@@ -15,6 +15,7 @@ description: 中古戸建の物件テキスト(SUUMOコピペ・ベタ打ちメ�
 1. **パース**: 投入されたテキストから抽出項目を拾い、`properties/{id}.yaml` を作る
    - id は `{エリア}-{媒体番号等}`(例: `akabanedai3-20268457`)
    - 抽出項目: 価格 / 所在地(エリア判定: akabane, akabane-nishi, akabanedai, akabane-kita) / 駅・徒歩分 / 土地・建物面積 / 私道負担・セットバック / 接道(幅員・方位・角地) / 築年月 / 構造・階数 / 権利形態 / 修繕・リフォーム記載 / 仲介手数料条件
+   - **元の掲載URL**: 入力テキストにURLがあれば `source_url` に記録する。無ければSUUMO物件番号から `https://suumo.jp/chukoikkodate/tokyo/sc_kita/nc_{番号}/` を構成し、**実際にアクセスして200応答かつタイトルの住所が一致した場合のみ**記録する(未確認URLのでっち上げ禁止。確認できなければ空のままにする)
    - **抽出できない項目は保守的デフォルトを適用し、YAMLに `assumed: true` と根拠を必ず記録**(例: 修繕記載なし → `repair: {status: unknown_likely_none, assumed: true, cost_man: 800}`)。推測で埋めたことを隠さない。**assumedフラグなしのデフォルト値埋めは禁止**
    - 既存YAMLと同一物件(同じ媒体番号・住所)なら新規作成せず `price_history` に追記する
 2. **確認**: パース結果(YAML全文と、適用した仮定の一覧)をユーザーに提示し、承認を得る

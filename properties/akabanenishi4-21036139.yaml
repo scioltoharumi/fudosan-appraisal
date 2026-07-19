@@ -3,6 +3,7 @@
 id: akabanenishi4-21036139
 status: considering        # considering / viewed / declined / closed
 source: "SUUMO 21036139 (三井のリハウス赤羽センター/三井不動産リアルティ)"
+source_url: "https://suumo.jp/chukoikkodate/tokyo/sc_kita/nc_21036139/"   # 実在確認済み 2026-07-20
 captured_at: 2026-07-19
 price_history:
   - {date: 2026-07-19, price_man: 6990}

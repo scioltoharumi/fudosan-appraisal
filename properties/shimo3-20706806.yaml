@@ -3,6 +3,7 @@
 id: shimo3-20706806
 status: considering        # considering / viewed / declined / closed
 source: "SUUMO 20706806 (ベストセレクト赤羽店)"
+source_url: "https://suumo.jp/chukoikkodate/tokyo/sc_kita/nc_20706806/"   # 実在確認済み 2026-07-20
 captured_at: 2026-07-19
 price_history:
   - {date: 2026-07-18, price_man: 6480}

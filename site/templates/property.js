@@ -1,7 +1,7 @@
 // site/templates/property.js — 物件詳細ページ(simulator v1.2のUI資産をサーバサイド描画に移植)
 // スケールSVG / 明細表 / MC分布 / トルネード / 算出根拠の全文開示 / 予算 / モデル外チェックリスト / 仮定一覧
 import { fmtMan, pct, COEFFS } from "../../engine/appraise.js";
-import { layout, esc, STATUS_LABEL, fmtDate } from "./layout.js";
+import { layout, esc, STATUS_LABEL, fmtDate, safeUrl } from "./layout.js";
 
 const DIR_LABEL = { "0.05": "南", "0.02": "東・南西・南東", "0": "西", "-0.03": "北" };
 const ROAD_LABEL = { "0": "幅員4m以上", "-0.05": "4m未満(2項道路)", "-0.1": "接道に疑義(通路等)" };
@@ -237,6 +237,7 @@ export function renderProperty(r, property) {
   <div class="panel">
     <h2>${esc(property.location?.address ?? r.id)} <span class="status">${esc(status)}</span></h2>
     <div class="note">ID: ${esc(r.id)} / 出典: ${esc(property.source ?? "—")} / 取得日: ${esc(fmtDate(property.captured_at))} / 駅徒歩${esc(property.station?.walk_min)}分 / 土地${esc(property.land?.registered_m2)}m² / 延床${esc(property.building?.floor_m2)}m² / 築: ${esc(fmtDate(property.building?.built))}</div>
+    ${safeUrl(property.source_url) ? `<a class="src-link" href="${esc(property.source_url)}" target="_blank" rel="noopener noreferrer">元の掲載ページを見る ↗</a>` : ""}
 
     <div class="verdict-wrap" style="margin-top:16px">
       <div class="stamp ${v.cls}">${v.mark}</div>

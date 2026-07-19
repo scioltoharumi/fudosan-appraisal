@@ -45,6 +45,8 @@ table.list td.num{font-family:var(--mono);text-align:right;white-space:nowrap}
 .badge.ok{border-color:var(--ok);color:var(--ok)}
 .badge.warn{border-color:var(--warn);color:var(--warn)}
 .status{font-size:.72rem;border:1px solid var(--ink-soft);padding:1px 7px;color:var(--ink-soft);white-space:nowrap}
+.src-link{display:inline-block;margin-top:10px;padding:5px 12px;border:1px solid var(--band);color:var(--band);font-size:.78rem;text-decoration:none;font-weight:700;background:#FDFDFC}
+.src-link:hover{background:var(--band);color:#fff}
 .note{font-size:.7rem;color:var(--ink-soft);margin-top:6px}
 
 /* 詳細: 判定 */

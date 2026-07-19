@@ -1,6 +1,6 @@
 // site/templates/index.js — 物件一覧ダッシュボード(F3-1: 乖離額ソート)
 import { fmtMan } from "../../engine/appraise.js";
-import { layout, esc, STATUS_LABEL } from "./layout.js";
+import { layout, esc, STATUS_LABEL, safeUrl } from "./layout.js";
 
 export function renderIndex(results, { asOf }) {
   // 乖離額の昇順 = 割安順(マイナスほど売出が査定より安い)
@@ -10,7 +10,7 @@ export function renderIndex(results, { asOf }) {
     const status = STATUS_LABEL[property.status] || property.status;
     return `<tr>
       <td><span class="badge ${v.cls}">${v.mark}</span></td>
-      <td><a href="property/${esc(r.id)}.html">${esc(property.location?.address ?? r.id)}</a><div class="note" style="margin-top:0">${esc(r.id)} / 徒歩${esc(property.station?.walk_min)}分</div></td>
+      <td><a href="property/${esc(r.id)}.html">${esc(property.location?.address ?? r.id)}</a><div class="note" style="margin-top:0">${esc(r.id)} / 徒歩${esc(property.station?.walk_min)}分${safeUrl(property.source_url) ? ` / <a href="${esc(property.source_url)}" target="_blank" rel="noopener noreferrer">掲載元↗</a>` : ""}</div></td>
       <td><span class="status">${esc(status)}</span></td>
       <td class="num">${fmtMan(r.state.ask)}</td>
       <td class="num">${fmtMan(r.mid.fair)}</td>

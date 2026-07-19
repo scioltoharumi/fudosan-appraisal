@@ -18,6 +18,10 @@ export const fmtDate = (d) => {
   return String(d ?? "");
 };
 
+// 外部リンクはhttpsのみ許可(YAML由来の値をhrefに入れるためのガード)
+export const safeUrl = (u) =>
+  typeof u === "string" && /^https:\/\/[^\s"'<>]+$/.test(u) ? u : null;
+
 export function layout({ title, subtitle, docNo, body }) {
   return `<!DOCTYPE html>
 <html lang="ja">

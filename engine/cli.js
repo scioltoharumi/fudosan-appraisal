@@ -15,6 +15,7 @@ function summary(r, property) {
   const L = [];
   L.push(`━━ ${r.id} ── 査定サマリ(基準日 ${r.asOf} / engine ${r.engineVersion})`);
   L.push(`判定      : 【${r.verdict.mark}】 ${r.verdict.head}`);
+  if (property.source_url) L.push(`掲載元    : ${property.source_url}`);
   L.push(`売出価格  : ${fmtMan(r.state.ask)}`);
   L.push(`下値フロア: ${fmtMan(r.mid.floorVal)}(悲観 ${fmtMan(r.lo.floorVal)})`);
   L.push(`適正レンジ: ${fmtMan(r.lo.fair)} 〜 ${fmtMan(r.mid.fair)} 〜 ${fmtMan(r.hi.fair)}`);
