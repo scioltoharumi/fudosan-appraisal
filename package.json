@@ -1,0 +1,15 @@
+{
+  "name": "fudosan-appraisal",
+  "version": "0.1.0",
+  "private": true,
+  "description": "赤羽エリア中古戸建の査定パイプライン(入力YAML→査定エンジン→静的サイト)",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test",
+    "build": "node site/build.js",
+    "appraise": "node engine/cli.js"
+  }
+}

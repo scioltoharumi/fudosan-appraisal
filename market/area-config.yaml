@@ -1,0 +1,24 @@
+# エリア別 基準坪単価(万円/坪・2025年1月時点の実勢想定)
+# 出典: 公示地価2025(赤羽住宅地321万・赤羽西190万・赤羽北160万/坪など) × 実勢係数1.15 の初期値。
+# 成約事例3件未満のため公示フォールバック(F5-2)。deals.csvが貯まったらcalibrateで実測に置換する。
+# エリアは赤羽4エリア固定(決定事項§9-3)。
+areas:
+  akabane:
+    label: 赤羽
+    ppt_man: 370
+    source: koji_fallback
+  akabane-nishi:
+    label: 赤羽西
+    ppt_man: 245
+    source: koji_fallback
+  akabanedai:
+    label: 赤羽台・西が丘
+    ppt_man: 230
+    source: koji_fallback
+  akabane-kita:
+    label: 赤羽北・北赤羽
+    ppt_man: 200
+    source: koji_fallback
+
+# 時点修正の年率地価上昇率(赤羽の直近実勢+10〜14%の保守側)
+rise_rate: 0.10

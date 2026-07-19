@@ -1,0 +1,288 @@
+// site/templates/property.js — 物件詳細ページ(simulator v1.2のUI資産をサーバサイド描画に移植)
+// スケールSVG / 明細表 / MC分布 / トルネード / 算出根拠の全文開示 / 予算 / モデル外チェックリスト / 仮定一覧
+import { fmtMan, pct, COEFFS } from "../../engine/appraise.js";
+import { layout, esc, STATUS_LABEL, fmtDate } from "./layout.js";
+
+const DIR_LABEL = { "0.05": "南", "0.02": "東・南西・南東", "0": "西", "-0.03": "北" };
+const ROAD_LABEL = { "0": "幅員4m以上", "-0.05": "4m未満(2項道路)", "-0.1": "接道に疑義(通路等)" };
+
+const CHECK_ITEMS = [
+  ["road_type_verified", "接道種別の確認(42条区分。「通路」なら角地加算は消滅)"],
+  ["retaining_wall", "擁壁・がけ条例・高低差(赤羽台は台地縁)"],
+  ["hazard", "ハザードマップ"],
+  ["seismic", "耐震(2000年基準未適合なら耐震診断・補強費を修繕想定へ)"],
+];
+const CHECK_STATIC = [
+  "セットバックの根拠(中心後退か一方後退か。一方後退なら向かい側の崖・水路を疑う)",
+  "インスペクション(観察減価はこのモデルの外)",
+  "解体費の実見積(重機搬入可否で大きく変動)",
+];
+
+// ---- 価格スケールSVG(v1.2 drawScale移植) ----
+function scaleSvg(s, v) {
+  const cands = [v.floorLo, v.fairHi, s.ask];
+  if (v.income) cands.push(v.income);
+  const rawMin = Math.min(...cands), rawMax = Math.max(...cands);
+  const span0 = Math.max(1, rawMax - rawMin);
+  const min = rawMin - 0.08 * span0, max = rawMax + 0.06 * span0;
+  const X = (val) => 30 + ((val - min) / (max - min)) * 580;
+  const el = [];
+  el.push(`<line x1="30" y1="100" x2="610" y2="100" stroke="#16232E" stroke-width="1"/>`);
+  const step = (max - min) / 6;
+  for (let i = 0; i <= 6; i++) {
+    const val = min + step * i, x = X(val);
+    el.push(`<line x1="${x}" y1="96" x2="${x}" y2="104" stroke="#16232E" stroke-width="1"/>`);
+    el.push(`<text x="${x}" y="120" font-size="9" text-anchor="middle" fill="#43566B" font-family="monospace">${(val / 10000).toFixed(2)}億</text>`);
+  }
+  el.push(`<rect x="${X(v.floorLo)}" y="70" width="${Math.max(2, X(v.floorHi) - X(v.floorLo))}" height="14" fill="#2E6E8E" opacity="0.85"/>`);
+  el.push(`<text x="${X(v.floorLo)}" y="64" font-size="10" fill="#16232E">下値フロア(土地−解体費)</text>`);
+  el.push(`<rect x="${X(v.fairLo)}" y="86" width="${Math.max(2, X(v.fairHi) - X(v.fairLo))}" height="14" fill="#BFD7E4"/>`);
+  el.push(`<text x="${X(v.fairLo)}" y="136" font-size="10" fill="#43566B">適正価格レンジ(売却ルートmax法)</text>`);
+  el.push(`<line x1="${X(v.fairMid)}" y1="66" x2="${X(v.fairMid)}" y2="102" stroke="#16232E" stroke-width="1" stroke-dasharray="3,2"/>`);
+  if (v.income) {
+    const ix = X(v.income);
+    el.push(`<line x1="${ix}" y1="70" x2="${ix}" y2="102" stroke="#6B4E9B" stroke-width="2" stroke-dasharray="5,3"/>`);
+    el.push(`<text x="${ix}" y="152" font-size="10" text-anchor="middle" fill="#6B4E9B">収益価格 ${(v.income / 10000).toFixed(2)}億</text>`);
+  }
+  const ax = X(s.ask);
+  el.push(`<line x1="${ax}" y1="26" x2="${ax}" y2="102" stroke="#C93A2B" stroke-width="2"/>`);
+  el.push(`<polygon points="${ax - 5},18 ${ax + 5},18 ${ax},28" fill="#C93A2B"/>`);
+  el.push(`<text x="${ax}" y="12" font-size="11" font-weight="700" text-anchor="middle" fill="#C93A2B">売出 ${(s.ask / 10000).toFixed(2)}億</text>`);
+  return `<svg class="scale-svg" viewBox="0 0 640 168" role="img" aria-label="査定レンジと売出価格の位置">${el.join("")}</svg>`;
+}
+
+// ---- MC分布SVG(v1.2 runMCのcanvas描画をSVGに移植) ----
+function histSvg(s, mc) {
+  const W = 640, H = 200, padB = 26, padT = 10;
+  const { lo, hi, counts } = mc.hist;
+  const bins = counts.length;
+  const span = Math.max(1, hi - lo);
+  const maxC = Math.max(...counts);
+  const bw = W / bins;
+  const el = [];
+  for (let b = 0; b < bins; b++) {
+    const binMid = lo + ((b + 0.5) / bins) * span;
+    const h = (counts[b] / maxC) * (H - padB - padT);
+    el.push(`<rect x="${(b * bw + 1).toFixed(1)}" y="${(H - padB - h).toFixed(1)}" width="${(bw - 2).toFixed(1)}" height="${h.toFixed(1)}" fill="${binMid < s.ask ? "#BFD7E4" : "#2E6E8E"}"/>`);
+  }
+  const ax = ((s.ask - lo) / span) * W;
+  if (ax >= 0 && ax <= W) {
+    el.push(`<line x1="${ax.toFixed(1)}" y1="${padT}" x2="${ax.toFixed(1)}" y2="${H - padB}" stroke="#C93A2B" stroke-width="2"/>`);
+  }
+  const t = (x, anchor, s2) => `<text x="${x}" y="${H - 8}" font-size="10" font-family="monospace" fill="#43566B" text-anchor="${anchor}">${s2}</text>`;
+  el.push(t(2, "start", (lo / 10000).toFixed(2) + "億"));
+  el.push(t(W - 2, "end", (hi / 10000).toFixed(2) + "億"));
+  el.push(t(W / 2, "middle", "P50 " + (mc.p50 / 10000).toFixed(2) + "億"));
+  return `<svg class="hist-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="適正総額のモンテカルロ分布">${el.join("")}</svg>`;
+}
+
+function pctLine(mc, p50) {
+  const askPct = mc.askPercentile;
+  return `売出価格は適正総額分布のおよそ <b>${askPct.toFixed(0)}パーセンタイル</b>。` +
+    (askPct >= 90 ? "試行の9割以上で「割高」側 ── 指値なしで買う合理性は乏しい。"
+      : askPct >= 60 ? `やや割高圏。P50(${fmtMan(p50)})を指値の錨に。`
+      : askPct >= 30 ? "適正圏の中央付近。条件面(修繕・引渡し時期)での交渉が現実的。"
+      : "分布の下位 ── 統計上は割安。逆に「安すぎる理由」(接道・擁壁・瑕疵)を疑うべき水準。");
+}
+
+// ---- トルネード(v1.2 drawTornado移植) ----
+function tornadoHtml(rows) {
+  const maxAbs = Math.max(...rows.map((r) => Math.max(Math.abs(r.dLo), Math.abs(r.dHi))), 1);
+  return rows.map(({ label, dLo, dHi }) => {
+    const leftPct = 50 + (Math.min(dLo, dHi, 0) / maxAbs) * 48;
+    const widthPct = ((Math.max(dLo, dHi, 0) - Math.min(dLo, dHi, 0)) / maxAbs) * 48;
+    const val = (dLo ? (dLo > 0 ? "+" : "") + Math.round(dLo).toLocaleString("en-US") : "") +
+      (dLo && dHi ? " / " : "") +
+      (dHi ? (dHi > 0 ? "+" : "") + Math.round(dHi).toLocaleString("en-US") : "");
+    return `<div class="bar-row"><div class="bar-label">${esc(label)}</div><div class="bar-area"><div class="bar-fill" style="left:${leftPct}%;width:${widthPct}%"></div><div class="bar-mid" style="left:50%"></div></div><div class="bar-val">${val}万</div></div>`;
+  }).join("");
+}
+
+// ---- 算出根拠の全文開示(v1.2 buildLogic移植) ----
+function logicSteps(r) {
+  const { state: s, mid, lo, hi, incomeVal, totalCost, instLoss, elapsed } = r;
+  const eff = s.land - s.setback;
+  const dirLabel = DIR_LABEL[String(s.dir)] || "—";
+  const roadLabel = ROAD_LABEL[String(s.roadq)] || "—";
+  let sizeWhy = "20〜45坪は分譲需要の中心帯のため補正なし。";
+  if (mid.tsubo < 20) sizeWhy = "20坪を下回るほど狭小地として買い手が減るため、1坪不足あたり−0.5%(最大−5%)。";
+  else if (mid.tsubo > 45) sizeWhy = "45坪を超えるほど総額が張り需要層が薄くなるため、1坪超過あたり−0.2%(最大−8%)。";
+  const pptCorrected = mid.pptAdj * (1 + mid.adj);
+
+  const steps = [
+    ["基準坪単価(地域相場の起点)",
+      s.ppt + "万円/坪(2025年1月時点の実勢想定)",
+      "国交省の公示地価(赤羽住宅地321万・赤羽西190万・赤羽北160万/坪など)に実勢係数1.15を掛けた値を初期値としています。公示地価は鑑定士が更地として評価した「基準値」で、実際の取引は人気エリアでは公示の1.1〜1.3倍で成約するのが通例だからです。この値が査定全体の土台であり、成約事例の実測に置き換えるほど現実に近づきます。"],
+
+    ["時点修正(相場の鮮度合わせ)",
+      s.ppt + "万 × (1 + " + (s.rise * 100).toFixed(0) + "%)^" + elapsed.toFixed(1) + "年 = <b>" + Math.round(mid.pptAdj) + "万円/坪</b>",
+      "公示地価の基準日は2025年1月1日。経過年数は査定基準日(" + r.asOf + ")から自動計算しています(現在" + elapsed.toFixed(1) + "年)。赤羽は直近で年+10〜14%の上昇局面にあるため、古い基準のまま査定すると安く出過ぎます。"],
+
+    ["実効宅地面積(払う面積と使える面積は違う)",
+      "登記 " + s.land + "m² − 私道負担・セットバック " + s.setback + "m² = <b>" + eff.toFixed(2) + "m²(" + mid.tsubo.toFixed(2) + "坪)</b>",
+      "私道負担・セットバック部分は建築も容積算入もできないため、本モデルでは価値ゼロとして全額控除しています。税務上は更地の0〜3割で評価される場合もあるので、これは意図的に保守側(安全側)に倒した処理です。"],
+
+    ["個別補正(この土地ならではの加点・減点)",
+      "徒歩 " + pct(mid.walkAdj) + " ＋ 方位[" + dirLabel + "] " + pct(s.dir) + " ＋ 接道[" + roadLabel + "] " + pct(s.roadq) + " ＋ 形状 " + pct(s.shape) + " ＋ 角地 " + pct(mid.cornerAdj) + " ＋ 複数駅 " + pct(mid.mstAdj) + " ＋ 面積 " + pct(mid.sizeAdj) + " ＋ その他 " + pct(s.extra / 100) + " = <b>合計 " + pct(mid.adj) + "</b>",
+      "徒歩は10分基準で1分±1.2%。方位は日照価値。接道は幅員4m未満で−5%、道路種別に疑義があれば−10%。旗竿地−25%。角地+3%は両方が建築基準法上の道路の場合のみ。複数駅・複数路線は再販時の訴求力で+2%。面積は" + sizeWhy + " 「その他」は容積率格差・高低差・眺望など本モデルにない要因の手動枠です。補正後坪単価は <b>" + Math.round(pptCorrected) + "万円/坪</b>。"],
+
+    ["査定土地値(土地だけの値段)",
+      Math.round(pptCorrected) + "万/坪 × " + mid.tsubo.toFixed(2) + "坪" + (s.lc !== 0 ? " × (1" + pct(s.lc) + " 法的制約)" : "") + " = <b>" + fmtMan(mid.land2) + "</b>(レンジ: " + fmtMan(lo.land2) + "〜" + fmtMan(hi.land2) + ")",
+      "補正後坪単価×実効坪数。再建築不可などの法的制約はここで−30%を掛けます(住宅ローンが付かず買い手が現金投資家に限られるため)。基準坪単価に±10%の不確実性を置き、レンジで表示しています。"],
+
+    ["下値フロア(土地値 − 解体費)",
+      fmtMan(mid.land2) + " − 解体費 " + fmtMan(s.demo) + " = <b>" + fmtMan(mid.floorVal) + "</b>",
+      "この物件を「最悪でも土地として売る」ときの手取り相当額です。古家付き土地の買い手は解体費を差し引いて指値するため、資産防衛の合格ラインはここに置くべきです。なお「確実な下値」と呼びたくなりますが、基準坪単価自体に±10%の幅がある以上、ここに示すのは中央値であり、悲観側の下値は " + fmtMan(lo.floorVal) + " です。売出価格がこのフロア以下なら「買」判定です。"],
+
+    ["建物残価(市場が建物に払う残り時間)",
+      s.rebuild + "万/坪 × " + (s.floor / COEFFS.TSUBO_M2).toFixed(2) + "坪 × max(0, 1 − 築" + s.age.toFixed(1) + "年 ÷ 22年) = <b>" + fmtMan(mid.resid) + "</b>",
+      "木造戸建の建物は市場評価上おおむね22年で価値ゼロ(税法耐用年数と市場慣行の近似)。" + (mid.alive ? "残価が残っている間は、3階建・狭小などの市場性減価(" + pct(s.bm) + ")が土地建物一体の取引価格に掛かります(買い手層の減少は物件全体の成約価格を押し下げるため、便宜上総額適用)。" : "本件は築" + s.age.toFixed(1) + "年のため残価ゼロ。査定上は「古家付き土地」であり、実際に住めるかどうかと市場が建物代を払うかは別問題です。") + " 雨漏り・傾き等の実際の劣化(観察減価)はこの式の外で、インスペクションでしか分かりません。"],
+
+    ["売却ルートの場合分け(このモデルの心臓部)",
+      "適正価格 = max(住まいとして売る価値, 土地として売る価値)<br>＝ max((土地値＋残価)×(1" + pct(s.bm) + ") − 繰延修繕" + fmtMan(s.repair) + ", 土地値 − 解体費" + fmtMan(s.demo) + ")<br>＝ max(" + fmtMan(mid.asHome) + ", " + fmtMan(mid.asLand) + ") = <b>" + fmtMan(mid.fair) + "</b>",
+      "物件には「住まいとして売る」「土地として売る」の2つの出口があり、市場価格は高い方で決まります。住まいルートでは買い手が引き継ぐ繰延修繕を控除し、土地ルートでは解体費を控除します。※築浅で大規模修繕が未到来の物件は修繕を+0としてください。未到来なのに未実施+800万を置くと、経年減価との二重控除になります。両方を同時に引くのは二重控除の誤り(直してから壊す人はいない)です。本件は" + (mid.route === "land" ? "土地ルートが優位＝買い手は解体を前提に値付けしてくる、という読みになります。" : "住まいルートが優位＝建物の残り価値に相応の対価を払う合理性があります。")],
+
+    ["適正価格レンジ(最終的な物差し)",
+      fmtMan(lo.fair) + " 〜 <b>" + fmtMan(mid.fair) + "</b> 〜 " + fmtMan(hi.fair),
+      "売出価格" + fmtMan(s.ask) + "との差 <b>" + (s.ask - mid.fair >= 0 ? "+" : "") + fmtMan(s.ask - mid.fair) + "</b> が、土地でも建物でも説明できない上乗せ(プレミアム)です。払うこと自体は悪ではありませんが、金額を自覚して払うのと知らずに払うのは別物です。"],
+  ];
+
+  if (incomeVal) {
+    steps.push(["収益価格(第3の錨)",
+      "月額 " + s.rent + "万 × 12 × (1 − 経費率" + (s.expr * 100).toFixed(0) + "%) ÷ 還元利回り" + (s.yld * 100).toFixed(1) + "% = <b>" + fmtMan(incomeVal) + "</b>",
+      "「貸したら投資家は幾らまで払うか」の逆算です。戸建賃貸は固定資産税・修繕・空室で賃料の15〜20%が経費に消えるため、表面でなく経費控除後(NOI)で還元します。賃料入力が仮置きなら必ず周辺実勢に差し替えてください。ここが現状最も弱い入力です。"]);
+  }
+
+  steps.push(["総取得コストと即時含み損(最後の現実)",
+    "総コスト: " + fmtMan(s.ask) + " × (1+" + (s.fee * 100).toFixed(1) + "%) + 修繕 " + fmtMan(s.repair) + " = <b>" + fmtMan(totalCost) + "</b><br>即時含み損: " + fmtMan(totalCost) + " − 査定 " + fmtMan(mid.fair) + " = <b>" + fmtMan(instLoss) + "</b>",
+    "諸費用と修繕は「住むために払うが、売るとき市場は返してくれない」お金です。総取得コストから査定価値を引いた即時含み損は、引渡しの瞬間に確定する資産毀損の見積りです。持ち家は住む価値(帰属家賃)でこれを回収していく構造なので、含み損＝悪ではありませんが、「毀損しない物件」を掲げるなら直視すべき数字です。心理的上限1億円と比較すべきもこの総額です。"]);
+
+  return steps.map((st, i) =>
+    `<div class="logic-step"><div class="t"><span class="no">STEP ${i + 1}</span>${st[0]}</div><div class="formula">${st[1]}</div><div class="why">${st[2]}</div></div>`
+  ).join("");
+}
+
+// ---- 明細表(v1.2 rows移植) ----
+function kvTable(r) {
+  const { state: s, mid, lo, hi, premium, instLoss, incomeVal, elapsed } = r;
+  const rows = [
+    ["実効宅地面積(登記−私道負担" + s.setback + "m²)", mid.tsubo.toFixed(2) + " 坪(" + (s.land - s.setback).toFixed(2) + "m²)"],
+    ["時点修正後 基準坪単価(" + elapsed.toFixed(1) + "年分複利)", Math.round(mid.pptAdj).toLocaleString("en-US") + " 万円/坪"],
+    ["個別補正計", pct(mid.adj) + "(補正後 " + Math.round(mid.pptAdj * (1 + mid.adj)).toLocaleString("en-US") + "万/坪)"],
+    ["査定土地値(法的制約込)", fmtMan(lo.land2) + " 〜 " + fmtMan(hi.land2)],
+    ["下値フロア(土地値−解体費" + fmtMan(s.demo) + ")", fmtMan(lo.floorVal) + " 〜 " + fmtMan(hi.floorVal)],
+    ["建物残価(木造22年逓減)", mid.alive ? fmtMan(mid.resid) + "(市場性 " + pct(s.bm) + " は残価あり時のみ)" : "0円(築" + s.age.toFixed(1) + "年・市場評価消滅)"],
+    ["売却ルート判定", mid.route === "land" ? "土地として売る方が高い(解体前提)" : "住まいとして売る方が高い(修繕" + fmtMan(s.repair) + "控除後)"],
+    ["適正価格レンジ", fmtMan(lo.fair) + " 〜 " + fmtMan(hi.fair), "em"],
+    ["売出価格 − 査定中央値", (premium >= 0 ? "+" : "") + fmtMan(premium)],
+    ["実質坪単価(売出÷実効坪)", Math.round(s.ask / mid.tsubo).toLocaleString("en-US") + " 万円/坪"],
+  ];
+  if (incomeVal) rows.push(["収益価格(月" + s.rent + "万×12×(1−経費" + (s.expr * 100) + "%)÷" + (s.yld * 100).toFixed(1) + "%)", fmtMan(incomeVal)]);
+  rows.push(["即時含み損(総取得コスト − 査定中央値)", (instLoss >= 0 ? "" : "+") + fmtMan(Math.abs(instLoss)) + (instLoss >= 0 ? " の毀損スタート" : " の含み益スタート"), instLoss > 0 ? "loss em" : "em"]);
+  return `<table class="kv">` + rows.map((r2) =>
+    `<tr${r2[2] ? ` class="${r2[2]}"` : ""}><td>${r2[0]}</td><td>${r2[1]}</td></tr>`).join("") + `</table>`;
+}
+
+function budgetHtml(r) {
+  const { state: s, totalCost } = r;
+  const cap = COEFFS.BUDGET_CAP_MAN;
+  const width = Math.min((totalCost / 11500) * 100, 100);
+  const over = totalCost > cap;
+  return `<section class="budget">
+    <div style="font-size:.85rem;font-weight:700">総取得コスト vs 心理的上限 1億円</div>
+    <div class="budget-bar"><div class="budget-fill${over ? " over" : ""}" style="width:${width.toFixed(1)}%"></div><div class="budget-cap" style="left:86.9%"></div></div>
+    <div class="budget-line"><span>0</span><span>総取得コスト <b style="font-family:var(--mono)">${fmtMan(totalCost)}</b>(価格×(1+${(s.fee * 100).toFixed(1)}%)＋修繕${fmtMan(s.repair)})${over ? ` ── <span style="color:var(--stamp)">上限超過 ${fmtMan(totalCost - cap)}</span>` : ` ── 余裕 ${fmtMan(cap - totalCost)}`}</span><span>1.15億</span></div>
+  </section>`;
+}
+
+function checklistHtml(property) {
+  const cl = property.checklist || {};
+  const items = CHECK_ITEMS.map(([key, label]) =>
+    cl[key] ? `<span class="done">✓ ${esc(label)}</span>` : `□ ${esc(label)}`);
+  CHECK_STATIC.forEach((label) => items.push(`□ ${esc(label)}`));
+  return `<section class="human-check"><b>モデル外チェックリスト(現地・書面でしか確認できない)</b><br>${items.join("<br>")}
+  <div class="note">チェック状態は物件YAMLの checklist で管理(✓は確認済み)</div></section>`;
+}
+
+function assumptionsHtml(r) {
+  const src = r.area.source === "koji_fallback"
+    ? "公示地価×1.15フォールバック(成約事例3件未満)"
+    : esc(String(r.area.source));
+  const items = r.assumptions.length
+    ? r.assumptions.map((a) => `<li><b>${esc(a.field)}</b> = ${esc(a.value)} <span class="why">── ${esc(a.why)}</span></li>`).join("")
+    : "<li>なし(全項目が実測・記載値)</li>";
+  return `<section>
+    <h2 class="sub">採用した仮定と出典 ── この査定が立っている足場</h2>
+    <ul class="assumptions">${items}</ul>
+    <div class="provenance">基準坪単価の出典: ${esc(r.area.label ?? r.area.key)} ${r.area.ppt_man ?? r.state.ppt}万円/坪 ── ${src} / 年率上昇 ${(r.state.rise * 100).toFixed(0)}% / 査定基準日 ${r.asOf} / MC seed=${r.mc.seed} / engine ${esc(r.engineVersion)}</div>
+  </section>`;
+}
+
+function priceHistoryHtml(property) {
+  const ph = property.price_history || [];
+  if (ph.length < 2) return "";
+  const rows = ph.map((p, i) => {
+    const diff = i === 0 ? "" : (p.price_man - ph[i - 1].price_man >= 0 ? "+" : "") + fmtMan(p.price_man - ph[i - 1].price_man);
+    return `<tr><td>${esc(fmtDate(p.date))}</td><td style="text-align:right;font-family:var(--mono)">${fmtMan(p.price_man)}</td><td style="text-align:right;font-family:var(--mono)">${diff}</td></tr>`;
+  }).join("");
+  return `<section><h2 class="sub">価格改定履歴</h2><table class="kv"><tr><td>日付</td><td style="text-align:right">価格</td><td style="text-align:right">改定幅</td></tr>${rows}</table></section>`;
+}
+
+// ---- ページ全体 ----
+export function renderProperty(r, property) {
+  const { state: s, mid, lo, hi, verdict: v, incomeVal } = r;
+  const status = STATUS_LABEL[property.status] || property.status;
+  const body = `
+  <div style="margin-bottom:12px;font-size:.8rem"><a href="../index.html">← 物件一覧へ</a></div>
+  <div class="panel">
+    <h2>${esc(property.location?.address ?? r.id)} <span class="status">${esc(status)}</span></h2>
+    <div class="note">ID: ${esc(r.id)} / 出典: ${esc(property.source ?? "—")} / 取得日: ${esc(fmtDate(property.captured_at))} / 駅徒歩${esc(property.station?.walk_min)}分 / 土地${esc(property.land?.registered_m2)}m² / 延床${esc(property.building?.floor_m2)}m² / 築: ${esc(fmtDate(property.building?.built))}</div>
+
+    <div class="verdict-wrap" style="margin-top:16px">
+      <div class="stamp ${v.cls}">${v.mark}</div>
+      <div class="verdict-text">
+        <div class="head">${v.head}</div>
+        <div class="body">${v.body}</div>
+      </div>
+    </div>
+
+    <section>
+      <h2 class="sub">価格スケール ── 売出価格はどこに立っているか</h2>
+      <div class="scale-wrap">${scaleSvg(s, { fairLo: lo.fair, fairMid: mid.fair, fairHi: hi.fair, floorLo: lo.floorVal, floorHi: hi.floorVal, income: incomeVal })}</div>
+      ${kvTable(r)}
+    </section>
+
+    <section>
+      <h2 class="sub">モンテカルロ分布(${r.mc.trials.toLocaleString("en-US")}試行) ── 適正総額のばらつき</h2>
+      ${histSvg(s, r.mc)}
+      <div class="pct-line">${pctLine(r.mc, r.mc.p50)}</div>
+      <div class="caveat">※ パラメータ不確実性＋モデル構造誤差(±5%)を含むが、補正体系自体の誤りは表現できない。パーセンタイルは目安であり検定結果ではない。</div>
+    </section>
+
+    <section class="tornado">
+      <h2 class="sub">感度分析 ── どの変数が査定額を動かすか</h2>
+      ${tornadoHtml(r.tornado)}
+    </section>
+
+    <section>
+      <h2 class="sub">算出根拠の全文開示 ── この査定額はこうやって作られている</h2>
+      <div class="logic-body">${logicSteps(r)}</div>
+    </section>
+
+    ${budgetHtml(r)}
+    ${priceHistoryHtml(property)}
+    ${checklistHtml(property)}
+    ${assumptionsHtml(r)}
+
+    <div class="disclaimer">
+      本ページは公開データに基づく簡易モデルであり、不動産鑑定評価・投資助言ではありません。補正係数(徒歩±1.2%/分、方位±2〜5%、旗竿−25%、複数駅+2%、木造残価22年逓減等)は市場慣行の近似値で、統計的に推定されたものではありません。取引事例による係数検証と、有資格者の査定・重要事項説明・解体費実見積で必ず裏取りしてください。
+    </div>
+  </div>`;
+
+  return layout({
+    title: "中古戸建 査定台帳",
+    subtitle: esc(property.location?.address ?? r.id) + " ── 売出価格を土地値・解体費・建物残価・繰延修繕に分解する",
+    docNo: `判定【${v.mark}】<br>査定基準日 ${r.asOf}<br>engine ${esc(r.engineVersion)}`,
+    body,
+  });
+}

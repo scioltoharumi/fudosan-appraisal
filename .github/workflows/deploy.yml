@@ -1,0 +1,45 @@
+# push契機で テスト → サイト生成 → GitHub Pages 反映まで無人実行(F4-1)
+# テスト失敗時は build ジョブが落ちて deploy に進まない = 壊れた査定を公開しない(F4-2)
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # 依存はvendor同梱のためnpm install不要
+      - name: 不変条件テスト(floor<=fair全域スイープ・回帰値)
+        run: npm test
+      - name: サイト生成
+        run: npm run build
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
