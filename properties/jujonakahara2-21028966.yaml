@@ -1,0 +1,32 @@
+# 物件データ(1物件1ファイル)。記載ルール: 事実データと査定パラメータのみ。
+# 指値方針・交渉メモ・個人的所感・写真・紹介文は書かない(publicリポジトリ運用・decisions D4)
+id: jujonakahara2-21028966
+status: considering        # considering / viewed / declined / closed
+source: "SUUMO 21028966 (福屋不動産販売赤羽店)"
+source_url: "https://suumo.jp/chukoikkodate/tokyo/sc_kita/nc_21028966/"   # 実在確認済み 2026-07-24
+captured_at: 2026-07-24
+price_history:
+  - {date: 2026-07-24, price_man: 9000}
+location: {area: jujo-nakahara, address: "北区十条仲原2"}
+# 十条仲原はエリア設定4区分(赤羽固定)の対象外のため基準坪単価を明示上書き(F2-3)。
+# 根拠: 十条仲原の公示地価平均85.15万/m2(2025)は駅前商業地点154万に上振れするため
+# 保守側80万/m2を採用 ×3.30578 ≈264万/坪 ×実勢係数1.15 ≈304 → 300万/坪。
+# 本物件は近隣商業・容積270%・十条銀座商店街190mでエリア内上位の立地(assumed・要再検証)
+ppt_man_override: 300
+station: {walk_min: 10, multi_station: true}   # JR埼京線「十条」10分/JR京浜東北線「東十条」10分/「赤羽」23分
+land:
+  registered_m2: 82.85
+  setback_m2: 0            # 私道負担・セットバック「無」(媒体記載)
+  road: {quality: good_4m, direction: SE, corner: false, note: "南東側 幅員4.5m(接道幅6.3m)。公道/私道の別は媒体記載なし・要確認"}
+  shape: regular           # 特徴欄「整形地」「平坦地」
+  legal: {ownership: shoyuken, rebuildable: true, note: "近隣商業/建ぺい80%・容積270%/防火地域・新たな防火地域/高度地区/景観法規制/都市計画道路区域内"}
+building:
+  built: 2000-07
+  floor_m2: 142.1          # 現況(うち1階車庫11.4m2)。公簿は木造2階建89.07m2・増築未登記部分あり(現況3階建130.74m2)
+  type: wood_3f_narrow     # 現況木造3階建
+  repair: {status: unknown_likely_none, assumed: true, cost_man: 800}
+# 増築未登記(公簿2F/現況3F)・都市計画道路区域内による市場性・融資制約の減価(保守仮定・要調査)
+extra_adj_pct: -5
+costs: {fee_rate: 0.05, demolition_man: 260, demolition_assumed: true}   # 木造3F・現況延床42.99坪×約6万/坪
+income: {rent_man: 27, rent_assumed: true, expense_rate: 0.15, cap_rate: 0.045}
+checklist: {road_type_verified: false, retaining_wall: false, hazard: false, seismic: false}
