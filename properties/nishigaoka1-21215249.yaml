@@ -1,0 +1,24 @@
+# 物件データ(1物件1ファイル)。記載ルール: 事実データと査定パラメータのみ。
+# 指値方針・交渉メモ・個人的所感・写真・紹介文は書かない(publicリポジトリ運用・decisions D4)
+id: nishigaoka1-21215249
+status: considering        # considering / viewed / declined / closed
+source: "SUUMO 21215249 (三井のリハウス赤羽センター/三井不動産リアルティ)"
+source_url: "https://suumo.jp/chukoikkodate/tokyo/sc_kita/nc_21215249/"   # 実在確認済み 2026-07-24
+captured_at: 2026-07-24
+price_history:
+  - {date: 2026-07-24, price_man: 9480}
+location: {area: akabanedai, address: "北区西が丘1"}   # エリア区分「赤羽台・西が丘」
+station: {walk_min: 13, multi_station: true}   # JR京浜東北線・埼京線「赤羽」13分/都営三田線「本蓮沼」16分
+land:
+  registered_m2: 67.24
+  setback_m2: 0            # 私道負担・セットバック「無」(媒体記載)
+  road: {quality: good_4m, direction: S, corner: false, note: "南側 幅員5.7m(接道幅6.9m)。公道/私道の別は媒体記載なし・要確認"}
+  legal: {ownership: shoyuken, rebuildable: true}   # 用途地域: 2種低層 / 建ぺい60%・容積150%
+building:
+  built: 2003-10
+  floor_m2: 99.15
+  type: wood_3f_narrow     # 木造3階建・土地20.34坪・車庫(カースペース)
+  repair: {status: unknown_likely_none, assumed: true, cost_man: 800}   # 媒体画像は「空室リフォームイメージ」CGで実施済リフォームなし
+costs: {fee_rate: 0.05, demolition_man: 180, demolition_assumed: true}   # 木造3F・延床29.99坪×約6万/坪
+income: {rent_man: 26, rent_assumed: true, expense_rate: 0.15, cap_rate: 0.045}
+checklist: {road_type_verified: false, retaining_wall: false, hazard: false, seismic: false}
