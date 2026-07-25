@@ -1,0 +1,29 @@
+# 物件データ(1物件1ファイル)。記載ルール: 事実データと査定パラメータのみ。
+# 指値方針・交渉メモ・個人的所感・写真・紹介文は書かない(publicリポジトリ運用・decisions D4)
+id: shimo1-21186616
+status: considering        # considering / viewed / declined / closed
+source: "SUUMO 21186616 (住友林業ホームサービス川口支店)"
+source_url: "https://suumo.jp/chukoikkodate/tokyo/sc_kita/nc_21186616/"   # 実在確認済み 2026-07-24
+captured_at: 2026-07-24
+price_history:
+  - {date: 2026-07-24, price_man: 5680}   # 媒体内訳: 建物1595万/土地4085万(スムストック査定)
+location: {area: shimo, address: "北区志茂1"}
+# 志茂はエリア設定4区分(赤羽固定)の対象外のため基準坪単価を明示上書き(F2-3)。
+# shimo3-20706806と同一根拠・同一値: 公示地価目安 約55.4万/m2(2025) ×3.30578×実勢1.15 ≈210万/坪
+ppt_man_override: 210
+station: {walk_min: 5, multi_station: true}   # 南北線「志茂」5分/湘南新宿ライン等「赤羽」10分/「赤羽岩淵」15分
+land:
+  registered_m2: 47.09
+  # 西側私道3.1m幅(4m未満)→再建築時セットバック想定 (4-3.1)/2×接道幅5.4m ≈2.43m2(実測未確認の推計)
+  setback_m2: 2.43
+  road: {quality: setback_2ko, direction: W, corner: false, note: "西側私道3.1m幅(接道幅5.4m)・共有持分36.06m2×1/4(按分9.02m2)。42条区分と持分の登記面積算入は要確認"}
+  legal: {ownership: shoyuken, rebuildable: true, note: "1種住居/建ぺい60%・容積160%/高度地区/準防火地域"}
+building:
+  built: 2010-03
+  floor_m2: 76.87
+  type: wood_3f_narrow     # 木造3階建(在来)・土地14.24坪
+  # スムストック認定(点検・補修履歴保管/50年メンテプログラム/瑕疵保険付)につき既定800万から減額。金額は仮置き
+  repair: {status: sumstock_maintenance_history, assumed: true, cost_man: 400}
+costs: {fee_rate: 0.05, demolition_man: 160, demolition_assumed: true}   # 木造3F・延床23.25坪×約7万/坪(前面道路狭小)
+income: {rent_man: 21, rent_assumed: true, expense_rate: 0.15, cap_rate: 0.045}
+checklist: {road_type_verified: false, retaining_wall: false, hazard: false, seismic: false}
