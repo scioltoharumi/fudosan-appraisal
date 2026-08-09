@@ -25,6 +25,7 @@ export function renderIndex(results, { asOf }) {
   const body = `
   <div class="panel">
     <h2>物件一覧(乖離額の小さい順 = 割安順)</h2>
+    <div class="note" style="margin:0 0 10px">はじめての方へ: 査定値の出所(公示地価・坪単価・建物22年ルール・判定スタンプの意味)は <a href="guide.html">査定の読み方 ── 前提知識ガイド</a> で実物件を題材に解説しています。</div>
     <div style="overflow-x:auto">
     <table class="list">
       <tr><th>判定</th><th>物件</th><th>状態</th><th>売出価格</th><th>適正中央値</th><th>乖離</th><th>実質坪単価</th><th>仮定</th></tr>

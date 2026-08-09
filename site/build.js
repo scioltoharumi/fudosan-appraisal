@@ -6,6 +6,10 @@ import { evaluate } from "../engine/appraise.js";
 import { ROOT, loadAreaConfig, loadProperty, listPropertyIds } from "../engine/io.js";
 import { renderIndex } from "./templates/index.js";
 import { renderProperty } from "./templates/property.js";
+import { renderGuide } from "./templates/guide.js";
+
+// 前提知識ガイドの題材物件(存在しなければ先頭の物件にフォールバック)
+const GUIDE_EXAMPLE_ID = "jujonakahara3-adcast";
 
 const DIST = join(ROOT, "site", "dist");
 mkdirSync(join(DIST, "property"), { recursive: true });
@@ -30,6 +34,9 @@ for (const id of ids) {
 }
 
 const asOf = results[0].r.asOf;
+const guideTarget = results.find(({ r }) => r.id === GUIDE_EXAMPLE_ID) ?? results[0];
+writeFileSync(join(DIST, "guide.html"), renderGuide(guideTarget.r, guideTarget.property), "utf8");
+console.log(`✓ guide.html(題材: ${guideTarget.r.id})`);
 writeFileSync(join(DIST, "index.html"), renderIndex(results, { asOf }), "utf8");
 console.log(`✓ index.html(${results.length}件・基準日 ${asOf})`);
 console.log(`出力先: ${DIST}`);
