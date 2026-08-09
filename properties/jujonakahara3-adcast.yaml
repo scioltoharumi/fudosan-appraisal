@@ -1,0 +1,29 @@
+# 物件データ(1物件1ファイル)。記載ルール: 事実データと査定パラメータのみ。
+# 指値方針・交渉メモ・個人的所感・写真・紹介文は書かない(publicリポジトリ運用・decisions D4)
+id: jujonakahara3-adcast
+status: viewed             # considering / viewed / declined / closed
+source: "アドキャスト赤羽支店チラシ(媒介)"
+captured_at: 2026-08-09
+price_history:
+  - {date: 2026-08-09, price_man: 6580}   # チラシ取得時点の価格
+location: {area: jujo-nakahara, address: "北区十条仲原3"}
+# 十条仲原はエリア設定4区分(赤羽固定)の対象外のため基準坪単価を明示上書き(F2-3)。
+# 本物件は1種中高の住宅地につき、2丁目近商物件の300万/坪ではなく住宅地水準を適用。
+# 根拠: 十条仲原の住宅地地点51.9万/m2〜・隣接中十条平均56.4万/m2(2025)に
+# 富士見銀座商店街約300m・東十条11分を考慮した60万/m2 ×3.30578×実勢1.15 ≈228 → 230万/坪(assumed・要再検証)
+ppt_man_override: 230
+station: {walk_min: 11, multi_station: true}   # 東十条11分/十条12分/赤羽17分
+land:
+  registered_m2: 70.06     # 公簿。路地状部分 約21.83m2を含む(有効宅地約48.23m2)
+  setback_m2: 0            # 私道負担「無」(チラシ記載)
+  road: {quality: good_4m, direction: N, corner: false, note: "北側 約5.4m公道・アスファルト舗装・高低差なし"}
+  shape: flagpole          # 旗竿地(チラシ明記)
+  legal: {ownership: shoyuken, rebuildable: true, note: "1種中高/建ぺい60%・容積150%/準防火/2種高度/地区計画あり"}
+building:
+  built: 2008-12
+  floor_m2: 88.26          # 公簿
+  type: wood_3f_narrow     # 木造スレート葺3階建・カースペース付
+  repair: {status: unknown_likely_none, assumed: true, cost_man: 800}   # 建物状況調査は売主実施予定なし
+costs: {fee_rate: 0.05, demolition_man: 180, demolition_assumed: true}   # 木造3F・延床26.69坪×約7万/坪(旗竿地で重機搬入難を考慮)
+income: {rent_man: 22, rent_assumed: true, expense_rate: 0.15, cap_rate: 0.045}
+checklist: {road_type_verified: false, retaining_wall: false, hazard: false, seismic: false}

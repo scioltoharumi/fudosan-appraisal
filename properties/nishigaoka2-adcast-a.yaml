@@ -1,0 +1,24 @@
+# 物件データ(1物件1ファイル)。記載ルール: 事実データと査定パラメータのみ。
+# 指値方針・交渉メモ・個人的所感・写真・紹介文は書かない(publicリポジトリ運用・decisions D4)
+id: nishigaoka2-adcast-a
+status: viewed             # considering / viewed / declined / closed
+source: "アドキャスト赤羽支店チラシ(媒介)・A号棟。新築戸建(未完成・2026年9月完成予定/9月下旬引渡予定・建築確認 第JAIC2025X0546A1号)"
+captured_at: 2026-08-09
+price_history:
+  - {date: 2026-08-09, price_man: 6980}   # チラシ取得時点の価格
+location: {area: akabanedai, address: "北区西が丘2"}   # エリア区分「赤羽台・西が丘」
+station: {walk_min: 15, multi_station: true}   # 東十条15分/赤羽17分/都営三田線「板橋本町」18分
+land:
+  registered_m2: 50.74     # 実測。私道負担1.40m2は土地面積とは別途
+  setback_m2: 0
+  road: {quality: good_4m, direction: NW, corner: false, note: "北西側 約4m公道・アスファルト舗装・高低差なし。私道負担1.40m2(別途)"}
+  shape: regular           # チラシ「整形地」
+  legal: {ownership: shoyuken, rebuildable: true, note: "1種中高/建ぺい60%・容積150%/準防火/2種高度"}
+building:
+  built: 2026-09           # 完成予定(未完成)
+  floor_m2: 83.51          # 実測・車庫8.96m2を含む
+  type: wood_3f_narrow     # 木造3階建・土地15.34坪・ビルトインガレージ
+  repair: {status: new_construction, cost_man: 0}   # 新築につき繰延修繕なし
+costs: {fee_rate: 0.05, demolition_man: 150, demolition_assumed: true}   # 木造3F・延床25.26坪×約6万/坪
+income: {rent_man: 23, rent_assumed: true, expense_rate: 0.15, cap_rate: 0.045}
+checklist: {road_type_verified: false, retaining_wall: false, hazard: false, seismic: true}   # 新築(2025建築確認)につき現行基準

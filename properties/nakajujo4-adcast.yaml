@@ -1,0 +1,29 @@
+# 物件データ(1物件1ファイル)。記載ルール: 事実データと査定パラメータのみ。
+# 指値方針・交渉メモ・個人的所感・写真・紹介文は書かない(publicリポジトリ運用・decisions D4)
+id: nakajujo4-adcast
+status: viewed             # considering / viewed / declined / closed
+source: "アドキャスト赤羽支店チラシ(媒介)"
+captured_at: 2026-08-09
+price_history:
+  - {date: 2026-08-09, price_man: 6880}   # チラシ取得時点の価格
+location: {area: nakajujo, address: "北区中十条4"}
+# 中十条はエリア設定4区分(赤羽固定)の対象外のため基準坪単価を明示上書き(F2-3)。
+# 根拠: 中十条の公示地価平均56.4万/m2(2025・前年比+8.88%) ×3.30578 ≈186万/坪 ×実勢係数1.15 ≈214 → 215万/坪
+# (assumed・要再検証)
+ppt_man_override: 215
+station: {walk_min: 8, multi_station: true}   # 東十条8分/十条17分(2沿線)
+land:
+  registered_m2: 60.78     # 公簿。私道負担3.98m2は土地面積とは別途
+  # 東側公道 約3.3m幅(4m未満)。チラシも「セットバック要否確認推奨」。
+  # 再建築時セットバック推計 (4-3.3)/2×間口約5m ≈1.75m2(間口不明のため概算・要実測)
+  setback_m2: 1.75
+  road: {quality: setback_2ko, direction: E, corner: false, note: "東側 約3.3m公道(4m未満)・アスファルト舗装・高低差なし。私道負担3.98m2(別途)。42条区分・セットバック要否は要役所確認"}
+  legal: {ownership: shoyuken, rebuildable: true, note: "1種住居/建ぺい60%・容積160%(前面道路幅員制限)/準防火/2種高度"}
+building:
+  built: 2011-03
+  floor_m2: 91.79          # 公簿
+  type: wood_3f_narrow     # 木造スレート葺3階建・駐車場なし
+  repair: {status: unknown_likely_none, assumed: true, cost_man: 800}   # 居住中・建物状況調査は売主実施予定なし
+costs: {fee_rate: 0.05, demolition_man: 190, demolition_assumed: true}   # 木造3F・延床27.76坪×約7万/坪(前面3.3m狭小)
+income: {rent_man: 24, rent_assumed: true, expense_rate: 0.15, cap_rate: 0.045}
+checklist: {road_type_verified: false, retaining_wall: false, hazard: false, seismic: false}
