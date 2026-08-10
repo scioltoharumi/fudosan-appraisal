@@ -8,7 +8,7 @@ captured_at: 2026-07-19
 price_history:
   - {date: 2026-07-19, price_man: 6990}
 location: {area: akabane-nishi, address: "北区赤羽西4"}
-layout: "2LDK+2S(納戸)"   # 間取り(媒体記載)
+layout: "2LDK+2S(納戸)"   # 媒体本文の注記「※本物件の間取りは2LDK+2S」に基づく(見出しは2LDK+S(納戸)と表記揺れ)
 station: {walk_min: 13, multi_station: true}   # JR京浜東北線・埼京線「赤羽」13分/都営三田線「本蓮沼」15分
 land:
   registered_m2: 66.37
