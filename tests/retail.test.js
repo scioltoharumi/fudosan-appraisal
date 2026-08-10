@@ -3,7 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { evaluate } from "../engine/appraise.js";
 import { loadHouseDeals, retailEstimate, RETAIL } from "../engine/retail.js";
-import { growthFactor, growthFactorHouse } from "../engine/timeadjust.js";
+import { growthFactor } from "../engine/timeadjust.js";
 import { calibrate } from "../engine/calibrate.js";
 import { loadAreaConfig, loadProperty, listPropertyIds } from "../engine/io.js";
 
@@ -55,14 +55,17 @@ test("敵対的: 減価要因(再建築不可)がリテール経路でも消滅�
     `再建築不可で2割以上下がるべき: ${Math.round(normal.fairFinal.mid)} → ${Math.round(noRebuild.fairFinal.mid)}`);
 });
 
-test("地区水準補正: 高地区の物件は同一条件でも高く査定される", () => {
+test("地域要因: 事例は対象の近接地区に限定される(不足時のみ全地区+フラグ)", () => {
   const deals = loadHouseDeals();
   const base = { land: 66, setback: 0, floor: 88, walk: 10, age: 15,
     shape: 0, dir: 0, roadq: 0, corner: false, extra: 0, lc: 0, repair: 800, bm: -0.05 };
-  const cheap = retailEstimate(base, AS_OF, deals, { subjectDistrict: "西が丘" });
-  const rich = retailEstimate(base, AS_OF, deals, { subjectDistrict: "赤羽" });
-  assert.ok(cheap && rich && cheap.districtAdjusted && rich.districtAdjusted);
-  assert.ok(rich.mid > cheap.mid, `地区補正が効いていない: 赤羽${Math.round(rich.mid)} vs 西が丘${Math.round(cheap.mid)}`);
+  const r = retailEstimate(base, AS_OF, deals, { subjectDistrict: "赤羽西" });
+  assert.ok(r && r.districtScoped, "近接地区限定が成立する");
+  const allowed = ["赤羽西", "西が丘", "赤羽台", "赤羽"];
+  for (const c of r.comps) assert.ok(allowed.includes(c.district), `近接外の事例が混入: ${c.district}`);
+  // subjectDistrict不明でも落ちない(全地区・フラグfalse)
+  const r2 = retailEstimate(base, AS_OF, deals, { subjectDistrict: null });
+  assert.ok(r2 && !r2.districtScoped);
 });
 
 test("時点修正(年次別): 過去→現在で1超・逆向きは逆数・恒等", () => {
@@ -108,9 +111,9 @@ test("不変条件: 全登録物件(較正込み)で floorNet<=floorVal<=fairFin
 test("較正接続: 信頼度が十分なエリアは較正値が採用され、参考は従来値を維持", () => {
   const cfg = loadAreaConfig();
   const cal = calibrate();
-  // akabane-nishi(較正205・従来245) → 採用
+  // akabane-nishi(較正205・従来245) → level=lowは50:50ブレンド(R3監査: フル置換の崖を解消)
   const r1 = evaluate(loadProperty("akabanenishi4-21036139"), cfg, { asOf: AS_OF, cal });
-  assert.equal(Math.round(r1.state.ppt), cal.byArea["akabane-nishi"].chosen.ppt);
+  assert.equal(Math.round(r1.state.ppt), 225);
   // jujo-nakahara(参考・極小標本) → 物件YAMLの上書きを維持
   const r2 = evaluate(loadProperty("jujonakahara2-21028966"), cfg, { asOf: AS_OF, cal });
   assert.equal(Math.round(r2.state.ppt), 300);

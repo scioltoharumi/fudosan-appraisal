@@ -50,7 +50,11 @@ export function loadDeals() {
       zoning: row.zoning,
       source_url: row.source_url,
     };
-  });
+  }).filter((d) =>
+    // データ検収(retail側と対称): 徒歩0〜30分・正の面積/価格のみ
+    Number.isFinite(d.walk_min) && d.walk_min >= 0 && d.walk_min <= 30 &&
+    Number.isFinite(d.price_man) && d.price_man > 0 && Number.isFinite(d.land_tsubo) && d.land_tsubo > 0
+  );
 }
 
 export function loadBenchmarks() {
@@ -62,7 +66,7 @@ export function loadBenchmarks() {
 export function normalizeDeal(deal) {
   const walkAdj = COEFFS.WALK_ADJ_PER_MIN * (deal.walk_min - COEFFS.WALK_BASE_MIN);
   const shapeAdj = SHAPE_NORM_ADJ[deal.shape] ?? 0;
-  const attr = 1 + walkAdj + shapeAdj;
+  const attr = Math.max(0.6, 1 + walkAdj + shapeAdj);   // 分母クランプ(発散防止・retail側と対称)
   const time = 1 / growthFactor(deal.date, KOJI_BASE_DATE);   // 取引時点→2025-01の換算(÷time)
   const ppt_norm = deal.ppt_man / (attr * time);
   return { ...deal, walkAdj, shapeAdj, attrFactor: attr, timeFactor: time, ppt_norm };

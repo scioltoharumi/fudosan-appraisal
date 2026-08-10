@@ -37,9 +37,10 @@ test("回帰値: YAML→evaluate経由の基準値(時点修正の年次別統�
   // v1.2受入基準(5952/6562)は一律年率10%前提。2026-08第2次監査で時点修正を年次別実効レートに
   // 統一したため(実効約12%)、evaluate経由の値は意図的に更新。engineレベルの回帰(rise明示)は不変
   const r = evaluate(loadProperty("akabanedai3-20268457"), loadAreaConfig(), { asOf: AS_OF });
-  assert.equal(Math.round(r.mid.fair), 6124);
-  assert.equal(Math.round(r.hi.fair), 6751);
-  assert.equal(r.verdict.mark, "保留");
+  // 2026年の将来外挿を+6%に保守化(R3監査)後の値。v1.2原典(5952/6562)にほぼ回帰している
+  assert.equal(Math.round(r.mid.fair), 5938);
+  assert.equal(Math.round(r.hi.fair), 6547);
+  assert.equal(r.verdict.mark, "見送");  // ask 6560 vs hi 6547 の境界物件(差0.2%)
   // 修繕・解体・賃料のassumed項目が記録されていること(F1-3/監査性)
   assert.ok(r.assumptions.length >= 3, "assumed項目: " + JSON.stringify(r.assumptions));
 });
@@ -111,10 +112,10 @@ test("MC: seed固定で再現可能・パーセンタイル順序が正しい", 
 
 test("判定境界: ask<=floorで「買」、fair<0で「不能」、上限超過で「見送」", () => {
   const { mid, lo, hi } = appraiseRange(DEMO, ELAPSED);
-  // 2026-08第2次監査: 「買」の閾値は土地換算値(floorVal)から即時処分値(floorNet=卸値90%×諸費用控除後)に保守化
-  const buy = { ...DEMO, ask: Math.floor(mid.floorNet) };
+  // R2で「買」閾値を即時処分値に、R3で取得諸費用込み(ask×(1+fee)<=floorNet)に保守化
+  const buy = { ...DEMO, ask: Math.floor(mid.floorNet / 1.05) };
   assert.equal(verdict(buy, mid, lo, hi).mark, "買");
-  const notBuy = { ...DEMO, ask: Math.ceil(mid.floorNet) + 1 };
+  const notBuy = { ...DEMO, ask: Math.ceil(mid.floorNet / 1.05) + 1 };
   assert.notEqual(verdict(notBuy, mid, lo, hi).mark, "買", "floorNet超は買にならない");
   assert.ok(mid.floorNet < mid.floorVal, "即時処分値は土地換算値より保守的");
   const pass = { ...DEMO, ask: Math.ceil(hi.fair) + 1 };

@@ -2,17 +2,11 @@
 // 一律10%/年は2022〜23年(実績+3〜5%)に対して過大だったため、年次別レートに置換。
 // 出典: 北区住宅地の公示地価・基準地価の実績(2025基準地価+8.9%、2026公示+12.1%、赤羽+13.3%)
 export const RISE_BY_YEAR = {
-  2021: 0.03, 2022: 0.04, 2023: 0.05, 2024: 0.09, 2025: 0.12, 2026: 0.12,
+  // 2025までは公示・基準地価の観測値。2026は公示+12.1%(2026-01時点の後方観測)だが、
+  // 基準日以降の「将来分」を+12%で外挿すると市況鈍化時に全査定が過大になるため半減の+6%で保守化(R3監査)
+  2021: 0.03, 2022: 0.04, 2023: 0.05, 2024: 0.09, 2025: 0.12, 2026: 0.06,
 };
 const RISE_DEFAULT = 0.10; // 表にない年のフォールバック
-
-// 戸建「総額」用の時点修正率(2026-08レビュー対応)
-// 総額 ≒ 土地2/3 + 建物1/3 で構成されるため、地価上昇率をそのまま総額に適用すると過大。
-// 建物部分は建築費インフレ(年約4%)で動くと置き、blend = 地価率×2/3 + 4%×1/3
-export const HOUSE_RISE_BY_YEAR = Object.fromEntries(
-  Object.entries(RISE_BY_YEAR).map(([y, r]) => [y, r * (2 / 3) + 0.04 * (1 / 3)])
-);
-const HOUSE_RISE_DEFAULT = RISE_DEFAULT * (2 / 3) + 0.04 * (1 / 3);
 
 const MS_YEAR = 31557600000; // 365.25日
 
@@ -56,7 +50,3 @@ export function growthFactor(from, to) {
   return growthWith(RISE_BY_YEAR, RISE_DEFAULT, from, to);
 }
 
-// from時点の【戸建総額】をto時点の水準に換算する係数(土地2/3+建築費1/3のブレンド率)
-export function growthFactorHouse(from, to) {
-  return growthWith(HOUSE_RISE_BY_YEAR, HOUSE_RISE_DEFAULT, from, to);
-}

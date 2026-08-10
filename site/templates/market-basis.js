@@ -133,7 +133,7 @@ export function renderMarketBasis(r, property, marketCal, areaCal) {
   <div class="panel">
     <h2>STEP 4.5 ── 戸建成約比較(リテール比較法)の併算</h2>
     <div class="logic-body">
-      <p class="why">ここまでは土地の成約から積み上げた値。2026-08監査で「住める家」を買う実需市場はこの積算を上回ることが確認されたため、条件の近い戸建成約から直接比較した値を併算し、高い方を採用する。</p>
+      <p class="why">ここまでは土地の成約から積み上げた値。2026-08監査で「住める家」を買う実需市場はこの積算を上回ることが確認されたため、条件の近い戸建成約から直接比較した値を併算し、事例数に応じた重みで調整する(土地換算値を下限保証)。</p>
       ${r.retail ? `<div class="formula">リテール比較(類似戸建成約 ${r.retail.n}件・時点/徒歩/築年差補正済): ${fmtMan(r.retail.lo)} 〜 <b>${fmtMan(r.retail.mid)}</b> 〜 ${fmtMan(r.retail.hi)}</div>
       <p class="why">事例の一覧と選定条件は<a href="${esc(r.id)}.html">物件ページの「戸建成約比較」セクション</a>を参照。</p>` : `<div class="note">類似の戸建成約が不足のため、この物件では土地較正ベースのみ。</div>`}
     </div>
@@ -143,7 +143,7 @@ export function renderMarketBasis(r, property, marketCal, areaCal) {
     <h2>STEP 5 ── 結論: 売出価格はどこまで事例で説明できるか</h2>
     <div class="logic-body">
       <table class="kv">
-        <tr><td>成約事例で説明できる範囲(楽観上限・土地較正×リテールの高い方)</td><td>${fmtMan(r.fairFinal.hi)}</td></tr>
+        <tr><td>成約事例で説明できる範囲(楽観上限・重み付き調整後)</td><td>${fmtMan(r.fairFinal.hi)}</td></tr>
         <tr class="loss"><td>売出価格のうち事例で説明できない部分</td><td>${s.ask > r.fairFinal.hi ? "+" + fmtMan(s.ask - r.fairFinal.hi) : "なし(レンジ内)"}</td></tr>
         <tr><td>成約ベースでの判定</td><td>【${r.verdict.mark}】${esc(r.verdict.head)}</td></tr>
       </table>

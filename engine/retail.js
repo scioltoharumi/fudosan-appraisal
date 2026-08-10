@@ -24,7 +24,25 @@ export const RETAIL = {
   SUBJECT_USED_AGE: 2,   // 対象が築2年以上(=中古)なら新築事例を除外。対象が新築なら新築事例に限定(対称化)
   NEWSUBJ_COMP_MAX_AGE: 2,  // 新築対象の事例プール上限築年
   LAND_RESID_MIN_RATIO: 0.3, // 土地残差の下限(総額の30%。建物控除のしすぎ防止)
-  DISTRICT_MIN_N: 8,     // 地区水準指数を採用する最小事例数
+  REPAIR_PER_YEAR: 30,   // 繰延修繕の築年比例上限(万円/年)。築浅事例に一律800万を仮定する過大控除の防止
+};
+
+// 近接地区マップ(R3監査対応): 地区水準指数によるスケーリングは築年構成・標本ノイズで
+// 地価序列と逆転するため廃止し、対象と同一・近接地区の事例に限定する方式に変更。
+// 近接関係は北区の地理(台地/低地・鉄道)に基づく。
+export const ADJACENT_DISTRICTS = {
+  "赤羽西": ["赤羽西", "西が丘", "赤羽台", "赤羽"],
+  "西が丘": ["西が丘", "赤羽西", "赤羽台", "中十条", "十条仲原"],
+  "赤羽台": ["赤羽台", "赤羽西", "西が丘", "赤羽"],
+  "赤羽":   ["赤羽", "赤羽西", "赤羽台", "赤羽南", "志茂"],
+  "赤羽南": ["赤羽南", "赤羽", "志茂"],
+  "赤羽北": ["赤羽北", "赤羽", "赤羽台"],
+  "志茂":   ["志茂", "岩淵町", "赤羽", "神谷"],
+  "岩淵町": ["岩淵町", "志茂", "赤羽"],
+  "神谷":   ["神谷", "志茂", "中十条"],
+  "十条仲原": ["十条仲原", "中十条", "上十条", "西が丘"],
+  "中十条": ["中十条", "十条仲原", "上十条", "西が丘"],
+  "上十条": ["上十条", "中十条", "十条仲原"],
 };
 
 export function loadHouseDeals() {
@@ -75,10 +93,16 @@ const CONSTR_INFL = 0.04;  // 建築費インフレ(年率)。取引時点の建
 // 建物控除は (a)取引時点の建築費水準に割引き (b)修繕履歴不明の典型的な繰延修繕(既定800万)を
 // 差し引いた「現況ベース」で行う ── 対象側の建物加算(維持前提−繰延修繕)と対称にするため。
 // 実需プレミアム・分譲利益は土地残差側に残る(=リテール市場の水準を保持)
+function quarterMid(q) {
+  const m = String(q).match(/^(\d{4})Q([1-4])$/);
+  return new Date(Date.UTC(+m[1], (+m[2] - 1) * 3 + 1, 15));  // growthFactorと同じ四半期中間月
+}
+
 function normalizeLandUnit(d, asOf) {
-  const yearsAgo = Math.max(0, (asOf.getTime() - new Date(Date.UTC(+d.quarter.slice(0, 4), 6, 1)).getTime()) / 31557600000);
+  const yearsAgo = Math.max(0, (asOf.getTime() - quarterMid(d.quarter).getTime()) / 31557600000);
   const bldgAtDeal = buildingValue(d.floor_m2, d.age_y) / Math.pow(1 + CONSTR_INFL, yearsAgo);
-  const bldgNet = Math.max(0, bldgAtDeal - (d.age_y >= RETAIL.NEWBUILD_AGE ? COEFFS.DEFAULT_REPAIR_MAN : 0));
+  const repairComp = Math.min(COEFFS.DEFAULT_REPAIR_MAN, RETAIL.REPAIR_PER_YEAR * Math.max(0, d.age_y));
+  const bldgNet = Math.max(0, bldgAtDeal - repairComp);
   const landResid = Math.max(d.price_man - bldgNet, d.price_man * RETAIL.LAND_RESID_MIN_RATIO);
   const unit = landResid / (d.land_m2 / COEFFS.TSUBO_M2);
   const time = growthFactor(d.quarter, asOf);  // 土地残差なので土地の年次別レートで時点修正
@@ -99,13 +123,13 @@ export function buildDistrictIndex(deals, asOf) {
   for (const d of deals) (byDist[d.district] ??= []).push(normalizeLandUnit(d, asOf));
   const index = {};
   for (const [dist, units] of Object.entries(byDist)) {
-    if (units.length >= RETAIL.DISTRICT_MIN_N) index[dist] = median(units);
+    if (units.length >= 8) index[dist] = median(units);  // 診断用(査定には不使用)
   }
   return index;
 }
 
 // s: appraise正規化済み入力。property側の減価・加点(shape/dir/roadq/corner/extra/lc)を伝搬する
-// 戻り値: {n, comps, unitMid, landPart, bldgSubj, lo, mid, hi, districtAdjusted, subjectFactor} または null
+// 戻り値: {n, comps, unitMid, landPart, bldgSubj, lo, mid, hi, districtScoped, subjectFactor} または null
 export function retailEstimate(s, asOf, deals, { subjectDistrict = null } = {}) {
   const landM2 = s.land;
   const isUsed = s.age >= RETAIL.SUBJECT_USED_AGE;
@@ -119,12 +143,12 @@ export function retailEstimate(s, asOf, deals, { subjectDistrict = null } = {}) 
   );
   if (comps.length < RETAIL.MIN_COMPS) return null;
 
-  // 地区水準指数(地域要因)。事例側の地区指数が無い事例は距離補正不能のため除外(非一貫な混入を防ぐ)
-  const index = buildDistrictIndex(deals, asOf);
-  const subjIdx = subjectDistrict ? index[subjectDistrict] : null;
-  const districtAdjusted = subjIdx != null;
-  const usable = districtAdjusted ? comps.filter((d) => index[d.district] != null) : comps;
-  if (usable.length < RETAIL.MIN_COMPS) return null;
+  // 地域要因: 対象と同一・近接地区の事例に限定(R3監査で地区指数方式を廃止)。
+  // 近接限定で事例不足になる場合のみ全地区に拡大し、その旨をフラグで開示する
+  const allowed = subjectDistrict ? ADJACENT_DISTRICTS[subjectDistrict] : null;
+  const scoped = allowed ? comps.filter((d) => allowed.includes(d.district)) : [];
+  const districtScoped = scoped.length >= RETAIL.MIN_COMPS;
+  const usable = districtScoped ? scoped : comps;
 
   const effTsubo = Math.max(0, s.land - s.setback) / COEFFS.TSUBO_M2;
   // 対象物件の個別要因(原価法と同じ係数体系)。複数駅補正は事例側の駅属性が不明なため適用しない
@@ -135,16 +159,17 @@ export function retailEstimate(s, asOf, deals, { subjectDistrict = null } = {}) 
 
   const adjusted = usable.map((d) => {
     const unitStd = normalizeLandUnit(d, asOf);                   // 土地残差・標準条件・基準日時点
-    const distFactor = districtAdjusted ? subjIdx / index[d.district] : 1;
-    const unitAdj = unitStd * distFactor * subjectFactor;
-    return { ...d, unitStd, distFactor, unitAdj };
+    const unitAdj = unitStd * subjectFactor;
+    return { ...d, unitStd, unitAdj };
   });
   const units = adjusted.map((d) => d.unitAdj);
   const unitMid = median(units);
 
-  // 対象の建物価値: 事例と同じ配分法モデル(維持前提)から、履歴不明分の繰延修繕を控除
-  const resid = buildingValue(s.floor, s.age);
-  const bldgSubj = Math.max(0, resid * (1 + s.bm) - s.repair);
+  // 対象の建物価値: 事例と同じ配分法モデル(維持前提)から、繰延修繕(築年比例上限・事例側と対称)を控除
+  const rebuildPpt = s.rebuild ?? COEFFS.DEFAULT_REBUILD_PPT;
+  const resid = rebuildPpt * (s.floor / COEFFS.TSUBO_M2) * Math.max(0, 1 - Math.max(0, s.age) / COEFFS.BUILDING_LIFE_Y);
+  const repairSubj = Math.min(s.repair, RETAIL.REPAIR_PER_YEAR * Math.max(0, s.age));
+  const bldgSubj = Math.max(0, resid * (1 + s.bm) - repairSubj);
   const landPart = unitMid * effTsubo;
   return {
     n: usable.length,
@@ -153,8 +178,9 @@ export function retailEstimate(s, asOf, deals, { subjectDistrict = null } = {}) 
     landPart,
     bldgSubj,
     subjectFactor,
-    districtAdjusted,
+    districtScoped,
     subjectDistrict,
+    repairSubj,
     lo: quantile(units, 0.25) * effTsubo + bldgSubj,
     mid: landPart + bldgSubj,
     hi: quantile(units, 0.75) * effTsubo + bldgSubj,

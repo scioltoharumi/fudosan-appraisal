@@ -20,7 +20,7 @@ const CHECK_STATIC = [
 
 // ---- 価格スケールSVG(v1.2 drawScale移植) ----
 function scaleSvg(s, v) {
-  const cands = [v.floorLo, v.fairHi, s.ask];
+  const cands = [v.floorLo, v.floorHi, v.fairLo, v.fairHi, s.ask];
   if (v.income) cands.push(v.income);
   const rawMin = Math.min(...cands), rawMax = Math.max(...cands);
   const span0 = Math.max(1, rawMax - rawMin);
@@ -144,8 +144,8 @@ function logicSteps(r) {
 
     ...(r.retail ? [[
       "リテール比較法(第3の売却ルート: 実需に家として売る)",
-      "類似の戸建成約 " + r.retail.n + "件(築±" + 6 + "年・面積帯一致)の正規化単価中央値 " + Math.round(r.retail.unitMid) + "万/坪 × 実効" + mid.tsubo.toFixed(2) + "坪 = <b>" + fmtMan(r.retail.mid) + "</b>(四分位 " + fmtMan(r.retail.lo) + "〜" + fmtMan(r.retail.hi) + ")",
-      "住宅ローン実需が「住める家」に払う価格を、国交省の戸建成約から直接比較した値です。第2次監査を反映し、①事例は地区水準指数で地域要因を補正(" + (r.retail.districtAdjusted ? "本件は補正済" : "本件の地区は指数不足のため未補正") + ")、②対象物件の減価・加点(形状・方位・接道・角地・法的制約・個別補正)を事例側にも伝搬、③新築建売は中古の査定から除外、④時点修正は戸建総額用のブレンド率を使用しています。最終的な適正価格は max採用ではなく<b>事例数に応じた重み付き調整</b>(本件: リテール" + (r.fairFinal.weights.retail * 100).toFixed(0) + "%・原価法" + (r.fairFinal.weights.cost * 100).toFixed(0) + "%)で、ただし土地換算値を下回る場合は土地値が下限になります。"
+      "類似の戸建成約 " + r.retail.n + "件(築±6年・面積帯一致)の土地残差単価中央値 " + Math.round(r.retail.unitMid) + "万/坪 × 実効" + mid.tsubo.toFixed(2) + "坪 + 対象建物価値 " + fmtMan(r.retail.bldgSubj) + " = <b>" + fmtMan(r.retail.mid) + "</b>(四分位 " + fmtMan(r.retail.lo) + "〜" + fmtMan(r.retail.hi) + ")",
+      "住宅ローン実需が「住める家」に払う価格を、国交省の戸建成約から直接比較した値です。第2次監査を反映し、①事例は対象の近接地区に限定(" + (r.retail.districtScoped ? "本件は近接地区のみ" : "近接事例不足のため全地区・参考") + ")、②対象物件の減価・加点(形状・方位・接道・角地・法的制約・個別補正)を事例側にも伝搬、③新築建売は中古の査定から除外、④時点修正は土地残差に年次別の地価レートを適用しています。最終的な適正価格は max採用ではなく<b>事例数に応じた重み付き調整</b>(本件: リテール" + (r.fairFinal.weights.retail * 100).toFixed(0) + "%・原価法" + (r.fairFinal.weights.cost * 100).toFixed(0) + "%)で、ただし土地換算値を下回る場合は土地値が下限になります。"
     ]] : [[
       "リテール比較法(第3の売却ルート)",
       "類似成約が不足(5件未満)のため原価法のみで査定",
@@ -180,8 +180,8 @@ function kvTable(r) {
     ["時点修正後 基準坪単価(" + elapsed.toFixed(1) + "年分複利)", Math.round(mid.pptAdj).toLocaleString("en-US") + " 万円/坪"],
     ["個別補正計", pct(mid.adj) + "(補正後 " + Math.round(mid.pptAdj * (1 + mid.adj)).toLocaleString("en-US") + "万/坪)"],
     ["査定土地値(法的制約込)", fmtMan(lo.land2) + " 〜 " + fmtMan(hi.land2)],
-    ["土地換算値(土地値−解体費" + fmtMan(s.demo) + ")", fmtMan(lo.floorVal) + " 〜 " + fmtMan(hi.floorVal)],
-    ["即時処分値(卸値90%・諸費用4%控除後。買判定の閾値)", fmtMan(mid.floorNet)],
+    ["土地換算値(土地値−解体費" + fmtMan(s.demo) + (r.fairFinal.floorGuard < 1 ? "。単価未検証につき×0.9で適用" : "") + ")", fmtMan(r.fairFinal.floorEff.lo) + " 〜 " + fmtMan(r.fairFinal.floorEff.hi)],
+    ["即時処分値(卸値90%・売却諸費用4%控除後。取得諸費用込みの買判定閾値)", fmtMan(r.fairFinal.floorEff.netMid)],
     ["建物残価(木造" + COEFFS.BUILDING_LIFE_Y + "年逓減)", mid.alive ? fmtMan(mid.resid) + "(市場性 " + pct(s.bm) + " は残価のみに適用)" : "0円(築" + s.age.toFixed(1) + "年・市場評価消滅)"],
     ["リテール比較(戸建成約 " + (r.retail ? r.retail.n + "件" : "—") + ")", r.retail ? fmtMan(r.retail.lo) + " 〜 " + fmtMan(r.retail.mid) + " 〜 " + fmtMan(r.retail.hi) : "類似成約不足のため適用外"],
     ["売却ルート判定", r.fairFinal.route === "retail" ? "リテール(実需に家として売る)が優位。加重 リテール" + (r.fairFinal.weights.retail * 100).toFixed(0) + "%:原価" + (r.fairFinal.weights.cost * 100).toFixed(0) + "%" : r.fairFinal.route === "land" ? "土地として売る方が高い(解体前提)" : "住まいとして売る方が高い"],
@@ -268,7 +268,7 @@ function retailCompsHtml(r) {
       <div class="logic-body">
         <p class="why">「住める家」として売買された周辺の実成約(国交省 不動産取引価格情報)から、本物件と条件の近い${retail.n}件を選び、時点(年次別地価上昇率)・徒歩・築年差を補正した比較値。実需の住宅ローン買い手が実際に払っている水準であり、土地値ベースの原価法とは別の物差し。</p>
         <table class="kv" style="margin-top:8px">
-          <tr class="em"><td>リテール比較の適正額(補正後単価の中央値 ${Math.round(retail.unitMid)}万/坪 × 実効${r.mid.tsubo.toFixed(2)}坪)</td><td>${fmtMan(retail.lo)} 〜 <b>${fmtMan(retail.mid)}</b> 〜 ${fmtMan(retail.hi)}</td></tr>
+          <tr class="em"><td>リテール比較の適正額(土地残差単価中央値 ${Math.round(retail.unitMid)}万/坪 × 実効${r.mid.tsubo.toFixed(2)}坪 + 対象建物価値 ${fmtMan(retail.bldgSubj)})</td><td>${fmtMan(retail.lo)} 〜 <b>${fmtMan(retail.mid)}</b> 〜 ${fmtMan(retail.hi)}</td></tr>
           <tr><td>原価法(土地+建物)の中央値</td><td>${fmtMan(r.mid.fair)}</td></tr>
           <tr><td>調整(事例数に応じた加重)</td><td>リテール${(r.fairFinal.weights.retail * 100).toFixed(0)}% + 原価法${(r.fairFinal.weights.cost * 100).toFixed(0)}%(土地換算値下限) → 適正中央値 ${fmtMan(r.fairFinal.mid)}</td></tr>
         </table>
