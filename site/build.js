@@ -8,6 +8,7 @@ import { renderIndex } from "./templates/index.js";
 import { renderProperty } from "./templates/property.js";
 import { renderGuide } from "./templates/guide.js";
 import { calibrate } from "../engine/calibrate.js";
+import { renderMarketBasis } from "./templates/market-basis.js";
 
 // 前提知識ガイドの題材物件(存在しなければ先頭の物件にフォールバック)
 const GUIDE_EXAMPLE_ID = "jujonakahara3-adcast";
@@ -38,6 +39,8 @@ for (const id of ids) {
   if (chosen) {
     calR = evaluate({ ...property, ppt_man_override: chosen.ppt }, areaConfig);
     marketCal = { chosen, calR, dealsN: cal.byArea[property.location.area].deals.n };
+    writeFileSync(join(DIST, "property", `${id}-market.html`),
+      renderMarketBasis(r, property, marketCal, cal.byArea[property.location.area]), "utf8");
   }
   results.push({ r, property, calR });
   writeFileSync(join(DIST, "property", `${id}.html`), renderProperty(r, property, marketCal), "utf8");

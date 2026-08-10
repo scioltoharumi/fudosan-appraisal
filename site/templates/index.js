@@ -79,7 +79,7 @@ export function renderIndex(results, { asOf, cal = null }) {
       <td><span class="status">${esc(status)}</span></td>
       <td class="num">${fmtMan(r.state.ask)}<div class="note" style="margin-top:0">${esc(priceDate)}時点${ph.length > 1 ? ` / 改定${ph.length - 1}回` : ""}</div></td>
       <td class="num">${fmtMan(r.mid.fair)}</td>
-      <td class="num">${calR ? fmtMan(calR.mid.fair) : "—"}</td>
+      <td class="num">${calR ? `<a href="property/${esc(r.id)}-market.html">${fmtMan(calR.mid.fair)}</a>` : "—"}</td>
       <td class="num"${r.premium > 0 ? ' style="color:var(--stamp)"' : ""}>${r.premium >= 0 ? "+" : ""}${fmtMan(r.premium)}</td>
       <td class="num">${Math.round(r.state.ask / r.mid.tsubo).toLocaleString("en-US")}万/坪</td>
       <td class="num">${r.assumptions.length}件</td>
