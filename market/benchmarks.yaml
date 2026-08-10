@@ -1,0 +1,18 @@
+# 成約実勢ベンチマーク(地区別の取引統計)。出典: 国交省「不動産取引価格情報」の再掲サイト utinokati.com (取得 2026-08-09)
+# recent: true = 直近窓の統計(時点補正可能)。false = 全期間平均(時点補正不能のため参考表示のみ)
+# 注意: 地区平均は旗竿地・狭小・工業系なども混みの「混合平均」であり、標準的な整形地の単価より低めに出る傾向がある。
+benchmarks:
+  - {area: akabane, district: 赤羽, period: "2022-09〜2026-03", window_mid: 2024-06-15, n: 58, avg_ppt: 197, median_ppt: 172, recent: true,
+     source_url: "https://utinokati.com/details/土地相場・不動産相場/エリア/東京都-北区-赤羽/"}
+  - {area: akabane-nishi, district: 赤羽西, period: "2022-09〜2026-03", window_mid: 2024-06-15, n: 31, avg_ppt: 178, recent: true,
+     source_url: "https://utinokati.com/details/土地相場・不動産相場/エリア/東京都-北区-赤羽西/"}
+  - {area: akabanedai, district: 赤羽台, period: "2025年", window_mid: 2025-07-01, n: 5, avg_ppt: 182.4, median_ppt: 145, recent: true, caveat: "小標本(5件)",
+     source_url: "https://utinokati.com/details/土地相場・不動産相場/エリア/東京都-北区-赤羽台/"}
+  - {area: akabanedai, district: 西が丘, period: "2005-09〜2025-09(全期間)", n: 71, avg_ppt: 228.4, median_ppt: 136.7, recent: false, caveat: "全期間平均のため時点補正不能・参考",
+     source_url: "https://utinokati.com/details/土地相場・不動産相場/エリア/東京都-北区-西が丘/"}
+  - {area: shimo, district: 志茂, period: "2022-09〜2026-03", window_mid: 2024-06-15, n: 37, avg_ppt: 215, median_ppt: 201, recent: true,
+     source_url: "https://utinokati.com/details/土地相場・不動産相場/エリア/東京都-北区-志茂/"}
+  - {area: jujo-nakahara, district: 十条仲原, period: "2005-12〜2026-03(全期間)", n: 71, avg_ppt: 134.8, median_ppt: 130.1, recent: false, caveat: "全期間平均のため時点補正不能・参考",
+     source_url: "https://utinokati.com/details/土地相場・不動産相場/エリア/東京都-北区-十条仲原/"}
+  - {area: nakajujo, district: 中十条, period: "2022-09〜2026-03", window_mid: 2024-06-15, n: 27, avg_ppt: 191, recent: true,
+     source_url: "https://utinokati.com/details/土地相場・不動産相場/エリア/東京都-北区-中十条/"}

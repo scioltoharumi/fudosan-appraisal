@@ -7,7 +7,7 @@ const man = (n) => fmtMan(n);
 const f1 = (n) => n.toFixed(1);
 const f2 = (n) => n.toFixed(2);
 
-export function renderGuide(r, property) {
+export function renderGuide(r, property, areaCal = null) {
   const s = r.state;
   const m = r.mid;
   const addr = property.location?.address ?? r.id;
@@ -192,10 +192,20 @@ export function renderGuide(r, property) {
   </div>
 
   <div class="panel">
+    <h2>STEP 10 ── 「でも実際の値付けは成約事例ベースでは?」への答え</h2>
+    <div class="logic-body">
+      <p>その通りで、仲介の査定も売出価格も成約事例(周辺で実際にいくらで売れたか)を基準に作られます。公示地価から積み上げる本査定が市場とズレていないかは、<b>実際の成約データと突き合わせて検証</b>しています。</p>
+      ${areaCal?.chosen ? `
+      <div class="formula" style="white-space:normal">この題材物件のエリアの成約ベース坪単価: <b>${areaCal.chosen.ppt}万円/坪</b>(${esc(areaCal.chosen.basis)} / 信頼度: ${esc(areaCal.chosen.confidence)}) ── 本査定の採用単価 ${s.ppt}万円/坪 と比較</div>` : ""}
+      <p class="why">検証結果と個別成約の一覧は<a href="index.html">一覧ページの「成約実勢との突き合わせ」パネル</a>に、物件ごとの成約ベース再査定は各物件ページに常設しています。現時点の観測では、成約実勢が採用単価を大きく上回るエリアはなく、「帳簿方式だから割安に出る」という系統的バイアスは確認されていません。</p>
+    </div>
+  </div>
+
+  <div class="panel">
     <h2>この査定の限界(正直な注意書き)</h2>
     <div class="logic-body">
       <ul class="assumptions">
-        <li>基準坪単価は公示地価×仮の実勢係数です。<b>成約事例による較正はまだ行っていません</b>。</li>
+        <li>基準坪単価は公示地価×仮の実勢係数です。成約実勢との突き合わせ(STEP 10)は開始しましたが、<b>標本数が少なく信頼度は低〜中</b>です。</li>
         <li>修繕・解体・賃料などは<span class="why">「仮定」欄に明示した保守的な置き値</span>で、内見・見積で置き換える前提です。</li>
         <li>接道の42条区分・ハザード・耐震などの役所調査はチェックリスト方式で別管理です(未検証項目は各物件ページ参照)。</li>
         <li>本サイトは個人の検討用簡易査定であり、不動産鑑定評価・投資助言ではありません。</li>

@@ -23,9 +23,10 @@ description: 中古戸建の物件テキスト(SUUMOコピペ・ベタ打ちメ�
    - サマリには判定スタンプ/下値フロア/適正レンジ/乖離/含み損/次に取るべき調査アクションが含まれる
 4. **反映**: 承認後に `npm test` が通ることを確認して commit & push。Pages URL を提示する
 
-## 動作フロー(成約事例の登録) ※Phase 3で有効化
+## 動作フロー(成約事例の登録)
 
-- `market/deals.csv` に追記 → `node engine/calibrate.js` の更新案を提示(現状は未実装)
+- `market/deals.csv` に追記(出典ページに実在するレコードのみ。推測での行追加は禁止) → `node engine/calibrate.js` でエリア別の成約ベース坪単価を確認 → commit(サイトはビルド時にdeals.csv/benchmarks.yamlから較正を自動再計算)
+- 地区統計は `market/benchmarks.yaml` に出典URL・期間・件数つきで記録する
 
 ## YAML記載ルール(publicリポジトリ運用)
 

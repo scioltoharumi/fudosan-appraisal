@@ -228,8 +228,46 @@ function priceHistoryHtml(property) {
   return `<section><h2 class="sub">価格改定履歴</h2><table class="kv"><tr><td>日付</td><td style="text-align:right">価格</td><td style="text-align:right">改定幅</td></tr>${rows}</table></section>`;
 }
 
+// ---- 成約実勢との突き合わせ(較正)セクション ----
+// marketCal: {chosen, calR, dealsN} — build.jsがcalibrate結果と成約ベース再査定を渡す。なければ非表示
+function marketCalHtml(r, marketCal) {
+  if (!marketCal?.chosen) {
+    return `
+    <section>
+      <h2 class="sub">成約実勢との突き合わせ ── 実際の取引価格と比べる</h2>
+      <div class="note">このエリアは成約データ不足のため成約ベース査定を表示できません(市況データの整備状況は<a href="../index.html">一覧ページ</a>の較正状態を参照)。</div>
+    </section>`;
+  }
+  const { chosen, calR, dealsN } = marketCal;
+  const s = r.state;
+  const gap = chosen.ppt / s.ppt - 1;
+  const calPremium = s.ask - calR.mid.fair;
+  return `
+    <section>
+      <h2 class="sub">成約実勢との突き合わせ ── 実際の取引価格と比べる</h2>
+      <div class="logic-body">
+        <p class="why">「公示地価ベースの査定は市場価格と無関係では?」という批判に答えるための欄。国交省の不動産取引価格情報(の再掲データ)から周辺の実際の成約を集め、標準地条件・2025年1月基準に正規化した「成約ベース坪単価」で査定をやり直し、公示ベースと並べて表示する。</p>
+        <table class="kv">
+          <tr><td>本査定の採用単価(公示地価×実勢係数)</td><td>${Math.round(s.ppt)}万円/坪</td></tr>
+          <tr><td>成約ベース坪単価<div class="note" style="margin-top:2px">${esc(chosen.basis)} / 信頼度: ${esc(chosen.confidence)}</div></td><td>${chosen.ppt}万円/坪</td></tr>
+          <tr class="em"><td>採用単価との乖離</td><td>${pct(gap)}</td></tr>
+          <tr><td>成約ベースの適正レンジ(再計算)</td><td>${fmtMan(calR.lo.fair)} 〜 <b>${fmtMan(calR.mid.fair)}</b> 〜 ${fmtMan(calR.hi.fair)}</td></tr>
+          <tr><td>成約ベースの下値フロア</td><td>${fmtMan(calR.mid.floorVal)}</td></tr>
+          <tr class="${calPremium > 0 ? "loss" : ""}"><td>売出価格との乖離(成約ベース)</td><td>${calPremium >= 0 ? "+" : ""}${fmtMan(calPremium)}</td></tr>
+          <tr><td>成約ベースでの判定</td><td>【${calR.verdict.mark}】</td></tr>
+        </table>
+        <p class="why" style="margin-top:8px">${gap < -0.05
+          ? "成約実勢は採用単価より低く出ている。つまり公示ベースの本査定は市場実勢に対して<b>むしろ高め(買い手に甘め)</b>であり、売出価格との乖離は成約ベースで見るとさらに大きい。"
+          : gap > 0.05
+            ? "成約実勢は採用単価より高く出ている。公示ベースの本査定は保守的すぎる可能性があり、実勢では上の適正レンジがより現実的。"
+            : "成約実勢と採用単価はおおむね整合しており、公示ベースの査定は市場実勢から大きく外れていない。"}</p>
+        <div class="caveat">※ 成約データは地区・面積帯単位の匿名情報(国交省 不動産取引価格情報の再掲)。方位・接道の質・角地は補正できないため誤差を含む。地区平均ベンチマークは旗竿地等も混みの混合平均で、標準的な整形地より低めに出る傾向がある。個別成約${dealsN}件の一覧と較正方法は一覧ページの較正状態パネルを参照。</div>
+      </div>
+    </section>`;
+}
+
 // ---- ページ全体 ----
-export function renderProperty(r, property) {
+export function renderProperty(r, property, marketCal = null) {
   const { state: s, mid, lo, hi, verdict: v, incomeVal } = r;
   const status = STATUS_LABEL[property.status] || property.status;
   const body = `
@@ -252,6 +290,8 @@ export function renderProperty(r, property) {
       <div class="scale-wrap">${scaleSvg(s, { fairLo: lo.fair, fairMid: mid.fair, fairHi: hi.fair, floorLo: lo.floorVal, floorHi: hi.floorVal, income: incomeVal })}</div>
       ${kvTable(r)}
     </section>
+
+    ${marketCalHtml(r, marketCal)}
 
     <section>
       <h2 class="sub">モンテカルロ分布(${r.mc.trials.toLocaleString("en-US")}試行) ── 適正総額のばらつき</h2>
