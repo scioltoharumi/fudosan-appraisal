@@ -35,23 +35,23 @@ for (const id of ids) {
   if (property.id !== id) {
     throw new Error(`ファイル名とid不一致: ${id}.yaml の id は ${property.id}`);
   }
-  const r = evaluate(property, areaConfig, { houseDeals });
-  // 成約ベース坪単価がある物件は、単価だけ差し替えた再査定(成約ベース参考値)を併算する
-  const chosen = cal.byArea[property.location?.area]?.chosen;
-  let calR = null, marketCal = null;
-  if (chosen) {
-    calR = evaluate({ ...property, ppt_man_override: chosen.ppt }, areaConfig, { houseDeals });
-    marketCal = { chosen, calR, dealsN: cal.byArea[property.location.area].deals.n };
+  // 本査定(成約較正+リテール比較を含む)。rRefは較正を外した公示ベースの参考値
+  const r = evaluate(property, areaConfig, { houseDeals, cal });
+  const rRef = evaluate(property, areaConfig, { houseDeals });
+  const chosen = cal.byArea[property.location?.area]?.chosen ?? null;
+  const marketCal = { chosen, rRef, dealsN: cal.byArea[property.location?.area]?.deals.n ?? 0 };
+  if (chosen || r.retail) {
     writeFileSync(join(DIST, "property", `${id}-market.html`),
-      renderMarketBasis(r, property, marketCal, cal.byArea[property.location.area]), "utf8");
+      renderMarketBasis(r, property, marketCal, cal.byArea[property.location?.area] ?? null), "utf8");
   }
-  results.push({ r, property, calR });
+  results.push({ r, rRef, property, hasMarketPage: !!(chosen || r.retail) });
   writeFileSync(join(DIST, "property", `${id}.html`), renderProperty(r, property, marketCal), "utf8");
   console.log(`✓ property/${id}.html 【${r.verdict.mark}】 売出${Math.round(r.state.ask)}万 / 適正中央値${Math.round(r.fairFinal.mid)}万(${r.fairFinal.route})${r.retail ? ` / リテール${r.retail.n}件` : ""}`);
 }
 
 const asOf = results[0].r.asOf;
 const guideTarget = results.find(({ r }) => r.id === GUIDE_EXAMPLE_ID) ?? results[0];
+if (guideTarget.r.id !== GUIDE_EXAMPLE_ID) console.warn(`⚠ ガイド題材 ${GUIDE_EXAMPLE_ID} が見つからずフォールバック(本文の固有記述に不一致の可能性)`);
 writeFileSync(join(DIST, "guide.html"), renderGuide(guideTarget.r, guideTarget.property, cal.byArea[guideTarget.property.location?.area] ?? null), "utf8");
 console.log(`✓ guide.html(題材: ${guideTarget.r.id})`);
 writeFileSync(join(DIST, "index.html"), renderIndex(results, { asOf, cal }), "utf8");

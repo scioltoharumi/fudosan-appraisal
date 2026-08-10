@@ -2,13 +2,14 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { evaluate } from "../engine/appraise.js";
-import { loadHouseDeals, RETAIL } from "../engine/retail.js";
-import { growthFactor } from "../engine/timeadjust.js";
-import { loadAreaConfig, loadProperty } from "../engine/io.js";
+import { loadHouseDeals, retailEstimate, RETAIL } from "../engine/retail.js";
+import { growthFactor, growthFactorHouse } from "../engine/timeadjust.js";
+import { calibrate } from "../engine/calibrate.js";
+import { loadAreaConfig, loadProperty, listPropertyIds } from "../engine/io.js";
 
 const AS_OF = new Date(Date.UTC(2026, 7, 10));  // 2026-08-10 固定
 
-test("house-deals.csv: 全行が数値として妥当", () => {
+test("house-deals.csv: 全行が数値として妥当・外れ値がロード時に除外される", () => {
   const deals = loadHouseDeals();
   assert.ok(deals.length >= 400, `件数: ${deals.length}`);
   for (const d of deals) {
@@ -16,8 +17,52 @@ test("house-deals.csv: 全行が数値として妥当", () => {
     assert.ok(d.land_m2 > 10 && d.land_m2 < 1000, `land ${d.land_m2}`);
     assert.ok(d.floor_m2 > 10 && d.floor_m2 < 1000, `floor ${d.floor_m2}`);
     assert.ok(Number.isFinite(d.age_y) && Number.isFinite(d.walk_min));
-    assert.ok(d.quarter >= "2022Q1");
+    assert.ok(d.walk_min >= 0 && d.walk_min <= 30, `徒歩域外がロードされた: ${d.walk_min}分`);
+    assert.match(d.quarter, /^\d{4}Q[1-4]$/, `四半期書式: ${d.quarter}`);
+    assert.ok(d.quarter.slice(0, 4) >= "2022");
   }
+});
+
+test("敵対的: 徒歩外れ値・新築混入・負の単価が事例比較を汚染しない", () => {
+  const asOf = AS_OF;
+  const base = { land: 66, setback: 0, floor: 88, walk: 13, age: 16,
+    shape: 0, dir: 0.02, roadq: 0, corner: false, extra: 0, lc: 0 };
+  // 徒歩90分の事例を故意に混入しても、フィルタで除外されるか単価が発散しない
+  const poisoned = [
+    ...loadHouseDeals(),
+    { quarter: "2023Q2", district: "神谷", price_man: 4700, land_m2: 66, floor_m2: 88, age_y: 16, walk_min: 90, source_url: "" },
+  ];
+  const r = retailEstimate(base, asOf, poisoned, { subjectDistrict: "赤羽西" });
+  assert.ok(r, "比較成立");
+  for (const c of r.comps) {
+    assert.ok(c.unitAdj > 0, `負の単価: ${JSON.stringify(c)}`);
+    assert.ok(c.unitAdj < 2000, `発散した単価: ${Math.round(c.unitAdj)}万/坪 (${c.quarter} ${c.district} 徒歩${c.walk_min}分)`);
+    assert.ok(c.walk_min <= RETAIL.WALK_MAX, "徒歩上限超の事例が混入");
+  }
+  // 中古(築16年)の査定に新築建売(築1年未満)が混ざらない
+  for (const c of r.comps) assert.ok(c.age_y >= RETAIL.NEWBUILD_AGE, `新築混入: 築${c.age_y}年`);
+});
+
+test("敵対的: 減価要因(再建築不可)がリテール経路でも消滅しない", () => {
+  const cfg = loadAreaConfig();
+  const deals = loadHouseDeals();
+  const prop = loadProperty("shimo3-20706806");
+  const normal = evaluate(prop, cfg, { asOf: AS_OF, houseDeals: deals });
+  const noRebuild = evaluate(
+    { ...prop, land: { ...prop.land, legal: { ...prop.land.legal, rebuildable: false } } },
+    cfg, { asOf: AS_OF, houseDeals: deals });
+  assert.ok(noRebuild.fairFinal.mid < normal.fairFinal.mid * 0.8,
+    `再建築不可で2割以上下がるべき: ${Math.round(normal.fairFinal.mid)} → ${Math.round(noRebuild.fairFinal.mid)}`);
+});
+
+test("地区水準補正: 高地区の物件は同一条件でも高く査定される", () => {
+  const deals = loadHouseDeals();
+  const base = { land: 66, setback: 0, floor: 88, walk: 10, age: 15,
+    shape: 0, dir: 0, roadq: 0, corner: false, extra: 0, lc: 0 };
+  const cheap = retailEstimate(base, AS_OF, deals, { subjectDistrict: "西が丘" });
+  const rich = retailEstimate(base, AS_OF, deals, { subjectDistrict: "赤羽" });
+  assert.ok(cheap && rich && cheap.districtAdjusted && rich.districtAdjusted);
+  assert.ok(rich.mid > cheap.mid, `地区補正が効いていない: 赤羽${Math.round(rich.mid)} vs 西が丘${Math.round(cheap.mid)}`);
 });
 
 test("時点修正(年次別): 過去→現在で1超・逆向きは逆数・恒等", () => {
@@ -40,13 +85,33 @@ test("回帰値: 赤羽西4のリテール比較が実勢レンジ内で、適�
   assert.ok(r.retail.lo <= r.retail.mid && r.retail.mid <= r.retail.hi, "四分位の順序");
 });
 
-test("不変条件: 全登録物件で floor<=fairFinal / lo<=mid<=hi", () => {
+test("不変条件: 全登録物件(較正込み)で floorNet<=floorVal<=fairFinal / lo<=mid<=hi", () => {
   const cfg = loadAreaConfig();
   const deals = loadHouseDeals();
-  for (const id of ["akabanedai3-20268457", "shimo1-21186616", "jujonakahara3-adcast", "nishigaoka2-adcast-a"]) {
-    const r = evaluate(loadProperty(id), cfg, { asOf: AS_OF, houseDeals: deals });
+  const cal = calibrate();
+  for (const id of listPropertyIds()) {
+    const r = evaluate(loadProperty(id), cfg, { asOf: AS_OF, houseDeals: deals, cal });
+    assert.ok(r.mid.floorNet <= r.mid.floorVal + 1e-9, `${id}: floorNet>floorVal`);
     assert.ok(r.mid.floorVal <= r.fairFinal.mid + 1e-9, `${id}: floor>fair`);
     assert.ok(r.fairFinal.lo <= r.fairFinal.mid + 1e-9 && r.fairFinal.mid <= r.fairFinal.hi + 1e-9, `${id}: レンジ順序`);
     assert.ok(Number.isFinite(r.premium) && Number.isFinite(r.instLoss));
+    if (r.retail) {
+      assert.ok(r.fairFinal.weights.retail + r.fairFinal.weights.cost === 1, `${id}: 重みが1に正規化されていない`);
+      for (const c of r.retail.comps) assert.ok(c.unitAdj > 0 && c.unitAdj < 2000, `${id}: 補正後単価が異常 ${c.unitAdj}`);
+    }
   }
+});
+
+test("較正接続: 信頼度が十分なエリアは較正値が採用され、参考は従来値を維持", () => {
+  const cfg = loadAreaConfig();
+  const cal = calibrate();
+  // akabane-nishi(較正205・従来245) → 採用
+  const r1 = evaluate(loadProperty("akabanenishi4-21036139"), cfg, { asOf: AS_OF, cal });
+  assert.equal(Math.round(r1.state.ppt), cal.byArea["akabane-nishi"].chosen.ppt);
+  // jujo-nakahara(参考・極小標本) → 物件YAMLの上書きを維持
+  const r2 = evaluate(loadProperty("jujonakahara2-21028966"), cfg, { asOf: AS_OF, cal });
+  assert.equal(Math.round(r2.state.ppt), 300);
+  // cal未指定なら従来どおり
+  const r3 = evaluate(loadProperty("akabanenishi4-21036139"), cfg, { asOf: AS_OF });
+  assert.equal(Math.round(r3.state.ppt), 245);
 });

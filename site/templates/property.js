@@ -104,8 +104,8 @@ function logicSteps(r) {
   const eff = s.land - s.setback;
   const dirLabel = DIR_LABEL[String(s.dir)] || "—";
   const roadLabel = ROAD_LABEL[String(s.roadq)] || "—";
-  let sizeWhy = "20〜45坪は分譲需要の中心帯のため補正なし。";
-  if (mid.tsubo < 20) sizeWhy = "20坪を下回るほど狭小地として買い手が減るため、1坪不足あたり−0.5%(最大−5%)。";
+  let sizeWhy = `${COEFFS.SIZE_SMALL_TSUBO}〜45坪は補正なし(13〜20坪は23区実勢で需要が厚いため2026-08監査でペナルティ撤廃)。`;
+  if (mid.tsubo < COEFFS.SIZE_SMALL_TSUBO) sizeWhy = `${COEFFS.SIZE_SMALL_TSUBO}坪を下回るほど狭小地として買い手が減るため、1坪不足あたり−0.5%(最大−5%)。`;
   else if (mid.tsubo > 45) sizeWhy = "45坪を超えるほど総額が張り需要層が薄くなるため、1坪超過あたり−0.2%(最大−8%)。";
   const pptCorrected = mid.pptAdj * (1 + mid.adj);
 
@@ -132,7 +132,7 @@ function logicSteps(r) {
 
     ["下値フロア(土地値 − 解体費)",
       fmtMan(mid.land2) + " − 解体費 " + fmtMan(s.demo) + " = <b>" + fmtMan(mid.floorVal) + "</b>",
-      "この物件を「最悪でも土地として売る」ときの手取り相当額です。古家付き土地の買い手は解体費を差し引いて指値するため、資産防衛の合格ラインはここに置くべきです。なお「確実な下値」と呼びたくなりますが、基準坪単価自体に±10%の幅がある以上、ここに示すのは中央値であり、悲観側の下値は " + fmtMan(lo.floorVal) + " です。売出価格がこのフロア以下なら「買」判定です。"],
+      "この物件を「最悪でも土地として売る」ときの手取り相当額です。古家付き土地の買い手は解体費を差し引いて指値するため、資産防衛の合格ラインはここに置くべきです。なお「確実な下値」と呼びたくなりますが、基準坪単価の幅に加え、実際に即時処分する場合は業者卸値(実勢の約90%)と売却諸費用(約4%)がかかります。それらを控除した<b>即時処分値 " + fmtMan(mid.floorNet) + "</b> が「買」判定の閾値です(2026-08第2次監査でフロア定義を保守化)。"],
 
     ["建物残価(市場が建物に払う残り時間)",
       s.rebuild + "万/坪 × " + (s.floor / COEFFS.TSUBO_M2).toFixed(2) + "坪 × max(0, 1 − 築" + s.age.toFixed(1) + "年 ÷ " + COEFFS.BUILDING_LIFE_Y + "年) = <b>" + fmtMan(mid.resid) + "</b>",
@@ -145,7 +145,7 @@ function logicSteps(r) {
     ...(r.retail ? [[
       "リテール比較法(第3の売却ルート: 実需に家として売る)",
       "類似の戸建成約 " + r.retail.n + "件(築±" + 6 + "年・面積帯一致)の正規化単価中央値 " + Math.round(r.retail.unitMid) + "万/坪 × 実効" + mid.tsubo.toFixed(2) + "坪 = <b>" + fmtMan(r.retail.mid) + "</b>(四分位 " + fmtMan(r.retail.lo) + "〜" + fmtMan(r.retail.hi) + ")",
-      "2026-08監査で判明した通り、住宅ローン実需が「住める家」に払う価格は原価法(土地値+建物残価)を大きく上回るのが北区の実勢です(戸建付き成約は土地換算で土地成約の+30〜60%)。国交省の戸建成約データから条件の近い事例を選び、時点・徒歩・築年差を補正して算出しています。最終的な適正価格は原価法とリテール比較法の高い方(本件は" + (r.fairFinal.route === "retail" ? "リテール比較法" : "原価法") + ")を採用します。"
+      "住宅ローン実需が「住める家」に払う価格を、国交省の戸建成約から直接比較した値です。第2次監査を反映し、①事例は地区水準指数で地域要因を補正(" + (r.retail.districtAdjusted ? "本件は補正済" : "本件の地区は指数不足のため未補正") + ")、②対象物件の減価・加点(形状・方位・接道・角地・法的制約・個別補正)を事例側にも伝搬、③新築建売は中古の査定から除外、④時点修正は戸建総額用のブレンド率を使用しています。最終的な適正価格は max採用ではなく<b>事例数に応じた重み付き調整</b>(本件: リテール" + (r.fairFinal.weights.retail * 100).toFixed(0) + "%・原価法" + (r.fairFinal.weights.cost * 100).toFixed(0) + "%)で、ただし土地換算値を下回る場合は土地値が下限になります。"
     ]] : [[
       "リテール比較法(第3の売却ルート)",
       "類似成約が不足(5件未満)のため原価法のみで査定",
@@ -154,7 +154,7 @@ function logicSteps(r) {
 
     ["適正価格レンジ(最終的な物差し)",
       fmtMan(r.fairFinal.lo) + " 〜 <b>" + fmtMan(r.fairFinal.mid) + "</b> 〜 " + fmtMan(r.fairFinal.hi),
-      "原価法とリテール比較法の高い方によるレンジです。売出価格" + fmtMan(s.ask) + "との差 <b>" + (s.ask - r.fairFinal.mid >= 0 ? "+" : "") + fmtMan(s.ask - r.fairFinal.mid) + "</b> が、土地・建物・周辺成約のいずれでも説明できない上乗せ(プレミアム)です。払うこと自体は悪ではありませんが、金額を自覚して払うのと知らずに払うのは別物です。"],
+      "原価法とリテール比較法の重み付き調整(土地換算値を下限保証)によるレンジです。売出価格" + fmtMan(s.ask) + "との差 <b>" + (s.ask - r.fairFinal.mid >= 0 ? "+" : "") + fmtMan(s.ask - r.fairFinal.mid) + "</b> が、土地・建物・周辺成約のいずれでも説明できない上乗せ(プレミアム)です。払うこと自体は悪ではありませんが、金額を自覚して払うのと知らずに払うのは別物です。"],
   ];
 
   if (incomeVal) {
@@ -180,11 +180,12 @@ function kvTable(r) {
     ["時点修正後 基準坪単価(" + elapsed.toFixed(1) + "年分複利)", Math.round(mid.pptAdj).toLocaleString("en-US") + " 万円/坪"],
     ["個別補正計", pct(mid.adj) + "(補正後 " + Math.round(mid.pptAdj * (1 + mid.adj)).toLocaleString("en-US") + "万/坪)"],
     ["査定土地値(法的制約込)", fmtMan(lo.land2) + " 〜 " + fmtMan(hi.land2)],
-    ["下値フロア(土地値−解体費" + fmtMan(s.demo) + ")", fmtMan(lo.floorVal) + " 〜 " + fmtMan(hi.floorVal)],
+    ["土地換算値(土地値−解体費" + fmtMan(s.demo) + ")", fmtMan(lo.floorVal) + " 〜 " + fmtMan(hi.floorVal)],
+    ["即時処分値(卸値90%・諸費用4%控除後。買判定の閾値)", fmtMan(mid.floorNet)],
     ["建物残価(木造" + COEFFS.BUILDING_LIFE_Y + "年逓減)", mid.alive ? fmtMan(mid.resid) + "(市場性 " + pct(s.bm) + " は残価のみに適用)" : "0円(築" + s.age.toFixed(1) + "年・市場評価消滅)"],
     ["リテール比較(戸建成約 " + (r.retail ? r.retail.n + "件" : "—") + ")", r.retail ? fmtMan(r.retail.lo) + " 〜 " + fmtMan(r.retail.mid) + " 〜 " + fmtMan(r.retail.hi) : "類似成約不足のため適用外"],
-    ["売却ルート判定", r.fairFinal.route === "retail" ? "リテール(実需に家として売る)が最も高い" : r.fairFinal.route === "land" ? "土地として売る方が高い(解体前提)" : "住まいとして売る方が高い(修繕" + fmtMan(s.repair) + "控除後)"],
-    ["適正価格レンジ(原価法×リテールの高い方)", fmtMan(r.fairFinal.lo) + " 〜 " + fmtMan(r.fairFinal.hi), "em"],
+    ["売却ルート判定", r.fairFinal.route === "retail" ? "リテール(実需に家として売る)が優位。加重 リテール" + (r.fairFinal.weights.retail * 100).toFixed(0) + "%:原価" + (r.fairFinal.weights.cost * 100).toFixed(0) + "%" : r.fairFinal.route === "land" ? "土地として売る方が高い(解体前提)" : "住まいとして売る方が高い"],
+    ["適正価格レンジ(重み付き調整・土地値下限)", fmtMan(r.fairFinal.lo) + " 〜 " + fmtMan(r.fairFinal.hi), "em"],
     ["売出価格 − 査定中央値", (premium >= 0 ? "+" : "") + fmtMan(premium)],
     ["実質坪単価(売出÷実効坪)", Math.round(s.ask / mid.tsubo).toLocaleString("en-US") + " 万円/坪"],
   ];
@@ -202,7 +203,7 @@ function budgetHtml(r) {
   return `<section class="budget">
     <div style="font-size:.85rem;font-weight:700">総取得コスト vs 心理的上限 1億円</div>
     <div class="budget-bar"><div class="budget-fill${over ? " over" : ""}" style="width:${width.toFixed(1)}%"></div><div class="budget-cap" style="left:86.9%"></div></div>
-    <div class="budget-line"><span>0</span><span>総取得コスト <b style="font-family:var(--mono)">${fmtMan(totalCost)}</b>(価格×(1+${(s.fee * 100).toFixed(1)}%)＋修繕${fmtMan(s.repair)})${over ? ` ── <span style="color:var(--stamp)">上限超過 ${fmtMan(totalCost - cap)}</span>` : ` ── 余裕 ${fmtMan(cap - totalCost)}`}</span><span>1.15億</span></div>
+    <div class="budget-line"><span>0</span><span>総取得コスト <b style="font-family:var(--mono)">${fmtMan(totalCost)}</b>(価格×(1+${(s.fee * 100).toFixed(1)}%)${r.fairFinal.route === "home" ? `＋修繕${fmtMan(s.repair)}` : "。修繕費は別枠"})${over ? ` ── <span style="color:var(--stamp)">上限超過 ${fmtMan(totalCost - cap)}</span>` : ` ── 余裕 ${fmtMan(cap - totalCost)}`}</span><span>1.15億</span></div>
   </section>`;
 }
 
@@ -269,7 +270,7 @@ function retailCompsHtml(r) {
         <table class="kv" style="margin-top:8px">
           <tr class="em"><td>リテール比較の適正額(補正後単価の中央値 ${Math.round(retail.unitMid)}万/坪 × 実効${r.mid.tsubo.toFixed(2)}坪)</td><td>${fmtMan(retail.lo)} 〜 <b>${fmtMan(retail.mid)}</b> 〜 ${fmtMan(retail.hi)}</td></tr>
           <tr><td>原価法(土地+建物)の中央値</td><td>${fmtMan(r.mid.fair)}</td></tr>
-          <tr><td>採用(高い方)</td><td>${r.fairFinal.route === "retail" ? "リテール比較法" : "原価法"} → 適正中央値 ${fmtMan(r.fairFinal.mid)}</td></tr>
+          <tr><td>調整(事例数に応じた加重)</td><td>リテール${(r.fairFinal.weights.retail * 100).toFixed(0)}% + 原価法${(r.fairFinal.weights.cost * 100).toFixed(0)}%(土地換算値下限) → 適正中央値 ${fmtMan(r.fairFinal.mid)}</td></tr>
         </table>
         <div style="overflow-x:auto;margin-top:10px">
         <table class="list">
@@ -277,46 +278,28 @@ function retailCompsHtml(r) {
           ${rows}
         </table>
         </div>
-        <div class="note">直近10件を表示(選定は${retail.n}件・築±6年・土地0.6〜1.6倍・延床0.7〜1.4倍)。レンジは四分位。出典: 国交省 不動産取引価格情報の再掲(utinokati.com・北区12地区・取得2026-08-10)。原データは価格100万円単位・面積5m²単位に丸め。方位・接道・リフォーム有無は補正できないため誤差を含む。</div>
+        <div class="note">直近10件を表示(選定は${retail.n}件・築±6年・土地0.6〜1.6倍・延床0.7〜1.4倍・徒歩25分以内${r.state.age >= 2 ? "・新築建売除外" : ""})。補正後単価は地区水準・時点・徒歩・築年差・対象の個別要因を反映。レンジは四分位。出典: 国交省 不動産取引価格情報の再掲(utinokati.com・北区12地区・取得2026-08-10)。原データは価格100万円単位・面積5m²単位に丸め。方位・接道・リフォーム有無は補正できないため誤差を含む。</div>
       </div>
     </section>`;
 }
 
 // ---- 成約実勢との突き合わせ(較正)セクション ----
-// marketCal: {chosen, calR, dealsN} — build.jsがcalibrate結果と成約ベース再査定を渡す。なければ非表示
+// marketCal: {chosen, rRef, dealsN} — chosenは土地成約による較正値、rRefは較正を外した公示ベースの参考査定
 function marketCalHtml(r, marketCal) {
-  if (!marketCal?.chosen) {
-    return `
-    <section>
-      <h2 class="sub">成約実勢との突き合わせ ── 実際の取引価格と比べる</h2>
-      <div class="note">このエリアは成約データ不足のため成約ベース査定を表示できません(市況データの整備状況は<a href="../index.html">一覧ページ</a>の較正状態を参照)。</div>
-    </section>`;
-  }
-  const { chosen, calR, dealsN } = marketCal;
-  const s = r.state;
-  const gap = chosen.ppt / s.ppt - 1;
-  const calPremium = s.ask - calR.mid.fair;
+  const { chosen, rRef } = marketCal ?? {};
+  const adopted = chosen && Math.round(r.state.ppt) === chosen.ppt;
   return `
     <section>
-      <h2 class="sub">成約実勢との突き合わせ ── 実際の取引価格と比べる</h2>
+      <h2 class="sub">成約実勢との突き合わせ ── 土地単価の較正状況</h2>
       <div class="logic-body">
-        <p class="why">「公示地価ベースの査定は市場価格と無関係では?」という批判に答えるための欄。国交省の不動産取引価格情報(の再掲データ)から周辺の実際の成約を集め、標準地条件・2025年1月基準に正規化した「成約ベース坪単価」で査定をやり直し、公示ベースと並べて表示する。</p>
         <table class="kv">
-          <tr><td>本査定の採用単価(公示地価×実勢係数)</td><td>${Math.round(s.ppt)}万円/坪</td></tr>
-          <tr><td>成約ベース坪単価<div class="note" style="margin-top:2px">${esc(chosen.basis)} / 信頼度: ${esc(chosen.confidence)}</div></td><td>${chosen.ppt}万円/坪</td></tr>
-          <tr class="em"><td>採用単価との乖離</td><td>${pct(gap)}</td></tr>
-          <tr><td>成約ベースの適正レンジ(再計算)</td><td>${fmtMan(calR.lo.fair)} 〜 <b>${fmtMan(calR.mid.fair)}</b> 〜 ${fmtMan(calR.hi.fair)}</td></tr>
-          <tr><td>成約ベースの下値フロア</td><td>${fmtMan(calR.mid.floorVal)}</td></tr>
-          <tr class="${calPremium > 0 ? "loss" : ""}"><td>売出価格との乖離(成約ベース)</td><td>${calPremium >= 0 ? "+" : ""}${fmtMan(calPremium)}</td></tr>
-          <tr><td>成約ベースでの判定</td><td>【${calR.verdict.mark}】</td></tr>
+          <tr><td>公示ベースの従来単価(公示×実勢係数)</td><td>${rRef ? Math.round(rRef.state.ppt) + "万円/坪" : "—"}</td></tr>
+          <tr><td>土地成約による較正値${chosen ? `<div class="note" style="margin-top:2px">${esc(chosen.basis)} / 信頼度: ${esc(chosen.confidence)}</div>` : ""}</td><td>${chosen ? chosen.ppt + "万円/坪" : "データ不足"}</td></tr>
+          <tr class="em"><td>本査定の採用単価</td><td>${Math.round(r.state.ppt)}万円/坪(${adopted ? "較正値を採用" : chosen ? "較正値は信頼度不足のため従来値を採用" : "従来値"})</td></tr>
+          ${rRef && Math.round(rRef.fairFinal.mid) !== Math.round(r.fairFinal.mid) ? `<tr><td>(参考)従来単価のままの場合の適正中央値</td><td>${fmtMan(rRef.fairFinal.mid)}(本査定 ${fmtMan(r.fairFinal.mid)})</td></tr>` : ""}
         </table>
-        <p class="why" style="margin-top:8px">${gap < -0.05
-          ? "成約実勢は採用単価より低く出ている。つまり公示ベースの本査定は市場実勢に対して<b>むしろ高め(買い手に甘め)</b>であり、売出価格との乖離は成約ベースで見るとさらに大きい。"
-          : gap > 0.05
-            ? "成約実勢は採用単価より高く出ている。公示ベースの本査定は保守的すぎる可能性があり、実勢では上の適正レンジがより現実的。"
-            : "成約実勢と採用単価はおおむね整合しており、公示ベースの査定は市場実勢から大きく外れていない。"}</p>
-        <div class="caveat">※ 成約データは地区・面積帯単位の匿名情報(国交省 不動産取引価格情報の再掲)。方位・接道の質・角地は補正できないため誤差を含む。地区平均ベンチマークは旗竿地等も混みの混合平均で、標準的な整形地より低めに出る傾向がある。</div>
-        <a class="src-link" href="${esc(r.id)}-market.html" style="margin-top:10px">成約事例ベースの根拠を全文で見る(事例一覧・正規化・乖離の仕分け) →</a>
+        <div class="caveat">※ 較正値は国交省 不動産取引価格情報(再掲)の土地成約を標準地条件・2025年1月基準に正規化したもの。地区平均採用時は混合平均補正+10%込み。詳細は一覧ページの較正状態パネルを参照。</div>
+        <a class="src-link" href="${esc(r.id)}-market.html" style="margin-top:10px">成約事例ベースの根拠を全文で見る(土地較正・戸建比較・乖離の仕分け) →</a>
       </div>
     </section>`;
 }
@@ -351,14 +334,14 @@ export function renderProperty(r, property, marketCal = null) {
     ${marketCalHtml(r, marketCal)}
 
     <section>
-      <h2 class="sub">モンテカルロ分布(${r.mc.trials.toLocaleString("en-US")}試行) ── 適正総額のばらつき</h2>
+      <h2 class="sub">モンテカルロ分布(${r.mc.trials.toLocaleString("en-US")}試行) ── 原価法サイドのばらつき(参考)</h2>
       ${histSvg(s, r.mc)}
-      <div class="pct-line">${pctLine(r.mc, r.mc.p50)}</div>
+      <div class="pct-line">${r.fairFinal.route === "retail" ? `売出は原価法分布の${r.mc.askPercentile.toFixed(0)}パーセンタイル(※最終査定はリテール比較を${(r.fairFinal.weights.retail * 100).toFixed(0)}%加重しているため、この分布だけで割高とは判断しない)` : pctLine(r.mc, r.mc.p50)}</div>
       <div class="caveat">※ 原価法(土地+建物)側のばらつきであり、リテール比較法の値は含まない。パラメータ不確実性＋モデル構造誤差(±5%)を含むが、補正体系自体の誤りは表現できない。パーセンタイルは目安であり検定結果ではない。</div>
     </section>
 
     <section class="tornado">
-      <h2 class="sub">感度分析 ── どの変数が査定額を動かすか</h2>
+      <h2 class="sub">感度分析 ── どの変数が原価法の査定額を動かすか</h2>\n      <div class="note">※ 原価法サイドの感度。リテール比較加重後の最終査定への影響は重み(原価${"${(r.fairFinal.weights.cost * 100).toFixed(0)}"}%)分に縮小される。</div>
       ${tornadoHtml(r.tornado)}
     </section>
 
@@ -373,7 +356,7 @@ export function renderProperty(r, property, marketCal = null) {
     ${assumptionsHtml(r)}
 
     <div class="disclaimer">
-      本ページは公開データに基づく簡易モデルであり、不動産鑑定評価・投資助言ではありません。補正係数(徒歩±1.2%/分、方位±2〜5%、旗竿−25%、複数駅+2%、木造残価22年逓減等)は市場慣行の近似値で、統計的に推定されたものではありません。取引事例による係数検証と、有資格者の査定・重要事項説明・解体費実見積で必ず裏取りしてください。
+      本ページは公開データに基づく簡易モデルであり、不動産鑑定評価・投資助言ではありません。補正係数(徒歩±1.2%/分、方位±2〜5%、旗竿−25%、複数駅+2%、木造残価${COEFFS.BUILDING_LIFE_Y}年逓減等)は市場慣行の近似値で、統計的に推定されたものではありません。取引事例による係数検証と、有資格者の査定・重要事項説明・解体費実見積で必ず裏取りしてください。
     </div>
   </div>`;
 

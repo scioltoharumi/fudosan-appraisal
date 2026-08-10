@@ -109,8 +109,12 @@ test("MC: seed固定で再現可能・パーセンタイル順序が正しい", 
 
 test("判定境界: ask<=floorで「買」、fair<0で「不能」、上限超過で「見送」", () => {
   const { mid, lo, hi } = appraiseRange(DEMO, ELAPSED);
-  const buy = { ...DEMO, ask: Math.floor(mid.floorVal) };
+  // 2026-08第2次監査: 「買」の閾値は土地換算値(floorVal)から即時処分値(floorNet=卸値90%×諸費用控除後)に保守化
+  const buy = { ...DEMO, ask: Math.floor(mid.floorNet) };
   assert.equal(verdict(buy, mid, lo, hi).mark, "買");
+  const notBuy = { ...DEMO, ask: Math.ceil(mid.floorNet) + 1 };
+  assert.notEqual(verdict(notBuy, mid, lo, hi).mark, "買", "floorNet超は買にならない");
+  assert.ok(mid.floorNet < mid.floorVal, "即時処分値は土地換算値より保守的");
   const pass = { ...DEMO, ask: Math.ceil(hi.fair) + 1 };
   assert.equal(verdict(pass, mid, lo, hi).mark, "見送");
   // 解体費が土地値を上回る極端条件 → 査定不能

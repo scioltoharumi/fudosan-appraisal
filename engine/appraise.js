@@ -6,9 +6,9 @@
 //   - 評価基準日(asOf)と乱数seedを引数注入可能にした。既定は実行日のUTC0時＝同日内は再現可能。
 //   - それ以外の数式・係数・文言分岐は v1.2 と同一。
 
-import { retailEstimate } from "./retail.js";
+import { retailEstimate, districtOf } from "./retail.js";
 
-export const ENGINE_VERSION = "2.0.0 (2026-08監査反映: bm適用範囲修正・建物モデル更新・リテール比較法追加)";
+export const ENGINE_VERSION = "2.1.0 (第2次監査反映: 重み付き調整・地区水準補正・減価伝搬・較正接続・即時処分フロア)";
 
 // ---- 係数ブロック(根拠コメント付き) ----
 export const COEFFS = {
@@ -37,6 +37,8 @@ export const COEFFS = {
   DEFAULT_FEE_RATE: 0.05,               // 諸費用率
   DEFAULT_EXPENSE_RATE: 0.15,           // 戸建賃貸の経費率(固都税・修繕・空室で15〜20%)
   DEFAULT_CAP_RATE: 0.045,              // 還元利回り
+  WHOLESALE_RATIO: 0.90,                // 土地即時処分時の卸値係数(業者仕入れは実勢の85〜90%。保守側90%)
+  SALE_COST_RATE: 0.04,                 // 売却時の諸費用率(仲介3%+印紙・測量等)
   MC_TRIALS: 5000,                      // モンテカルロ試行数(F2-5)
   MC_SEED: 20260719,                    // 乱数seed既定値(再現性確保)
   MC_BINS: 48,                          // ヒストグラムのビン数
@@ -134,9 +136,11 @@ export function appraise(s, opts = {}) {
   // 建物市場性補正(bm)は建物残価のみに適用(2026-08監査: 土地込みに掛かっていたバグを修正)
   const asHome = land2 + resid * (1 + s.bm) - rep;                // 住まいとして売る価値
   const fair = alive ? Math.max(asHome, asLand) : asLand;         // 高い方の売却ルートが市場価格
-  const floorVal = asLand;                                        // フロア=確実な下値(常に土地−解体費)
+  const floorVal = asLand;                                        // 土地換算値(土地−解体費)
+  // 実現可能な下値(第2次監査対応): 即時処分は業者卸値(×0.90)になり売却諸費用(4%)もかかる
+  const floorNet = land2 * COEFFS.WHOLESALE_RATIO * (1 - COEFFS.SALE_COST_RATE) - demo;
   const route = (!alive || asLand >= asHome) ? "land" : "home";
-  return { landRaw, land2, resid, alive, asLand, asHome, fair, floorVal, route, tsubo, adj, walkAdj, cornerAdj, mstAdj, sizeAdj, pptAdj: ppt };
+  return { landRaw, land2, resid, alive, asLand, asHome, fair, floorVal, floorNet, route, tsubo, adj, walkAdj, cornerAdj, mstAdj, sizeAdj, pptAdj: ppt };
 }
 
 // lo/mid/hi の3点査定(基準坪単価±10%)
@@ -158,11 +162,11 @@ export function verdict(s, mid, lo, hi) {
       body: "入力条件では土地価値より処分コストが大きく、価格が付きません。入力値(面積・解体費・制約)を再確認してください。",
     };
   }
-  if (s.ask <= mid.floorVal) {
+  if (s.ask <= mid.floorNet) {
     return {
       mark: "買", cls: "ok",
-      head: "解体費控除後の土地値以下。資産防衛の観点では合格圏",
-      body: "土地として売る際の下値フロア中央値(" + fmtMan(mid.floorVal) + ")を売出価格が下回る構造。悲観シナリオ(坪単価−10%)の下値は " + fmtMan(lo.floorVal) + " で、これも意識した指値が理想。" + (mid.alive ? "建物残価はタダで付いてくる。" : "") + "残る論点は接道種別・擁壁・瑕疵の確認のみ。",
+      head: "即時処分価値(卸値換算・諸費用控除後)以下。資産防衛の観点では合格圏",
+      body: "最悪ケースで業者に土地として即売りしても回収できる水準(中央値 " + fmtMan(mid.floorNet) + " = 土地値×卸値90%×諸費用控除−解体費)を売出価格が下回る構造。悲観シナリオの同値は " + fmtMan(lo.floorNet) + " で、これも意識した指値が理想。" + (mid.alive ? "建物残価はタダで付いてくる。" : "") + "残る論点は接道種別・擁壁・瑕疵の確認のみ。",
     };
   }
   if (s.ask <= hi.fair) {
@@ -175,7 +179,7 @@ export function verdict(s, mid, lo, hi) {
   return {
     mark: "見送", cls: "",
     head: "査定上限を超過。プレミアムに払っている",
-    body: "楽観シナリオ(坪単価+10%)でも " + fmtMan(s.ask - hi.fair) + " の説明不能な上乗せ。売主に価格根拠を説明させるか、査定上限 " + fmtMan(hi.fair) + " 近辺への指値が前提。",
+    body: "楽観側のシナリオ(原価法は坪単価+10%、リテール比較は上位四分位)を採用しても " + fmtMan(s.ask - hi.fair) + " の説明不能な上乗せ。売主に価格根拠を説明させるか、査定上限 " + fmtMan(hi.fair) + " 近辺への指値が前提。",
   };
 }
 
@@ -268,7 +272,7 @@ export function tornado(s, elapsed) {
 
 // ---- 物件YAML(オブジェクト) → 正規化入力state ----
 // 抽出できない項目は保守的デフォルトを適用し、assumptions配列に必ず記録する(F1-3)
-export function toState(property, areaConfig, asOf) {
+export function toState(property, areaConfig, asOf, { calChosen = null } = {}) {
   const assumptions = [];
   const note = (field, value, why) => assumptions.push({ field, value, why });
 
@@ -278,9 +282,15 @@ export function toState(property, areaConfig, asOf) {
     throw new Error(`エリア「${areaKey}」がarea-config.yamlに未定義で、ppt_man_overrideもありません`);
   }
   let ppt;
-  if (property.ppt_man_override !== undefined) {
+  const configuredPpt = property.ppt_man_override !== undefined ? property.ppt_man_override : area?.ppt_man;
+  // 成約較正値の採用(F5-2・2026-08第2次監査で本体接続)。信頼度「参考」は採用しない
+  if (calChosen && !String(calChosen.confidence).startsWith("参考")) {
+    ppt = calChosen.ppt;
+    note("基準坪単価", ppt + "万/坪",
+      `成約較正値を採用(${calChosen.basis})。公示ベースの従来値 ${configuredPpt}万/坪 を置換`);
+  } else if (property.ppt_man_override !== undefined) {
     ppt = property.ppt_man_override;
-    note("基準坪単価", ppt + "万/坪", "物件YAMLの明示上書き(F2-3)");
+    note("基準坪単価", ppt + "万/坪", "物件YAMLの明示上書き(F2-3)" + (calChosen ? "。成約較正値" + calChosen.ppt + "万は信頼度不足のため不採用" : ""));
   } else {
     ppt = area.ppt_man;
   }
@@ -351,26 +361,36 @@ export function toState(property, areaConfig, asOf) {
 // ---- 総合評価(F2-4: 判定/フロア/適正lo-mid-hi/乖離/含み損/補正内訳/採用した仮定一覧) ----
 // houseDeals(retail.jsのloadHouseDeals()の戻り値)を渡すと、原価法(土地+建物)に加えて
 // リテール比較法(中古戸建成約の事例比較)を併算し、高い方の売却ルートを適正価格に採用する。
-export function evaluate(property, areaConfig, { asOf = defaultAsOf(), seed = COEFFS.MC_SEED, houseDeals = null } = {}) {
+export function evaluate(property, areaConfig, { asOf = defaultAsOf(), seed = COEFFS.MC_SEED, houseDeals = null, cal = null } = {}) {
   const elapsed = elapsedYears(asOf);
-  const { state: s, assumptions, area } = toState(property, areaConfig, asOf);
+  const calChosen = cal?.byArea?.[property.location?.area]?.chosen ?? null;
+  const { state: s, assumptions, area } = toState(property, areaConfig, asOf, { calChosen });
   const { mid, lo, hi } = appraiseRange(s, elapsed);
 
   // リテール比較法(2026-08監査対応)。事例不足(MIN_COMPS未満)ならnull
-  const retail = houseDeals ? retailEstimate(s, asOf, houseDeals) : null;
-  const fairLo = Math.max(lo.fair, retail?.lo ?? -Infinity);
-  const fairMid = Math.max(mid.fair, retail?.mid ?? -Infinity);
-  const fairHi = Math.max(hi.fair, retail?.hi ?? -Infinity);
+  const subjectDistrict = districtOf(property.location?.address);
+  const retail = houseDeals ? retailEstimate(s, asOf, houseDeals, { subjectDistrict }) : null;
+
+  // 試算価格の調整(第2次監査対応): max採用は上振れを構造的に保証するため、
+  // 事例数に応じた重み付き調整に変更。ただし土地換算値(floorVal)は常に実現可能な
+  // 売却ルートなので、調整結果がそれを下回る場合は土地値が下限になる。
+  const wR = retail ? (retail.n >= 20 ? 0.65 : retail.n >= 10 ? 0.5 : 0.35) : 0;
+  const blend = (costV, retailV) => retail ? wR * retailV + (1 - wR) * costV : costV;
+  const fairLo = Math.max(blend(lo.fair, retail?.lo), lo.floorVal);
+  const fairMid = Math.max(blend(mid.fair, retail?.mid), mid.floorVal);
+  const fairHi = Math.max(blend(hi.fair, retail?.hi), hi.floorVal);
   const finalRoute = retail && retail.mid > mid.fair ? "retail" : mid.route;
-  const fairFinal = { lo: fairLo, mid: fairMid, hi: fairHi, route: finalRoute, costMid: mid.fair };
+  const fairFinal = { lo: fairLo, mid: fairMid, hi: fairHi, route: finalRoute, costMid: mid.fair, weights: { retail: wR, cost: 1 - wR } };
 
   const v = verdict(s,
     { ...mid, fair: fairMid, route: finalRoute },
     { ...lo, fair: fairLo },
     { ...hi, fair: fairHi });
   const premium = s.ask - fairMid;
-  // 土地ルートでは建物は解体されるため修繕費は取得コストに含めない(監査: instLossの不整合修正)
-  const totalCost = s.ask * (1 + s.fee) + (finalRoute === "land" ? 0 : s.repair);
+  // 修繕費は「住まいとして継続利用する」ルートの追加投資。土地ルートでは解体されるため、
+  // リテール(事例の成約価格にも同様の繰延修繕が織り込み済み)ルートでは価値中立の別枠として、
+  // いずれも即時含み損の取得コストには算入しない(第2次監査: 二重計上の解消)
+  const totalCost = s.ask * (1 + s.fee) + (finalRoute === "home" ? s.repair : 0);
   const instLoss = totalCost - fairMid;                // 即時含み損
   const incomeVal = s.rent > 0 ? (s.rent * 12 * (1 - s.expr)) / s.yld : null;
   const mc = monteCarlo(s, elapsed, { seed });         // 原価法側のばらつき(リテール比較は含まない)
