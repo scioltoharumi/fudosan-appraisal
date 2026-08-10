@@ -10,6 +10,9 @@ import { renderGuide } from "./templates/guide.js";
 import { calibrate } from "../engine/calibrate.js";
 import { loadHouseDeals } from "../engine/retail.js";
 import { renderMarketBasis } from "./templates/market-basis.js";
+import { renderDataExplorer } from "./templates/data-explorer.js";
+import { loadVerification } from "../engine/retail.js";
+import { loadDeals } from "../engine/calibrate.js";
 
 // 前提知識ガイドの題材物件(存在しなければ先頭の物件にフォールバック)
 const GUIDE_EXAMPLE_ID = "jujonakahara3-adcast";
@@ -55,6 +58,19 @@ const guideTarget = results.find(({ r }) => r.id === GUIDE_EXAMPLE_ID) ?? result
 if (guideTarget.r.id !== GUIDE_EXAMPLE_ID) console.warn(`⚠ ガイド題材 ${GUIDE_EXAMPLE_ID} が見つからずフォールバック(本文の固有記述に不一致の可能性)`);
 writeFileSync(join(DIST, "guide.html"), renderGuide(guideTarget.r, guideTarget.property, cal.byArea[guideTarget.property.location?.area] ?? null), "utf8");
 console.log(`✓ guide.html(題材: ${guideTarget.r.id})`);
+// データ探索ページ: 各行に検証状態と出所リンクを付与
+const verification = loadVerification();
+const vByKey = new Map((verification?.rows ?? []).map((v) => [v.key, v]));
+const houseRows = houseDeals.map((d) => {
+  const key = [d.quarter, d.district, d.price_man, d.land_m2, d.floor_m2, d.age_y, d.walk_min].join("|");
+  const v = vByKey.get(key);
+  return { quarter: d.quarter, district: d.district, price_man: d.price_man, land_m2: d.land_m2,
+    floor_m2: d.floor_m2, age_y: d.age_y, walk_min: d.walk_min, verification: d.verification,
+    vnote: v?.note ?? "", mlit_ref: v?.mlit_ref ?? null,
+    source_primary: v?.source_primary ?? d.source_url, source_secondary: v?.source_secondary ?? "" };
+});
+writeFileSync(join(DIST, "data.html"), renderDataExplorer({ houseRows, landRows: loadDeals(), verification, asOf }), "utf8");
+console.log(`✓ data.html(戸建${houseRows.length}件・土地${loadDeals().length}件・検証 ${verification?.generated_at ?? "未実施"})`);
 writeFileSync(join(DIST, "index.html"), renderIndex(results, { asOf, cal }), "utf8");
 console.log(`✓ index.html(${results.length}件・基準日 ${asOf})`);
 console.log(`出力先: ${DIST}`);

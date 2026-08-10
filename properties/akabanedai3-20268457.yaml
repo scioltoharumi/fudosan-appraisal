@@ -12,7 +12,7 @@ station: {walk_min: 11, multi_station: true}
 land:
   registered_m2: 91.44
   setback_m2: 14.04
-  road: {quality: setback_2ko, direction: SE, corner: false, note: "南西3.7m/南東1.5m 要種別調査"}
+  road: {width_m: 3.7, quality: setback_2ko, direction: SE, corner: false, note: "南西3.7m/南東1.5m 要種別調査"}
   shape: regular
   legal: {ownership: shoyuken, rebuildable: true}
 building:

@@ -2,12 +2,24 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { evaluate } from "../engine/appraise.js";
-import { loadHouseDeals, retailEstimate, RETAIL } from "../engine/retail.js";
+import { loadHouseDeals, loadVerification, retailEstimate, RETAIL } from "../engine/retail.js";
 import { growthFactor } from "../engine/timeadjust.js";
 import { calibrate } from "../engine/calibrate.js";
 import { loadAreaConfig, loadProperty, listPropertyIds } from "../engine/io.js";
 
 const AS_OF = new Date(Date.UTC(2026, 7, 10));  // 2026-08-10 固定
+
+test("検証パイプライン: conflict行は査定から除外され、検証状態が全行に付与される", () => {
+  const v = loadVerification();
+  assert.ok(v && v.rows.length >= 400, "verification.jsonが存在する");
+  const conflicts = v.rows.filter((r) => r.status === "conflict");
+  const deals = loadHouseDeals();
+  const keys = new Set(deals.map((d) => [d.quarter, d.district, d.price_man, d.land_m2, d.floor_m2, d.age_y, d.walk_min].join("|")));
+  for (const c of conflicts) assert.ok(!keys.has(c.key), `conflict行が査定に混入: ${c.key}`);
+  for (const d of deals) assert.ok(["verified2", "verified1", "unverified", "unchecked"].includes(d.verification));
+  // 全行に人間がファクトチェックできる出所が記録されている
+  for (const r of v.rows) assert.ok(r.source_primary && r.source_secondary && r.source_origin, `出所欠落: ${r.key}`);
+});
 
 test("house-deals.csv: 全行が数値として妥当・外れ値がロード時に除外される", () => {
   const deals = loadHouseDeals();

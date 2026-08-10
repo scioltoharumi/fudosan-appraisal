@@ -8,12 +8,13 @@ captured_at: 2026-07-24
 price_history:
   - {date: 2026-07-24, price_man: 9480}
 location: {area: akabanedai, address: "北区西が丘1"}   # エリア区分「赤羽台・西が丘」
+layout: "4LDK"   # 間取り(媒体記載)
 station: {walk_min: 13, multi_station: true}   # JR京浜東北線・埼京線「赤羽」13分/都営三田線「本蓮沼」16分
 land:
   registered_m2: 67.24
   setback_m2: 0            # 私道負担・セットバック「無」(媒体記載)
-  road: {quality: good_4m, direction: S, corner: false, note: "南側 幅員5.7m(接道幅6.9m)。公道/私道の別は媒体記載なし・要確認"}
-  legal: {ownership: shoyuken, rebuildable: true}   # 用途地域: 2種低層 / 建ぺい60%・容積150%
+  road: {width_m: 5.7, quality: good_4m, direction: S, corner: false, note: "南側 幅員5.7m(接道幅6.9m)。公道/私道の別は媒体記載なし・要確認"}
+  legal: {zoning: "2種低層", bcr: 60, far: 150, ownership: shoyuken, rebuildable: true}   # 用途地域: 2種低層 / 建ぺい60%・容積150%
 building:
   built: 2003-10
   floor_m2: 99.15

@@ -8,6 +8,7 @@ captured_at: 2026-07-24
 price_history:
   - {date: 2026-07-24, price_man: 5680}   # 媒体内訳: 建物1595万/土地4085万(スムストック査定)
 location: {area: shimo, address: "北区志茂1"}
+layout: "2LDK+S(納戸)"   # 間取り(媒体記載)
 # 志茂はエリア設定4区分(赤羽固定)の対象外のため基準坪単価を明示上書き(F2-3)。
 # shimo3-20706806と同一根拠・同一値: 公示地価目安 約55.4万/m2(2025) ×3.30578×実勢1.15 ≈210万/坪
 ppt_man_override: 210
@@ -16,8 +17,8 @@ land:
   registered_m2: 47.09
   # 西側私道3.1m幅(4m未満)→再建築時セットバック想定 (4-3.1)/2×接道幅5.4m ≈2.43m2(実測未確認の推計)
   setback_m2: 2.43
-  road: {quality: setback_2ko, direction: W, corner: false, note: "西側私道3.1m幅(接道幅5.4m)・共有持分36.06m2×1/4(按分9.02m2)。42条区分と持分の登記面積算入は要確認"}
-  legal: {ownership: shoyuken, rebuildable: true, note: "1種住居/建ぺい60%・容積160%/高度地区/準防火地域"}
+  road: {width_m: 3.1, quality: setback_2ko, direction: W, corner: false, note: "西側私道3.1m幅(接道幅5.4m)・共有持分36.06m2×1/4(按分9.02m2)。42条区分と持分の登記面積算入は要確認"}
+  legal: {zoning: "1種住居", bcr: 60, far: 160, ownership: shoyuken, rebuildable: true, note: "1種住居/建ぺい60%・容積160%/高度地区/準防火地域"}
 building:
   built: 2010-03
   floor_m2: 76.87

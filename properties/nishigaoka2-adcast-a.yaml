@@ -7,13 +7,14 @@ captured_at: 2026-08-09
 price_history:
   - {date: 2026-08-09, price_man: 6980}   # チラシ取得時点の価格
 location: {area: akabanedai, address: "北区西が丘2"}   # エリア区分「赤羽台・西が丘」
+layout: "1LDK+2S(納戸)"   # 間取り(媒体記載)
 station: {walk_min: 15, multi_station: true}   # 東十条15分/赤羽17分/都営三田線「板橋本町」18分
 land:
   registered_m2: 50.74     # 実測。私道負担1.40m2は土地面積とは別途
   setback_m2: 0
-  road: {quality: good_4m, direction: NW, corner: false, note: "北西側 約4m公道・アスファルト舗装・高低差なし。私道負担1.40m2(別途)"}
+  road: {width_m: 4.0, quality: good_4m, direction: NW, corner: false, note: "北西側 約4m公道・アスファルト舗装・高低差なし。私道負担1.40m2(別途)"}
   shape: regular           # チラシ「整形地」
-  legal: {ownership: shoyuken, rebuildable: true, note: "1種中高/建ぺい60%・容積150%/準防火/2種高度"}
+  legal: {zoning: "1種中高", bcr: 60, far: 150, ownership: shoyuken, rebuildable: true, note: "1種中高/建ぺい60%・容積150%/準防火/2種高度"}
 building:
   built: 2026-09           # 完成予定(未完成)
   floor_m2: 83.51          # 実測・車庫8.96m2を含む

@@ -46,7 +46,18 @@ export const ADJACENT_DISTRICTS = {
   "上十条": ["上十条", "中十条", "十条仲原"],
 };
 
+// 検証結果(market/verification.json)を読み、conflict行のキー集合を返す。ファイル不在なら空
+export function loadVerification() {
+  try {
+    return JSON.parse(readFileSync(join(ROOT, "market", "verification.json"), "utf8"));
+  } catch { return null; }
+}
+
 export function loadHouseDeals() {
+  const verification = loadVerification();
+  const conflictKeys = new Set((verification?.rows ?? []).filter((r) => r.status === "conflict").map((r) => r.key));
+  const statusByKey = new Map((verification?.rows ?? []).map((r) => [r.key, r.status]));
+  const keyOf = (d) => [d.quarter, d.district, d.price_man, d.land_m2, d.floor_m2, d.age_y, d.walk_min].join("|");
   const text = readFileSync(join(ROOT, "market", "house-deals.csv"), "utf8");
   const lines = text.split("\n").map((l) => l.trim()).filter((l) => l && !l.startsWith("#"));
   const header = lines[0].split(",");
@@ -69,8 +80,10 @@ export function loadHouseDeals() {
     Number.isFinite(d.age_y) && d.age_y >= -2 &&
     Number.isFinite(d.price_man) && d.price_man > 0 &&
     Number.isFinite(d.land_m2) && d.land_m2 > 0 && Number.isFinite(d.floor_m2) && d.floor_m2 > 0 &&
-    /^\d{4}Q[1-4]$/.test(d.quarter)
-  );
+    /^\d{4}Q[1-4]$/.test(d.quarter) &&
+    // 二重照合で矛盾が検出された行は原典裁定まで査定から除外(engine/verify-data.mjs)
+    !conflictKeys.has(keyOf(d))
+  ).map((d) => ({ ...d, verification: statusByKey.get(keyOf(d)) ?? "unchecked" }));
 }
 
 const median = (xs) => {

@@ -240,6 +240,33 @@ function priceHistoryHtml(property) {
   return `<section><h2 class="sub">価格改定履歴</h2><table class="kv"><tr><td>日付</td><td style="text-align:right">価格</td><td style="text-align:right">改定幅</td></tr>${rows}</table></section>`;
 }
 
+// ---- 物件スペック表(メトリクス拡充・2026-08) ----
+function specTable(r, property) {
+  const s = r.state;
+  const legal = property.land?.legal ?? {};
+  const road = property.land?.road ?? {};
+  const effTsubo = r.mid.tsubo;
+  const landTsubo = s.land / COEFFS.TSUBO_M2;
+  const floorTsubo = s.floor / COEFFS.TSUBO_M2;
+  const cells = [
+    ["間取り", property.layout ?? "—"],
+    ["築年数", "築" + s.age.toFixed(1) + "年(" + esc(fmtDate(property.building?.built)) + "築)" + (r.isNewBuild ? " 新築" : "")],
+    ["用途地域 / 建ぺい・容積", legal.zoning ? esc(legal.zoning) + " / " + legal.bcr + "%・" + legal.far + "%" : "—(要調査)"],
+    ["接道", (road.direction ? esc(String(road.direction)) + "側 " : "") + (road.width_m ? "幅員" + road.width_m + "m" : "—") + (s.roadq < 0 ? "(4m未満・減点" + pct(s.roadq) + ")" : "")],
+    ["土地", s.land + "m²(" + landTsubo.toFixed(2) + "坪 / 実効" + effTsubo.toFixed(2) + "坪)"],
+    ["延床", s.floor + "m²(" + floorTsubo.toFixed(2) + "坪)"],
+    ["売出の土地単価(総額÷実効坪)", Math.round(s.ask / effTsubo).toLocaleString("en-US") + " 万円/坪"],
+    ["売出の延床単価(総額÷延床坪)", Math.round(s.ask / floorTsubo).toLocaleString("en-US") + " 万円/坪"],
+    ["駅徒歩", "徒歩" + s.walk + "分" + (s.mst ? "(複数駅・複数路線)" : "")],
+    ["土地形状 / 権利", (property.land?.shape ? esc(String(property.land.shape)) : "記載なし") + " / " + (legal.ownership === "shoyuken" ? "所有権" : esc(String(legal.ownership ?? "—")))],
+  ];
+  return `<section style="margin-top:14px">
+    <h2 class="sub">物件スペック ── 査定に入っている事実データ</h2>
+    <table class="kv" style="font-size:.8rem">${cells.map(([k, v]) => `<tr><td style="width:220px">${k}</td><td>${v}</td></tr>`).join("")}</table>
+    <div class="note">これらの値はYAMLに記録された媒体・チラシ記載の事実で、査定の入力そのもの(検証状態は各項目の注記・チェックリスト参照)。単価2種は売出価格の割り算で、査定値ではない。</div>
+  </section>`;
+}
+
 // ---- リテール比較法(戸建成約)セクション ----
 function retailCompsHtml(r) {
   if (!r.retail) {
@@ -314,6 +341,8 @@ export function renderProperty(r, property, marketCal = null) {
     <h2>${esc(property.location?.address ?? r.id)} <span class="status">${esc(status)}</span></h2>
     <div class="note">ID: ${esc(r.id)} / 出典: ${esc(property.source ?? "—")} / 取得日: ${esc(fmtDate(property.captured_at))} / 駅徒歩${esc(property.station?.walk_min)}分 / 土地${esc(property.land?.registered_m2)}m² / 延床${esc(property.building?.floor_m2)}m² / 築: ${esc(fmtDate(property.building?.built))}</div>
     ${safeUrl(property.source_url) ? `<a class="src-link" href="${esc(property.source_url)}" target="_blank" rel="noopener noreferrer">元の掲載ページを見る ↗</a>` : ""}
+
+    ${specTable(r, property)}
 
     <div class="verdict-wrap" style="margin-top:16px">
       <div class="stamp ${v.cls}">${v.mark}</div>

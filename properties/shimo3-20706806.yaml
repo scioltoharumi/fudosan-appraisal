@@ -8,6 +8,7 @@ captured_at: 2026-07-19
 price_history:
   - {date: 2026-07-18, price_man: 6480}
 location: {area: shimo, address: "北区志茂3"}
+layout: "2LDK"   # 間取り(媒体記載)
 # 志茂はエリア設定4区分(赤羽固定)の対象外のため基準坪単価を明示上書き(F2-3)。
 # 根拠: 志茂の公示地価目安 約55.4万/m2(2025) ×3.30578 ≈183万/坪 ×実勢係数1.15 ≈210万/坪。
 # 赤羽北200・赤羽台230の中間で整合。成約事例が貯まったら要再検証(assumed)
@@ -16,8 +17,8 @@ station: {walk_min: 4, multi_station: true}   # 南北線「志茂」4分/JR「�
 land:
   registered_m2: 59.51
   setback_m2: 0            # 私道負担・セットバック「無」(媒体記載)
-  road: {quality: good_4m, direction: SE, corner: false, note: "南東側 幅員4m。公道/私道の別は媒体記載なし・要確認"}
-  legal: {ownership: shoyuken, rebuildable: true}   # 用途地域: 1種中高 / 建ぺい60%・容積200%
+  road: {width_m: 4.0, quality: good_4m, direction: SE, corner: false, note: "南東側 幅員4m。公道/私道の別は媒体記載なし・要確認"}
+  legal: {zoning: "1種中高", bcr: 60, far: 200, ownership: shoyuken, rebuildable: true}   # 用途地域: 1種中高 / 建ぺい60%・容積200%
 building:
   built: 2007-07
   floor_m2: 89.1

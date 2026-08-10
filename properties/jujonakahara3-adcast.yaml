@@ -7,6 +7,7 @@ captured_at: 2026-08-09
 price_history:
   - {date: 2026-08-09, price_man: 6580}   # チラシ取得時点の価格
 location: {area: jujo-nakahara, address: "北区十条仲原3"}
+layout: "2LDK+1S(納戸)"   # 間取り(媒体記載)
 # 十条仲原はエリア設定4区分(赤羽固定)の対象外のため基準坪単価を明示上書き(F2-3)。
 # 本物件は1種中高の住宅地につき、2丁目近商物件の300万/坪ではなく住宅地水準を適用。
 # 根拠: 十条仲原の住宅地地点51.9万/m2〜・隣接中十条平均56.4万/m2(2025)に
@@ -16,9 +17,9 @@ station: {walk_min: 11, multi_station: true}   # 東十条11分/十条12分/赤�
 land:
   registered_m2: 70.06     # 公簿。路地状部分 約21.83m2を含む(有効宅地約48.23m2)
   setback_m2: 0            # 私道負担「無」(チラシ記載)
-  road: {quality: good_4m, direction: N, corner: false, note: "北側 約5.4m公道・アスファルト舗装・高低差なし"}
+  road: {width_m: 5.4, quality: good_4m, direction: N, corner: false, note: "北側 約5.4m公道・アスファルト舗装・高低差なし"}
   shape: flagpole          # 旗竿地(チラシ明記)
-  legal: {ownership: shoyuken, rebuildable: true, note: "1種中高/建ぺい60%・容積150%/準防火/2種高度/地区計画あり"}
+  legal: {zoning: "1種中高", bcr: 60, far: 150, ownership: shoyuken, rebuildable: true, note: "1種中高/建ぺい60%・容積150%/準防火/2種高度/地区計画あり"}
 building:
   built: 2008-12
   floor_m2: 88.26          # 公簿

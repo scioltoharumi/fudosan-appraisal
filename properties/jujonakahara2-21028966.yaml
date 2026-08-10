@@ -8,6 +8,7 @@ captured_at: 2026-07-24
 price_history:
   - {date: 2026-07-24, price_man: 9000}
 location: {area: jujo-nakahara, address: "北区十条仲原2"}
+layout: "3LDK"   # 間取り(媒体記載)
 # 十条仲原はエリア設定4区分(赤羽固定)の対象外のため基準坪単価を明示上書き(F2-3)。
 # 根拠: 十条仲原の公示地価平均85.15万/m2(2025)は駅前商業地点154万に上振れするため
 # 保守側80万/m2を採用 ×3.30578 ≈264万/坪 ×実勢係数1.15 ≈304 → 300万/坪。
@@ -17,9 +18,9 @@ station: {walk_min: 10, multi_station: true}   # JR埼京線「十条」10分/JR
 land:
   registered_m2: 82.85
   setback_m2: 0            # 私道負担・セットバック「無」(媒体記載)
-  road: {quality: good_4m, direction: SE, corner: false, note: "南東側 幅員4.5m(接道幅6.3m)。公道/私道の別は媒体記載なし・要確認"}
+  road: {width_m: 4.5, quality: good_4m, direction: SE, corner: false, note: "南東側 幅員4.5m(接道幅6.3m)。公道/私道の別は媒体記載なし・要確認"}
   shape: regular           # 特徴欄「整形地」「平坦地」
-  legal: {ownership: shoyuken, rebuildable: true, highest_use: commercial, note: "近隣商業/建ぺい80%・容積270%/防火地域・新たな防火地域/高度地区/景観法規制/都市計画道路区域内。highest_use=commercial: 最有効使用が商業系のため住宅戸建のリテール比較は適用外(R3監査)"}
+  legal: {zoning: "近隣商業", bcr: 80, far: 270, ownership: shoyuken, rebuildable: true, highest_use: commercial, note: "近隣商業/建ぺい80%・容積270%/防火地域・新たな防火地域/高度地区/景観法規制/都市計画道路区域内。highest_use=commercial: 最有効使用が商業系のため住宅戸建のリテール比較は適用外(R3監査)"}
 building:
   built: 2000-07
   floor_m2: 142.1          # 現況(うち1階車庫11.4m2)。公簿は木造2階建89.07m2・増築未登記部分あり(現況3階建130.74m2)
