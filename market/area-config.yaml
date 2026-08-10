@@ -5,8 +5,10 @@
 areas:
   akabane:
     label: 赤羽
-    ppt_man: 370
-    source: koji_fallback
+    # 2026-08 R4監査: 公示321×1.15=370は成約較正値227万/坪と63%乖離(公示地点が駅近商住系のため)。
+    # 成約側に寄せた暫定値300に修正。赤羽エリアの物件を登録する前に土地成約3件以上で要再較正
+    ppt_man: 300
+    source: koji_fallback_adjusted
   akabane-nishi:
     label: 赤羽西
     ppt_man: 245

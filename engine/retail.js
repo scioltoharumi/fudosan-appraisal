@@ -29,7 +29,8 @@ export const RETAIL = {
 
 // 近接地区マップ(R3監査対応): 地区水準指数によるスケーリングは築年構成・標本ノイズで
 // 地価序列と逆転するため廃止し、対象と同一・近接地区の事例に限定する方式に変更。
-// 近接関係は北区の地理(台地/低地・鉄道)に基づく。
+// 近接関係は北区の地理(台地/低地・鉄道)に基づく。意図的に非対称(小地区は隣の大地区から事例を
+// 借りるが、大地区は小地区の少数事例に引っ張られない)。
 export const ADJACENT_DISTRICTS = {
   "赤羽西": ["赤羽西", "西が丘", "赤羽台", "赤羽"],
   "西が丘": ["西が丘", "赤羽西", "赤羽台", "中十条", "十条仲原"],
@@ -66,7 +67,9 @@ export function loadHouseDeals() {
     // データ検収: 徒歩0〜30分の範囲外(例: 徒歩90分の1件)・築年-2未満は誤記/別市場として除外
     Number.isFinite(d.walk_min) && d.walk_min >= 0 && d.walk_min <= 30 &&
     Number.isFinite(d.age_y) && d.age_y >= -2 &&
-    Number.isFinite(d.price_man) && Number.isFinite(d.land_m2) && d.land_m2 > 0
+    Number.isFinite(d.price_man) && d.price_man > 0 &&
+    Number.isFinite(d.land_m2) && d.land_m2 > 0 && Number.isFinite(d.floor_m2) && d.floor_m2 > 0 &&
+    /^\d{4}Q[1-4]$/.test(d.quarter)
   );
 }
 
@@ -101,7 +104,8 @@ function quarterMid(q) {
 function normalizeLandUnit(d, asOf) {
   const yearsAgo = Math.max(0, (asOf.getTime() - quarterMid(d.quarter).getTime()) / 31557600000);
   const bldgAtDeal = buildingValue(d.floor_m2, d.age_y) / Math.pow(1 + CONSTR_INFL, yearsAgo);
-  const repairComp = Math.min(COEFFS.DEFAULT_REPAIR_MAN, RETAIL.REPAIR_PER_YEAR * Math.max(0, d.age_y));
+  // 修繕上限も取引時点の価格水準へ割引き(建物控除と時点基準を揃える・R4監査)
+  const repairComp = Math.min(COEFFS.DEFAULT_REPAIR_MAN, RETAIL.REPAIR_PER_YEAR * Math.max(0, d.age_y)) / Math.pow(1 + CONSTR_INFL, yearsAgo);
   const bldgNet = Math.max(0, bldgAtDeal - repairComp);
   const landResid = Math.max(d.price_man - bldgNet, d.price_man * RETAIL.LAND_RESID_MIN_RATIO);
   const unit = landResid / (d.land_m2 / COEFFS.TSUBO_M2);
@@ -113,7 +117,7 @@ function normalizeLandUnit(d, asOf) {
 
 // 物件住所(例: 北区赤羽西4)→ 地区名(赤羽西)
 export function districtOf(address) {
-  const m = String(address ?? "").match(/北区([^0-9０-９]+)/);
+  const m = String(address ?? "").match(/^北区([^0-9０-９]+)/);   // 先頭アンカー(住所文中の「北区」誤マッチ防止)
   return m ? m[1] : null;
 }
 
@@ -154,8 +158,10 @@ export function retailEstimate(s, asOf, deals, { subjectDistrict = null } = {}) 
   // 対象物件の個別要因(原価法と同じ係数体系)。複数駅補正は事例側の駅属性が不明なため適用しない
   const walkProp = COEFFS.WALK_ADJ_PER_MIN * (s.walk - COEFFS.WALK_BASE_MIN);
   const cornerAdj = s.corner ? COEFFS.CORNER_ADJ : 0;
+  // 形状補正は半減で適用: 事例プールの成約価格には旗竿地・不整形が既に混入しており(形状列なし)、
+  // 対象側に満額の-25%を掛けると混入分と二重減価になるため(R4監査)
   const subjectFactor = Math.max(0.1,
-    (1 + walkProp + s.shape + s.dir + s.roadq + cornerAdj + s.extra / 100)) * (1 + s.lc);
+    (1 + walkProp + s.shape * 0.5 + s.dir + s.roadq + cornerAdj + s.extra / 100)) * (1 + s.lc);
 
   const adjusted = usable.map((d) => {
     const unitStd = normalizeLandUnit(d, asOf);                   // 土地残差・標準条件・基準日時点

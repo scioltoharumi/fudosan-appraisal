@@ -130,9 +130,9 @@ function logicSteps(r) {
       Math.round(pptCorrected) + "万/坪 × " + mid.tsubo.toFixed(2) + "坪" + (s.lc !== 0 ? " × (1" + pct(s.lc) + " 法的制約)" : "") + " = <b>" + fmtMan(mid.land2) + "</b>(レンジ: " + fmtMan(lo.land2) + "〜" + fmtMan(hi.land2) + ")",
       "補正後坪単価×実効坪数。再建築不可などの法的制約はここで−30%を掛けます(住宅ローンが付かず買い手が現金投資家に限られるため)。基準坪単価に±10%の不確実性を置き、レンジで表示しています。"],
 
-    ["下値フロア(土地値 − 解体費)",
-      fmtMan(mid.land2) + " − 解体費 " + fmtMan(s.demo) + " = <b>" + fmtMan(mid.floorVal) + "</b>",
-      "この物件を「最悪でも土地として売る」ときの手取り相当額です。古家付き土地の買い手は解体費を差し引いて指値するため、資産防衛の合格ラインはここに置くべきです。なお「確実な下値」と呼びたくなりますが、基準坪単価の幅に加え、実際に即時処分する場合は業者卸値(実勢の約90%)と売却諸費用(約4%)がかかります。それらを控除した<b>即時処分値 " + fmtMan(mid.floorNet) + "</b> が「買」判定の閾値です(2026-08第2次監査でフロア定義を保守化)。"],
+    ["下値フロア(土地値 − 解体費" + (r.fairFinal.floorGuard < 1 ? "・未検証単価につき×0.9適用" : "") + ")",
+      fmtMan(mid.land2) + " − 解体費 " + fmtMan(s.demo) + (r.fairFinal.floorGuard < 1 ? " → ×0.9" : "") + " = <b>" + fmtMan(r.fairFinal.floorEff.mid) + "</b>",
+      "この物件を「最悪でも土地として売る」ときの手取り相当額です。古家付き土地の買い手は解体費を差し引いて指値するため、資産防衛の合格ラインはここに置くべきです。なお「確実な下値」と呼びたくなりますが、基準坪単価の幅に加え、実際に即時処分する場合は業者卸値(実勢の約90%)と売却諸費用(約4%)がかかります。それらを控除した<b>即時処分値 " + fmtMan(r.fairFinal.floorEff.netMid) + "</b> が取得諸費用込みの「買」判定の閾値です(2026-08第2次監査でフロア定義を保守化)。"],
 
     ["建物残価(市場が建物に払う残り時間)",
       s.rebuild + "万/坪 × " + (s.floor / COEFFS.TSUBO_M2).toFixed(2) + "坪 × max(0, 1 − 築" + s.age.toFixed(1) + "年 ÷ " + COEFFS.BUILDING_LIFE_Y + "年) = <b>" + fmtMan(mid.resid) + "</b>",
@@ -183,7 +183,7 @@ function kvTable(r) {
     ["土地換算値(土地値−解体費" + fmtMan(s.demo) + (r.fairFinal.floorGuard < 1 ? "。単価未検証につき×0.9で適用" : "") + ")", fmtMan(r.fairFinal.floorEff.lo) + " 〜 " + fmtMan(r.fairFinal.floorEff.hi)],
     ["即時処分値(卸値90%・売却諸費用4%控除後。取得諸費用込みの買判定閾値)", fmtMan(r.fairFinal.floorEff.netMid)],
     ["建物残価(木造" + COEFFS.BUILDING_LIFE_Y + "年逓減)", mid.alive ? fmtMan(mid.resid) + "(市場性 " + pct(s.bm) + " は残価のみに適用)" : "0円(築" + s.age.toFixed(1) + "年・市場評価消滅)"],
-    ["リテール比較(戸建成約 " + (r.retail ? r.retail.n + "件" : "—") + ")", r.retail ? fmtMan(r.retail.lo) + " 〜 " + fmtMan(r.retail.mid) + " 〜 " + fmtMan(r.retail.hi) : "類似成約不足のため適用外"],
+    ["リテール比較(戸建成約 " + (r.retail ? r.retail.n + "件" : "—") + ")", r.retail ? fmtMan(r.retail.lo) + " 〜 " + fmtMan(r.retail.mid) + " 〜 " + fmtMan(r.retail.hi) : (r.fairFinal.retailApplicable === false ? "商業系につき適用外(土地評価)" : "類似成約不足のため適用外")],
     ["売却ルート判定", r.fairFinal.route === "retail" ? "リテール(実需に家として売る)が優位。加重 リテール" + (r.fairFinal.weights.retail * 100).toFixed(0) + "%:原価" + (r.fairFinal.weights.cost * 100).toFixed(0) + "%" : r.fairFinal.route === "land" ? "土地として売る方が高い(解体前提)" : "住まいとして売る方が高い"],
     ["適正価格レンジ(重み付き調整・土地値下限)", fmtMan(r.fairFinal.lo) + " 〜 " + fmtMan(r.fairFinal.hi), "em"],
     ["売出価格 − 査定中央値", (premium >= 0 ? "+" : "") + fmtMan(premium)],
@@ -246,7 +246,7 @@ function retailCompsHtml(r) {
     return `
     <section>
       <h2 class="sub">戸建成約比較(リテール比較法) ── 実需はいくらで買っているか</h2>
-      <div class="note">土地面積・延床・築年の近い戸建成約が5件未満のため、この物件ではリテール比較を適用していません(原価法のみ)。</div>
+      <div class="note">${r.fairFinal.retailApplicable === false ? "最有効使用が商業系(近商・高容積)のため、住宅戸建の成約との比較は適用していません(土地評価ベース)。" : "土地面積・延床・築年の近い戸建成約が5件未満のため、この物件ではリテール比較を適用していません(原価法のみ)。"}</div>
     </section>`;
   }
   const { retail } = r;
@@ -287,7 +287,7 @@ function retailCompsHtml(r) {
 // marketCal: {chosen, rRef, dealsN} — chosenは土地成約による較正値、rRefは較正を外した公示ベースの参考査定
 function marketCalHtml(r, marketCal) {
   const { chosen, rRef } = marketCal ?? {};
-  const adopted = chosen && Math.round(r.state.ppt) === chosen.ppt;
+  const adopted = r.fairFinal.pptSource === "calibrated";
   return `
     <section>
       <h2 class="sub">成約実勢との突き合わせ ── 土地単価の較正状況</h2>
@@ -295,7 +295,7 @@ function marketCalHtml(r, marketCal) {
         <table class="kv">
           <tr><td>公示ベースの従来単価(公示×実勢係数)</td><td>${rRef ? Math.round(rRef.state.ppt) + "万円/坪" : "—"}</td></tr>
           <tr><td>土地成約による較正値${chosen ? `<div class="note" style="margin-top:2px">${esc(chosen.basis)} / 信頼度: ${esc(chosen.confidence)}</div>` : ""}</td><td>${chosen ? chosen.ppt + "万円/坪" : "データ不足"}</td></tr>
-          <tr class="em"><td>本査定の採用単価</td><td>${Math.round(r.state.ppt)}万円/坪(${adopted ? "較正値を採用" : chosen ? "較正値は信頼度不足のため従来値を採用" : "従来値"})</td></tr>
+          <tr class="em"><td>本査定の採用単価</td><td>${Math.round(r.state.ppt)}万円/坪(${adopted && chosen ? `較正値${chosen.ppt}万と従来値${rRef ? Math.round(rRef.state.ppt) : "—"}万のブレンド` : chosen ? "較正値は信頼度不足のため従来値を採用" : "従来値"})</td></tr>
           ${rRef && Math.round(rRef.fairFinal.mid) !== Math.round(r.fairFinal.mid) ? `<tr><td>(参考)従来単価のままの場合の適正中央値</td><td>${fmtMan(rRef.fairFinal.mid)}(本査定 ${fmtMan(r.fairFinal.mid)})</td></tr>` : ""}
         </table>
         <div class="caveat">※ 較正値は国交省 不動産取引価格情報(再掲)の土地成約を標準地条件・2025年1月基準に正規化したもの。地区平均採用時は混合平均補正+10%込み。詳細は一覧ページの較正状態パネルを参照。</div>
@@ -320,6 +320,7 @@ export function renderProperty(r, property, marketCal = null) {
       <div class="verdict-text">
         <div class="head">${v.head}</div>
         <div class="body">${v.body}</div>
+        ${r.borderline ? `<div class="caveat" style="margin-top:6px">※ 境界判定: 売出と査定上限の乖離が5%未満。時点修正等のノイズでスタンプが反転しうるため、スタンプでなくレンジで読むこと。</div>` : ""}
         ${r.isNewBuild ? `<div class="caveat" style="margin-top:6px">※ 新築物件: 本査定は「中古市場での再販価値」ベース。新築分譲価格には事業者利益・未入居プレミアムが含まれるのが通常で、乖離の一部はその剥落分と解釈すべき(査定がそのまま「ぼったくり」を意味しない)。</div>` : ""}
         ${r.fairFinal.floorBound ? `<div class="caveat" style="margin-top:6px">※ 本査定は土地換算値が下限として発火している(事例比較より土地値が高い)。土地単価が${r.fairFinal.pptSource === "calibrated" ? "成約較正済み" : "未検証(較正未成立)のため下限には×0.9のペナルティを適用済み"}。</div>` : ""}
       </div>
@@ -327,7 +328,7 @@ export function renderProperty(r, property, marketCal = null) {
 
     <section>
       <h2 class="sub">価格スケール ── 売出価格はどこに立っているか</h2>
-      <div class="scale-wrap">${scaleSvg(s, { fairLo: r.fairFinal.lo, fairMid: r.fairFinal.mid, fairHi: r.fairFinal.hi, floorLo: lo.floorVal, floorHi: hi.floorVal, income: incomeVal })}</div>
+      <div class="scale-wrap">${scaleSvg(s, { fairLo: r.fairFinal.lo, fairMid: r.fairFinal.mid, fairHi: r.fairFinal.hi, floorLo: r.fairFinal.floorEff.lo, floorHi: r.fairFinal.floorEff.hi, income: incomeVal })}</div>
       ${kvTable(r)}
     </section>
 

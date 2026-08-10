@@ -16,7 +16,8 @@ export const CHECK_ACTIONS = {
 function summary(r, property) {
   const L = [];
   L.push(`━━ ${r.id} ── 査定サマリ(基準日 ${r.asOf} / engine ${r.engineVersion})`);
-  L.push(`判定      : 【${r.verdict.mark}】 ${r.verdict.head}`);
+  L.push(`判定      : 【${r.verdict.mark}】 ${r.verdict.head}${r.borderline ? ' ※境界判定(乖離5%未満・レンジで読むこと)' : ''}`);
+  if (r.isNewBuild) L.push(`注意      : 新築物件。本査定は中古市場での再販価値ベース(新築プレミアム剥落込み)`);
   L.push(`主導ルート: ${r.fairFinal.route === "retail" ? "リテール比較法(戸建成約)" : r.fairFinal.route === "home" ? "原価法(家として売る)" : "土地値(更地換算)"}${r.retail ? `(加重併用: リテール${(r.fairFinal.weights.retail * 100).toFixed(0)}%)` : ""}${r.fairFinal.floorBound ? " ※土地換算値が下限発火" : ""}`);
   if (property.source_url) L.push(`掲載元    : ${property.source_url}`);
   L.push(`売出価格  : ${fmtMan(r.state.ask)}`);

@@ -2,7 +2,7 @@
 // 使い方: node site/build.js
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { evaluate } from "../engine/appraise.js";
+import { evaluate, defaultAsOf } from "../engine/appraise.js";
 import { ROOT, loadAreaConfig, loadProperty, listPropertyIds } from "../engine/io.js";
 import { renderIndex } from "./templates/index.js";
 import { renderProperty } from "./templates/property.js";
@@ -26,6 +26,7 @@ if (ids.length === 0) {
 
 // 成約較正(market/deals.csv + benchmarks.yaml から決定的に算出)
 const cal = calibrate();
+const asOfBuild = defaultAsOf();   // UTC日跨ぎで物件間の基準日が混在しないよう1回だけ確定
 // 戸建成約(リテール比較法の事例プール)
 const houseDeals = loadHouseDeals();
 
@@ -36,8 +37,8 @@ for (const id of ids) {
     throw new Error(`ファイル名とid不一致: ${id}.yaml の id は ${property.id}`);
   }
   // 本査定(成約較正+リテール比較を含む)。rRefは較正を外した公示ベースの参考値
-  const r = evaluate(property, areaConfig, { houseDeals, cal });
-  const rRef = evaluate(property, areaConfig, { houseDeals });
+  const r = evaluate(property, areaConfig, { houseDeals, cal, asOf: asOfBuild });
+  const rRef = evaluate(property, areaConfig, { houseDeals, asOf: asOfBuild });
   const chosen = cal.byArea[property.location?.area]?.chosen ?? null;
   const marketCal = { chosen, rRef, dealsN: cal.byArea[property.location?.area]?.deals.n ?? 0 };
   if (chosen || r.retail) {

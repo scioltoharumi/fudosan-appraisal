@@ -9,7 +9,7 @@
 import { retailEstimate, districtOf } from "./retail.js";
 import { growthFactor } from "./timeadjust.js";
 
-export const ENGINE_VERSION = "2.3.0 (第3次監査反映: 近接地区限定・フロアペナルティ一貫化・較正ブレンド・買閾値に諸費用)";
+export const ENGINE_VERSION = "2.4.0 (第4次監査反映: フロア表示統一・要調査判定・非近接減衰・境界表示)";
 
 // ---- 係数ブロック(根拠コメント付き) ----
 export const COEFFS = {
@@ -116,7 +116,7 @@ export function appraise(s, opts = {}) {
   const eff = Math.max(0, s.land - s.setback);                    // 実効宅地
   const tsubo = eff / COEFFS.TSUBO_M2;
   const walkAdj = COEFFS.WALK_ADJ_PER_MIN * (s.walk - COEFFS.WALK_BASE_MIN);
-  const cornerAdj = s.corner ? COEFFS.CORNER_ADJ : 0;
+  const cornerAdj = s.corner && s.roadq === 0 ? COEFFS.CORNER_ADJ : 0;   // 接道に減点がある角地は加算しない(コメント準拠)
   const mstAdj = s.mst ? COEFFS.MULTI_STATION_ADJ : 0;
   let sizeAdj = 0;                                                // クリフなしの線形ランプ
   if (tsubo < COEFFS.SIZE_SMALL_TSUBO) {
@@ -169,7 +169,7 @@ export function verdict(s, mid, lo, hi) {
     return {
       mark: "買", cls: "ok",
       head: "取得総額が即時処分価値(卸値換算・売却諸費用控除後)以下。資産防衛の観点では合格圏",
-      body: "最悪ケースで業者に土地として即売りしても取得総額(価格×1.05)を回収できる水準(中央値 " + fmtMan(mid.floorNet) + " = 土地値×卸値90%×売却諸費用控除−解体費)を下回る構造。悲観シナリオの同値は " + fmtMan(lo.floorNet) + " で、これも意識した指値が理想。" + (mid.alive ? "建物残価はタダで付いてくる。" : "") + "残る論点は接道種別・擁壁・瑕疵の確認のみ。",
+      body: "最悪ケースで業者に土地として即売りしても取得総額(価格×" + (1 + s.fee).toFixed(2) + ")を回収できる水準(中央値 " + fmtMan(mid.floorNet) + " = 土地値×卸値90%×売却諸費用控除−解体費)を下回る構造。悲観シナリオの同値は " + fmtMan(lo.floorNet) + " で、これも意識した指値が理想。" + (mid.alive ? "建物残価はタダで付いてくる。" : "") + "残る論点は接道種別・擁壁・瑕疵の確認のみ。",
     };
   }
   if (s.ask <= hi.fair) {
@@ -302,9 +302,9 @@ export function toState(property, areaConfig, asOf, { calChosen = null } = {}) {
     ppt = area.ppt_man;
   }
 
-  const ph = property.price_history || [];
+  const ph = [...(property.price_history || [])].sort((a, b) => String(a.date) < String(b.date) ? -1 : 1);
   if (ph.length === 0) throw new Error("price_historyが空です");
-  const ask = ph[ph.length - 1].price_man;
+  const ask = ph[ph.length - 1].price_man;   // 日付ソート後の最新値(YAMLの記載順に依存しない)
 
   const road = property.land?.road || {};
   let roadq = ROAD_QUALITY[road.quality];
@@ -401,7 +401,8 @@ export function evaluate(property, areaConfig, { asOf = defaultAsOf(), seed = CO
   // 事例数に応じた重み付き調整に変更。ただし土地換算値(floorVal)は常に実現可能な
   // 売却ルートなので、調整結果がそれを下回る場合は土地値が下限になる。
   // 事例数に応じた重み(段差で100万円級のジャンプが出るため連続関数に: n=5→0.35, n=20以上→0.65)
-  const wR = retail ? Math.min(0.65, Math.max(0.35, 0.35 + 0.02 * (retail.n - 5))) : 0;
+  let wR = retail ? Math.min(0.65, Math.max(0.35, 0.35 + 0.02 * (retail.n - 5))) : 0;
+  if (retail && !retail.districtScoped) wR *= 0.5;   // 近接地区で事例不足→全地区プールは半分の重みに減衰(参考扱い)
   const blend = (costV, retailV) => retail ? wR * retailV + (1 - wR) * costV : costV;
   // 土地換算値の下限保証。ただし土地単価が成約較正で未検証の場合、フロアが事例証拠(リテール)を
   // 無条件に握り潰すのは危険なため、×0.9のペナルティ付きで適用する(第2次監査: jujonakahara2問題)
@@ -420,10 +421,19 @@ export function evaluate(property, areaConfig, { asOf = defaultAsOf(), seed = CO
   const fairFinal = { lo: fairLo, mid: fairMid, hi: fairHi, route: finalRoute, costMid: mid.fair,
     weights: { retail: wR, cost: 1 - wR }, floorBound, floorGuard, floorEff, pptSource, retailApplicable };
 
-  const v = verdict(s,
+  let v = verdict(s,
     { ...mid, fair: fairMid, route: finalRoute, floorVal: floorEff.mid, floorNet: floorEff.netMid },
     { ...lo, fair: fairLo, floorVal: floorEff.lo, floorNet: floorEff.netLo },
     { ...hi, fair: fairHi, floorVal: floorEff.hi });
+  // 商業系(リテール比較適用外)かつ土地単価が未検証overrideの物件は、検証手段が全て外れた
+  // 状態で判定が単価1点に吊られるため「調査」判定に降格する(R4監査: jujonakahara2問題)
+  if (!retailApplicable && pptSource === "override" && v.mark !== "不能") {
+    v = { mark: "調査", cls: "warn",
+      head: "商業系×未検証単価につき判定保留(要調査)",
+      body: "本物件の適正価格は手入力の土地単価(" + Math.round(s.ppt) + "万/坪・未検証)にほぼ全面依存しており、リテール比較も適用外(商業系)のため機械判定を出さない。参考レンジは " + fmtMan(fairLo) + " 〜 " + fmtMan(fairHi) + "。土地成約3件以上の収集または業者査定でこの単価を検証してから判断すること。" };
+  }
+  // 境界判定の開示: 楽観上限と売出の乖離が±5%未満ならスタンプは反転しうる(R4監査)
+  const borderline = Math.abs(s.ask - fairHi) / fairHi < 0.05;
   const premium = s.ask - fairMid;
   // 修繕費は「住まいとして継続利用する」ルートの追加投資。土地ルートでは解体されるため、
   // リテール(事例の成約価格にも同様の繰延修繕が織り込み済み)ルートでは価値中立の別枠として、
@@ -442,7 +452,7 @@ export function evaluate(property, areaConfig, { asOf = defaultAsOf(), seed = CO
     area,
     assumptions,
     mid, lo, hi,
-    retail, fairFinal, isNewBuild,
+    retail, fairFinal, isNewBuild, borderline,
     verdict: v,
     premium, totalCost, instLoss, incomeVal,
     mc, tornado: tor,

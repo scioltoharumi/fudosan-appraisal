@@ -120,7 +120,7 @@ export function renderMarketBasis(r, property, marketCal, areaCal) {
       <div class="logic-step">
         <div class="t"><span class="no">4-2</span>この土地の個別条件を反映(合計 ${pct(m.adj)})</div>
         <p class="why">STEP 2で事例から取り除いたのと同じ係数体系で、今度は本物件の条件(徒歩${s.walk}分・方位・接道・形状・複数路線・広さ)を掛け戻す。</p>
-        <div class="formula">${Math.round(pptNow)}万/坪 × (1${m.adj >= 0 ? "+" : "−"}${Math.abs(m.adj * 100).toFixed(1)}%) × 実効${f2(m.tsubo)}坪 = 土地値 ${fmtMan(m.land2)}</div>
+        <div class="formula">${Math.round(pptNow)}万/坪 × (1${m.adj >= 0 ? "+" : "−"}${Math.abs(m.adj * 100).toFixed(1)}%)${s.lc !== 0 ? ` × (1${pct(s.lc)} 法的制約)` : ""} × 実効${f2(m.tsubo)}坪 = 土地値 ${fmtMan(m.land2)}</div>
       </div>
       <div class="logic-step">
         <div class="t"><span class="no">4-3</span>売却ルートの高い方が適正価格</div>

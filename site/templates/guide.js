@@ -34,8 +34,8 @@ export function renderGuide(r, property, areaCal = null) {
     <div class="logic-body">
       <p>査定サイトの数字が「なぜその値になるのか」を、実在の検討物件 <a href="property/${esc(r.id)}.html">${esc(addr)}(売出 ${man(s.ask)})</a> を題材に、前提知識ゼロから一つずつ解説します。数値はすべて実際の査定エンジンの出力(基準日 ${r.asOf})です。</p>
       <p style="margin-top:8px">結論を先に言うと、この査定は次の一行に集約されます。</p>
-      <div class="formula" style="white-space:normal">中古戸建の適正価格 = 「<b>土地として売った時の値段</b>」と「<b>家として売った時の値段</b>」の高い方</div>
-      <p class="why">築年数が経った木造戸建は建物の市場価値がほぼゼロになるため、実態は「土地を買う」行為に近くなります。だからこの査定は土地値の積み上げから始まります。</p>
+      <div class="formula" style="white-space:normal">中古戸建の適正価格 = 「<b>原価法</b>(土地値+建物残価)」と「<b>リテール比較法</b>(周辺の戸建成約)」の重み付き調整(土地換算値を下限保証)</div>
+      <p class="why">土台になるのは土地値の積み上げ(原価法)で、そこに実際の成約事例による比較(リテール比較法)を重ねて調整します。まずは原価法の中身から順に解説します。</p>
     </div>
   </div>
 
@@ -107,7 +107,7 @@ export function renderGuide(r, property, areaCal = null) {
         <tr class="em"><td>合計</td><td></td><td>${pct(m.adj)}</td></tr>
       </table>
       <div class="formula" style="margin-top:10px">${Math.round(pptNow)}万/坪 × (1 ${m.adj >= 0 ? "+" : "−"} ${Math.abs(m.adj * 100).toFixed(1)}%) = <b>${Math.round(pptFinal)}万円/坪</b>(この土地の坪単価)</div>
-      <div class="formula">${Math.round(pptFinal)}万/坪 × ${f2(tsuboLand)}坪 = <b>土地値 ${man(m.land2)}</b></div>
+      <div class="formula">${Math.round(pptFinal)}万/坪${s.lc !== 0 ? ` × (1${pct(s.lc)} 法的制約)` : ""} × ${f2(tsuboLand)}坪 = <b>土地値 ${man(m.land2)}</b></div>
       <p class="why">旗竿地の−25%が最大の下押し要因です。徒歩・方位・複数路線の補正は数%単位なのに対し、土地の形は一撃で2割以上効きます。</p>
     </div>
   </div>
@@ -182,7 +182,7 @@ export function renderGuide(r, property, areaCal = null) {
     <h2>STEP 9 ── 判定スタンプの意味</h2>
     <div class="logic-body">
       <table class="kv">
-        <tr><td><span class="badge ok" style="width:36px;height:36px;font-size:.8rem">買</span></td><td>売出価格 ≦ 即時処分値(土地値×卸値90%×諸費用控除−解体費)。最悪業者に土地で即売りしても損しにくい構造</td></tr>
+        <tr><td><span class="badge ok" style="width:36px;height:36px;font-size:.8rem">買</span></td><td>取得総額(価格+諸費用) ≦ 即時処分値(土地値×卸値90%×売却諸費用控除−解体費)。最悪業者に土地で即売りしても損しにくい構造</td></tr>
         <tr><td><span class="badge warn" style="width:36px;height:36px;font-size:.8rem">保留</span></td><td>売出価格が適正レンジ内(楽観上限まで)。交渉・指値次第</td></tr>
         <tr><td><span class="badge" style="width:36px;height:36px;font-size:.8rem">見送</span></td><td>売出価格が楽観上限すら超過。説明のつかない上乗せに払うことになる</td></tr>
       </table>
