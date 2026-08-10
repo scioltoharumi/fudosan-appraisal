@@ -17,14 +17,15 @@ test("正規化の不変条件: 正の値・過去の取引は上方修正・悪
 
 test("回帰値: エリア別の成約ベース坪単価(現データ固定)", () => {
   const cal = calibrate();
-  assert.equal(cal.dealCount, 13);
+  // 2026-08監査: 地区帰属が出典と不一致だった赤羽台1行を除外し13→12件
+  assert.equal(cal.dealCount, 12);
   const c = (a) => cal.byArea[a].chosen;
-  assert.equal(c("shimo").ppt, 205);            // 個別3件の正規化中央値
-  assert.equal(c("akabanedai").ppt, 204);       // 個別5件の正規化中央値(信頼度: 中)
-  assert.equal(c("akabanedai").confidence, "中");
-  assert.equal(c("akabane-nishi").ppt, 188);    // 個別2件のみ→地区ベンチマーク(31件)採用
-  assert.match(c("akabane-nishi").basis, /ベンチマーク/);
-  assert.equal(c("nakajujo").ppt, 201);         // 個別1件のみ→地区ベンチマーク(27件)採用
+  assert.equal(c("shimo").ppt, 204);            // 個別3件の正規化中央値(年次別時点修正)
+  assert.equal(c("akabanedai").ppt, 196);       // 個別4件の正規化中央値
+  assert.equal(c("akabanedai").confidence, "低");
+  assert.equal(c("akabane-nishi").ppt, 205);    // 個別2件のみ→地区ベンチマーク(31件)×混合平均補正+10%
+  assert.match(c("akabane-nishi").basis, /ベンチマーク.*混合平均補正/);
+  assert.equal(c("nakajujo").ppt, 220);         // 個別1件のみ→地区ベンチマーク(27件)×補正
   assert.match(c("jujo-nakahara").confidence, /極小標本/);  // 個別2件・直近ベンチマークなし
   // 全エリアの成約ベース単価は現実的なレンジ内
   for (const [area, a] of Object.entries(cal.byArea)) {

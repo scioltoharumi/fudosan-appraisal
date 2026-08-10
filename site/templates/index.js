@@ -50,7 +50,7 @@ function calibrationPanel(results, cal) {
         ${rows.join("")}
       </table>
       </div>
-      <div class="note" style="margin-top:10px">現時点の結論: 成約実勢が採用単価を大きく上回るエリアはなく、<b>「公示ベースだから割安に出る」という系統的バイアスは観測されていない</b>(むしろ赤羽西・赤羽台では実勢の方が低い)。つまり売出価格と査定の乖離は、帳簿方式の癖ではなく売主側の上乗せと解釈するのが整合的。</div>
+      <div class="note" style="margin-top:10px"><b>2026-08監査の結論</b>: この土地成約との突き合わせは「土地としての下値」の検証にはなるが、<b>それだけでは「住める家」を買う実需リテール市場を捕捉できず、売出との乖離を1物件あたり数百〜1,500万円ほど過大表示していた</b>ことが判明した(土地成約の混合平均バイアス+建物価値の過小評価)。現在は戸建成約による<b>リテール比較法</b>を査定本体に組み込み、適正価格は原価法との高い方を採用している。下表の土地ベース較正は下値側の参考として引き続き開示する。</div>
       <details style="margin-top:12px;font-size:.8rem">
         <summary>個別成約の一覧(${dealRows.length}件・2022年以降)と正規化方法</summary>
         <div style="overflow-x:auto;margin-top:8px">
@@ -59,7 +59,7 @@ function calibrationPanel(results, cal) {
           ${dealTable}
         </table>
         </div>
-        <div class="note">正規化 = 成約坪単価 ÷ (1+徒歩補正+形状補正) ÷ 1.10^経過年(2025年1月基準)。方位・接道の質は成約データに属性がないため未補正。出典: 国交省 不動産取引価格情報の再掲(utinokati.com、取得2026-08-09)。地区平均ベンチマークは旗竿地等も含む混合平均のため、標準的な整形地の単価より低めに出る傾向がある。</div>
+        <div class="note">正規化 = 成約坪単価 ÷ (1+徒歩補正+形状補正) ÷ 時点係数(年次別の地価上昇率・2025年1月基準)。方位・接道の質は成約データに属性がないため未補正。出典: 国交省 不動産取引価格情報の再掲(utinokati.com、取得2026-08-09)。地区平均ベンチマークは旗竿地・古家付き・業者仕入れも含む混合平均のため標準整形地より10〜20%低めに出る傾向があり、採用時は+10%の混合平均補正を掛けている(2026-08監査)。</div>
       </details>
     </div>
   </div>`;
@@ -78,8 +78,8 @@ export function renderIndex(results, { asOf, cal = null }) {
       <td><a href="property/${esc(r.id)}.html">${esc(property.location?.address ?? r.id)}</a><div class="note" style="margin-top:0">${esc(r.id)} / 徒歩${esc(property.station?.walk_min)}分 / 取得 ${esc(fmtDate(property.captured_at))}${safeUrl(property.source_url) ? ` / <a href="${esc(property.source_url)}" target="_blank" rel="noopener noreferrer">掲載元↗</a>` : ""}</div></td>
       <td><span class="status">${esc(status)}</span></td>
       <td class="num">${fmtMan(r.state.ask)}<div class="note" style="margin-top:0">${esc(priceDate)}時点${ph.length > 1 ? ` / 改定${ph.length - 1}回` : ""}</div></td>
-      <td class="num">${fmtMan(r.mid.fair)}</td>
-      <td class="num">${calR ? `<a href="property/${esc(r.id)}-market.html">${fmtMan(calR.mid.fair)}</a>` : "—"}</td>
+      <td class="num">${fmtMan(r.fairFinal.mid)}</td>
+      <td class="num">${r.retail ? `<a href="property/${esc(r.id)}-market.html">${fmtMan(r.retail.mid)}</a>` : "—"}</td>
       <td class="num"${r.premium > 0 ? ' style="color:var(--stamp)"' : ""}>${r.premium >= 0 ? "+" : ""}${fmtMan(r.premium)}</td>
       <td class="num">${Math.round(r.state.ask / r.mid.tsubo).toLocaleString("en-US")}万/坪</td>
       <td class="num">${r.assumptions.length}件</td>
@@ -89,14 +89,14 @@ export function renderIndex(results, { asOf, cal = null }) {
   const body = `
   <div class="panel">
     <h2>物件一覧(乖離額の小さい順 = 割安順)</h2>
-    <div class="note" style="margin:0 0 10px">はじめての方へ: 査定値の出所(公示地価・坪単価・建物22年ルール・判定スタンプの意味)は <a href="guide.html">査定の読み方 ── 前提知識ガイド</a> で実物件を題材に解説しています。</div>
+    <div class="note" style="margin:0 0 10px">はじめての方へ: 査定値の出所(公示地価・坪単価・建物残価・リテール比較法・判定スタンプの意味)は <a href="guide.html">査定の読み方 ── 前提知識ガイド</a> で実物件を題材に解説しています。</div>
     <div style="overflow-x:auto">
     <table class="list">
-      <tr><th>判定</th><th>物件</th><th>状態</th><th>売出価格</th><th>適正中央値</th><th>成約ベース中央値</th><th>乖離</th><th>実質坪単価</th><th>仮定</th></tr>
+      <tr><th>判定</th><th>物件</th><th>状態</th><th>売出価格</th><th>適正中央値</th><th>リテール比較中央値</th><th>乖離</th><th>実質坪単価</th><th>仮定</th></tr>
       ${rows}
     </table>
     </div>
-    <div class="note">乖離 = 売出価格 − 査定中央値(公示ベース)。成約ベース中央値 = 周辺の実際の成約単価で再計算した適正中央値(下の較正状態パネル参照)。判定の根拠は各物件の詳細ページ「算出根拠の全文開示」を参照。<br>
+    <div class="note">乖離 = 売出価格 − 適正中央値(原価法とリテール比較法の高い方)。リテール比較中央値 = 周辺の戸建成約(国交省データ)から時点・徒歩・築年差を補正した実需市場の水準(クリックで根拠ページへ)。判定の根拠は各物件の詳細ページ「算出根拠の全文開示」を参照。<br>
     売出価格の下の日付は媒体で当該価格を確認した時点(情報提供日)、「取得」は台帳への登録日。査定値は全物件とも査定基準日 ${asOf} 時点で再計算している。</div>
     <div class="meta-line">査定基準日 ${asOf} / 掲載 ${results.length}件 / 本サイトは個人の検討用簡易査定であり、不動産鑑定評価・投資助言ではありません。</div>
   </div>

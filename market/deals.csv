@@ -5,14 +5,13 @@
 date,area,district,price_man,land_tsubo,ppt_man,walk_min,shape,zoning,source_url
 2025-08-15,akabane-nishi,赤羽西,2500,21.2,118,10,長方形,1中住専,https://utinokati.com/details/土地相場・不動産相場/エリア/東京都-北区-赤羽西/
 2024-11-15,akabane-nishi,赤羽西,2000,21.2,94.5,10,ほぼ台形,1中住専,https://utinokati.com/details/土地相場・不動産相場/エリア/東京都-北区-赤羽西/
-2025-11-15,shimo,志茂,4700,28.7,164,6,不明,1中住専,https://utinokati.com/details/土地相場・不動産相場/エリア/東京都-北区-志茂/
-2024-05-15,shimo,志茂,5800,28.7,202,6,不明,1種住居,https://utinokati.com/details/土地相場・不動産相場/エリア/東京都-北区-志茂/
-2022-05-15,shimo,志茂,5900,30.3,195,6,不明,1種住居,https://utinokati.com/details/土地相場・不動産相場/エリア/東京都-北区-志茂/
+2025-11-15,shimo,志茂,4700,28.7,164,6,ほぼ長方形,1中住専,https://utinokati.com/details/土地相場・不動産相場/エリア/東京都-北区-志茂/
+2024-05-15,shimo,志茂,5800,28.7,202,6,ほぼ長方形,1種住居,https://utinokati.com/details/土地相場・不動産相場/エリア/東京都-北区-志茂/
+2022-05-15,shimo,志茂,5900,30.3,195,6,ほぼ長方形,1種住居,https://utinokati.com/details/土地相場・不動産相場/エリア/東京都-北区-志茂/
 2023-08-15,jujo-nakahara,十条仲原,6900,25.7,268,8,ほぼ正方形,1種住居,https://utinokati.com/details/土地相場・不動産相場/エリア/東京都-北区-十条仲原/
 2024-11-15,jujo-nakahara,十条仲原,5300,25.7,206,8,ほぼ台形,近隣商業,https://utinokati.com/details/土地相場・不動産相場/エリア/東京都-北区-十条仲原/
 2023-11-15,nakajujo,中十条,4300,22.7,190,5,ほぼ台形,1種住居,https://utinokati.com/details/土地相場・不動産相場/エリア/東京都-北区-中十条/
 2023-11-15,akabanedai,赤羽台,3900,22.7,172,9,台形,1中住専,https://utinokati.com/details/土地相場・不動産相場/エリア/東京都-北区-赤羽台/
-2025-02-15,akabanedai,赤羽台,3400,25.7,132,9,長方形,1中住専,https://utinokati.com/details/土地相場・不動産相場/エリア/東京都-北区-赤羽/
 2023-02-15,akabanedai,西が丘,5400,33.3,162,14,ほぼ長方形,2低住専,https://utinokati.com/details/土地相場・不動産相場/エリア/東京都-北区-西が丘/
 2022-11-15,akabanedai,西が丘,5200,31.8,164,14,ほぼ長方形,1中住専,https://utinokati.com/details/土地相場・不動産相場/エリア/東京都-北区-西が丘/
 2024-05-15,akabanedai,西が丘,6600,30.3,218,15,ほぼ長方形,2低住専,https://utinokati.com/details/土地相場・不動産相場/エリア/東京都-北区-西が丘/

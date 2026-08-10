@@ -25,7 +25,7 @@ export function renderGuide(r, property, areaCal = null) {
     ["接道の質", "約5.4m公道", pct(s.roadq), "幅4m以上の公道に接していれば減点なし。4m未満は−5%(セットバック義務)、接道に疑義があれば−10%"],
     ["土地の形", "旗竿地", pct(s.shape), "整形地±0、やや不整形−5%、旗竿地は−25%(下の解説参照)"],
     ["複数駅・複数路線", "利用可", pct(COEFFS.MULTI_STATION_ADJ), "東十条・十条・赤羽の3駅が使え、再販時の訴求力が高いので+2%"],
-    ["土地の広さ補正", `${f2(tsuboLand)}坪`, pct(m.sizeAdj), "20坪未満は狭小(1坪不足ごとに−0.5%)、45坪超は総額が張って買い手が減る(−0.2%/坪)。この物件は範囲内なので補正なし"],
+    ["土地の広さ補正", `${f2(tsuboLand)}坪`, pct(m.sizeAdj), "13坪未満は狭小(1坪不足ごとに−0.5%)、45坪超は総額が張って買い手が減る(−0.2%/坪)。13〜20坪は23区の実勢では需要が厚く単価が落ちないため、2026-08監査でペナルティを撤廃。この物件は範囲内なので補正なし"],
   ];
 
   const body = `
@@ -113,18 +113,18 @@ export function renderGuide(r, property, areaCal = null) {
   </div>
 
   <div class="panel">
-    <h2>STEP 5 ── 建物の値段: 「木造22年でゼロ」ルール</h2>
+    <h2>STEP 5 ── 建物の値段: 「木造${COEFFS.BUILDING_LIFE_Y}年逓減」ルール</h2>
     <div class="logic-body">
       <div class="logic-step">
-        <div class="t"><span class="no">5-1</span>なぜ22年か</div>
-        <p class="why">税法上の木造住宅の耐用年数が22年で、金融機関の担保評価や中古市場の値付け慣行もこれに引きずられています。実際に住めるかどうかとは別の「市場がいくら払うか」の話です。築22年を超えた木造戸建は、建物にほぼ値段が付きません。</p>
+        <div class="t"><span class="no">5-1</span>なぜ${COEFFS.BUILDING_LIFE_Y}年か</div>
+        <p class="why">税法上の木造住宅の耐用年数は22年で、担保評価の旧慣行はこれに引きずられてきました。ただし2026-08の監査で、北区の戸建成約の実勢は「維持管理された建物なら22年でゼロにはならない」ことが確認されたため、本エンジンは${COEFFS.BUILDING_LIFE_Y}年逓減(維持管理前提)を採用しています。維持履歴が不明な物件は、その分を繰延修繕の控除(STEP 6)で補います。</p>
       </div>
       <div class="logic-step">
         <div class="t"><span class="no">5-2</span>この物件の建物残価</div>
-        <p class="why">築年月 ${fmtDate(property.building?.built)} → 築${f1(s.age)}年。残存率は 1 − ${f1(s.age)}/22 = ${(residRate * 100).toFixed(0)}%。新築時の建築費相当(再調達単価)を70万円/坪と置き、延床${f2(tsuboFloor)}坪に掛けます。</p>
-        <div class="formula">残価 = ${(residRate * 100).toFixed(0)}% × 70万/坪 × ${f2(tsuboFloor)}坪 = <b>${man(m.resid)}</b></div>
+        <p class="why">築年月 ${fmtDate(property.building?.built)} → 築${f1(s.age)}年。残存率は 1 − ${f1(s.age)}/${COEFFS.BUILDING_LIFE_Y} = ${(residRate * 100).toFixed(0)}%。新築時の建築費相当(再調達単価)を${s.rebuild}万円/坪(2026年の実勢建築費の保守側)と置き、延床${f2(tsuboFloor)}坪に掛けます。</p>
+        <div class="formula">残価 = ${(residRate * 100).toFixed(0)}% × ${s.rebuild}万/坪 × ${f2(tsuboFloor)}坪 = <b>${man(m.resid)}</b></div>
         <div style="margin-top:10px;max-width:520px">
-          <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--ink-soft)"><span>新築(価値100%)</span><span>築22年(価値0%)</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--ink-soft)"><span>新築(価値100%)</span><span>築${COEFFS.BUILDING_LIFE_Y}年(価値0%)</span></div>
           <div style="height:18px;border:1px solid var(--grid);background:#F4F6F8;position:relative">
             <div style="position:absolute;top:0;bottom:0;left:0;width:${agePct.toFixed(0)}%;background:var(--band-soft)"></div>
             <div style="position:absolute;top:-4px;bottom:-4px;left:${agePct.toFixed(0)}%;width:2px;background:var(--stamp)"></div>
@@ -155,11 +155,11 @@ export function renderGuide(r, property, areaCal = null) {
       <table class="kv">
         <tr><td><b>ルートA: 土地として売る</b><div class="note" style="margin-top:2px">土地値 − 解体費</div></td>
             <td>${man(m.land2)} − ${man(s.demo)} =</td><td><b>${man(m.asLand)}</b></td></tr>
-        <tr><td><b>ルートB: 家として売る</b><div class="note" style="margin-top:2px">(土地値 + 建物残価) × 建物市場性補正(木造3階狭小 −5%) − 繰延修繕</div></td>
-            <td>(${man(m.land2)} + ${man(m.resid)}) × 0.95 − ${man(s.repair)} =</td><td><b>${man(m.asHome)}</b></td></tr>
+        <tr><td><b>ルートB: 家として売る</b><div class="note" style="margin-top:2px">土地値 + 建物残価×(1−5% 木造3階狭小の市場性) − 繰延修繕</div></td>
+            <td>${man(m.land2)} + ${man(m.resid)}×0.95 − ${man(s.repair)} =</td><td><b>${man(m.asHome)}</b></td></tr>
         <tr class="em"><td>適正価格(高い方)${m.route === "land" ? " = ルートA" : " = ルートB"}</td><td></td><td>${man(m.fair)}</td></tr>
       </table>
-      <p class="why" style="margin-top:8px">この物件は${m.route === "land" ? "ルートA(土地)が上回りました。つまり市場価値の実態は「古家付き土地」です。" : "ルートB(家)が上回りました。建物にまだ market value が残っています。"}また、ルートAの値は<b>下値フロア</b>(最悪でも土地としてこの値では売れるという下限)としても使います: <b>${man(m.floorVal)}</b>。</p>
+      <p class="why" style="margin-top:8px">この物件は${m.route === "land" ? "ルートA(土地)が上回りました。つまり市場価値の実態は「古家付き土地」です。" : "ルートB(家)が上回りました。建物にまだ market value が残っています。"}また、ルートAの値は<b>下値フロア</b>(最悪でも土地としてこの値では売れるという下限)としても使います: <b>${man(m.floorVal)}</b>。さらに2026-08監査で、この2ルート(原価法)だけでは「住める家」を買う実需市場の支払額を捉えられないことが分かったため、周辺の<b>戸建成約から直接比較する第3のルート(リテール比較法)</b>を追加し、最終的な適正価格は全ルートの最高値を採用しています${r.retail ? `(この物件は類似成約${r.retail.n}件からリテール値 ${man(r.retail.mid)} が得られ、${r.fairFinal.route === "retail" ? "これが採用されています" : "原価法側が上回っています"})` : ""}。</p>
     </div>
   </div>
 
@@ -169,7 +169,7 @@ export function renderGuide(r, property, areaCal = null) {
       <div class="logic-step">
         <div class="t"><span class="no">8-1</span>±10%の3点レンジ</div>
         <p class="why">基準坪単価そのものに±10%の不確かさがあると見て、悲観(−10%)・中央・楽観(+10%)の3通りで計算し直します。</p>
-        <div class="formula">適正レンジ: ${man(r.lo.fair)}(悲観) 〜 ${man(m.fair)}(中央) 〜 ${man(r.hi.fair)}(楽観)</div>
+        <div class="formula">適正レンジ(全ルート統合): ${man(r.fairFinal.lo)}(悲観) 〜 ${man(r.fairFinal.mid)}(中央) 〜 ${man(r.fairFinal.hi)}(楽観)</div>
       </div>
       <div class="logic-step">
         <div class="t"><span class="no">8-2</span>モンテカルロ・シミュレーションとは</div>
@@ -186,7 +186,7 @@ export function renderGuide(r, property, areaCal = null) {
         <tr><td><span class="badge warn" style="width:36px;height:36px;font-size:.8rem">保留</span></td><td>売出価格が適正レンジ内(楽観上限まで)。交渉・指値次第</td></tr>
         <tr><td><span class="badge" style="width:36px;height:36px;font-size:.8rem">見送</span></td><td>売出価格が楽観上限すら超過。説明のつかない上乗せに払うことになる</td></tr>
       </table>
-      <div class="formula" style="margin-top:10px">この物件: 売出 ${man(s.ask)} > 楽観上限 ${man(r.hi.fair)} → 判定【${r.verdict.mark}】(乖離 ${r.premium >= 0 ? "+" : ""}${man(r.premium)})</div>
+      <div class="formula" style="margin-top:10px">この物件: 売出 ${man(s.ask)} vs 楽観上限 ${man(r.fairFinal.hi)} → 判定【${r.verdict.mark}】(乖離 ${r.premium >= 0 ? "+" : ""}${man(r.premium)})</div>
       <p class="why">なお売出価格と査定が乖離していること自体は珍しくありません。売主の希望価格・住宅ローン前提の実需価格・リフォーム済プレミアムなどが上乗せされるためです。この査定は「資産防衛の観点でいくらまでなら払えるか」の物差しです。</p>
     </div>
   </div>

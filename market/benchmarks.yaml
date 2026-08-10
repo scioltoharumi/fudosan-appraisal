@@ -8,7 +8,9 @@ benchmarks:
      source_url: "https://utinokati.com/details/土地相場・不動産相場/エリア/東京都-北区-赤羽西/"}
   - {area: akabanedai, district: 赤羽台, period: "2025年", window_mid: 2025-07-01, n: 5, avg_ppt: 182.4, median_ppt: 145, recent: true, caveat: "小標本(5件)",
      source_url: "https://utinokati.com/details/土地相場・不動産相場/エリア/東京都-北区-赤羽台/"}
-  - {area: akabanedai, district: 西が丘, period: "2005-09〜2025-09(全期間)", n: 71, avg_ppt: 228.4, median_ppt: 136.7, recent: false, caveat: "全期間平均のため時点補正不能・参考",
+  # 2026-08監査: 当初「全期間平均228.4」としていたが、228.4は出典ページの「2025年の相場推計」であり
+  # 71件の全期間平均は約140万/坪。ラベル取り違えを訂正(recent:falseのため較正値には未使用)
+  - {area: akabanedai, district: 西が丘, period: "2005-09〜2025-09(全期間)", n: 71, avg_ppt: 140, median_ppt: 136.7, recent: false, caveat: "全期間平均のため時点補正不能・参考(2025年単年の相場推計は228.4万/坪)",
      source_url: "https://utinokati.com/details/土地相場・不動産相場/エリア/東京都-北区-西が丘/"}
   - {area: shimo, district: 志茂, period: "2022-09〜2026-03", window_mid: 2024-06-15, n: 37, avg_ppt: 215, median_ppt: 201, recent: true,
      source_url: "https://utinokati.com/details/土地相場・不動産相場/エリア/東京都-北区-志茂/"}

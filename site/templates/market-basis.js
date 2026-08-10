@@ -12,10 +12,10 @@ export function renderMarketBasis(r, property, marketCal, areaCal) {
   const m = calR.mid;
   const addr = property.location?.address ?? r.id;
   const area = property.location?.area;
-  const premium = s.ask - m.fair;
-  const premiumRate = s.ask / m.fair - 1;
+  const premium = s.ask - calR.fairFinal.mid;
+  const premiumRate = s.ask / calR.fairFinal.mid - 1;
   const pptNow = m.pptAdj;
-  const barMax = Math.max(s.ask, m.fair) * 1.05;
+  const barMax = Math.max(s.ask, calR.fairFinal.mid) * 1.05;
   const bar = (v, color) => `<div style="height:22px;background:${color};width:${((v / barMax) * 100).toFixed(1)}%"></div>`;
 
   // STEP 1-2: 個別成約の正規化テーブル
@@ -49,12 +49,12 @@ export function renderMarketBasis(r, property, marketCal, areaCal) {
 
     <table class="kv" style="margin-top:14px">
       <tr><td>売出価格</td><td>${fmtMan(s.ask)}</td></tr>
-      <tr class="em"><td>成約事例ベースの適正中央値</td><td>${fmtMan(m.fair)}</td></tr>
+      <tr class="em"><td>成約事例ベースの適正中央値(土地較正×リテール比較の統合)</td><td>${fmtMan(calR.fairFinal.mid)}</td></tr>
       <tr class="loss"><td>乖離(売出 − 成約ベース中央値)</td><td>${premium >= 0 ? "+" : ""}${fmtMan(premium)}(${pct(premiumRate)})</td></tr>
     </table>
     <div style="margin-top:10px;max-width:560px">
       <div style="display:flex;align-items:center;gap:8px;font-size:.72rem"><span style="width:110px;text-align:right;color:var(--ink-soft)">売出価格</span><div style="flex:1">${bar(s.ask, "var(--stamp)")}</div><span class="num" style="font-family:var(--mono)">${fmtMan(s.ask)}</span></div>
-      <div style="display:flex;align-items:center;gap:8px;font-size:.72rem;margin-top:4px"><span style="width:110px;text-align:right;color:var(--ink-soft)">成約ベース中央値</span><div style="flex:1">${bar(m.fair, "var(--band)")}</div><span class="num" style="font-family:var(--mono)">${fmtMan(m.fair)}</span></div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:.72rem;margin-top:4px"><span style="width:110px;text-align:right;color:var(--ink-soft)">成約ベース中央値</span><div style="flex:1">${bar(calR.fairFinal.mid, "var(--band)")}</div><span class="num" style="font-family:var(--mono)">${fmtMan(calR.fairFinal.mid)}</span></div>
       <div class="note">赤と青の差 = 周辺の実取引からは説明できない上乗せ幅。</div>
     </div>
   </div>
@@ -88,7 +88,7 @@ export function renderMarketBasis(r, property, marketCal, areaCal) {
       </div>
       <div class="logic-step">
         <div class="t"><span class="no">2-2</span>時点をそろえる(時点係数)</div>
-        <p class="why">2022年の成約は地価が今より安い時代の値段。年率+10%で2025年1月基準に引き直す(上の表の「時点係数」で割る)。古い取引ほど大きく上方修正される。</p>
+        <p class="why">2022年の成約は地価が今より安い時代の値段。年次別の地価上昇率(2022年+4%〜2026年+12%、公示・基準地価の実績ベース)で2025年1月基準に引き直す(上の表の「時点係数」で割る)。古い取引ほど大きく上方修正される。</p>
       </div>
       <div class="logic-step">
         <div class="t"><span class="no">2-3</span>土地の条件をそろえる(徒歩・形状補正)</div>
@@ -131,14 +131,23 @@ export function renderMarketBasis(r, property, marketCal, areaCal) {
   </div>
 
   <div class="panel">
+    <h2>STEP 4.5 ── 戸建成約比較(リテール比較法)の併算</h2>
+    <div class="logic-body">
+      <p class="why">ここまでは土地の成約から積み上げた値。2026-08監査で「住める家」を買う実需市場はこの積算を上回ることが確認されたため、条件の近い戸建成約から直接比較した値を併算し、高い方を採用する。</p>
+      ${calR.retail ? `<div class="formula">リテール比較(類似戸建成約 ${calR.retail.n}件・時点/徒歩/築年差補正済): ${fmtMan(calR.retail.lo)} 〜 <b>${fmtMan(calR.retail.mid)}</b> 〜 ${fmtMan(calR.retail.hi)}</div>
+      <p class="why">事例の一覧と選定条件は<a href="${esc(r.id)}.html">物件ページの「戸建成約比較」セクション</a>を参照。</p>` : `<div class="note">類似の戸建成約が不足のため、この物件では土地較正ベースのみ。</div>`}
+    </div>
+  </div>
+
+  <div class="panel">
     <h2>STEP 5 ── 結論: 売出価格はどこまで事例で説明できるか</h2>
     <div class="logic-body">
       <table class="kv">
-        <tr><td>成約事例で説明できる範囲(楽観上限)</td><td>${fmtMan(calR.hi.fair)}</td></tr>
-        <tr class="loss"><td>売出価格のうち事例で説明できない部分</td><td>${s.ask > calR.hi.fair ? "+" + fmtMan(s.ask - calR.hi.fair) : "なし(レンジ内)"}</td></tr>
+        <tr><td>成約事例で説明できる範囲(楽観上限・土地較正×リテールの高い方)</td><td>${fmtMan(calR.fairFinal.hi)}</td></tr>
+        <tr class="loss"><td>売出価格のうち事例で説明できない部分</td><td>${s.ask > calR.fairFinal.hi ? "+" + fmtMan(s.ask - calR.fairFinal.hi) : "なし(レンジ内)"}</td></tr>
         <tr><td>成約ベースでの判定</td><td>【${calR.verdict.mark}】${esc(calR.verdict.head)}</td></tr>
       </table>
-      <p class="why" style="margin-top:8px">${s.ask > calR.hi.fair
+      <p class="why" style="margin-top:8px">${s.ask > calR.fairFinal.hi
         ? "周辺の実取引を楽観側(坪単価+10%)に振っても売出価格には届かない。差額は「土地の実勢」ではなく、売主の期待・リテール商品としての上乗せ・仲介の値付け戦略のいずれかであり、交渉ではこの内訳の説明を売主側に求めるのが筋になる。"
         : "売出価格は成約事例から説明可能なレンジ内にあり、実勢に沿った値付けと評価できる。"}</p>
       <div class="caveat">※ 限界: ①収載事例は土地(更地・古家付き)取引であり、「住める家」としてのリテール価格はこの上に乗りうる ②売出価格は売主の希望であり成約価格ではない(価格改定履歴で市場の反応を追跡) ③標本が少なく信頼度は${esc(chosen.confidence)} ④方位・接道等は未補正。</div>

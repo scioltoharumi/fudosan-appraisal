@@ -28,7 +28,9 @@ test("回帰値: 本物件(engineレベル)が受入基準と一致する", () =
   assert.equal(Math.round(hi.fair), 6562, "楽観上限");
   assert.equal(verdict(DEMO, mid, lo, hi).mark, "保留");
   assert.equal(mid.route, "land");
-  assert.equal(mid.resid, 0, "築27年は建物残価ゼロ");
+  // 2026-08監査: 建物逓減を22年→30年に更新したため築27年でも残価は僅かに残る。
+  // ただし土地ルート優位のため fair は従来どおり(受入基準値は不変)
+  assert.ok(mid.resid > 0 && mid.resid < 200, "築27年の残価は僅少: " + mid.resid);
 });
 
 test("回帰値: YAML→evaluate経由でも受入基準と一致する", () => {
@@ -112,7 +114,7 @@ test("判定境界: ask<=floorで「買」、fair<0で「不能」、上限超�
   const pass = { ...DEMO, ask: Math.ceil(hi.fair) + 1 };
   assert.equal(verdict(pass, mid, lo, hi).mark, "見送");
   // 解体費が土地値を上回る極端条件 → 査定不能
-  const dead = { ...DEMO, land: 20, setback: 10, demo: 3000 };
+  const dead = { ...DEMO, land: 20, setback: 10, demo: 3000, age: 45 };  // 築45年=残価ゼロで土地ルートのみ
   const r2 = appraiseRange(dead, ELAPSED);
   assert.ok(r2.mid.fair < 0);
   assert.equal(verdict(dead, r2.mid, r2.lo, r2.hi).mark, "不能");

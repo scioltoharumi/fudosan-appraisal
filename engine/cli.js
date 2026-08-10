@@ -2,6 +2,7 @@
 // 物件YAML+area-configを読み、査定サマリを表示する。--jsonで結果JSON全体をstdoutへ。
 import { evaluate, fmtMan, pct } from "./appraise.js";
 import { loadAreaConfig, loadProperty, listPropertyIds } from "./io.js";
+import { loadHouseDeals } from "./retail.js";
 
 // チェックリスト未検証項目 → 次に取るべき調査アクション(§7)
 export const CHECK_ACTIONS = {
@@ -15,10 +16,13 @@ function summary(r, property) {
   const L = [];
   L.push(`━━ ${r.id} ── 査定サマリ(基準日 ${r.asOf} / engine ${r.engineVersion})`);
   L.push(`判定      : 【${r.verdict.mark}】 ${r.verdict.head}`);
+  L.push(`採用ルート: ${r.fairFinal.route === "retail" ? "リテール比較法(戸建成約)" : r.fairFinal.route === "home" ? "原価法(家として売る)" : "土地値(更地換算)"}`);
   if (property.source_url) L.push(`掲載元    : ${property.source_url}`);
   L.push(`売出価格  : ${fmtMan(r.state.ask)}`);
   L.push(`下値フロア: ${fmtMan(r.mid.floorVal)}(悲観 ${fmtMan(r.lo.floorVal)})`);
-  L.push(`適正レンジ: ${fmtMan(r.lo.fair)} 〜 ${fmtMan(r.mid.fair)} 〜 ${fmtMan(r.hi.fair)}`);
+  L.push(`適正レンジ: ${fmtMan(r.fairFinal.lo)} 〜 ${fmtMan(r.fairFinal.mid)} 〜 ${fmtMan(r.fairFinal.hi)}`);
+  if (r.retail) L.push(`リテール比較: ${fmtMan(r.retail.lo)} 〜 ${fmtMan(r.retail.mid)} 〜 ${fmtMan(r.retail.hi)}(類似成約${r.retail.n}件・四分位) / 原価法中央値 ${fmtMan(r.mid.fair)}`);
+  else L.push(`リテール比較: 類似成約が不足のため原価法のみ`);
   L.push(`乖離      : ${r.premium >= 0 ? "+" : ""}${fmtMan(r.premium)}(売出 − 査定中央値)`);
   L.push(`即時含み損: ${fmtMan(r.instLoss)}(総取得 ${fmtMan(r.totalCost)} − 査定中央値)`);
   L.push(`MC        : P10 ${fmtMan(r.mc.p10)} / P50 ${fmtMan(r.mc.p50)} / P90 ${fmtMan(r.mc.p90)}・売出は${r.mc.askPercentile.toFixed(0)}パーセンタイル(seed=${r.mc.seed})`);
@@ -44,7 +48,7 @@ if (!id) {
   process.exit(1);
 }
 const property = loadProperty(id);
-const result = evaluate(property, loadAreaConfig());
+const result = evaluate(property, loadAreaConfig(), { houseDeals: loadHouseDeals() });
 if (flags.includes("--json")) {
   console.log(JSON.stringify(result, null, 2));
 } else {

@@ -6,7 +6,9 @@
 //   - 評価基準日(asOf)と乱数seedを引数注入可能にした。既定は実行日のUTC0時＝同日内は再現可能。
 //   - それ以外の数式・係数・文言分岐は v1.2 と同一。
 
-export const ENGINE_VERSION = "1.0.0 (simulator v1.2 移植)";
+import { retailEstimate } from "./retail.js";
+
+export const ENGINE_VERSION = "2.0.0 (2026-08監査反映: bm適用範囲修正・建物モデル更新・リテール比較法追加)";
 
 // ---- 係数ブロック(根拠コメント付き) ----
 export const COEFFS = {
@@ -18,16 +20,18 @@ export const COEFFS = {
   WALK_BASE_MIN: 10,
   CORNER_ADJ: 0.03,                     // 角地+3%。両路とも建築基準法上の道路の場合のみ
   MULTI_STATION_ADJ: 0.02,              // 複数駅・複数路線は再販時の訴求力で+2%
-  SIZE_SMALL_TSUBO: 20,                 // 20坪未満: 狭小地。1坪不足あたり-0.5%(最大-5%)
+  SIZE_SMALL_TSUBO: 13,                 // 13坪未満: 狭小地。1坪不足あたり-0.5%(最大-5%)
+                                        // (2026-08監査: 13〜20坪は23区実勢で需要が厚く単価は落ちないためペナルティ撤廃)
   SIZE_SMALL_RATE: 0.005,
   SIZE_SMALL_CAP: 0.05,
   SIZE_LARGE_TSUBO: 45,                 // 45坪超: 総額が張り需要層が薄い。1坪超過あたり-0.2%(最大-8%)
   SIZE_LARGE_RATE: 0.002,
   SIZE_LARGE_CAP: 0.08,
-  BUILDING_LIFE_Y: 22,                  // 木造建物の市場評価は約22年でゼロ(税法耐用年数と市場慣行の近似)
+  BUILDING_LIFE_Y: 30,                  // 木造建物の市場評価の逓減年数。維持管理された建物の実勢(2026-08監査で22→30)。
+                                        // 維持不明の物件は繰延修繕控除(DEFAULT_REPAIR_MAN)が「維持されていた前提」との差分を埋める
   NO_REBUILD_ADJ: -0.30,                // 再建築不可等の重大制約(ローン不可・買い手が現金投資家に限定)
   PPT_UNCERTAINTY: 0.10,                // 基準坪単価の±10%でlo/hiレンジを構成
-  DEFAULT_REBUILD_PPT: 70,              // 再調達単価(万円/坪)
+  DEFAULT_REBUILD_PPT: 95,              // 再調達単価(万円/坪)。2026年の木造実勢建築費90〜110万の保守側(監査で70→95)
   DEFAULT_DEMOLITION_MAN: 150,          // 解体費既定(万円)。木造2階4〜5万/延床坪、3階・準防火・道路狭小5〜8万
   DEFAULT_REPAIR_MAN: 800,              // 大規模修繕「未実施の可能性大」の想定(万円)
   DEFAULT_FEE_RATE: 0.05,               // 諸費用率
@@ -127,7 +131,8 @@ export function appraise(s, opts = {}) {
   const demo = Math.max(0, s.demo * (1 + (noise.demo || 0)));
   const rep = Math.max(0, s.repair * (1 + (noise.rep || 0)));
   const asLand = land2 - demo;                                    // 土地として売る価値
-  const asHome = (land2 + resid) * (1 + s.bm) - rep;              // 住まいとして売る価値
+  // 建物市場性補正(bm)は建物残価のみに適用(2026-08監査: 土地込みに掛かっていたバグを修正)
+  const asHome = land2 + resid * (1 + s.bm) - rep;                // 住まいとして売る価値
   const fair = alive ? Math.max(asHome, asLand) : asLand;         // 高い方の売却ルートが市場価格
   const floorVal = asLand;                                        // フロア=確実な下値(常に土地−解体費)
   const route = (!alive || asLand >= asHome) ? "land" : "home";
@@ -164,7 +169,7 @@ export function verdict(s, mid, lo, hi) {
     return {
       mark: "保留", cls: "warn",
       head: "査定レンジ内。交渉次第",
-      body: "下値フロア(中央値 " + fmtMan(mid.floorVal) + "・悲観 " + fmtMan(lo.floorVal) + ")との差 " + fmtMan(s.ask - mid.floorVal) + " を" + (mid.route === "home" ? "建物の残り価値" : "土地の上振れ期待") + "に払う構図。査定中央値との乖離は " + (premium >= 0 ? "+" : "") + fmtMan(premium) + "。指値の錨は「査定中央値 " + fmtMan(mid.fair) + "」。",
+      body: "下値フロア(中央値 " + fmtMan(mid.floorVal) + "・悲観 " + fmtMan(lo.floorVal) + ")との差 " + fmtMan(s.ask - mid.floorVal) + " を" + (mid.route === "home" ? "建物の残り価値" : mid.route === "retail" ? "周辺の戸建成約水準(リテール市場)" : "土地の上振れ期待") + "に払う構図。査定中央値との乖離は " + (premium >= 0 ? "+" : "") + fmtMan(premium) + "。指値の錨は「査定中央値 " + fmtMan(mid.fair) + "」。",
     };
   }
   return {
@@ -344,16 +349,31 @@ export function toState(property, areaConfig, asOf) {
 }
 
 // ---- 総合評価(F2-4: 判定/フロア/適正lo-mid-hi/乖離/含み損/補正内訳/採用した仮定一覧) ----
-export function evaluate(property, areaConfig, { asOf = defaultAsOf(), seed = COEFFS.MC_SEED } = {}) {
+// houseDeals(retail.jsのloadHouseDeals()の戻り値)を渡すと、原価法(土地+建物)に加えて
+// リテール比較法(中古戸建成約の事例比較)を併算し、高い方の売却ルートを適正価格に採用する。
+export function evaluate(property, areaConfig, { asOf = defaultAsOf(), seed = COEFFS.MC_SEED, houseDeals = null } = {}) {
   const elapsed = elapsedYears(asOf);
   const { state: s, assumptions, area } = toState(property, areaConfig, asOf);
   const { mid, lo, hi } = appraiseRange(s, elapsed);
-  const v = verdict(s, mid, lo, hi);
-  const premium = s.ask - mid.fair;
-  const totalCost = s.ask * (1 + s.fee) + s.repair;
-  const instLoss = totalCost - mid.fair;               // 即時含み損
+
+  // リテール比較法(2026-08監査対応)。事例不足(MIN_COMPS未満)ならnull
+  const retail = houseDeals ? retailEstimate(s, asOf, houseDeals) : null;
+  const fairLo = Math.max(lo.fair, retail?.lo ?? -Infinity);
+  const fairMid = Math.max(mid.fair, retail?.mid ?? -Infinity);
+  const fairHi = Math.max(hi.fair, retail?.hi ?? -Infinity);
+  const finalRoute = retail && retail.mid > mid.fair ? "retail" : mid.route;
+  const fairFinal = { lo: fairLo, mid: fairMid, hi: fairHi, route: finalRoute, costMid: mid.fair };
+
+  const v = verdict(s,
+    { ...mid, fair: fairMid, route: finalRoute },
+    { ...lo, fair: fairLo },
+    { ...hi, fair: fairHi });
+  const premium = s.ask - fairMid;
+  // 土地ルートでは建物は解体されるため修繕費は取得コストに含めない(監査: instLossの不整合修正)
+  const totalCost = s.ask * (1 + s.fee) + (finalRoute === "land" ? 0 : s.repair);
+  const instLoss = totalCost - fairMid;                // 即時含み損
   const incomeVal = s.rent > 0 ? (s.rent * 12 * (1 - s.expr)) / s.yld : null;
-  const mc = monteCarlo(s, elapsed, { seed });
+  const mc = monteCarlo(s, elapsed, { seed });         // 原価法側のばらつき(リテール比較は含まない)
   const tor = tornado(s, elapsed);
   return {
     id: property.id,
@@ -364,6 +384,7 @@ export function evaluate(property, areaConfig, { asOf = defaultAsOf(), seed = CO
     area,
     assumptions,
     mid, lo, hi,
+    retail, fairFinal,
     verdict: v,
     premium, totalCost, instLoss, incomeVal,
     mc, tornado: tor,

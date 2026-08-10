@@ -8,6 +8,7 @@ import { renderIndex } from "./templates/index.js";
 import { renderProperty } from "./templates/property.js";
 import { renderGuide } from "./templates/guide.js";
 import { calibrate } from "../engine/calibrate.js";
+import { loadHouseDeals } from "../engine/retail.js";
 import { renderMarketBasis } from "./templates/market-basis.js";
 
 // 前提知識ガイドの題材物件(存在しなければ先頭の物件にフォールバック)
@@ -25,6 +26,8 @@ if (ids.length === 0) {
 
 // 成約較正(market/deals.csv + benchmarks.yaml から決定的に算出)
 const cal = calibrate();
+// 戸建成約(リテール比較法の事例プール)
+const houseDeals = loadHouseDeals();
 
 const results = [];
 for (const id of ids) {
@@ -32,19 +35,19 @@ for (const id of ids) {
   if (property.id !== id) {
     throw new Error(`ファイル名とid不一致: ${id}.yaml の id は ${property.id}`);
   }
-  const r = evaluate(property, areaConfig);
+  const r = evaluate(property, areaConfig, { houseDeals });
   // 成約ベース坪単価がある物件は、単価だけ差し替えた再査定(成約ベース参考値)を併算する
   const chosen = cal.byArea[property.location?.area]?.chosen;
   let calR = null, marketCal = null;
   if (chosen) {
-    calR = evaluate({ ...property, ppt_man_override: chosen.ppt }, areaConfig);
+    calR = evaluate({ ...property, ppt_man_override: chosen.ppt }, areaConfig, { houseDeals });
     marketCal = { chosen, calR, dealsN: cal.byArea[property.location.area].deals.n };
     writeFileSync(join(DIST, "property", `${id}-market.html`),
       renderMarketBasis(r, property, marketCal, cal.byArea[property.location.area]), "utf8");
   }
   results.push({ r, property, calR });
   writeFileSync(join(DIST, "property", `${id}.html`), renderProperty(r, property, marketCal), "utf8");
-  console.log(`✓ property/${id}.html 【${r.verdict.mark}】 売出${Math.round(r.state.ask)}万 / 適正中央値${Math.round(r.mid.fair)}万${calR ? ` / 成約ベース${Math.round(calR.mid.fair)}万` : ""}`);
+  console.log(`✓ property/${id}.html 【${r.verdict.mark}】 売出${Math.round(r.state.ask)}万 / 適正中央値${Math.round(r.fairFinal.mid)}万(${r.fairFinal.route})${r.retail ? ` / リテール${r.retail.n}件` : ""}`);
 }
 
 const asOf = results[0].r.asOf;

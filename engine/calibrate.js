@@ -4,7 +4,7 @@
 // エリアごとの「成約ベース坪単価」を算出して公示ベースの採用単価と突き合わせる。
 //
 // 正規化の考え方(appraise.jsの補正モデルの逆適用):
-//   ppt_norm = 成約坪単価 ÷ (1 + 徒歩補正 + 形状補正) ÷ (1+rise)^経過年
+//   ppt_norm = 成約坪単価 ÷ (1 + 徒歩補正 + 形状補正) ÷ 時点係数(年次別レート・timeadjust.js)
 //   - 経過年は公示基準日(2025-01-01)からの取引時期のズレ。過去の取引は上方修正される
 //   - 方位・接道の質・角地は成約データに属性がないため補正しない(=正規化残差として誤差に含む)
 // 全期間平均のベンチマークは時点補正できないため参考表示のみ(recent: false)。
@@ -13,14 +13,23 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { COEFFS, elapsedYears } from "./appraise.js";
 import { ROOT, loadYaml } from "./io.js";
+import { growthFactor } from "./timeadjust.js";
 
-// 成約データの形状表記 → appraise.jsの形状補正への写像(保守的に近い区分へ丸める)
+const KOJI_BASE_DATE = new Date(COEFFS.KOJI_BASE_UTC);
+
+// 成約データの形状表記 → appraise.jsの形状補正への写像
+// (2026-08監査: 台形0/ほぼ台形-5%の序列逆転を修正。台形系はいずれも整形扱い)
 export const SHAPE_NORM_ADJ = {
-  "長方形": 0, "ほぼ長方形": 0, "正方形": 0, "ほぼ正方形": 0, "台形": 0,
-  "ほぼ台形": -0.05, "やや不整形": -0.05, "不整形": -0.05,
+  "長方形": 0, "ほぼ長方形": 0, "正方形": 0, "ほぼ正方形": 0, "台形": 0, "ほぼ台形": 0,
+  "やや不整形": -0.05, "不整形": -0.05,
   "旗竿地": -0.25, "袋地等": -0.25, "袋地": -0.25,
   "不明": 0,
 };
+
+// 地区平均ベンチマークの混合バイアス補正(2026-08監査)
+// 地区平均には旗竿・不整形・古家付き(解体費控除)・業者仕入れ(卸値)が混入し、
+// 標準的な整形地の実勢より10〜20%低く出る。保守側の+10%で補正し、basisに明記する。
+export const MIXED_AVG_CORRECTION = 1.10;
 
 export function loadDeals() {
   const text = readFileSync(join(ROOT, "market", "deals.csv"), "utf8");
@@ -57,11 +66,12 @@ function elapsedOf(d) {
 }
 
 // 個別成約1件を「標準地条件・2025年1月基準」の坪単価に正規化する
-export function normalizeDeal(deal, rise = COEFFS.DEFAULT_RISE) {
+// 時点修正は年次別レート(timeadjust.js)。一律10%は2022〜23年に対し過大だった(2026-08監査)
+export function normalizeDeal(deal) {
   const walkAdj = COEFFS.WALK_ADJ_PER_MIN * (deal.walk_min - COEFFS.WALK_BASE_MIN);
   const shapeAdj = SHAPE_NORM_ADJ[deal.shape] ?? 0;
   const attr = 1 + walkAdj + shapeAdj;
-  const time = Math.pow(1 + rise, elapsedOf(deal.date));
+  const time = 1 / growthFactor(deal.date, KOJI_BASE_DATE);   // 取引時点→2025-01の換算(÷time)
   const ppt_norm = deal.ppt_man / (attr * time);
   return { ...deal, walkAdj, shapeAdj, attrFactor: attr, timeFactor: time, ppt_norm };
 }
@@ -76,15 +86,15 @@ const median = (xs) => {
 //   deals: {n, median_norm, min_norm, max_norm, rows}
 //   benches: ベンチマーク(recentは2025-01基準へ時点補正済みの avg_base / median_base 付き)
 //   chosen: {ppt, basis, confidence} — 成約ベース坪単価として採用する値(データ不足ならnull)
-export function calibrate({ rise = COEFFS.DEFAULT_RISE } = {}) {
-  const deals = loadDeals().map((d) => normalizeDeal(d, rise));
+export function calibrate() {
+  const deals = loadDeals().map((d) => normalizeDeal(d));
   const benches = loadBenchmarks().map((b) => {
     if (!b.recent) return { ...b, avg_base: null, median_base: null };
-    const t = Math.pow(1 + rise, elapsedOf(b.window_mid));
+    const g = growthFactor(b.window_mid, KOJI_BASE_DATE);
     return {
       ...b,
-      avg_base: b.avg_ppt != null ? b.avg_ppt / t : null,
-      median_base: b.median_ppt != null ? b.median_ppt / t : null,
+      avg_base: b.avg_ppt != null ? b.avg_ppt * g : null,
+      median_base: b.median_ppt != null ? b.median_ppt * g : null,
     };
   });
 
@@ -100,7 +110,11 @@ export function calibrate({ rise = COEFFS.DEFAULT_RISE } = {}) {
     if (dRows.length >= 3) {
       chosen = { ppt: Math.round(median(norms)), basis: "個別成約の正規化中央値", confidence: dRows.length >= 5 ? "中" : "低" };
     } else if (recentBench) {
-      chosen = { ppt: Math.round(recentBench.avg_base), basis: `地区平均ベンチマーク(${recentBench.district} ${recentBench.n}件)`, confidence: "低(属性未調整の混合平均)" };
+      chosen = {
+        ppt: Math.round(recentBench.avg_base * MIXED_AVG_CORRECTION),
+        basis: `地区平均ベンチマーク(${recentBench.district} ${recentBench.n}件)×混合平均補正+10%`,
+        confidence: "低(属性未調整の混合平均を補正した推定値)",
+      };
     } else if (dRows.length >= 1) {
       chosen = { ppt: Math.round(median(norms)), basis: `個別成約の正規化中央値(${dRows.length}件のみ)`, confidence: "参考(極小標本)" };
     }
@@ -116,13 +130,13 @@ export function calibrate({ rise = COEFFS.DEFAULT_RISE } = {}) {
       chosen,
     };
   }
-  return { rise, dealCount: deals.length, byArea };
+  return { dealCount: deals.length, byArea };
 }
 
 // ---- CLI: node engine/calibrate.js ----
 if (import.meta.url === `file://${process.argv[1]}`) {
   const cal = calibrate();
-  console.log(`━━ 成約較正サマリ(個別成約 ${cal.dealCount}件 / 正規化: 標準地条件・2025-01基準・年率${cal.rise * 100}%)`);
+  console.log(`━━ 成約較正サマリ(個別成約 ${cal.dealCount}件 / 正規化: 標準地条件・2025-01基準・年次別レート)`);
   for (const [area, a] of Object.entries(cal.byArea)) {
     const d = a.deals;
     const lines = [
