@@ -91,8 +91,8 @@ export function renderGuide(r, property, areaCal = null) {
       </div>
       <div class="logic-step">
         <div class="t"><span class="no">3-3</span>時点修正: 公示は1月1日時点、今日は${r.asOf}</div>
-        <p class="why">赤羽周辺の地価は直近年率10%超のペースで上がっています。公示の基準日(2025年1月)から基準日までの経過 ${f2(r.elapsed)}年 ぶん、保守側の年率+10%で割り増します。</p>
-        <div class="formula">${s.ppt}万/坪 × 1.10^${f2(r.elapsed)} = ${Math.round(pptNow)}万円/坪(時点修正後)</div>
+        <p class="why">赤羽周辺の地価は直近年率10%超のペースで上がっています(2026年公示は北区+12%)。公示の基準日(2025年1月)から基準日までの経過 ${f2(r.elapsed)}年 ぶん、年次別の実効レート(公示・基準地価の実績ベース)で割り増します。</p>
+        <div class="formula">${s.ppt}万/坪 × ${(1 + s.rise).toFixed(3)}^${f2(r.elapsed)} = ${Math.round(pptNow)}万円/坪(時点修正後)</div>
       </div>
     </div>
   </div>
@@ -182,7 +182,7 @@ export function renderGuide(r, property, areaCal = null) {
     <h2>STEP 9 ── 判定スタンプの意味</h2>
     <div class="logic-body">
       <table class="kv">
-        <tr><td><span class="badge ok" style="width:36px;height:36px;font-size:.8rem">買</span></td><td>売出価格 ≦ 下値フロア(土地値−解体費)。最悪土地で売っても損しにくい構造</td></tr>
+        <tr><td><span class="badge ok" style="width:36px;height:36px;font-size:.8rem">買</span></td><td>売出価格 ≦ 即時処分値(土地値×卸値90%×諸費用控除−解体費)。最悪業者に土地で即売りしても損しにくい構造</td></tr>
         <tr><td><span class="badge warn" style="width:36px;height:36px;font-size:.8rem">保留</span></td><td>売出価格が適正レンジ内(楽観上限まで)。交渉・指値次第</td></tr>
         <tr><td><span class="badge" style="width:36px;height:36px;font-size:.8rem">見送</span></td><td>売出価格が楽観上限すら超過。説明のつかない上乗せに払うことになる</td></tr>
       </table>

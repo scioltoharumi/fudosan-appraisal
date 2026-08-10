@@ -17,7 +17,7 @@ function summary(r, property) {
   const L = [];
   L.push(`━━ ${r.id} ── 査定サマリ(基準日 ${r.asOf} / engine ${r.engineVersion})`);
   L.push(`判定      : 【${r.verdict.mark}】 ${r.verdict.head}`);
-  L.push(`採用ルート: ${r.fairFinal.route === "retail" ? "リテール比較法(戸建成約)" : r.fairFinal.route === "home" ? "原価法(家として売る)" : "土地値(更地換算)"}`);
+  L.push(`主導ルート: ${r.fairFinal.route === "retail" ? "リテール比較法(戸建成約)" : r.fairFinal.route === "home" ? "原価法(家として売る)" : "土地値(更地換算)"}${r.retail ? `(加重併用: リテール${(r.fairFinal.weights.retail * 100).toFixed(0)}%)` : ""}${r.fairFinal.floorBound ? " ※土地換算値が下限発火" : ""}`);
   if (property.source_url) L.push(`掲載元    : ${property.source_url}`);
   L.push(`売出価格  : ${fmtMan(r.state.ask)}`);
   L.push(`土地換算値: ${fmtMan(r.mid.floorVal)}(悲観 ${fmtMan(r.lo.floorVal)})`);
@@ -27,7 +27,7 @@ function summary(r, property) {
   else L.push(`リテール比較: 類似成約が不足のため原価法のみ`);
   L.push(`乖離      : ${r.premium >= 0 ? "+" : ""}${fmtMan(r.premium)}(売出 − 査定中央値)`);
   L.push(`即時含み損: ${fmtMan(r.instLoss)}(総取得 ${fmtMan(r.totalCost)} − 査定中央値)`);
-  L.push(`MC        : P10 ${fmtMan(r.mc.p10)} / P50 ${fmtMan(r.mc.p50)} / P90 ${fmtMan(r.mc.p90)}・売出は${r.mc.askPercentile.toFixed(0)}パーセンタイル(seed=${r.mc.seed})`);
+  L.push(`MC        : P10 ${fmtMan(r.mc.p10)} / P50 ${fmtMan(r.mc.p50)} / P90 ${fmtMan(r.mc.p90)}・売出は${r.mc.askPercentile.toFixed(0)}パーセンタイル(原価法サイドのみの分布・参考。seed=${r.mc.seed})`);
   if (r.incomeVal) L.push(`収益価格  : ${fmtMan(r.incomeVal)}`);
   L.push(`個別補正計: ${pct(r.mid.adj)}(補正後 ${Math.round(r.mid.pptAdj * (1 + r.mid.adj))}万/坪 × 実効${r.mid.tsubo.toFixed(2)}坪)`);
   if (r.assumptions.length) {

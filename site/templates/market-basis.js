@@ -115,7 +115,7 @@ export function renderMarketBasis(r, property, marketCal, areaCal) {
     <div class="logic-body">
       <div class="logic-step">
         <div class="t"><span class="no">4-1</span>時点修正</div>
-        <div class="formula">${chosen.ppt}万/坪 × 1.10^${f2(r.elapsed)}年 = ${Math.round(pptNow)}万円/坪(査定基準日 ${r.asOf} 時点)</div>
+        <div class="formula">${Math.round(s.ppt)}万/坪(採用単価) × ${(1 + s.rise).toFixed(3)}^${f2(r.elapsed)}年 = ${Math.round(pptNow)}万円/坪(査定基準日 ${r.asOf} 時点)</div>
       </div>
       <div class="logic-step">
         <div class="t"><span class="no">4-2</span>この土地の個別条件を反映(合計 ${pct(m.adj)})</div>
@@ -124,7 +124,7 @@ export function renderMarketBasis(r, property, marketCal, areaCal) {
       </div>
       <div class="logic-step">
         <div class="t"><span class="no">4-3</span>売却ルートの高い方が適正価格</div>
-        <div class="formula">土地として売る: ${fmtMan(m.land2)} − 解体${fmtMan(s.demo)} = ${fmtMan(m.asLand)} / 家として売る: (${fmtMan(m.land2)} + 建物残価${fmtMan(m.resid)}) × 0.95 − 修繕${fmtMan(s.repair)} = ${fmtMan(m.asHome)}</div>
+        <div class="formula">土地として売る: ${fmtMan(m.land2)} − 解体${fmtMan(s.demo)} = ${fmtMan(m.asLand)} / 家として売る: ${fmtMan(m.land2)} + 建物残価${fmtMan(m.resid)}×(1${pct(s.bm)}) − 修繕${fmtMan(s.repair)} = ${fmtMan(m.asHome)}</div>
         <div class="formula">成約ベース適正レンジ(坪単価±10%): ${fmtMan(r.lo.fair)} 〜 <b>${fmtMan(m.fair)}</b> 〜 ${fmtMan(r.hi.fair)} / 下値フロア ${fmtMan(m.floorVal)}</div>
       </div>
     </div>
@@ -150,7 +150,7 @@ export function renderMarketBasis(r, property, marketCal, areaCal) {
       <p class="why" style="margin-top:8px">${s.ask > r.fairFinal.hi
         ? "周辺の実取引を楽観側(坪単価+10%)に振っても売出価格には届かない。差額は「土地の実勢」ではなく、売主の期待・リテール商品としての上乗せ・仲介の値付け戦略のいずれかであり、交渉ではこの内訳の説明を売主側に求めるのが筋になる。"
         : "売出価格は成約事例から説明可能なレンジ内にあり、実勢に沿った値付けと評価できる。"}</p>
-      <div class="caveat">※ 限界: ①収載事例は土地(更地・古家付き)取引であり、「住める家」としてのリテール価格はこの上に乗りうる ②売出価格は売主の希望であり成約価格ではない(価格改定履歴で市場の反応を追跡) ③標本が少なく信頼度は${esc(chosen.confidence)} ④方位・接道等は未補正。</div>
+      <div class="caveat">※ 限界: ①収載事例は土地(更地・古家付き)取引であり、「住める家」としてのリテール価格はこの上に乗りうる ②売出価格は売主の希望であり成約価格ではない(価格改定履歴で市場の反応を追跡) ③標本が少なく信頼度は${chosen ? esc(chosen.confidence) : "—(較正未成立)"} ④方位・接道等は未補正。</div>
     </div>
     <div class="meta-line">出典: 国交省 不動産取引価格情報の再掲(utinokati.com、取得2026-08-09) / 査定基準日 ${r.asOf} / engine ${esc(r.engineVersion)}</div>
   </div>

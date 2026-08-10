@@ -26,7 +26,7 @@ test("house-deals.csv: 全行が数値として妥当・外れ値がロード時
 test("敵対的: 徒歩外れ値・新築混入・負の単価が事例比較を汚染しない", () => {
   const asOf = AS_OF;
   const base = { land: 66, setback: 0, floor: 88, walk: 13, age: 16,
-    shape: 0, dir: 0.02, roadq: 0, corner: false, extra: 0, lc: 0 };
+    shape: 0, dir: 0.02, roadq: 0, corner: false, extra: 0, lc: 0, repair: 800, bm: -0.05 };
   // 徒歩90分の事例を故意に混入しても、フィルタで除外されるか単価が発散しない
   const poisoned = [
     ...loadHouseDeals(),
@@ -58,7 +58,7 @@ test("敵対的: 減価要因(再建築不可)がリテール経路でも消滅�
 test("地区水準補正: 高地区の物件は同一条件でも高く査定される", () => {
   const deals = loadHouseDeals();
   const base = { land: 66, setback: 0, floor: 88, walk: 10, age: 15,
-    shape: 0, dir: 0, roadq: 0, corner: false, extra: 0, lc: 0 };
+    shape: 0, dir: 0, roadq: 0, corner: false, extra: 0, lc: 0, repair: 800, bm: -0.05 };
   const cheap = retailEstimate(base, AS_OF, deals, { subjectDistrict: "西が丘" });
   const rich = retailEstimate(base, AS_OF, deals, { subjectDistrict: "赤羽" });
   assert.ok(cheap && rich && cheap.districtAdjusted && rich.districtAdjusted);
@@ -80,8 +80,11 @@ test("回帰値: 赤羽西4のリテール比較が実勢レンジ内で、適�
   assert.ok(r.retail.n >= RETAIL.MIN_COMPS, `類似成約 ${r.retail.n}件`);
   // 監査③の実測(同帯の直近成約 5,700〜6,800万・中心6,000〜6,400万)と整合すること
   assert.ok(r.retail.mid > 5500 && r.retail.mid < 7000, `リテール中央値: ${r.retail.mid}`);
-  assert.ok(r.fairFinal.mid >= r.mid.fair, "統合適正は原価法以上");
-  assert.ok(r.mid.floorVal <= r.fairFinal.mid + 1e-9, "floor<=fair不変条件");
+  // 重み付き調整(第2次監査)により、統合適正は両手法の間(±フロア下限)に収まる
+  const lower = Math.min(r.retail.mid, r.mid.fair) - 1e-9;
+  const upper = Math.max(r.retail.mid, r.mid.fair, r.mid.floorVal) + 1e-9;
+  assert.ok(r.fairFinal.mid >= lower && r.fairFinal.mid <= upper, `統合適正が両手法の外: ${r.fairFinal.mid}`);
+  assert.ok(r.mid.floorVal * r.fairFinal.floorGuard <= r.fairFinal.mid + 1e-9, "floor×guard<=fair不変条件");
   assert.ok(r.retail.lo <= r.retail.mid && r.retail.mid <= r.retail.hi, "四分位の順序");
 });
 
@@ -92,7 +95,7 @@ test("不変条件: 全登録物件(較正込み)で floorNet<=floorVal<=fairFin
   for (const id of listPropertyIds()) {
     const r = evaluate(loadProperty(id), cfg, { asOf: AS_OF, houseDeals: deals, cal });
     assert.ok(r.mid.floorNet <= r.mid.floorVal + 1e-9, `${id}: floorNet>floorVal`);
-    assert.ok(r.mid.floorVal <= r.fairFinal.mid + 1e-9, `${id}: floor>fair`);
+    assert.ok(r.mid.floorVal * r.fairFinal.floorGuard <= r.fairFinal.mid + 1e-9, `${id}: floor×guard>fair`);
     assert.ok(r.fairFinal.lo <= r.fairFinal.mid + 1e-9 && r.fairFinal.mid <= r.fairFinal.hi + 1e-9, `${id}: レンジ順序`);
     assert.ok(Number.isFinite(r.premium) && Number.isFinite(r.instLoss));
     if (r.retail) {

@@ -11,7 +11,7 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { COEFFS, elapsedYears } from "./appraise.js";
+import { COEFFS } from "./appraise.js";
 import { ROOT, loadYaml } from "./io.js";
 import { growthFactor } from "./timeadjust.js";
 
@@ -57,14 +57,6 @@ export function loadBenchmarks() {
   return loadYaml(join(ROOT, "market", "benchmarks.yaml")).benchmarks;
 }
 
-// 取引日(文字列 or YAML由来のDate) → 公示基準日からの経過年
-function elapsedOf(d) {
-  if (d instanceof Date) return elapsedYears(d);
-  const m = String(d).match(/^(\d{4})-(\d{1,2})(?:-(\d{1,2}))?/);
-  if (!m) throw new Error(`日付を解釈できません: ${d}`);
-  return elapsedYears(new Date(Date.UTC(+m[1], +m[2] - 1, m[3] ? +m[3] : 15)));
-}
-
 // 個別成約1件を「標準地条件・2025年1月基準」の坪単価に正規化する
 // 時点修正は年次別レート(timeadjust.js)。一律10%は2022〜23年に対し過大だった(2026-08監査)
 export function normalizeDeal(deal) {
@@ -107,16 +99,30 @@ export function calibrate() {
     const recentBench = bRows.find((b) => b.recent && b.avg_base != null);
 
     let chosen = null;
+    const benchPpt = recentBench ? recentBench.avg_base * MIXED_AVG_CORRECTION : null;
     if (dRows.length >= 3) {
-      chosen = { ppt: Math.round(median(norms)), basis: "個別成約の正規化中央値", confidence: dRows.length >= 5 ? "中" : "低" };
+      const med = median(norms);
+      // 乖離ガード(第2次監査): 小標本の中央値が大標本ベンチマークと±25%超乖離する場合、
+      // 個別成約側に特殊取引(再建築不可・卸値等)の混入を疑い、ベンチマーク側を採用する
+      if (benchPpt && Math.abs(med / benchPpt - 1) > 0.25) {
+        chosen = {
+          ppt: Math.round(benchPpt), level: "low",
+          basis: `地区平均ベンチマーク(${recentBench.district} ${recentBench.n}件)×混合平均補正+10%`,
+          confidence: `低(個別成約${dRows.length}件の中央値${Math.round(med)}万が地区平均と±25%超乖離・要人手確認)`,
+        };
+      } else {
+        chosen = { ppt: Math.round(med), level: dRows.length >= 5 ? "mid" : "low",
+          basis: "個別成約の正規化中央値", confidence: dRows.length >= 5 ? "中" : "低" };
+      }
     } else if (recentBench) {
       chosen = {
-        ppt: Math.round(recentBench.avg_base * MIXED_AVG_CORRECTION),
+        ppt: Math.round(benchPpt), level: "low",
         basis: `地区平均ベンチマーク(${recentBench.district} ${recentBench.n}件)×混合平均補正+10%`,
         confidence: "低(属性未調整の混合平均を補正した推定値)",
       };
     } else if (dRows.length >= 1) {
-      chosen = { ppt: Math.round(median(norms)), basis: `個別成約の正規化中央値(${dRows.length}件のみ)`, confidence: "参考(極小標本)" };
+      chosen = { ppt: Math.round(median(norms)), level: "reference",
+        basis: `個別成約の正規化中央値(${dRows.length}件のみ)`, confidence: "参考(極小標本)" };
     }
     byArea[area] = {
       deals: {

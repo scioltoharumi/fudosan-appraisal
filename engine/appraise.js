@@ -7,6 +7,7 @@
 //   - それ以外の数式・係数・文言分岐は v1.2 と同一。
 
 import { retailEstimate, districtOf } from "./retail.js";
+import { growthFactor } from "./timeadjust.js";
 
 export const ENGINE_VERSION = "2.1.0 (第2次監査反映: 重み付き調整・地区水準補正・減価伝搬・較正接続・即時処分フロア)";
 
@@ -125,6 +126,7 @@ export function appraise(s, opts = {}) {
   }
   let adj = walkAdj + s.dir + s.roadq + s.shape + cornerAdj + mstAdj + sizeAdj + s.extra / 100;
   if (noise.adj) adj += noise.adj;
+  adj = Math.max(adj, -0.8);   // 補正合計のクランプ。(1+adj)が負になると単価が負転しlo/hi逆転・フロア逆転が起きる(第2次監査)
   const landRaw = ppt * (1 + adj) * tsubo;
   const land2 = landRaw * (1 + s.lc);                             // 土地制約は常時適用
   let resid = Math.max(0, 1 - s.age / COEFFS.BUILDING_LIFE_Y) * s.rebuild * (s.floor / COEFFS.TSUBO_M2);
@@ -284,10 +286,11 @@ export function toState(property, areaConfig, asOf, { calChosen = null } = {}) {
   let ppt;
   const configuredPpt = property.ppt_man_override !== undefined ? property.ppt_man_override : area?.ppt_man;
   // 成約較正値の採用(F5-2・2026-08第2次監査で本体接続)。信頼度「参考」は採用しない
-  if (calChosen && !String(calChosen.confidence).startsWith("参考")) {
+  const calAdoptable = calChosen && calChosen.level !== "reference";
+  if (calAdoptable) {
     ppt = calChosen.ppt;
     note("基準坪単価", ppt + "万/坪",
-      `成約較正値を採用(${calChosen.basis})。公示ベースの従来値 ${configuredPpt}万/坪 を置換`);
+      `成約較正値を採用(${calChosen.basis})。従来値(${property.ppt_man_override !== undefined ? "YAML上書き値" : "公示ベース"} ${configuredPpt}万/坪)を置換`);
   } else if (property.ppt_man_override !== undefined) {
     ppt = property.ppt_man_override;
     note("基準坪単価", ppt + "万/坪", "物件YAMLの明示上書き(F2-3)" + (calChosen ? "。成約較正値" + calChosen.ppt + "万は信頼度不足のため不採用" : ""));
@@ -331,9 +334,20 @@ export function toState(property, areaConfig, asOf, { calChosen = null } = {}) {
 
   const rebuild = property.building?.rebuild_ppt_man ?? COEFFS.DEFAULT_REBUILD_PPT;
 
+  const extraRaw = property.extra_adj_pct ?? 0;
+  if (!Number.isFinite(extraRaw) || extraRaw < -30 || extraRaw > 15) {
+    throw new Error(`extra_adj_pct は -30〜+15 の範囲で指定してください: ${extraRaw}`);
+  }
+  // 時点修正率: area-configの一律値ではなく年次別レート(timeadjust.js)から実効年率を導出し、
+  // 較正・リテール比較と同じ時点修正観に統一する(第2次監査: 内部不整合の解消)
+  const elapsedForRise = elapsedYears(asOf);
+  const impliedRise = elapsedForRise > 0.05
+    ? Math.pow(growthFactor(new Date(COEFFS.KOJI_BASE_UTC), asOf), 1 / elapsedForRise) - 1
+    : (areaConfig.rise_rate ?? COEFFS.DEFAULT_RISE);
+
   const s = {
     ppt,
-    rise: areaConfig.rise_rate ?? COEFFS.DEFAULT_RISE,
+    rise: impliedRise,
     ask,
     land: property.land?.registered_m2,
     setback: property.land?.setback_m2 ?? 0,
@@ -341,7 +355,7 @@ export function toState(property, areaConfig, asOf, { calChosen = null } = {}) {
     roadq, dir, shape, lc,
     corner: road.corner === true,
     mst: property.station?.multi_station === true,
-    extra: property.extra_adj_pct ?? 0,
+    extra: extraRaw,
     age: ageYears(property.building?.built, asOf),
     floor: property.building?.floor_m2,
     bm, rebuild,
@@ -355,7 +369,9 @@ export function toState(property, areaConfig, asOf, { calChosen = null } = {}) {
   for (const [k, v] of Object.entries({ land: s.land, walk: s.walk, floor: s.floor, ask: s.ask })) {
     if (typeof v !== "number" || Number.isNaN(v)) throw new Error(`必須項目 ${k} が数値ではありません: ${v}`);
   }
-  return { state: s, assumptions, area: area ? { key: areaKey, ...area } : { key: areaKey, source: "override" } };
+  const pptSource = (calChosen && ppt === calChosen.ppt) ? "calibrated"
+    : property.ppt_man_override !== undefined ? "override" : "config";
+  return { state: s, assumptions, pptSource, area: area ? { key: areaKey, ...area } : { key: areaKey, source: "override" } };
 }
 
 // ---- 総合評価(F2-4: 判定/フロア/適正lo-mid-hi/乖離/含み損/補正内訳/採用した仮定一覧) ----
@@ -364,7 +380,7 @@ export function toState(property, areaConfig, asOf, { calChosen = null } = {}) {
 export function evaluate(property, areaConfig, { asOf = defaultAsOf(), seed = COEFFS.MC_SEED, houseDeals = null, cal = null } = {}) {
   const elapsed = elapsedYears(asOf);
   const calChosen = cal?.byArea?.[property.location?.area]?.chosen ?? null;
-  const { state: s, assumptions, area } = toState(property, areaConfig, asOf, { calChosen });
+  const { state: s, assumptions, pptSource, area } = toState(property, areaConfig, asOf, { calChosen });
   const { mid, lo, hi } = appraiseRange(s, elapsed);
 
   // リテール比較法(2026-08監査対応)。事例不足(MIN_COMPS未満)ならnull
@@ -376,11 +392,17 @@ export function evaluate(property, areaConfig, { asOf = defaultAsOf(), seed = CO
   // 売却ルートなので、調整結果がそれを下回る場合は土地値が下限になる。
   const wR = retail ? (retail.n >= 20 ? 0.65 : retail.n >= 10 ? 0.5 : 0.35) : 0;
   const blend = (costV, retailV) => retail ? wR * retailV + (1 - wR) * costV : costV;
-  const fairLo = Math.max(blend(lo.fair, retail?.lo), lo.floorVal);
-  const fairMid = Math.max(blend(mid.fair, retail?.mid), mid.floorVal);
-  const fairHi = Math.max(blend(hi.fair, retail?.hi), hi.floorVal);
-  const finalRoute = retail && retail.mid > mid.fair ? "retail" : mid.route;
-  const fairFinal = { lo: fairLo, mid: fairMid, hi: fairHi, route: finalRoute, costMid: mid.fair, weights: { retail: wR, cost: 1 - wR } };
+  // 土地換算値の下限保証。ただし土地単価が成約較正で未検証の場合、フロアが事例証拠(リテール)を
+  // 無条件に握り潰すのは危険なため、×0.9のペナルティ付きで適用する(第2次監査: jujonakahara2問題)
+  const floorGuard = pptSource === "calibrated" ? 1 : 0.9;
+  const fairLo = Math.max(blend(lo.fair, retail?.lo), lo.floorVal * floorGuard);
+  const fairMid = Math.max(blend(mid.fair, retail?.mid), mid.floorVal * floorGuard);
+  const fairHi = Math.max(blend(hi.fair, retail?.hi), hi.floorVal * floorGuard);
+  const floorBound = retail ? fairMid > blend(mid.fair, retail.mid) + 1e-9 : false;
+  const finalRoute = floorBound ? "land" : (retail && retail.mid > mid.fair ? "retail" : mid.route);
+  const isNewBuild = s.age < 1;
+  const fairFinal = { lo: fairLo, mid: fairMid, hi: fairHi, route: finalRoute, costMid: mid.fair,
+    weights: { retail: wR, cost: 1 - wR }, floorBound, floorGuard, pptSource };
 
   const v = verdict(s,
     { ...mid, fair: fairMid, route: finalRoute },
@@ -404,7 +426,7 @@ export function evaluate(property, areaConfig, { asOf = defaultAsOf(), seed = CO
     area,
     assumptions,
     mid, lo, hi,
-    retail, fairFinal,
+    retail, fairFinal, isNewBuild,
     verdict: v,
     premium, totalCost, instLoss, incomeVal,
     mc, tornado: tor,

@@ -33,10 +33,12 @@ test("回帰値: 本物件(engineレベル)が受入基準と一致する", () =
   assert.ok(mid.resid > 0 && mid.resid < 200, "築27年の残価は僅少: " + mid.resid);
 });
 
-test("回帰値: YAML→evaluate経由でも受入基準と一致する", () => {
+test("回帰値: YAML→evaluate経由の基準値(時点修正の年次別統一後)", () => {
+  // v1.2受入基準(5952/6562)は一律年率10%前提。2026-08第2次監査で時点修正を年次別実効レートに
+  // 統一したため(実効約12%)、evaluate経由の値は意図的に更新。engineレベルの回帰(rise明示)は不変
   const r = evaluate(loadProperty("akabanedai3-20268457"), loadAreaConfig(), { asOf: AS_OF });
-  assert.equal(Math.round(r.mid.fair), 5952);
-  assert.equal(Math.round(r.hi.fair), 6562);
+  assert.equal(Math.round(r.mid.fair), 6124);
+  assert.equal(Math.round(r.hi.fair), 6751);
   assert.equal(r.verdict.mark, "保留");
   // 修繕・解体・賃料のassumed項目が記録されていること(F1-3/監査性)
   assert.ok(r.assumptions.length >= 3, "assumed項目: " + JSON.stringify(r.assumptions));

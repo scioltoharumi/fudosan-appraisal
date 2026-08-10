@@ -37,7 +37,7 @@ function scaleSvg(s, v) {
   el.push(`<rect x="${X(v.floorLo)}" y="70" width="${Math.max(2, X(v.floorHi) - X(v.floorLo))}" height="14" fill="#2E6E8E" opacity="0.85"/>`);
   el.push(`<text x="${X(v.floorLo)}" y="64" font-size="10" fill="#16232E">下値フロア(土地−解体費)</text>`);
   el.push(`<rect x="${X(v.fairLo)}" y="86" width="${Math.max(2, X(v.fairHi) - X(v.fairLo))}" height="14" fill="#BFD7E4"/>`);
-  el.push(`<text x="${X(v.fairLo)}" y="136" font-size="10" fill="#43566B">適正価格レンジ(売却ルートmax法)</text>`);
+  el.push(`<text x="${X(v.fairLo)}" y="136" font-size="10" fill="#43566B">適正価格レンジ(原価法×リテールの重み付き調整)</text>`);
   el.push(`<line x1="${X(v.fairMid)}" y1="66" x2="${X(v.fairMid)}" y2="102" stroke="#16232E" stroke-width="1" stroke-dasharray="3,2"/>`);
   if (v.income) {
     const ix = X(v.income);
@@ -164,7 +164,7 @@ function logicSteps(r) {
   }
 
   steps.push(["総取得コストと即時含み損(最後の現実)",
-    "総コスト: " + fmtMan(s.ask) + " × (1+" + (s.fee * 100).toFixed(1) + "%)" + (r.fairFinal.route === "land" ? "(土地ルートのため修繕費は含めず)" : " + 修繕 " + fmtMan(s.repair)) + " = <b>" + fmtMan(totalCost) + "</b><br>即時含み損: " + fmtMan(totalCost) + " − 査定 " + fmtMan(r.fairFinal.mid) + " = <b>" + fmtMan(instLoss) + "</b>",
+    "総コスト: " + fmtMan(s.ask) + " × (1+" + (s.fee * 100).toFixed(1) + "%)" + (r.fairFinal.route === "home" ? " + 修繕 " + fmtMan(s.repair) : "(修繕費は取得コストと別枠)") + " = <b>" + fmtMan(totalCost) + "</b><br>即時含み損: " + fmtMan(totalCost) + " − 査定 " + fmtMan(r.fairFinal.mid) + " = <b>" + fmtMan(instLoss) + "</b>",
     "諸費用と修繕は「住むために払うが、売るとき市場は返してくれない」お金です。総取得コストから査定価値を引いた即時含み損は、引渡しの瞬間に確定する資産毀損の見積りです。持ち家は住む価値(帰属家賃)でこれを回収していく構造なので、含み損＝悪ではありませんが、「毀損しない物件」を掲げるなら直視すべき数字です。心理的上限1億円と比較すべきもこの総額です。"]);
 
   return steps.map((st, i) =>
@@ -320,6 +320,8 @@ export function renderProperty(r, property, marketCal = null) {
       <div class="verdict-text">
         <div class="head">${v.head}</div>
         <div class="body">${v.body}</div>
+        ${r.isNewBuild ? `<div class="caveat" style="margin-top:6px">※ 新築物件: 本査定は「中古市場での再販価値」ベース。新築分譲価格には事業者利益・未入居プレミアムが含まれるのが通常で、乖離の一部はその剥落分と解釈すべき(査定がそのまま「ぼったくり」を意味しない)。</div>` : ""}
+        ${r.fairFinal.floorBound ? `<div class="caveat" style="margin-top:6px">※ 本査定は土地換算値が下限として発火している(事例比較より土地値が高い)。土地単価が${r.fairFinal.pptSource === "calibrated" ? "成約較正済み" : "未検証(較正未成立)のため下限には×0.9のペナルティを適用済み"}。</div>` : ""}
       </div>
     </div>
 
@@ -341,7 +343,7 @@ export function renderProperty(r, property, marketCal = null) {
     </section>
 
     <section class="tornado">
-      <h2 class="sub">感度分析 ── どの変数が原価法の査定額を動かすか</h2>\n      <div class="note">※ 原価法サイドの感度。リテール比較加重後の最終査定への影響は重み(原価${"${(r.fairFinal.weights.cost * 100).toFixed(0)}"}%)分に縮小される。</div>
+      <h2 class="sub">感度分析 ── どの変数が原価法の査定額を動かすか</h2>\n      <div class="note">※ 原価法サイドの感度。リテール比較加重後の最終査定への影響は重み(原価${(r.fairFinal.weights.cost * 100).toFixed(0)}%)分に縮小される。</div>
       ${tornadoHtml(r.tornado)}
     </section>
 

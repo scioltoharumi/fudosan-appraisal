@@ -22,7 +22,7 @@ function calibrationPanel(results, cal) {
         continue;
       }
       const gap = a.chosen.ppt / used - 1;
-      const adopted = !String(a.chosen.confidence).startsWith("参考");
+      const adopted = a.chosen.level !== "reference";
       const view = adopted
         ? "較正値を本査定の土地単価として採用済み(2026-08第2次監査で本体接続)"
         : "信頼度不足(極小標本)のため未採用。従来値で査定し、較正値は参考表示";
@@ -95,7 +95,7 @@ export function renderIndex(results, { asOf, cal = null }) {
       ${rows}
     </table>
     </div>
-    <div class="note">乖離 = 売出価格 − 適正中央値(原価法とリテール比較法の高い方)。リテール比較中央値 = 周辺の戸建成約(国交省データ)から時点・徒歩・築年差を補正した実需市場の水準(クリックで根拠ページへ)。判定の根拠は各物件の詳細ページ「算出根拠の全文開示」を参照。<br>
+    <div class="note">乖離 = 売出価格 − 適正中央値(原価法とリテール比較法の重み付き調整・土地値下限)。リテール比較中央値 = 周辺の戸建成約(国交省データ)から時点・徒歩・築年差を補正した実需市場の水準(クリックで根拠ページへ)。判定の根拠は各物件の詳細ページ「算出根拠の全文開示」を参照。<br>
     売出価格の下の日付は媒体で当該価格を確認した時点(情報提供日)、「取得」は台帳への登録日。査定値は全物件とも査定基準日 ${asOf} 時点で再計算している。</div>
     <div class="meta-line">査定基準日 ${asOf} / 掲載 ${results.length}件 / 本サイトは個人の検討用簡易査定であり、不動産鑑定評価・投資助言ではありません。</div>
   </div>
