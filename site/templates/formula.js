@@ -240,6 +240,123 @@ function variableDictHtml() {
   </table></div>`;
 }
 
+// 建物残価(万円)。repaired=true なら繰延修繕の控除なし(カーブ・早見表・実例で共通)
+function bldgResid(cfg, age, repaired) {
+  const base = cfg.rebuild * cfg.floorTsubo * Math.max(0, 1 - age / COEFFS.BUILDING_LIFE_Y) * (1 + cfg.bm);
+  const rep = repaired ? 0 : Math.min(cfg.repairCap, RETAIL.REPAIR_PER_YEAR * age);
+  return Math.max(0, base - rep);
+}
+
+// ---- 早見表: 実際何年だったら残価いくらか ----
+function bldgTableHtml(cfg, subjectAge, landPartExample) {
+  const ages = [0, 5, 10, 15, 20, 25, 30].filter((a) => Math.abs(a - subjectAge) > 0.6);
+  const all = [...ages, subjectAge].sort((a, b) => a - b);
+  const rows = all.map((a) => {
+    const isSubj = a === subjectAge;
+    const un = bldgResid(cfg, a, false), full = bldgResid(cfg, a, true);
+    const total = landPartExample + un;
+    return `<tr${isSubj ? ' style="background:#F4E9DA;font-weight:700"' : ""}>
+      <td>築${isSubj ? a.toFixed(1) + "年(本物件)" : a + "年"}</td>
+      <td class="num">${Math.max(0, (1 - a / COEFFS.BUILDING_LIFE_Y) * 100).toFixed(0)}%</td>
+      <td class="num">${fmtMan(Math.round(un))}</td>
+      <td class="num">${fmtMan(Math.round(full))}</td>
+      <td class="num">${fmtMan(Math.round(total))}</td>
+      <td class="num">×${((total) / landPartExample).toFixed(2)}</td>
+    </tr>`;
+  }).join("");
+  return `<div style="overflow-x:auto;margin-top:12px"><table class="list">
+    <tr><th>築年数</th><th>残存率</th><th>建物残価(未修繕)</th><th>同(修繕・リフォーム済)</th><th>総額のめやす※</th><th>対土地倍率</th></tr>
+    ${rows}
+  </table></div>
+  <div class="note" style="margin-top:6px">※ 土地部分を実例の${fmtMan(Math.round(landPartExample))}に固定し、<b>築年数だけを動かした場合の総額(未修繕)</b>。延床${cfg.floorTsubo.toFixed(1)}坪・木造(再調達${cfg.rebuild}万/坪)の場合で、延床が変われば建物側は比例して増減する。</div>`;
+}
+
+// ---- シミュレーター: 変数を入れると総額がその場で変わる ----
+function simulatorHtml(d) {
+  const inp = 'style="font-family:var(--mono);font-size:.85rem;padding:5px 7px;border:1px solid var(--ink-soft);width:110px;background:#FDFDFC"';
+  const lbl = 'style="font-size:.72rem;color:var(--ink-soft);display:block;margin-bottom:3px;letter-spacing:.05em"';
+  return `
+    <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end">
+      <div><span ${lbl}>土地面積(m²)</span><input id="sim-land" type="number" step="0.01" value="${d.landM2}" ${inp}><span id="sim-land-t" class="note" style="margin:2px 0 0;display:block"></span></div>
+      <div><span ${lbl}>土地実勢単価(万/坪・残余)</span><input id="sim-unit" type="number" step="1" value="${d.unit}" ${inp}>
+        <div style="margin-top:4px;display:flex;gap:4px">
+          <button type="button" class="sim-preset" data-v="${d.unitRawMed}" style="font-size:.68rem;padding:2px 6px;cursor:pointer">実績${d.unitRawMed}</button>
+          <button type="button" class="sim-preset" data-v="${d.unit}" style="font-size:.68rem;padding:2px 6px;cursor:pointer">中央値${d.unit}</button>
+          <button type="button" class="sim-preset" data-v="${d.unitP90}" style="font-size:.68rem;padding:2px 6px;cursor:pointer">上位${d.unitP90}</button>
+        </div></div>
+      <div><span ${lbl}>延床面積(m²)</span><input id="sim-floor" type="number" step="0.01" value="${d.floorM2}" ${inp}><span id="sim-floor-t" class="note" style="margin:2px 0 0;display:block"></span></div>
+      <div><span ${lbl}>個別補正(%)</span><input id="sim-adj" type="number" step="1" min="-30" max="10" value="0" ${inp}></div>
+      <div><span ${lbl}>修繕状態</span><select id="sim-repair" ${inp.replace('width:110px', 'width:150px')}><option value="none">未修繕(築年相応控除)</option><option value="done">大規模修繕・リフォーム済</option></select></div>
+      <div><span ${lbl}>売出価格(万円)</span><input id="sim-ask" type="number" step="10" value="${d.ask}" ${inp}></div>
+    </div>
+    <div style="margin-top:16px">
+      <span style="font-size:.78rem;color:var(--ink-soft);letter-spacing:.05em">築年数(スライダーを動かして体感): <b id="sim-age-v" style="font-family:var(--mono);color:var(--ink);font-size:.95rem"></b></span>
+      <input id="sim-age" type="range" min="0" max="35" step="1" value="${d.age}" style="width:100%;accent-color:#B07C10">
+    </div>
+    <div id="sim-bar" style="position:relative;height:42px;border:1px solid var(--ink);background:#FDFDFC;margin-top:14px;overflow:hidden">
+      <div id="seg-land" style="position:absolute;left:0;top:0;bottom:0;background:#2E6E8E"></div>
+      <div id="seg-bldg" style="position:absolute;top:0;bottom:0;background:#B07C10"></div>
+      <div id="seg-exp" style="position:absolute;top:0;bottom:0;background:rgba(201,58,43,.13);border-left:none;border:1.5px dashed #C93A2B;box-sizing:border-box"></div>
+      <div id="seg-ask" style="position:absolute;top:0;bottom:0;width:2px;background:#C93A2B"></div>
+    </div>
+    <div id="sim-out" style="font-family:var(--mono);font-size:.85rem;margin-top:10px;line-height:1.9"></div>
+    <script>
+    (function () {
+      var el = function (id) { return document.getElementById(id); };
+      var fmt = function (n) { return Math.round(n).toLocaleString('en-US') + '万'; };
+      var T = ${COEFFS.TSUBO_M2}, REBUILD = ${COEFFS.DEFAULT_REBUILD_PPT}, LIFE = ${COEFFS.BUILDING_LIFE_Y};
+      var BM = ${(1 + d.bm).toFixed(2)}, REPCAP = ${Math.round(d.repairCap)}, REPYR = ${RETAIL.REPAIR_PER_YEAR};
+      function calc() {
+        var landM2 = parseFloat(el('sim-land').value) || 0;
+        var unit = parseFloat(el('sim-unit').value) || 0;
+        var floorM2 = parseFloat(el('sim-floor').value) || 0;
+        var age = parseFloat(el('sim-age').value) || 0;
+        var repaired = el('sim-repair').value === 'done';
+        var adj = (parseFloat(el('sim-adj').value) || 0) / 100;
+        var ask = parseFloat(el('sim-ask').value) || 0;
+        var landTsubo = landM2 / T, floorTsubo = floorM2 / T;
+        var base = REBUILD * floorTsubo * Math.max(0, 1 - age / LIFE) * BM;
+        var rep = repaired ? 0 : Math.min(REPCAP, REPYR * age);
+        var bldg = Math.max(0, base - rep);
+        var land = unit * landTsubo * (1 + adj);
+        var total = land + bldg;
+        var scale = Math.max(total, ask, 1) * 1.05;
+        el('seg-land').style.width = (100 * land / scale) + '%';
+        el('seg-bldg').style.left = (100 * land / scale) + '%';
+        el('seg-bldg').style.width = (100 * bldg / scale) + '%';
+        var hasExp = ask > total;
+        el('seg-exp').style.display = hasExp ? 'block' : 'none';
+        if (hasExp) {
+          el('seg-exp').style.left = (100 * total / scale) + '%';
+          el('seg-exp').style.width = (100 * (ask - total) / scale) + '%';
+        }
+        el('seg-ask').style.left = 'calc(' + (100 * ask / scale) + '% - 1px)';
+        el('seg-ask').style.display = ask > 0 ? 'block' : 'none';
+        el('sim-age-v').textContent = '築' + age + '年';
+        el('sim-land-t').textContent = '= ' + landTsubo.toFixed(1) + '坪';
+        el('sim-floor-t').textContent = '= ' + floorTsubo.toFixed(1) + '坪';
+        var line1 = '<span style="color:#2E6E8E">■土地 ' + fmt(land) + '</span> + <span style="color:#B07C10">■建物残価 ' + fmt(bldg) + '</span>' +
+          (repaired ? '(修繕済)' : '(未修繕・控除' + fmt(rep) + ')') +
+          ' = <b>成約価格の見込み ' + fmt(total) + '</b>';
+        var line2 = '';
+        if (ask > 0) {
+          var gap = ask - total;
+          if (gap > 0) line2 = '<span style="color:#C93A2B">売出 ' + fmt(ask) + ' との差 = 売主の期待 +' + fmt(gap) + '(見込み比 +' + (100 * gap / total).toFixed(1) + '%)</span>';
+          else line2 = '<span style="color:#2C6E49">売出 ' + fmt(ask) + ' は見込みを ' + fmt(-gap) + ' 下回る(理論上は割安圏──理由の確認を)</span>';
+        }
+        el('sim-out').innerHTML = line1 + '<br>' + line2;
+      }
+      var ids = ['sim-land', 'sim-unit', 'sim-floor', 'sim-age', 'sim-repair', 'sim-adj', 'sim-ask'];
+      for (var i = 0; i < ids.length; i++) el(ids[i]).addEventListener('input', calc);
+      var ps = document.getElementsByClassName('sim-preset');
+      for (var j = 0; j < ps.length; j++) ps[j].addEventListener('click', function (e) {
+        el('sim-unit').value = e.target.getAttribute('data-v'); calc();
+      });
+      calc();
+    })();
+    </script>`;
+}
+
 export function renderFormula({ r, rRef, property }, calArea, houseDeals) {
   const rt = r.retail;
   const s = r.state;
@@ -278,6 +395,15 @@ export function renderFormula({ r, rRef, property }, calArea, houseDeals) {
   </div>
 
   <div class="panel">
+    <h2>シミュレーター ── 変数を動かして総額の出方を体感する</h2>
+    <div class="logic-body">
+      <p class="why">簡略式 <b>総額 = 残余単価 × 土地坪数 × (1+個別補正) + 建物残価(築年・修繕状態)</b> をその場で計算する。初期値は${esc(property.location?.address ?? r.id)}のもの。<b>築年数のスライダーを動かす</b>と、青(土地)は動かず琥珀(建物)だけが伸び縮みし、売出価格との赤い差分がどう変わるかが見える。</p>
+      ${simulatorHtml({ landM2: s.land, floorM2: s.floor, age: Math.round(s.age), unit: midUnitResid, unitRawMed: raw.med, unitP90: raw.p90, ask: Math.round(s.ask), bm: s.bm, repairCap: s.repair })}
+      <div class="note" style="margin-top:12px"><b>物差しに注意</b>: ここで入れる「土地実勢単価」は建物控除後・現在時点の<b>残余単価</b>で、プリセットはこの地区の実測(生の実績中央値${raw.med} / 時点修正後中央値${midUnitResid} / 上位10% ${raw.p90}万/坪)。第1項の公示系の素の単価(190〜245万/坪)とは物差しが違う(あちらは×1.1〜1.2の実勢化と時点修正を経てこちらの水準になる)。簡略式のため徒歩・形状等の細目は「個別補正」1本に集約し、原価法とのブレンド・下値フロア・時点修正の将来分は含まない──登録物件の正式な査定値は各物件ページを参照。</div>
+    </div>
+  </div>
+
+  <div class="panel">
     <h2>変数辞典 ── 成約事例・売出情報のどこを見るか</h2>
     <div class="logic-body">
       <p class="why">式の各項に入る変数と、取り違えたときに誤差がどちらへ出るか。成約事例を自分で検分するときのチェックリストとして使う。</p>
@@ -311,6 +437,7 @@ export function renderFormula({ r, rRef, property }, calArea, houseDeals) {
       <pre style="font-family:var(--mono);font-size:.8rem;line-height:1.9;background:#F7F9FA;border:1px solid var(--grid);padding:12px 14px;overflow-x:auto">建物残価 = 再調達${s.rebuild ?? COEFFS.DEFAULT_REBUILD_PPT}万/坪 × 延床${floorTsubo.toFixed(1)}坪 × (1 − 築年/${COEFFS.BUILDING_LIFE_Y}) × 市場性${(1 + s.bm).toFixed(2)}
          − 繰延修繕 min(想定${Math.round(s.repair)}万, ${RETAIL.REPAIR_PER_YEAR}万×築年)   ← リフォーム状態でここが大きく動く
 本物件(築${s.age.toFixed(1)}年・未修繕) = ${fmtMan(Math.round(rt.bldgSubj))} / 修繕・リフォーム済みなら ${fmtMan(Math.round(rt.bldgSubj + (rt.repairSubj ?? 0)))}(差 ${fmtMan(Math.round(rt.repairSubj ?? 0))})</pre>
+      ${bldgTableHtml({ rebuild: s.rebuild ?? COEFFS.DEFAULT_REBUILD_PPT, floorTsubo, bm: s.bm, repairCap: s.repair }, Math.round(s.age * 10) / 10, rt.landPart)}
       <div class="note"><b>読み方</b>: 税法耐用年数22年(木造)は帳簿の話で、市場は「解体せず住める家」に新築回避価値を払う──だから30年直線。ただし償却(年約${Math.round((s.rebuild ?? COEFFS.DEFAULT_REBUILD_PPT) * floorTsubo * (1 + s.bm) / COEFFS.BUILDING_LIFE_Y)}万)に修繕負債の積み上がり(年${RETAIL.REPAIR_PER_YEAR}万)が重なり、実質ゼロ着地は偶然にも税法と同じ築22年前後。<b>築浅は建物が総額の3〜4割を占める別の乗り物</b>で、新築には分譲利益も乗る(本エンジンは新築の査定を新築成約とだけ比較する対称ルールで隔離)。この式は比較事例側の建物控除にも同じ形で使っており(配分法の対称性)、カーブの多少の誤差は引く側と足す側で相殺される。</div>
       <div class="note" style="margin-top:8px"><b>リフォーム済みか否かで大きく変わる</b>: 図の2本のカーブの差が繰延修繕で、同じ築年でも大規模修繕・リフォーム済みなら上の破線(本物件なら+${fmtMan(Math.round(rt.repairSubj ?? 0))}=総額の約${(100 * (rt.repairSubj ?? 0) / rt.mid).toFixed(0)}%)、放置で劣化が想定超なら実額控除でさらに下へ動く。売出情報で「大規模修繕の実施歴」を必ず確認し、未実施なら実見積りを指値の根拠にすること。なお比較事例側の修繕状態はデータに記録がなく、本モデルは「全事例とも年式相応の未修繕」と対称に仮定している。実際には売却前に化粧直しされた事例が混ざりやすい(=中央値がやや修繕済み寄りに上振れ)ため、<b>未修繕の物件は市場中央値そのままではなく、中央値−リフォーム差分の間を等価点と見るのが保守的</b>。</div>
     </div>
