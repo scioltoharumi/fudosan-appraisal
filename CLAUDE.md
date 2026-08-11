@@ -1,0 +1,45 @@
+# fudosan-appraisal 作業ガイド(セッション引き継ぎ用)
+
+東京都北区(赤羽エリア)の中古戸建を査定し、静的サイトとして公開する個人用台帳。
+物件登録・査定・サイト更新の手順は `.claude/skills/fudosan-appraisal` のスキルに従う。
+
+## 構成
+
+- `engine/` — 査定エンジン(Node ESM・依存なし)。appraise.js(原価法+統合) / retail.js(リテール比較法=配分法) /
+  calibrate.js(土地成約較正) / timeadjust.js(年次別時点修正) / verify-data.mjs(成約データの二重照合)
+- `market/` — house-deals.csv(戸建成約・北区12地区) / deals.csv(土地成約) / benchmarks.yaml /
+  area-config.yaml(エリア基準坪単価) / verification.json(照合結果。conflict行は自動除外)
+- `properties/` — 1物件1YAML。事実と査定パラメータのみ
+- `site/` — build.js が dist/ を生成。index / property別 / market(根拠) / guide / data(データ探索) /
+  formula(値段の解剖=算出ロジック図解・題材は赤羽西4)
+- `tests/` — `npm test`(node --test)。エンジン回帰値・不変条件・データ妥当性 17件
+
+## 運用ルール
+
+1. 変更後は必ず `npm test`(17件) と `node site/build.js` を通す
+2. 反映は feature ブランチ → main へ ff-merge → push(GitHub Pages が main から自動デプロイ)。
+   デプロイ後に本番URLをcurlで確認する運用が確立している
+3. **公開リポジトリ**: 指値方針・交渉メモ・個人的所感・写真は書かない(決定事項D4)。
+   交渉関連の文脈は会話内のみで扱う
+4. データ規律: source_url は実在確認後にのみ記載。deals/house-deals へは出典ページに実在する
+   レコードのみ収載(推測・補完での行追加は禁止)。regression値の変更はコメントで理由を残す
+5. SVGを含むページ変更時は、text要素の見切れ・重なりを機械検査してから反映
+   (formula.jsの各図はラベル段組みを崩さないこと)
+
+## 現在の状態(2026-08-11)
+
+- 台帳9物件: 見送8・調査1(jujonakahara2)。エンジン v2.4.0(敵対的レビュー4巡で収束済み)
+- 赤羽西4(akabanenishi4-21036139): 売出6,990万・見送。売出開始2026-06-08前後、
+  6/8〜7/19の間に1回値下げ(旧価格は公開ウェブに非残存・レインズ照会のみで確定可能)
+- 土地較正: akabane-nishi は較正205万/坪(31件平均178×時点×1.10)を従来値245と50:50ブレンドで225採用
+  (信頼度low)。公示地価2025の赤羽西・住宅地平均は190万/坪
+- formula.html: 意思決定の二軸→評価の型→一般形→実例→シミュレーター→変数辞典→
+  土地単価→建物残価(早見表)→残余単価検算→売主の期待、の構成
+
+## 未了事項(技術的なもののみ)
+
+- akabanenishi4: 崖・擁壁の実地確認待ち(checklist.retaining_wall=false。判明したら extra_adj_pct へ反映)/
+  大規模修繕の実見積り待ち(現在は想定800万)/木・RC混構造の確認(チラシとSUUMOで表記が異なる)
+- market: 国交省 不動産情報ライブラリAPI未接続(verification.json の conflict 1件の最終裁定用。要無料登録)/
+  赤羽西の土地成約を3件以上集めると較正が low→mid に昇格し、ブレンドが75:25(較正寄り)へ自動で変わる
+- 比較事例の重複疑い3ペア(2025Q3西が丘6,600万ほか)はレインズ照会でのみ確定可能
