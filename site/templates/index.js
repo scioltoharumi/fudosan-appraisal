@@ -79,11 +79,10 @@ export function renderIndex(results, { asOf, cal = null }) {
       <td><a href="property/${esc(r.id)}.html">${esc(property.location?.address ?? r.id)}</a><div class="note" style="margin-top:0">${esc(r.id)} / ${esc(property.layout ?? "—")} / 築${r.state.age.toFixed(1)}年 / 徒歩${esc(property.station?.walk_min)}分 / 取得 ${esc(fmtDate(property.captured_at))}${safeUrl(property.source_url) ? ` / <a href="${esc(property.source_url)}" target="_blank" rel="noopener noreferrer">掲載元↗</a>` : ""}</div></td>
       <td><span class="status">${esc(status)}</span></td>
       <td class="num">${fmtMan(r.state.ask)}<div class="note" style="margin-top:0">${esc(priceDate)}時点${ph.length > 1 ? ` / 改定${ph.length - 1}回` : ""}</div></td>
-      <td class="num">${fmtMan(r.fairFinal.mid)}</td>
       <td class="num">${r.retail && hasMarketPage ? `<a href="property/${esc(r.id)}-market.html">${fmtMan(r.retail.mid)}</a>` : r.retail ? fmtMan(r.retail.mid) : "—"}</td>
       <td class="num"${divergence(r) > 0 ? ' style="color:var(--stamp)"' : ""}>${divergence(r) >= 0 ? "+" : ""}${fmtMan(divergence(r))}</td>
-      <td class="num">${Math.round(r.state.ask / r.mid.tsubo).toLocaleString("en-US")}万/坪</td>
       <td class="num">${r.assumptions.length}件</td>
+      <td class="num">${fmtMan(r.fairFinal.mid)}</td>
     </tr>`;
   }).join("");
 
@@ -93,7 +92,7 @@ export function renderIndex(results, { asOf, cal = null }) {
     <div class="note" style="margin:0 0 10px">はじめての方へ: 「総額 = 土地単価×坪数 + 建物残価 + 売主の期待」という値段の構造は <a href="formula.html">値段の解剖 ── 算出ロジック図解</a> が1ページで図解しています。査定値の出所(公示地価・坪単価・建物残価・リテール比較法・判定スタンプの意味)は <a href="guide.html">査定の読み方 ── 前提知識ガイド</a>、成約データ全件は <a href="data.html">成約データ台帳(検証と探索)</a> で出所リンク・二重照合結果つきで確認できます。希望条件(間取り・設備等)を金額換算して妥協判断する方法は <a href="tradeoff.html">妥協の値段 ── A/B/C分類と工事費早見表</a> にまとめています。</div>
     <div style="overflow-x:auto">
     <table class="list">
-      <tr><th>判定</th><th>物件</th><th>状態</th><th>売出価格</th><th>適正中央値(参考)</th><th>市場実勢中央値</th><th>乖離(対市場)</th><th>実質坪単価</th><th>仮定</th></tr>
+      <tr><th>判定</th><th>物件</th><th>状態</th><th>売出価格</th><th>市場実勢中央値</th><th>乖離(対市場)</th><th>仮定</th><th>適正中央値(参考)</th></tr>
       ${rows}
     </table>
     </div>
