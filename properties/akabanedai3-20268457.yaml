@@ -7,6 +7,7 @@ source_url: "https://suumo.jp/chukoikkodate/tokyo/sc_kita/nc_20268457/"   # 実�
 captured_at: 2026-07-19
 price_history:
   - {date: 2026-07-17, price_man: 6560}
+  - {date: 2026-08-08, price_man: 6260}   # 値下げ-300万を掲載元で確認(2026-08-11クロール。日付は媒体の情報提供日)
 location: {area: akabanedai, address: "北区赤羽台3"}
 station: {walk_min: 11, multi_station: true}
 land:

@@ -7,6 +7,7 @@ source_url: "https://suumo.jp/chukoikkodate/tokyo/sc_kita/nc_21215249/"   # 実�
 captured_at: 2026-07-24
 price_history:
   - {date: 2026-07-24, price_man: 9480}
+  - {date: 2026-08-10, price_man: 8880}   # 値下げ-600万を掲載元で確認(2026-08-11クロール。日付は媒体の情報提供日)
 location: {area: akabanedai, address: "北区西が丘1"}   # エリア区分「赤羽台・西が丘」
 layout: "4LDK"   # 間取り(媒体記載)
 station: {walk_min: 13, multi_station: true}   # JR京浜東北線・埼京線「赤羽」13分/都営三田線「本蓮沼」16分
