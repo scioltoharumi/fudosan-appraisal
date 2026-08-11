@@ -156,6 +156,90 @@ function bldgCurveSvg(c) {
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="建物残価の築年カーブ" style="width:100%;height:auto">${el.join("")}</svg>`;
 }
 
+// ---- 図0: 一般形 ── 価格形成の模式図(特定物件に依存しない) ----
+function genericSvg() {
+  const W = 640, barY = 52, barH = 38, x0 = 24, x1 = 616;
+  const seg = (a, b) => [x0 + (x1 - x0) * a, (x1 - x0) * (b - a)];
+  const [lx, lw] = seg(0, 0.60);
+  const [bx, bw] = seg(0.60, 0.78);
+  const [ex, ew] = seg(0.78, 0.95);
+  const el = [];
+  // 土地(青): 価値の土台。残る資産
+  el.push(`<rect x="${lx}" y="${barY}" width="${lw}" height="${barH}" fill="#2E6E8E"/>`);
+  el.push(`<text x="${lx + lw / 2}" y="${barY + 17}" font-size="12" font-weight="700" text-anchor="middle" fill="#FFFFFF">土地</text>`);
+  el.push(`<text x="${lx + lw / 2}" y="${barY + 31}" font-size="9.5" text-anchor="middle" fill="#DCE8F0">実勢単価 × 土地坪数 × 個別補正</text>`);
+  // 建物(琥珀): 築年で消える部分
+  el.push(`<rect x="${bx}" y="${barY}" width="${bw}" height="${barH}" fill="#B07C10"/>`);
+  el.push(`<text x="${bx + bw / 2}" y="${barY + 17}" font-size="11" font-weight="700" text-anchor="middle" fill="#FFFFFF">建物残価</text>`);
+  el.push(`<text x="${bx + bw / 2}" y="${barY + 31}" font-size="9" text-anchor="middle" fill="#F2E4C4">再調達×残存率−修繕</text>`);
+  // 売主の期待(赤点線): 交渉で削る部分
+  el.push(`<rect x="${ex}" y="${barY}" width="${ew}" height="${barH}" fill="#C93A2B" opacity="0.13" stroke="#C93A2B" stroke-width="1.4" stroke-dasharray="6,3"/>`);
+  el.push(`<text x="${ex + ew / 2}" y="${barY + 17}" font-size="11" font-weight="700" text-anchor="middle" fill="#C93A2B">売主の期待</text>`);
+  el.push(`<text x="${ex + ew / 2}" y="${barY + 31}" font-size="9" text-anchor="middle" fill="#C93A2B">査定インフレ+希望</text>`);
+  // 上側マーカー: 成約価格の見込み / 売出価格
+  const mx = ex, ax = ex + ew;
+  el.push(`<line x1="${mx}" y1="${barY - 22}" x2="${mx}" y2="${barY + barH}" stroke="#16232E" stroke-width="1.4"/>`);
+  el.push(`<text x="${mx}" y="${barY - 27}" font-size="10.5" font-weight="700" text-anchor="middle" fill="#16232E">成約価格の見込み(=市場水準)</text>`);
+  el.push(`<line x1="${ax}" y1="${barY - 6}" x2="${ax}" y2="${barY + barH}" stroke="#C93A2B" stroke-width="2"/>`);
+  el.push(`<polygon points="${ax - 5},${barY - 14} ${ax + 5},${barY - 14} ${ax},${barY - 5}" fill="#C93A2B"/>`);
+  el.push(`<text x="${ax - 2}" y="${barY - 18}" font-size="10.5" font-weight="700" text-anchor="end" fill="#C93A2B">売出価格</text>`);
+  // 下側注記: 値下げ・指値はどこを削るか
+  const y2 = barY + barH + 22;
+  el.push(`<path d="M ${ax} ${barY + barH + 6} L ${ax} ${y2 - 6} L ${mx} ${y2 - 6} L ${mx} ${barY + barH + 6}" fill="none" stroke="#C93A2B" stroke-width="1" stroke-dasharray="3,2"/>`);
+  el.push(`<text x="${(mx + ax) / 2}" y="${y2 + 8}" font-size="9.5" text-anchor="middle" fill="#C93A2B">値下げ・指値交渉で削られていく区間</text>`);
+  el.push(`<text x="${lx + lw / 2}" y="${y2 + 8}" font-size="9.5" text-anchor="middle" fill="#43566B">解体しても残る価値(下値フロアの源泉)</text>`);
+  el.push(`<text x="${bx + bw / 2}" y="${y2 + 8}" font-size="9.5" text-anchor="middle" fill="#B07C10">住みながら消費する価値</text>`);
+  return `<svg viewBox="0 0 ${W} 148" role="img" aria-label="価格形成の一般形: 土地+建物+売主の期待" style="width:100%;height:auto">${el.join("")}</svg>`;
+}
+
+// ---- 図0b: 築年帯で構成比がどう変わるか(総額≒土地×係数の暗算式を可視化) ----
+function ageBarsSvg() {
+  const W = 640, x0 = 150, unit = 240;   // 土地=unit px で固定し、建物比率で伸びを変える
+  const rows = [
+    { label: "築5年", bldg: 0.34, note: "総額 ≒ 土地×1.34" },
+    { label: "築15年", bldg: 0.13, note: "総額 ≒ 土地×1.13" },
+    { label: "築25年〜", bldg: 0.0, note: "総額 ≒ 土地×1.0(土地値買い)" },
+  ];
+  const el = [];
+  rows.forEach((r0, i) => {
+    const y = 18 + i * 42, h = 24;
+    el.push(`<text x="${x0 - 10}" y="${y + 16}" font-size="10.5" text-anchor="end" fill="#16232E">${r0.label}</text>`);
+    el.push(`<rect x="${x0}" y="${y}" width="${unit}" height="${h}" fill="#2E6E8E"/>`);
+    if (r0.bldg > 0) el.push(`<rect x="${x0 + unit}" y="${y}" width="${unit * r0.bldg}" height="${h}" fill="#B07C10"/>`);
+    const ex = x0 + unit * (1 + r0.bldg);
+    el.push(`<rect x="${ex}" y="${y}" width="${unit * 0.11}" height="${h}" fill="#C93A2B" opacity="0.13" stroke="#C93A2B" stroke-width="1" stroke-dasharray="4,2"/>`);
+    el.push(`<text x="${ex + unit * 0.11 + 8}" y="${y + 16}" font-size="9.5" fill="#43566B">${r0.note}</text>`);
+  });
+  el.push(`<text x="${x0}" y="${18 + 3 * 42 + 4}" font-size="9" fill="#43566B">■土地(同じ土地なら一定) ■建物残価(築年で縮む) ▨売主の期待(築年と無関係に乗る)</text>`);
+  return `<svg viewBox="0 0 ${W} 152" role="img" aria-label="築年帯による価格構成の変化" style="width:100%;height:auto">${el.join("")}</svg>`;
+}
+
+// ---- 変数辞典: 成約事例・売出情報のどこを見るか ----
+function variableDictHtml() {
+  const rows = [
+    ["成約価格・成約年月", "分子と時点修正の基準", "年月がないと時点修正できず、上昇局面では古い事例ほど過小評価になる。四半期単位で記録する",
+      "quarter列。年次別上昇率(2024:+9%・2025:+12%・2026:+6%想定)で基準日へ補正"],
+    ["土地面積(公簿/実測、私道負担の内外)", "分母", "<b>私道負担・セットバック込みの面積で割ると単価が過小に出る</b>。逆に対象物件を公簿のまま計算すると過大評価。実測(確定測量)の有無で数%動く",
+      "対象=登記面積−セットバック(有効宅地)。事例側は内外不明→単価がやや低めに出る事例が混入(保守側の誤差)"],
+    ["建物延床面積・構造・築年月", "建物残価控除の3変数", "延床に車庫・小屋裏を含むかで坪単価が振れる。構造(木造/S/RC/混構造)で再調達単価と寿命が変わる。築年月は残存率の起点",
+      "再調達95万/坪(木造)×(1−築年/30)−繰延修繕。構造はデータに列がなく木造想定──混構造・RCは個別上書き"],
+    ["接道の方位・幅員・公私道別・間口、土地形状、高低差", "個別補正(±数%〜−25%)", "図面があれば旗竿・不整形は一目で判定できる。南面・広幅員・整形は上振れ、旗竿・狭間口・高低差(擁壁)は下振れ。<b>崖・擁壁は検査済証の有無まで確認</b>",
+      "対象=YAMLのdir/roadq/shape/extra。事例側は観測不能→形状補正は半減適用(混入分との二重減価回避)"],
+    ["用途地域・建ぺい率・容積率、再建築可否、セットバック要否", "土地の法的スペック差", "容積率が違う事例と比べると単価がズレる(商業系ほど高い)。<b>再建築不可は別の市場</b>(現金・投資家のみ、−3〜5割)。42条2項道路はセットバック分の面積減",
+      "対象=zoning/bcr/far/rebuildable。再建築不可は両手法に大減価が伝搬。事例側は不明→分布(四分位)に吸収"],
+    ["備考欄(リフォーム歴・告知事項・隣地関係)", "建物残価と個別補正の前提を変える", "<b>残価前提を変える情報はここに出る</b>。大規模修繕済みなら残価+数百万、心理的瑕疵・越境・隣地紛争は価格外の減点。成約事例側の備考はレインズでしか見えない",
+      "データに列なし→全事例「年式相応の未修繕」と対称仮定。上の建物パネルの2本カーブの差がこの影響量"],
+    ["駅徒歩(時間距離)", "個別補正(±1.2%/分)", "実測の徒歩分数(80m/分)か、バス便かを確認。複数路線はプラス材料だが事例側の駅属性は通常不明",
+      "徒歩10分標準へ正規化(発散防止のため±の頭打ちあり)。事例=データのwalk_min、30分超は除外"],
+    ["権利形態(所有権/借地権)", "土地部分の係数(借地は×0.4〜0.6)", "借地権・底地は所有権と別の市場。地代・更新料・譲渡承諾の条件で大きく変わる",
+      "所有権のみ査定対象。借地はlc係数で減額の上、参考扱い"],
+  ];
+  return `<div style="overflow-x:auto"><table class="list">
+    <tr><th>変数</th><th>式のどこに効くか</th><th>見るポイント(誤差の向き)</th><th>本モデルでの扱い</th></tr>
+    ${rows.map(([a, b, c, d]) => `<tr><td style="white-space:normal;min-width:120px"><b>${a}</b></td><td style="white-space:normal;min-width:90px">${b}</td><td style="white-space:normal;font-size:.78rem">${c}</td><td style="white-space:normal;font-size:.78rem;color:var(--ink-soft)">${d}</td></tr>`).join("")}
+  </table></div>`;
+}
+
 export function renderFormula({ r, rRef, property }, calArea, houseDeals) {
   const rt = r.retail;
   const s = r.state;
@@ -172,13 +256,33 @@ export function renderFormula({ r, rRef, property }, calArea, houseDeals) {
 
   const body = `
   <div class="panel">
-    <h2>一枚の式 ── 中古戸建の値段はこう分解できる</h2>
+    <h2>一般形 ── 中古戸建の値段はこう積み上がる</h2>
     <div class="logic-body">
-      <pre style="font-family:var(--mono);font-size:.86rem;line-height:2;background:#F7F9FA;border:1px solid var(--grid);padding:14px 16px;overflow-x:auto"><b>成約価格</b> = 土地実勢単価 × 土地坪数 × 個別補正 + 建物残価(修繕控除後)
-<b>売出価格</b> = 成約価格の見込み + <span style="color:var(--stamp)">売主の期待(査定インフレ+希望上乗せ)</span></pre>
-      <p class="why">実際の市場は成約事例ベースで値付けされる。この式の各項が「どこから来る数字か」を、本物件(${esc(property.location?.address ?? r.id)}・売出${fmtMan(Math.round(s.ask))})を例に順に解剖する。図中の数値はすべて査定基準日 ${esc(r.asOf)} 時点のエンジン再計算値。</p>
+      <pre style="font-family:var(--mono);font-size:.86rem;line-height:2;background:#F7F9FA;border:1px solid var(--grid);padding:14px 16px;overflow-x:auto"><b>成約価格</b> = <span style="color:#2E6E8E"><b>土地実勢単価 × 土地坪数 × 個別補正</b></span> + <span style="color:#B07C10"><b>建物残価(修繕控除後)</b></span>
+<b>売出価格</b> = 成約価格の見込み + <span style="color:var(--stamp)"><b>売主の期待(査定インフレ+希望上乗せ)</b></span></pre>
+      ${genericSvg()}
+      <div class="note">3つの塊は性質が違う: <b style="color:#2E6E8E">土地</b>は解体しても残る資産で下値フロアの源泉。<b style="color:#B07C10">建物</b>は住みながら消費する価値で築年とともに消える。<b style="color:var(--stamp)">売主の期待</b>は資産価値ゼロの上乗せで、時間経過と値下げ・指値交渉で削られていく部分──買い手の仕事はこの赤い区間を払わないこと。</div>
+      <p class="why" style="margin-top:14px">同じ土地でも、築年帯によって構成比は大きく変わる(暗算式: 総額 ≒ 土地実勢 × 係数):</p>
+      ${ageBarsSvg()}
+      <div class="note">築浅は建物が総額の3割超を占める「別の乗り物」(新築なら分譲利益も乗る)。築22〜25年で建物はゼロに収束し、以降は「土地値買い」の世界。どの築年帯でも売主の期待は同じように乗ってくるため、<b>築古ほど期待の相対的な歪みが大きくなりやすい</b>。</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>実例 ── ${esc(property.location?.address ?? r.id)}(売出${fmtMan(Math.round(s.ask))})を式に当てはめる</h2>
+    <div class="logic-body">
+      <p class="why">上の一般形に実物件の数字を入れたのが下図。図中の数値はすべて査定基準日 ${esc(r.asOf)} 時点のエンジン再計算値。</p>
       ${anatomySvg({ landPart: rt.landPart, bldg: rt.bldgSubj, retailMid: rt.mid, fairLo: r.fairFinal.lo, fairMid: r.fairFinal.mid, fairHi: r.fairFinal.hi, ask: s.ask })}
       <div class="note">市場水準 = 周辺の戸建成約${rt.n}件から時点・徒歩・規模を補正した中央値(リテール比較法)。適正レンジは原価法との重み付き調整(重み ${(r.fairFinal.weights.cost * 100).toFixed(0)}:${(r.fairFinal.weights.retail * 100).toFixed(0)})。売出と市場水準の差 <b>+${fmtMan(Math.round(s.ask - rt.mid))}</b> が「売主の期待」──媒介獲得競争で上振れした査定額に、売主の希望が上乗せされた部分で、値下げ交渉の主戦場になる。</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>変数辞典 ── 成約事例・売出情報のどこを見るか</h2>
+    <div class="logic-body">
+      <p class="why">式の各項に入る変数と、取り違えたときに誤差がどちらへ出るか。成約事例を自分で検分するときのチェックリストとして使う。</p>
+      ${variableDictHtml()}
+      <div class="note">国交省の公開データに存在しない列(構造・修繕歴・接道方位・備考)は観測不能のため、本モデルは「対象と事例に同じ仮定を対称に置いて誤差を相殺する」方針を取る。個別事例の実態を確定させたい場合はレインズ(買側仲介経由)の成約図面・備考欄が唯一の情報源。</div>
     </div>
   </div>
 
