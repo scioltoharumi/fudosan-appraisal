@@ -371,7 +371,39 @@ export function renderFormula({ r, rRef, property }, calArea, houseDeals) {
   const quarterRows = raw.quarters.map((q) =>
     `<tr><td>${esc(q.q)}</td><td class="num">${q.n}件</td><td class="num">${q.med}万/坪</td><td class="num">${q.over300 > 0 ? `<span style="color:var(--stamp)">${q.over300}件</span>` : "0件"}</td></tr>`).join("");
 
+  const boxStyle = 'border:1.5px solid var(--ink);background:#FDFDFC;padding:12px 14px;flex:1;min-width:250px';
+  const stepStyle = 'font-size:.8rem;line-height:1.8;margin-top:8px';
   const body = `
+  <div class="panel">
+    <h2>買付側の評価の型 ── このページの使い方</h2>
+    <div class="logic-body">
+      <p class="why">不動産価格の変数の核は<b>①土地実勢単価</b>と<b>②修繕負債</b>の2つ(+踏むと一撃の③地雷)。この3つを自分の数字で固める<b>【評価】</b>と、売出価格との差=売主の期待を削る<b>【交渉】</b>は別のフェーズで、両者はループする──交渉で得た情報が評価の確度を上げ、評価の根拠が交渉の材料になる。</p>
+      <div style="display:flex;flex-wrap:wrap;gap:0;align-items:stretch;margin-top:6px">
+        <div style="${boxStyle}">
+          <div style="font-weight:700;border-bottom:1px solid var(--grid);padding-bottom:6px">【評価】自分の数字を固める(推定の作業)</div>
+          <div style="${stepStyle}">
+            <b>1. 土地実勢単価を測る</b> ── 成約データで自分で較正(→第1項)。業者の提示単価には「その単価で成約した事例はどれか」と根拠を要求<br>
+            <b>2. 修繕負債を確定する</b> ── 履歴確認+実見積り(→第2項)。不明なら築年×${RETAIL.REPAIR_PER_YEAR}万/年で仮置きし、契約前に実額へ置き換える<br>
+            <b>3. 地雷を潰す</b> ── 再建築可否・崖/擁壁・私道・告知事項(→変数辞典)。見積もる変数ではなく、黒なら単価の議論以前
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;padding:8px 10px;min-width:110px">
+          <div style="font-size:.68rem;color:var(--ink-soft);text-align:center">根拠を材料に<br>指値を出す</div>
+          <div style="font-size:1.3rem;color:var(--ink);line-height:1.1">⇄</div>
+          <div style="font-size:.68rem;color:var(--ink-soft);text-align:center">売出履歴・売主事情で<br>評価の確度を更新</div>
+        </div>
+        <div style="${boxStyle};border-color:var(--stamp)">
+          <div style="font-weight:700;color:var(--stamp);border-bottom:1px solid var(--grid);padding-bottom:6px">【交渉】売主の期待を削る(駆け引きの作業)</div>
+          <div style="${stepStyle}">
+            <b>4. 売出履歴・値下げ・媒介の経過を調べ、1〜3の根拠を突きつける</b><br>
+            値下げ済み・長期滞留・媒介更新期限はすべて圧力材料。売主の期待は「見積もる」対象ではなく「払わないと決めて削る」対象。<b>指値の底は1+2の合計(3が全て白の場合)で、そこを超えたら降りる</b>
+          </div>
+        </div>
+      </div>
+      <div class="note" style="margin-top:10px">1〜3は精度を上げるほど得をする推定、4は情報の非対称を潰すほど得をする駆け引き。そして4の最強の材料は1〜3を先に済ませてあること──成約事例・修繕見積り・検査済証を持って座る買主には、期待分の上乗せが最初から通らない。以下、この型に必要な部品を順に図解する。</div>
+    </div>
+  </div>
+
   <div class="panel">
     <h2>一般形 ── 中古戸建の値段はこう積み上がる</h2>
     <div class="logic-body">
