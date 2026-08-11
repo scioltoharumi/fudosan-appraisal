@@ -28,7 +28,10 @@ export function renderDataExplorer({ houseRows, landRows, verification, asOf }) 
     <h2>戸建成約(リテール比較法の事例プール)</h2>
     <div class="logic-body">
       <div id="controls" style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;font-size:.78rem">
-        <div><div class="note">地区</div><div id="distChips" style="max-width:430px"></div></div>
+        <div><div class="note">地区
+          <button type="button" id="distAll" style="font-size:.68rem;padding:1px 7px;margin-left:6px;cursor:pointer">全て選択</button>
+          <button type="button" id="distNone" style="font-size:.68rem;padding:1px 7px;cursor:pointer">全て解除</button>
+        </div><div id="distChips" style="max-width:430px"></div></div>
         <div><div class="note">築年(年)</div><input id="ageMin" type="number" value="-2" style="width:56px"> 〜 <input id="ageMax" type="number" value="70" style="width:56px"></div>
         <div><div class="note">土地(m²)</div><input id="landMin" type="number" value="0" style="width:60px"> 〜 <input id="landMax" type="number" value="400" style="width:60px"></div>
         <div><div class="note">時期(以降)</div><select id="qFrom"></select></div>
@@ -49,7 +52,8 @@ export function renderDataExplorer({ houseRows, landRows, verification, asOf }) 
           <tbody></tbody>
         </table>
       </div>
-      <div class="note">土地単価 = 総額÷土地坪(補正前の生値)。検証バッジ: ✓✓=二重照合一致 / ✓=一次ソース確認 / ?=要再確認。出所列のリンク先ページ内で価格・面積・時期を目視照合できる(「原典ID」は一次ソースが参照する国交省CSV内のレコードID)。</div>
+      <div class="note">土地単価 = 総額÷土地坪(補正前の生値・<b>建物込みの見かけ単価</b>。査定に使う建物控除後の残余単価とは別物)。検証バッジ: ✓✓=二重照合一致 / ✓=一次ソース確認 / ?=要再確認。</div>
+      <div class="note" style="margin-top:8px;border:1px dashed var(--grid);padding:10px 12px"><b>目視でファクトチェックする手順</b>: 一次↗(utinokati)は開いた直後に見えるのが「相場○○万円/坪」等の集計値で、<b>個別成約はページ下部の取引事例一覧(スクリプト描画・ページ送りあり)まで降りる必要がある</b>。目当ての行が見つからない場合はページ送りを繰り返すか、静的な一覧表で照合しやすい<b>第二↗(baikyaku-agent)</b>を使うのが早い(価格・面積・建築年・時期が1表に並ぶ)。なお一次ページ上部の「相場」は<b>直近暦年のみ・総額÷土地面積の単純平均</b>で、標本が数件しかない年は外れ値1件で数十%動く参考値──本サイトが集計値でなく個別レコードだけを収載しているのはこのため。機械照合は <code>node engine/verify-data.mjs</code>(一次のライブ再取得+第二ソース突合)で全行を再実行できる。原典IDは一次ソースが参照する国交省CSV内のレコードID。</div>
     </div>
   </div>
 
@@ -87,6 +91,9 @@ export function renderDataExplorer({ houseRows, landRows, verification, asOf }) 
   // 地区チップ
   $("distChips").innerHTML = districts.map(d => '<label style="display:inline-block;margin:1px 4px 1px 0"><input type="checkbox" checked data-d="' + d + '">' + d + '</label>').join("");
   document.querySelectorAll("#distChips input").forEach(el => el.addEventListener("change", () => { el.checked ? S.dists.add(el.dataset.d) : S.dists.delete(el.dataset.d); render(); }));
+  const setAllDists = (on) => { document.querySelectorAll("#distChips input").forEach(el => { el.checked = on; }); S.dists = new Set(on ? districts : []); render(); };
+  $("distAll").addEventListener("click", () => setAllDists(true));
+  $("distNone").addEventListener("click", () => setAllDists(false));
   $("qFrom").innerHTML = quarters.map(q => '<option' + (q === "2022Q1" ? " selected" : "") + '>' + q + '</option>').join("");
   ["ageMin","ageMax","landMin","landMax","qFrom","vFilter"].forEach(id => $(id).addEventListener("input", render));
   document.querySelectorAll("#dealTable th[data-k]").forEach(th => th.addEventListener("click", () => {
