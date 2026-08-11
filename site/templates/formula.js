@@ -548,7 +548,8 @@ export function renderFormula({ r, rRef, property }, calArea, houseDeals) {
           <div style="font-weight:700;color:#2C6E49;border-bottom:1px solid var(--grid);padding-bottom:6px">満足軸 ── 上限を事前に自分で決める</div>
           <div style="${stepStyle}">
             相場を超えて払う分だけが<b>満足の購入代金</b>で、転売時に回収できない。だから「気に入ったら+○○万円まで」と<b>内見の前に紙に書く</b>。<br>
-            本物の個人的事情(学区・親との距離・介護の間取り)は正当なプレミアム。見分け方は「その理由を言い出したのは自分か、営業か」。
+            本物の個人的事情(学区・親との距離・介護の間取り)は正当なプレミアム。見分け方は「その理由を言い出したのは自分か、営業か」。<br>
+            希望条件の大半は実はプレミアムではなく計算で潰せる──仕分けと金額換算は<a href="tradeoff.html">妥協の値段(A/B/C分類と工事費早見表)</a>。
           </div>
         </div>
       </div>

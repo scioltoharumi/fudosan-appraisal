@@ -12,6 +12,7 @@ import { loadHouseDeals } from "../engine/retail.js";
 import { renderMarketBasis } from "./templates/market-basis.js";
 import { renderDataExplorer } from "./templates/data-explorer.js";
 import { renderFormula } from "./templates/formula.js";
+import { renderTradeoff } from "./templates/tradeoff.js";
 import { loadVerification } from "../engine/retail.js";
 import { loadDeals } from "../engine/calibrate.js";
 
@@ -69,6 +70,9 @@ if (formulaTarget) {
 } else {
   console.warn("⚠ formula.html スキップ(リテール比較が成立する物件なし)");
 }
+// 妥協の値段(A/B/C分類とB群工事費早見表): 静的リファレンス
+writeFileSync(join(DIST, "tradeoff.html"), renderTradeoff({ asOf }), "utf8");
+console.log("✓ tradeoff.html");
 // データ探索ページ: 各行に検証状態と出所リンクを付与
 const verification = loadVerification();
 const vByKey = new Map((verification?.rows ?? []).map((v) => [v.key, v]));

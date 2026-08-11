@@ -11,7 +11,8 @@
   area-config.yaml(エリア基準坪単価) / verification.json(照合結果。conflict行は自動除外)
 - `properties/` — 1物件1YAML。事実と査定パラメータのみ
 - `site/` — build.js が dist/ を生成。index / property別 / market(根拠) / guide / data(データ探索) /
-  formula(値段の解剖=算出ロジック図解・題材は赤羽西4)
+  formula(値段の解剖=算出ロジック図解・題材は赤羽西4) / tradeoff(妥協の値段=希望条件のA/B/C分類と
+  B群工事費早見表。A=市場価格・B=工事費上限(物件ごとにA昇格あり)・C=月額テスト)
 - `tests/` — `npm test`(node --test)。エンジン回帰値・不変条件・データ妥当性 20件
 
 ## 運用ルール
