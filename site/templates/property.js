@@ -1,7 +1,9 @@
 // site/templates/property.js — 物件詳細ページ(simulator v1.2のUI資産をサーバサイド描画に移植)
 // スケールSVG / 明細表 / MC分布 / トルネード / 算出根拠の全文開示 / 予算 / モデル外チェックリスト / 仮定一覧
 import { fmtMan, pct, COEFFS } from "../../engine/appraise.js";
+import { districtOf } from "../../engine/retail.js";
 import { layout, esc, STATUS_LABEL, fmtDate, safeUrl } from "./layout.js";
+import { anatomySvg, rawResidualStats } from "./anatomy.js";
 
 const DIR_LABEL = { "0.05": "南", "0.02": "東・南西・南東", "0": "西", "-0.03": "北" };
 const ROAD_LABEL = { "0": "幅員4m以上", "-0.05": "4m未満(2項道路)", "-0.1": "接道に疑義(通路等)" };
@@ -17,6 +19,59 @@ const CHECK_STATIC = [
   "インスペクション(観察減価はこのモデルの外)",
   "解体費の実見積(重機搬入可否で大きく変動)",
 ];
+
+// ---- 値段の解剖(formula.htmlの「実例」と同じ書き方を全物件で踏襲) ----
+// 総額 = 土地 + 建物残価 + 売主の期待、の3層に分解して1本のバーで示し、
+// 式への実数代入と残余単価の検算(市場分布との突き合わせ)を添える。
+function anatomyHtml(r, property, houseDeals) {
+  const { state: s, mid } = r;
+  const rt = r.retail;
+  const marketMid = rt ? rt.mid : r.fairFinal.mid;
+  const landPartRaw = rt ? rt.landPart : mid.land2;
+  const barLand = Math.min(landPartRaw, marketMid);
+  const barBldg = Math.max(0, marketMid - barLand);
+  const gap = s.ask - marketMid;
+  const tsubo = mid.tsubo;
+  const svg = anatomySvg({ landPart: barLand, bldg: barBldg, retailMid: marketMid,
+    fairLo: r.fairFinal.lo, fairMid: r.fairFinal.mid, fairHi: r.fairFinal.hi, ask: s.ask });
+
+  const formulaPre = rt
+    ? `<b>市場水準</b> = 残余単価 ${Math.round(rt.unitMid)}万/坪 × 実効${tsubo.toFixed(2)}坪 × 個別補正${rt.subjectFactor.toFixed(2)}(= <span style="color:#2E6E8E">土地 ${fmtMan(Math.round(rt.landPart))}</span>) + <span style="color:#B07C10">建物残価 ${fmtMan(Math.round(rt.bldgSubj))}</span> = <b>${fmtMan(Math.round(rt.mid))}</b>
+<b>売出価格</b> = 市場水準 ${fmtMan(Math.round(rt.mid))} + <span style="color:var(--stamp)"><b>売主の期待 ${gap >= 0 ? "+" : ""}${fmtMan(Math.round(gap))}</b>(市場水準比 ${gap >= 0 ? "+" : ""}${(100 * gap / marketMid).toFixed(1)}%)</span> = ${fmtMan(Math.round(s.ask))}`
+    : `<b>市場水準(原価法)</b> = ${r.fairFinal.route === "land"
+      ? `<span style="color:#2E6E8E">土地 ${fmtMan(Math.round(mid.land2))}</span> − 解体費 ${fmtMan(Math.round(s.demo))}(土地として売る方が高い)`
+      : `<span style="color:#2E6E8E">土地 ${fmtMan(Math.round(mid.land2))}</span> + <span style="color:#B07C10">建物残価(市場性・修繕控除後) ${fmtMan(Math.round(Math.max(0, marketMid - mid.land2)))}</span>`} = <b>${fmtMan(Math.round(marketMid))}</b>
+<b>売出価格</b> = 市場水準 ${fmtMan(Math.round(marketMid))} + <span style="color:var(--stamp)"><b>売主の期待 ${gap >= 0 ? "+" : ""}${fmtMan(Math.round(gap))}</b>(市場水準比 ${gap >= 0 ? "+" : ""}${(100 * gap / marketMid).toFixed(1)}%)</span> = ${fmtMan(Math.round(s.ask))}`;
+
+  // 残余単価の検算(リテール成立時のみ。市場分布は隣接地区・中古実需帯の生の実績)
+  let residCheck = "";
+  if (rt) {
+    const district = districtOf(property.location?.address);
+    const raw = district ? rawResidualStats(houseDeals, district) : { n: 0 };
+    const askUnitResid = Math.round((s.ask - rt.bldgSubj) / (tsubo * rt.subjectFactor));
+    if (raw.n >= 8) {
+      residCheck = `
+      <table class="kv" style="max-width:640px;margin-top:10px">
+        <tr><td>検算: 売出価格の残余単価(建物控除後・土地1坪あたりの要求水準)</td><td class="num" style="color:var(--stamp)"><b>${askUnitResid}万/坪</b></td></tr>
+        <tr><td>周辺実績の生の中央値 / 上位10%(隣接地区・築3〜25年 ${raw.n}件)</td><td class="num">${raw.med}万/坪 / ${raw.p90}万/坪</td></tr>
+        <tr><td>時点修正後の市場中央値(上昇継続を仮定した「今」の推計)</td><td class="num">${Math.round(rt.unitMid)}万/坪</td></tr>
+      </table>`;
+    } else {
+      residCheck = `<div class="note" style="margin-top:8px">検算: 売出価格の残余単価は <b>${askUnitResid}万/坪</b>(建物控除後)。この地区は隣接の実需帯標本が少なく分布との突き合わせは省略。</div>`;
+    }
+  }
+
+  return `
+    <section>
+      <h2 class="sub">値段の解剖 ── 売出価格を「土地+建物+売主の期待」に分ける</h2>
+      <div class="logic-body">
+        ${svg}
+        <pre style="font-family:var(--mono);font-size:.78rem;line-height:1.9;background:#F7F9FA;border:1px solid var(--grid);padding:12px 14px;overflow-x:auto;margin-top:10px">${formulaPre}</pre>
+        ${residCheck}
+        <div class="note" style="margin-top:8px"><span style="color:#2E6E8E">■土地</span>は解体しても残る価値(下値フロアの源泉)、<span style="color:#B07C10">■建物</span>は住みながら消費する価値、<span style="color:var(--stamp)">▨売主の期待</span>は資産価値ゼロの上乗せで値下げ・交渉で削られていく部分${rt ? "" : "。本物件はリテール比較が不成立のため市場水準は原価法による"}。この書き方の一般形・各項の意味は<a href="../formula.html">値段の解剖(算出ロジック図解)</a>、希望条件の金額換算は<a href="../tradeoff.html">妥協の値段</a>を参照。</div>
+      </div>
+    </section>`;
+}
 
 // ---- 価格スケールSVG(v1.2 drawScale移植) ----
 function scaleSvg(s, v) {
@@ -332,7 +387,7 @@ function marketCalHtml(r, marketCal) {
 }
 
 // ---- ページ全体 ----
-export function renderProperty(r, property, marketCal = null) {
+export function renderProperty(r, property, marketCal = null, houseDeals = null) {
   const { state: s, mid, lo, hi, verdict: v, incomeVal } = r;
   const status = STATUS_LABEL[property.status] || property.status;
   const body = `
@@ -354,6 +409,8 @@ export function renderProperty(r, property, marketCal = null) {
         ${r.fairFinal.floorBound ? `<div class="caveat" style="margin-top:6px">※ 本査定は土地換算値が下限として発火している(事例比較より土地値が高い)。土地単価が${r.fairFinal.pptSource === "calibrated" ? "成約較正済み" : "未検証(較正未成立)のため下限には×0.9のペナルティを適用済み"}。</div>` : ""}
       </div>
     </div>
+
+    ${anatomyHtml(r, property, houseDeals)}
 
     <section>
       <h2 class="sub">価格スケール ── 売出価格はどこに立っているか</h2>
