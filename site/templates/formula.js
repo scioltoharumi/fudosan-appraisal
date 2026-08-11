@@ -115,6 +115,8 @@ function bldgCurveSvg(c) {
   const Y = (v) => padT + (1 - v / yMax) * (H - padT - padB);
   const val = (a) => Math.max(0, c.rebuild * c.floorTsubo * Math.max(0, 1 - a / COEFFS.BUILDING_LIFE_Y) * (1 + c.bm)
     - Math.min(c.repairCap, RETAIL.REPAIR_PER_YEAR * a));
+  // リフォーム・大規模修繕済み(繰延修繕の控除なし)の上側カーブ
+  const valFull = (a) => Math.max(0, c.rebuild * c.floorTsubo * Math.max(0, 1 - a / COEFFS.BUILDING_LIFE_Y) * (1 + c.bm));
   const el = [];
   for (let m = 0; m <= yMax; m += 500) {
     el.push(`<line x1="${padL}" y1="${Y(m)}" x2="${W - 16}" y2="${Y(m)}" stroke="#DCE3EA" stroke-width="1"/>`);
@@ -124,17 +126,29 @@ function bldgCurveSvg(c) {
     el.push(`<text x="${X(a)}" y="${H - padB + 16}" font-size="9" text-anchor="middle" fill="#43566B" font-family="monospace">築${a}年</text>`);
   }
   el.push(`<line x1="${padL}" y1="${H - padB}" x2="${W - 16}" y2="${H - padB}" stroke="#16232E" stroke-width="1"/>`);
+  // 上側: リフォーム済みカーブ(破線)
+  const ptsF = [];
+  for (let a = 0; a <= 30; a += 0.25) ptsF.push(`${X(a).toFixed(1)},${Y(valFull(a)).toFixed(1)}`);
+  el.push(`<polyline points="${ptsF.join(" ")}" fill="none" stroke="#2E6E8E" stroke-width="1.8" stroke-dasharray="6,4"/>`);
+  el.push(`<text x="${X(21)}" y="${Y(valFull(21)) - 8}" font-size="9.5" fill="#2E6E8E">リフォーム・大規模修繕済み(控除なし・築30年でゼロ)</text>`);
+  // 下側: 未修繕(現況)カーブ(実線)
   const pts = [];
   for (let a = 0; a <= 30; a += 0.25) pts.push(`${X(a).toFixed(1)},${Y(val(a)).toFixed(1)}`);
   el.push(`<polyline points="${pts.join(" ")}" fill="none" stroke="#B07C10" stroke-width="2.5"/>`);
+  el.push(`<text x="${X(6.5)}" y="${Y(val(6.5)) + 16}" font-size="9.5" fill="#B07C10">未修繕(繰延修繕を控除)</text>`);
   for (const m of [0, 5, 10]) {
     el.push(`<circle cx="${X(m)}" cy="${Y(val(m))}" r="3.5" fill="#B07C10"/>`);
     el.push(`<text x="${X(m) + 6}" y="${Y(val(m)) - 7}" font-size="9.5" fill="#43566B">築${m}: ${Math.round(val(m))}万</text>`);
   }
-  // 対象物件とゼロ着地
+  // 対象物件とゼロ着地。リフォーム状態の差を両カーブ間の縦矢印で示す
   el.push(`<line x1="${X(c.age)}" y1="${Y(val(c.age))}" x2="${X(c.age)}" y2="${H - padB}" stroke="#C93A2B" stroke-width="1.4" stroke-dasharray="4,3"/>`);
+  el.push(`<line x1="${X(c.age)}" y1="${Y(valFull(c.age))}" x2="${X(c.age)}" y2="${Y(val(c.age))}" stroke="#2C6E49" stroke-width="1.6"/>`);
+  el.push(`<polygon points="${X(c.age) - 4},${Y(valFull(c.age)) + 7} ${X(c.age) + 4},${Y(valFull(c.age)) + 7} ${X(c.age)},${Y(valFull(c.age)) + 1}" fill="#2C6E49"/>`);
+  el.push(`<circle cx="${X(c.age)}" cy="${Y(valFull(c.age))}" r="4" fill="#2E6E8E"/>`);
+  el.push(`<text x="${X(c.age) + 7}" y="${Y(valFull(c.age)) - 6}" font-size="10" font-weight="700" fill="#2E6E8E">修繕済みなら ${Math.round(valFull(c.age))}万</text>`);
+  el.push(`<text x="${X(c.age) + 7}" y="${(Y(valFull(c.age)) + Y(val(c.age))) / 2 + 4}" font-size="9.5" font-weight="700" fill="#2C6E49">リフォームで埋まる差 ${Math.round(valFull(c.age) - val(c.age))}万</text>`);
   el.push(`<circle cx="${X(c.age)}" cy="${Y(val(c.age))}" r="4.5" fill="#C93A2B"/>`);
-  el.push(`<text x="${X(c.age) + 6}" y="${Y(val(c.age)) - 8}" font-size="10.5" font-weight="700" fill="#C93A2B">本物件 築${c.age.toFixed(1)}年: ${Math.round(val(c.age))}万</text>`);
+  el.push(`<text x="${X(c.age) + 7}" y="${Y(val(c.age)) + 14}" font-size="10.5" font-weight="700" fill="#C93A2B">本物件(未修繕) 築${c.age.toFixed(1)}年: ${Math.round(val(c.age))}万</text>`);
   let zeroAge = 30;
   for (let a = 0; a <= 30; a += 0.05) if (val(a) <= 0) { zeroAge = a; break; }
   el.push(`<text x="${X(zeroAge)}" y="${H - padB - 8}" font-size="9.5" fill="#43566B">築${zeroAge.toFixed(0)}年前後でゼロ着地(税法22年とほぼ一致)</text>`);
@@ -191,9 +205,10 @@ export function renderFormula({ r, rRef, property }, calArea, houseDeals) {
     <div class="logic-body">
       ${bldgCurveSvg({ rebuild: s.rebuild ?? COEFFS.DEFAULT_REBUILD_PPT, floorTsubo, bm: s.bm, age: s.age, repairCap: s.repair, atNew: (s.rebuild ?? COEFFS.DEFAULT_REBUILD_PPT) * floorTsubo * (1 + s.bm) })}
       <pre style="font-family:var(--mono);font-size:.8rem;line-height:1.9;background:#F7F9FA;border:1px solid var(--grid);padding:12px 14px;overflow-x:auto">建物残価 = 再調達${s.rebuild ?? COEFFS.DEFAULT_REBUILD_PPT}万/坪 × 延床${floorTsubo.toFixed(1)}坪 × (1 − 築年/${COEFFS.BUILDING_LIFE_Y}) × 市場性${(1 + s.bm).toFixed(2)}
-         − 繰延修繕 min(想定${Math.round(s.repair)}万, ${RETAIL.REPAIR_PER_YEAR}万×築年)
-本物件(築${s.age.toFixed(1)}年) = ${fmtMan(Math.round(rt.bldgSubj))}</pre>
+         − 繰延修繕 min(想定${Math.round(s.repair)}万, ${RETAIL.REPAIR_PER_YEAR}万×築年)   ← リフォーム状態でここが大きく動く
+本物件(築${s.age.toFixed(1)}年・未修繕) = ${fmtMan(Math.round(rt.bldgSubj))} / 修繕・リフォーム済みなら ${fmtMan(Math.round(rt.bldgSubj + (rt.repairSubj ?? 0)))}(差 ${fmtMan(Math.round(rt.repairSubj ?? 0))})</pre>
       <div class="note"><b>読み方</b>: 税法耐用年数22年(木造)は帳簿の話で、市場は「解体せず住める家」に新築回避価値を払う──だから30年直線。ただし償却(年約${Math.round((s.rebuild ?? COEFFS.DEFAULT_REBUILD_PPT) * floorTsubo * (1 + s.bm) / COEFFS.BUILDING_LIFE_Y)}万)に修繕負債の積み上がり(年${RETAIL.REPAIR_PER_YEAR}万)が重なり、実質ゼロ着地は偶然にも税法と同じ築22年前後。<b>築浅は建物が総額の3〜4割を占める別の乗り物</b>で、新築には分譲利益も乗る(本エンジンは新築の査定を新築成約とだけ比較する対称ルールで隔離)。この式は比較事例側の建物控除にも同じ形で使っており(配分法の対称性)、カーブの多少の誤差は引く側と足す側で相殺される。</div>
+      <div class="note" style="margin-top:8px"><b>リフォーム済みか否かで大きく変わる</b>: 図の2本のカーブの差が繰延修繕で、同じ築年でも大規模修繕・リフォーム済みなら上の破線(本物件なら+${fmtMan(Math.round(rt.repairSubj ?? 0))}=総額の約${(100 * (rt.repairSubj ?? 0) / rt.mid).toFixed(0)}%)、放置で劣化が想定超なら実額控除でさらに下へ動く。売出情報で「大規模修繕の実施歴」を必ず確認し、未実施なら実見積りを指値の根拠にすること。なお比較事例側の修繕状態はデータに記録がなく、本モデルは「全事例とも年式相応の未修繕」と対称に仮定している。実際には売却前に化粧直しされた事例が混ざりやすい(=中央値がやや修繕済み寄りに上振れ)ため、<b>未修繕の物件は市場中央値そのままではなく、中央値−リフォーム差分の間を等価点と見るのが保守的</b>。</div>
     </div>
   </div>
 
