@@ -39,8 +39,9 @@ function rawResidualStats(houseDeals, subjectDistrict) {
 }
 
 // ---- 図1: 総額の解剖(積み上げ+売主の期待) ----
+// ラベルは縦3段(y=14売出 / y=30市場水準 / y=46建物)に分離し重なりを防ぐ
 function anatomySvg(v) {
-  const W = 640, axisY = 96;
+  const W = 640, barY = 58, barH = 30, axisY = 104;
   const max = Math.max(v.ask, v.fairHi) * 1.06;
   const X = (val) => 24 + (val / max) * 592;
   const el = [];
@@ -52,30 +53,31 @@ function anatomySvg(v) {
   }
   el.push(`<line x1="24" y1="${axisY}" x2="616" y2="${axisY}" stroke="#16232E" stroke-width="1"/>`);
   // 積み上げバー: 土地 + 建物 = 市場水準(リテール中央値)
-  const barY = 52, barH = 30;
   el.push(`<rect x="${X(0)}" y="${barY}" width="${X(v.landPart) - X(0)}" height="${barH}" fill="#2E6E8E"/>`);
-  el.push(`<text x="${X(v.landPart / 2)}" y="${barY + 20}" font-size="11" font-weight="700" text-anchor="middle" fill="#FFFFFF">土地 ${fmtMan(Math.round(v.landPart))}</text>`);
+  el.push(`<text x="${X(v.landPart / 2)}" y="${barY + 19}" font-size="11" font-weight="700" text-anchor="middle" fill="#FFFFFF">土地 ${fmtMan(Math.round(v.landPart))}</text>`);
   el.push(`<rect x="${X(v.landPart)}" y="${barY}" width="${X(v.landPart + v.bldg) - X(v.landPart)}" height="${barH}" fill="#B07C10"/>`);
-  el.push(`<text x="${X(v.landPart + v.bldg / 2)}" y="${barY - 26}" font-size="10" text-anchor="middle" fill="#B07C10">建物 ${fmtMan(Math.round(v.bldg))}</text>`);
-  el.push(`<line x1="${X(v.landPart + v.bldg / 2)}" y1="${barY - 22}" x2="${X(v.landPart + v.bldg / 2)}" y2="${barY - 4}" stroke="#B07C10" stroke-width="1"/>`);
-  // 売主の期待(市場水準→売出)
+  const bcx = X(v.landPart + v.bldg / 2);
+  el.push(`<text x="${bcx}" y="46" font-size="10" text-anchor="middle" fill="#B07C10">建物 ${fmtMan(Math.round(v.bldg))}</text>`);
+  el.push(`<line x1="${bcx}" y1="49" x2="${bcx}" y2="${barY}" stroke="#B07C10" stroke-width="1"/>`);
+  // 売主の期待(市場水準→売出)。幅が狭いため差額のみバー内に表記(全文は図下の注記)
   const gx0 = X(v.retailMid), gx1 = X(v.ask);
   el.push(`<rect x="${gx0}" y="${barY}" width="${Math.max(2, gx1 - gx0)}" height="${barH}" fill="#C93A2B" opacity="0.14" stroke="#C93A2B" stroke-width="1.2" stroke-dasharray="5,3"/>`);
-  el.push(`<text x="${(gx0 + gx1) / 2}" y="${barY + 19}" font-size="10.5" font-weight="700" text-anchor="middle" fill="#C93A2B">売主の期待 +${fmtMan(Math.round(v.ask - v.retailMid))}</text>`);
-  // 市場水準・適正レンジ・売出のマーカー
-  el.push(`<line x1="${gx0}" y1="${barY - 14}" x2="${gx0}" y2="${axisY}" stroke="#16232E" stroke-width="1.2"/>`);
-  el.push(`<text x="${gx0}" y="${barY - 18}" font-size="10" text-anchor="middle" fill="#16232E">市場水準 ${fmtMan(Math.round(v.retailMid))}</text>`);
+  el.push(`<text x="${(gx0 + gx1) / 2}" y="${barY + 19}" font-size="10" font-weight="700" text-anchor="middle" fill="#C93A2B">+${fmtMan(Math.round(v.ask - v.retailMid))}</text>`);
+  // 市場水準・売出・適正レンジのマーカー(各ラベルは専用の段)
+  el.push(`<line x1="${gx0}" y1="33" x2="${gx0}" y2="${axisY}" stroke="#16232E" stroke-width="1.2"/>`);
+  el.push(`<text x="${gx0}" y="30" font-size="10" text-anchor="middle" fill="#16232E">市場水準 ${fmtMan(Math.round(v.retailMid))}</text>`);
+  el.push(`<line x1="${X(v.ask)}" y1="27" x2="${X(v.ask)}" y2="${axisY}" stroke="#C93A2B" stroke-width="2"/>`);
+  el.push(`<polygon points="${X(v.ask) - 5},18 ${X(v.ask) + 5},18 ${X(v.ask)},27" fill="#C93A2B"/>`);
+  el.push(`<text x="${X(v.ask)}" y="14" font-size="11.5" font-weight="700" text-anchor="middle" fill="#C93A2B">売出 ${fmtMan(Math.round(v.ask))}</text>`);
   const fy = axisY + 26;
   el.push(`<rect x="${X(v.fairLo)}" y="${fy}" width="${Math.max(2, X(v.fairHi) - X(v.fairLo))}" height="10" fill="#BFD7E4"/>`);
   el.push(`<line x1="${X(v.fairMid)}" y1="${fy - 3}" x2="${X(v.fairMid)}" y2="${fy + 13}" stroke="#16232E" stroke-width="1.4"/>`);
-  el.push(`<text x="${X(v.fairLo)}" y="${fy + 24}" font-size="9.5" fill="#43566B">適正レンジ ${fmtMan(Math.round(v.fairLo))}〜${fmtMan(Math.round(v.fairHi))}(中央 ${fmtMan(Math.round(v.fairMid))} = 原価法との重み付き)</text>`);
-  el.push(`<line x1="${X(v.ask)}" y1="30" x2="${X(v.ask)}" y2="${axisY}" stroke="#C93A2B" stroke-width="2"/>`);
-  el.push(`<polygon points="${X(v.ask) - 5},22 ${X(v.ask) + 5},22 ${X(v.ask)},31" fill="#C93A2B"/>`);
-  el.push(`<text x="${X(v.ask)}" y="16" font-size="11.5" font-weight="700" text-anchor="middle" fill="#C93A2B">売出 ${fmtMan(Math.round(v.ask))}</text>`);
-  return `<svg viewBox="0 0 ${W} 158" role="img" aria-label="総額の分解: 土地+建物+売主の期待" style="width:100%;height:auto">${el.join("")}</svg>`;
+  el.push(`<text x="24" y="${fy + 24}" font-size="9.5" fill="#43566B">適正レンジ ${fmtMan(Math.round(v.fairLo))}〜${fmtMan(Math.round(v.fairHi))}(中央 ${fmtMan(Math.round(v.fairMid))} = 原価法との重み付き)</text>`);
+  return `<svg viewBox="0 0 ${W} 162" role="img" aria-label="総額の分解: 土地+建物+売主の期待" style="width:100%;height:auto">${el.join("")}</svg>`;
 }
 
 // ---- 図2: 土地坪単価の物差し(素の単価・2025年1月基準) ----
+// ラベルは上2段(y28/46)+下2段(y136/150)に明示配置し、重なり・見切れを防ぐ
 function pptGaugeSvg(g) {
   const W = 640, axisY = 104, MIN = 80, MAX = 310;
   const X = (v) => 24 + ((v - MIN) / (MAX - MIN)) * 592;
@@ -89,22 +91,23 @@ function pptGaugeSvg(g) {
   const bx0 = X(g.ruleLo), bx1 = X(g.ruleHi);
   el.push(`<rect x="${bx0}" y="${axisY - 34}" width="${bx1 - bx0}" height="34" fill="#BFD7E4" opacity="0.75"/>`);
   el.push(`<text x="${(bx0 + bx1) / 2}" y="${axisY - 40}" font-size="9.5" text-anchor="middle" fill="#2E6E8E">経験則 公示×1.1〜1.2</text>`);
-  const pin = (v, label, color, tier, bold = false) => {
-    const x = X(v), ly = tier === 0 ? axisY - 58 : tier === 1 ? axisY - 76 : axisY + 36;
-    el.push(`<line x1="${x}" y1="${Math.min(ly + 4, axisY)}" x2="${x}" y2="${Math.max(ly - 8, axisY)}" stroke="${color}" stroke-width="1" stroke-dasharray="2,2"/>`);
+  const pin = (v, label, color, ly, { bold = false, anchor = "middle", tx = null } = {}) => {
+    const x = X(v);
+    const yA = ly < axisY ? ly + 4 : axisY + 8, yB = ly < axisY ? axisY : ly - 9;
+    el.push(`<line x1="${x}" y1="${yA}" x2="${x}" y2="${yB}" stroke="${color}" stroke-width="1" stroke-dasharray="2,2"/>`);
     el.push(`<circle cx="${x}" cy="${axisY}" r="4" fill="${color}"/>`);
-    el.push(`<text x="${x}" y="${ly}" font-size="${bold ? 10.5 : 9.5}" ${bold ? 'font-weight="700"' : ""} text-anchor="middle" fill="${color}">${label}</text>`);
+    el.push(`<text x="${tx ?? x}" y="${ly}" font-size="${bold ? 10.5 : 9.5}" ${bold ? 'font-weight="700"' : ""} text-anchor="${anchor}" fill="${color}">${label}</text>`);
   };
-  // 下段(axisY+36)・上段2層を交互に使い重なり回避
+  // 個別成約の帯と左端寄せラベル(下段2)
   el.push(`<rect x="${X(g.dealLo)}" y="${axisY - 3}" width="${X(g.dealHi) - X(g.dealLo)}" height="6" fill="#43566B" opacity="0.5"/>`);
-  el.push(`<text x="${(X(g.dealLo) + X(g.dealHi)) / 2}" y="${axisY + 36}" font-size="9.5" text-anchor="middle" fill="#43566B">個別成約 ${g.dealLo}〜${g.dealHi}(極小地・業者仕入れ)</text>`);
-  pin(g.mixedAvg, `混合平均 ${g.mixedAvg}(31件)`, "#43566B", 1);
-  pin(g.koji, `公示地価 ${g.koji}`, "#16232E", 2, true);
-  pin(g.cal, `成約較正 ${g.cal}`, "#2E6E8E", 0, true);
-  pin(g.adopted, `採用 ${g.adopted}`, "#2C6E49", 1, true);
-  pin(g.configured, `初期推定 ${g.configured}(公示×${(g.configured / g.koji).toFixed(2)})`, "#B07C10", 2);
-  pin(g.rule15, `×1.5なら ${g.rule15} ← 観測なし`, "#C93A2B", 0);
-  return `<svg viewBox="0 0 ${W} 150" role="img" aria-label="土地坪単価の物差し" style="width:100%;height:auto">${el.join("")}</svg>`;
+  el.push(`<text x="26" y="150" font-size="9.5" text-anchor="start" fill="#43566B">個別成約 ${g.dealLo}〜${g.dealHi}(極小地・業者仕入れ)</text>`);
+  pin(g.mixedAvg, `混合平均 ${g.mixedAvg}(31件)`, "#43566B", 28);
+  pin(g.configured, `初期推定 ${g.configured}(公示×${(g.configured / g.koji).toFixed(2)})`, "#B07C10", 28);
+  pin(g.koji, `公示地価 ${g.koji}`, "#16232E", 46, { bold: true });
+  pin(g.rule15, `×1.5なら ${g.rule15} ← 観測なし`, "#C93A2B", 46, { anchor: "end", tx: 616 });
+  pin(g.cal, `成約較正 ${g.cal}`, "#2E6E8E", 136, { bold: true });
+  pin(g.adopted, `採用 ${g.adopted}`, "#2C6E49", 150, { bold: true });
+  return `<svg viewBox="0 0 ${W} 158" role="img" aria-label="土地坪単価の物差し" style="width:100%;height:auto">${el.join("")}</svg>`;
 }
 
 // ---- 図3: 建物残価の築年カーブ ----
@@ -130,12 +133,11 @@ function bldgCurveSvg(c) {
   const ptsF = [];
   for (let a = 0; a <= 30; a += 0.25) ptsF.push(`${X(a).toFixed(1)},${Y(valFull(a)).toFixed(1)}`);
   el.push(`<polyline points="${ptsF.join(" ")}" fill="none" stroke="#2E6E8E" stroke-width="1.8" stroke-dasharray="6,4"/>`);
-  el.push(`<text x="${X(21)}" y="${Y(valFull(21)) - 8}" font-size="9.5" fill="#2E6E8E">リフォーム・大規模修繕済み(控除なし・築30年でゼロ)</text>`);
-  // 下側: 未修繕(現況)カーブ(実線)
+  // 下側: 未修繕(現況)カーブ(実線)。曲線への直接ラベルはやめ、右上に凡例2行で表示(重なり防止)
   const pts = [];
   for (let a = 0; a <= 30; a += 0.25) pts.push(`${X(a).toFixed(1)},${Y(val(a)).toFixed(1)}`);
   el.push(`<polyline points="${pts.join(" ")}" fill="none" stroke="#B07C10" stroke-width="2.5"/>`);
-  el.push(`<text x="${X(6.5)}" y="${Y(val(6.5)) + 16}" font-size="9.5" fill="#B07C10">未修繕(繰延修繕を控除)</text>`);
+  el.push(`<text x="${W - 18}" y="20" font-size="9.5" text-anchor="end"><tspan fill="#B07C10">━ 実線: 未修繕(繰延修繕を控除)</tspan><tspan fill="#2E6E8E">　┅ 破線: 修繕・リフォーム済み(控除なし)</tspan></text>`);
   for (const m of [0, 5, 10]) {
     el.push(`<circle cx="${X(m)}" cy="${Y(val(m))}" r="3.5" fill="#B07C10"/>`);
     el.push(`<text x="${X(m) + 6}" y="${Y(val(m)) - 7}" font-size="9.5" fill="#43566B">築${m}: ${Math.round(val(m))}万</text>`);
@@ -151,8 +153,8 @@ function bldgCurveSvg(c) {
   el.push(`<text x="${X(c.age) + 7}" y="${Y(val(c.age)) + 14}" font-size="10.5" font-weight="700" fill="#C93A2B">本物件(未修繕) 築${c.age.toFixed(1)}年: ${Math.round(val(c.age))}万</text>`);
   let zeroAge = 30;
   for (let a = 0; a <= 30; a += 0.05) if (val(a) <= 0) { zeroAge = a; break; }
-  el.push(`<text x="${X(zeroAge)}" y="${H - padB - 8}" font-size="9.5" fill="#43566B">築${zeroAge.toFixed(0)}年前後でゼロ着地(税法22年とほぼ一致)</text>`);
-  el.push(`<text x="${X(2)}" y="${Y(yMax * 0.92)}" font-size="9.5" fill="#B07C10">減少ペース ≒ 年${Math.round(c.rebuild * c.floorTsubo * (1 + c.bm) / 30 + RETAIL.REPAIR_PER_YEAR)}万(償却+修繕負債の積み上がり)</text>`);
+  el.push(`<text x="${W - 18}" y="${H - padB - 8}" font-size="9.5" text-anchor="end" fill="#43566B">築${zeroAge.toFixed(0)}年前後でゼロ着地(税法22年とほぼ一致)</text>`);
+  el.push(`<text x="${W - 18}" y="40" font-size="9.5" text-anchor="end" fill="#B07C10">未修繕の減少ペース ≒ 年${Math.round(c.rebuild * c.floorTsubo * (1 + c.bm) / 30 + RETAIL.REPAIR_PER_YEAR)}万(償却+修繕負債の積み上がり)</text>`);
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="建物残価の築年カーブ" style="width:100%;height:auto">${el.join("")}</svg>`;
 }
 
@@ -179,17 +181,17 @@ function genericSvg() {
   // 上側マーカー: 成約価格の見込み / 売出価格
   const mx = ex, ax = ex + ew;
   el.push(`<line x1="${mx}" y1="${barY - 22}" x2="${mx}" y2="${barY + barH}" stroke="#16232E" stroke-width="1.4"/>`);
-  el.push(`<text x="${mx}" y="${barY - 27}" font-size="10.5" font-weight="700" text-anchor="middle" fill="#16232E">成約価格の見込み(=市場水準)</text>`);
+  el.push(`<text x="${mx - 8}" y="${barY - 27}" font-size="10.5" font-weight="700" text-anchor="end" fill="#16232E">成約価格の見込み(=市場水準)</text>`);
   el.push(`<line x1="${ax}" y1="${barY - 6}" x2="${ax}" y2="${barY + barH}" stroke="#C93A2B" stroke-width="2"/>`);
   el.push(`<polygon points="${ax - 5},${barY - 14} ${ax + 5},${barY - 14} ${ax},${barY - 5}" fill="#C93A2B"/>`);
   el.push(`<text x="${ax - 2}" y="${barY - 18}" font-size="10.5" font-weight="700" text-anchor="end" fill="#C93A2B">売出価格</text>`);
-  // 下側注記: 値下げ・指値はどこを削るか
-  const y2 = barY + barH + 22;
-  el.push(`<path d="M ${ax} ${barY + barH + 6} L ${ax} ${y2 - 6} L ${mx} ${y2 - 6} L ${mx} ${barY + barH + 6}" fill="none" stroke="#C93A2B" stroke-width="1" stroke-dasharray="3,2"/>`);
-  el.push(`<text x="${(mx + ax) / 2}" y="${y2 + 8}" font-size="9.5" text-anchor="middle" fill="#C93A2B">値下げ・指値交渉で削られていく区間</text>`);
-  el.push(`<text x="${lx + lw / 2}" y="${y2 + 8}" font-size="9.5" text-anchor="middle" fill="#43566B">解体しても残る価値(下値フロアの源泉)</text>`);
-  el.push(`<text x="${bx + bw / 2}" y="${y2 + 8}" font-size="9.5" text-anchor="middle" fill="#B07C10">住みながら消費する価値</text>`);
-  return `<svg viewBox="0 0 ${W} 148" role="img" aria-label="価格形成の一般形: 土地+建物+売主の期待" style="width:100%;height:auto">${el.join("")}</svg>`;
+  // 下側注記: 行を2段に分けて重なりを防ぐ(1段目=左2区分の性質、2段目=右の交渉区間)
+  const y2 = barY + barH + 16;
+  el.push(`<path d="M ${ax} ${barY + barH + 4} L ${ax} ${y2} L ${mx} ${y2} L ${mx} ${barY + barH + 4}" fill="none" stroke="#C93A2B" stroke-width="1" stroke-dasharray="3,2"/>`);
+  el.push(`<text x="${lx + lw / 2}" y="${y2 + 14}" font-size="9.5" text-anchor="middle" fill="#43566B">解体しても残る価値(下値フロアの源泉)</text>`);
+  el.push(`<text x="${bx + bw / 2}" y="${y2 + 14}" font-size="9.5" text-anchor="middle" fill="#B07C10">住みながら消費する価値</text>`);
+  el.push(`<text x="${x1}" y="${y2 + 30}" font-size="9.5" text-anchor="end" fill="#C93A2B">↑ 値下げ・指値交渉で削られていく区間</text>`);
+  return `<svg viewBox="0 0 ${W} 158" role="img" aria-label="価格形成の一般形: 土地+建物+売主の期待" style="width:100%;height:auto">${el.join("")}</svg>`;
 }
 
 // ---- 図0b: 築年帯で構成比がどう変わるか(総額≒土地×係数の暗算式を可視化) ----
