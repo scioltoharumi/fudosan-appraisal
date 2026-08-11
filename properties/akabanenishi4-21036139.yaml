@@ -5,8 +5,12 @@ status: viewed             # considering / viewed / declined / closed(2026-08-09
 source: "SUUMO 21036139 (三井のリハウス赤羽センター/三井不動産リアルティ) / アドキャスト赤羽支店チラシ(媒介)2026-08-09"
 source_url: "https://suumo.jp/chukoikkodate/tokyo/sc_kita/nc_21036139/"   # 実在確認済み 2026-07-20
 captured_at: 2026-07-19
+# 売出開始は2026-06-08前後(athome情報登録日)。三井のリハウス自社サイト一覧(FQ3BFA02)に
+# 「新価格」表示を確認(2026-08-11)しており、6/8〜7/19の間に一度値下げされた形跡がある。
+# 旧価格はWayback/Common Crawl/各ポータルのいずれにも残存せず数値不明のため履歴には計上しない
+# (goo住宅の2026-06-06アーカイブに本物件は未掲載=売出開始日の傍証。CC-MAIN-2026-25)
 price_history:
-  - {date: 2026-07-19, price_man: 6990}
+  - {date: 2026-07-19, price_man: 6990}   # 値下げ後の価格として観測
 location: {area: akabane-nishi, address: "北区赤羽西4"}
 layout: "2LDK+2S(納戸)"   # 媒体本文の注記「※本物件の間取りは2LDK+2S」に基づく(見出しは2LDK+S(納戸)と表記揺れ)
 station: {walk_min: 13, multi_station: true}   # JR京浜東北線・埼京線「赤羽」13分/都営三田線「本蓮沼」15分
