@@ -38,6 +38,104 @@ function rawResidualStats(houseDeals, subjectDistrict) {
   return { quarters, n: all.length, med: Math.round(med(all)), p75: pct(0.75), p90: pct(0.9), over300: all.filter((u) => u >= 300).length };
 }
 
+// ---- 築年カーブの実測(補論: 新築プレミアム検証) ----
+// 地区ごとに成熟帯(築11〜25年)の残余から土地基準単価を置き、各成約を
+// モデル価格(土地基準×坪×徒歩 + 建物線形残価)と比べる。比率1.00=線形減価どおりの値付け。
+// 新築プレミアムが実在すれば築0〜3年の比率が1を大きく超えて現れ、
+// 「築30年の崖」は築31年以降の比率の段差として現れる(2026-08 検証会話の定式化)。
+export function ageCurveStats(houseDeals) {
+  const T = COEFFS.TSUBO_M2;
+  const bldg = (d) => Math.max(0, COEFFS.DEFAULT_REBUILD_PPT * (d.floor_m2 / T) * Math.max(0, 1 - d.age / COEFFS.BUILDING_LIFE_Y)
+    - Math.min(COEFFS.DEFAULT_REPAIR_MAN, RETAIL.REPAIR_PER_YEAR * d.age));
+  const wden = (w) => Math.min(RETAIL.WALK_DENOM_CLAMP[1], Math.max(RETAIL.WALK_DENOM_CLAMP[0],
+    1 + COEFFS.WALK_ADJ_PER_MIN * (w - COEFFS.WALK_BASE_MIN)));
+  const med = (a) => { const s = [...a].sort((x, y) => x - y); return s.length ? s[Math.floor(s.length / 2)] : null; };
+  // rawResidualStatsと同じ実需帯フィルタ(土地40〜120m2)。築年は全帯を使う(未完成売買は築0に丸め)
+  const rows = (houseDeals ?? []).map((d) => ({ ...d, age: Math.max(0, d.age_y) }))
+    .filter((d) => d.land_m2 >= 40 && d.land_m2 <= 120 && d.price_man > 0 && d.floor_m2 > 0);
+  const byDistrict = {};
+  for (const d of rows) (byDistrict[d.district] ??= []).push(d);
+  const base = {};
+  for (const [dist, arr] of Object.entries(byDistrict)) {
+    const mature = arr.filter((d) => d.age >= 11 && d.age < 26)
+      .map((d) => Math.max(d.price_man - bldg(d), d.price_man * RETAIL.LAND_RESID_MIN_RATIO) / (d.land_m2 / T) / wden(d.walk_min));
+    if (mature.length >= 5) base[dist] = med(mature);   // 成熟帯5件未満の地区は基準が立たないため除外
+  }
+  const EDGES = [0, 3, 7, 11, 16, 21, 26, 31, 41, Infinity];
+  const buckets = EDGES.slice(0, -1).map((lo, i) => ({ lo, hi: EDGES[i + 1], ratios: [] }));
+  const newShares = [], newPrices = [];
+  for (const d of rows) {
+    if (!(d.district in base)) continue;
+    const landPart = base[d.district] * (d.land_m2 / T) * wden(d.walk_min);
+    buckets.find((b) => d.age >= b.lo && d.age < b.hi).ratios.push(d.price_man / (landPart + bldg(d)));
+    if (d.age < 3) { newShares.push(landPart / d.price_man); newPrices.push(d.price_man); }
+  }
+  return {
+    districts: Object.keys(base).length,
+    buckets: buckets.map((b) => ({ lo: b.lo, hi: b.hi, n: b.ratios.length, ratio: b.ratios.length ? med(b.ratios) : null })),
+    landShareNew: med(newShares), newMedPrice: med(newPrices), nNew: newShares.length,
+  };
+}
+
+// ---- 図A(補論): 築年カーブ ── 成約/モデル比の実測プロフィール ----
+// ラベルは値(点の上)・軸(下2段: 帯/件数)・帯注記(上1段)に分離して重なりを防ぐ
+function ageCurveSvg(ac) {
+  const W = 640, H = 232, padL = 56, padR = 16, axisY = 178;
+  const bks = ac.buckets.filter((b) => b.n > 0);
+  const X = (i) => padL + ((i + 0.5) / bks.length) * (W - padL - padR);
+  const MIN = 0.45, MAX = 1.14;
+  const Y = (v) => 30 + (1 - (v - MIN) / (MAX - MIN)) * (axisY - 30);
+  const cliffIdx = bks.findIndex((b) => b.lo >= 31);
+  const el = [];
+  // 崖ゾーンの面(築31年〜)
+  if (cliffIdx > 0) {
+    const zx = (X(cliffIdx - 1) + X(cliffIdx)) / 2;
+    el.push(`<rect x="${zx}" y="30" width="${W - padR - zx}" height="${axisY - 30}" fill="#C93A2B" opacity="0.06"/>`);
+    el.push(`<text x="${(zx + W - padR) / 2}" y="24" font-size="9.5" font-weight="700" text-anchor="middle" fill="#C93A2B">築30年の崖(古家=土地値未満)</text>`);
+    el.push(`<text x="${(padL + zx) / 2}" y="24" font-size="9.5" font-weight="700" text-anchor="middle" fill="#2C6E49">フラット圏 ── 俗説の「2割の段差」は無い</text>`);
+  }
+  // 目盛と基準線
+  for (const v of [0.5, 0.7, 0.9, 1.1]) {
+    el.push(`<line x1="${padL}" y1="${Y(v)}" x2="${W - padR}" y2="${Y(v)}" stroke="#DCE3EA" stroke-width="1"/>`);
+    el.push(`<text x="${padL - 6}" y="${Y(v) + 3}" font-size="9" text-anchor="end" fill="#43566B" font-family="monospace">${v.toFixed(1)}</text>`);
+  }
+  el.push(`<line x1="${padL}" y1="${Y(1)}" x2="${W - padR}" y2="${Y(1)}" stroke="#16232E" stroke-width="1.2" stroke-dasharray="5,3"/>`);
+  el.push(`<text x="${padL - 6}" y="${Y(1) + 3}" font-size="9" font-weight="700" text-anchor="end" fill="#16232E" font-family="monospace">1.0</text>`);
+  el.push(`<line x1="${padL}" y1="${axisY}" x2="${W - padR}" y2="${axisY}" stroke="#16232E" stroke-width="1"/>`);
+  // 折れ線+点+値ラベル
+  el.push(`<polyline points="${bks.map((b, i) => `${X(i).toFixed(1)},${Y(b.ratio).toFixed(1)}`).join(" ")}" fill="none" stroke="#2E6E8E" stroke-width="1.6"/>`);
+  bks.forEach((b, i) => {
+    const inCliff = b.lo >= 31;
+    el.push(`<circle cx="${X(i)}" cy="${Y(b.ratio)}" r="4" fill="${inCliff ? "#C93A2B" : "#2E6E8E"}"/>`);
+    el.push(`<text x="${X(i)}" y="${Y(b.ratio) - 8}" font-size="9.5" font-weight="700" text-anchor="middle" fill="${inCliff ? "#C93A2B" : "#16232E"}" font-family="monospace">${b.ratio.toFixed(2)}</text>`);
+    el.push(`<text x="${X(i)}" y="${axisY + 14}" font-size="8.5" text-anchor="middle" fill="#43566B">${b.lo}${b.hi === Infinity ? "年〜" : "〜" + b.hi}</text>`);
+    el.push(`<text x="${X(i)}" y="${axisY + 27}" font-size="8" text-anchor="middle" fill="#8A97A5" font-family="monospace">n=${b.n}</text>`);
+  });
+  el.push(`<text x="${padL}" y="${H - 6}" font-size="9" fill="#43566B">縦軸: 成約価格 ÷ モデル価格(土地=地区基準 + 建物=線形減価)の中央値。1.0 = 線形減価モデルどおりの値付け</text>`);
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="築年帯別の成約/モデル価格比: 築30年までフラット、以降に崖" style="width:100%;height:auto">${el.join("")}</svg>`;
+}
+
+// ---- 図B(補論): 算術的希釈 ── 新築価格の3分の2は土地 ----
+function dilutionSvg(v) {
+  const W = 640, barY = 56, barH = 34, x0 = 24, x1 = 616;
+  const landW = (x1 - x0) * v.share, bldgW = (x1 - x0) * (1 - v.share);
+  const el = [];
+  el.push(`<text x="${x0}" y="20" font-size="10.5" font-weight="700" fill="#16232E">新築建売の中央値 ${fmtMan(v.total)} の中身(実測 ${v.n}件)</text>`);
+  el.push(`<rect x="${x0}" y="${barY}" width="${landW}" height="${barH}" fill="#2E6E8E"/>`);
+  el.push(`<text x="${x0 + landW / 2}" y="${barY + 15}" font-size="11" font-weight="700" text-anchor="middle" fill="#FFFFFF">土地 ${fmtMan(v.land)}(${Math.round(v.share * 100)}%)</text>`);
+  el.push(`<text x="${x0 + landW / 2}" y="${barY + 28}" font-size="8.5" text-anchor="middle" fill="#DCE8F0">新品の割増が乗りようがない部分</text>`);
+  el.push(`<rect x="${x0 + landW}" y="${barY}" width="${bldgW}" height="${barH}" fill="#B07C10"/>`);
+  el.push(`<text x="${x0 + landW + bldgW / 2}" y="${barY + 15}" font-size="10.5" font-weight="700" text-anchor="middle" fill="#FFFFFF">建物 ${fmtMan(v.bldg)}</text>`);
+  el.push(`<text x="${x0 + landW + bldgW / 2}" y="${barY + 28}" font-size="8.5" text-anchor="middle" fill="#F2E4C4">プレミアムが乗りうるのはここだけ</text>`);
+  // 建物側だけに乗る仮想プレミアムの括弧
+  const bx0 = x0 + landW, bx1 = x1, by = barY + barH + 10;
+  el.push(`<path d="M ${bx0} ${by} L ${bx0} ${by + 6} L ${bx1} ${by + 6} L ${bx1} ${by}" fill="none" stroke="#C93A2B" stroke-width="1.2"/>`);
+  el.push(`<text x="${(bx0 + bx1) / 2}" y="${by + 20}" font-size="9.5" font-weight="700" text-anchor="middle" fill="#C93A2B">仮に建物へ25%の割増でも +${fmtMan(v.prem)}</text>`);
+  el.push(`<text x="${x0}" y="${by + 20}" font-size="9.5" fill="#43566B">総額に対しては</text>`);
+  el.push(`<text x="${x0}" y="${by + 36}" font-size="11.5" font-weight="700" fill="#16232E">わずか ${v.premPct}%</text>`);
+  return `<svg viewBox="0 0 ${W} 152" role="img" aria-label="新築プレミアムの算術的希釈: 価格の3分の2が土地" style="width:100%;height:auto">${el.join("")}</svg>`;
+}
+
 // ---- 図1: 総額の解剖(積み上げ+売主の期待) ----
 // ラベルは縦3段(y=14売出 / y=30市場水準 / y=46建物)に分離し重なりを防ぐ
 function anatomySvg(v) {
@@ -418,6 +516,15 @@ export function renderFormula({ r, rRef, property }, calArea, houseDeals) {
   const dealPpts = (calArea?.deals?.rows ?? []).map((d) => Math.round(d.ppt_norm)).sort((a, b) => a - b);
   const askUnitResid = Math.round((s.ask - rt.bldgSubj) / (landTsubo * rt.subjectFactor));
   const midUnitResid = Math.round(rt.unitMid);
+  const ac = ageCurveStats(houseDeals);
+  const acFlat = ac.buckets.filter((b) => b.n > 0 && b.lo < 31);
+  const acFlatLo = Math.min(...acFlat.map((b) => b.ratio)), acFlatHi = Math.max(...acFlat.map((b) => b.ratio));
+  const acCliff = ac.buckets.find((b) => b.lo === 31), acOld = ac.buckets.find((b) => b.lo === 41);
+  const acLand = Math.round(ac.newMedPrice * ac.landShareNew);
+  const acBldg = Math.round(ac.newMedPrice - acLand);
+  const acPrem = Math.round(acBldg * 0.25);
+  const carryExample = Math.round(COEFFS.DEFAULT_REBUILD_PPT * (95 / COEFFS.TSUBO_M2) / COEFFS.BUILDING_LIFE_Y + RETAIL.REPAIR_PER_YEAR);
+  const wholesaleNet = Math.round(COEFFS.WHOLESALE_RATIO * (1 - COEFFS.SALE_COST_RATE) * 100);
   const quarterRows = raw.quarters.map((q) =>
     `<tr><td>${esc(q.q)}</td><td class="num">${q.n}件</td><td class="num">${q.med}万/坪</td><td class="num">${q.over300 > 0 ? `<span style="color:var(--stamp)">${q.over300}件</span>` : "0件"}</td></tr>`).join("");
 
@@ -573,6 +680,25 @@ export function renderFormula({ r, rRef, property }, calArea, houseDeals) {
         <div class="note" style="margin-top:6px">300万/坪超の生の観測は${raw.over300}件のみ(うち2件は同一取引の重複記録疑い)。直近四半期は反落しており、時点修正(上昇継続)は現在検証中の仮定。</div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>補論: 築年カーブの実測 ── 「新築は買った瞬間2割下がる」は本当か</h2>
+    <div class="logic-body">
+      <p class="why">俗説を台帳で検証する。地区ごとに成熟帯(築11〜25年)の残余から土地基準単価を置き、全成約を<b>モデル価格(土地基準+建物の線形減価)との比率</b>で並べると、市場が築年ごとにどう値付けしているかが1本のカーブで見える。比率1.00=線形減価モデルどおり。新築プレミアムが実在すれば築0〜3年が1.0を大きく超えるはず。</p>
+      ${ageCurveSvg(ac)}
+      <div class="note"><b>読み方</b>: 築0〜31年の比率は${acFlatLo.toFixed(2)}〜${acFlatHi.toFixed(2)}に収まり(中古側は小標本で、この幅は誤差圏)、<b>新築${ac.buckets[0].ratio.toFixed(2)}=新築も中古と同じ物差しで値付けされている</b>。唯一の構造的な段差は築31年以降(${acCliff.ratio.toFixed(2)}→${acOld.ratio.toFixed(2)})で、建物ゼロは織り込み済みのモデルに対して更に3〜5割安──古家付き土地は「土地値−解体費−流動性引き」でしか売れない。<b>買う側の含意</b>: 保有中の減価キャリーは入口の築年に依らずほぼ一定(償却+修繕負債の積み上がりで延床95m²なら年約${carryExample}万)なので、効くのは入口でなく<b>出口の築年がこの崖を跨ぐかどうか</b>。10数年住むなら、出口が築30年の手前に収まる入口(新築〜築10年)か、最初から土地値で買う入口(築25年〜)の二択で、その中間(築12〜18年)は出口が崖に着地する。</div>
+      <p class="why" style="margin-top:14px">では、なぜ新築にプレミアムの山が立たないのか。最大の理由は算数で決まっている:</p>
+      ${dilutionSvg({ share: ac.landShareNew, total: Math.round(ac.newMedPrice), land: acLand, bldg: acBldg, prem: acPrem, premPct: Math.round(100 * acPrem / ac.newMedPrice), n: ac.nNew })}
+      <div class="note"><b>算術的希釈</b>: 新品の割増が乗りうるのは建物側だけで、土地は新築でも中古でも同じ土地。価格の${Math.round(ac.landShareNew * 100)}%が土地であるこのエリアでは、建物に25%の割増が乗っても総額の1割に届かない。加えて、この帯の新築は建売の競争供給(値引き後の成約がこの台帳)であり、上昇局面では業者の利幅が仕入れ土地の含み益から出るため、目に見える上乗せを積む必要自体が薄い。</div>
+      <div style="overflow-x:auto;margin-top:12px"><table class="list">
+        <tr><th>俗説「総額2割下がる」の正体</th><th>中身</th><th>この市場に当てはまるか</th></tr>
+        <tr><td><b>① 商品が建物でできている</b></td><td style="white-space:normal">新築マンション・郊外/地方の戸建は減価する側が価格の大半→建物側の割増がほぼそのまま総額に効く</td><td style="white-space:normal">当てはまらない(土地${Math.round(ac.landShareNew * 100)}%)</td></tr>
+        <tr><td><b>② 即売りチャネルの目減り</b></td><td style="white-space:normal">買取業者経由は実勢×${COEFFS.WHOLESALE_RATIO}×売却諸費用で手取り約${wholesaleNet}%+購入時諸費用は戻らない→「翌日売れば2割減」は<b>築年と無関係に</b>常に成立</td><td style="white-space:normal">成立する(が新築固有ではない)</td></tr>
+        <tr><td><b>③ 下落相場の記憶</b></td><td style="white-space:normal">地価下落期は土地レグ自体が数年で2割下がり、「新築だから」に誤帰属された</td><td style="white-space:normal">現在は上昇〜横ばい局面</td></tr>
+      </table></div>
+      <div class="note" style="margin-top:8px">まとめ: 10数年住む前提なら新築プレミアムは総額比0〜数%・年割り数十万の下位変数。総費用に効く順は <b>売主の期待を払うか(〜数千万)→出口の築年が崖を跨ぐか(〜1,500万)→出口チャネル(買取か仲介か)→往復の取引コスト(約1割・固定)→新築プレミアム</b>。入口の割高判定は築年帯に依らず、上の「検算: 残余単価」と同じ物差しで行う。</div>
     </div>
   </div>
 
