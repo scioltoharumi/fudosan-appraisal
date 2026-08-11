@@ -11,6 +11,7 @@ import { calibrate } from "../engine/calibrate.js";
 import { loadHouseDeals } from "../engine/retail.js";
 import { renderMarketBasis } from "./templates/market-basis.js";
 import { renderDataExplorer } from "./templates/data-explorer.js";
+import { renderFormula } from "./templates/formula.js";
 import { loadVerification } from "../engine/retail.js";
 import { loadDeals } from "../engine/calibrate.js";
 
@@ -58,6 +59,16 @@ const guideTarget = results.find(({ r }) => r.id === GUIDE_EXAMPLE_ID) ?? result
 if (guideTarget.r.id !== GUIDE_EXAMPLE_ID) console.warn(`⚠ ガイド題材 ${GUIDE_EXAMPLE_ID} が見つからずフォールバック(本文の固有記述に不一致の可能性)`);
 writeFileSync(join(DIST, "guide.html"), renderGuide(guideTarget.r, guideTarget.property, cal.byArea[guideTarget.property.location?.area] ?? null), "utf8");
 console.log(`✓ guide.html(題材: ${guideTarget.r.id})`);
+// 値段の解剖(算出ロジック図解)。リテール比較が成立する物件を題材にする(既定: 赤羽西4)
+const FORMULA_EXAMPLE_ID = "akabanenishi4-21036139";
+const formulaTarget = results.find(({ r }) => r.id === FORMULA_EXAMPLE_ID && r.retail) ?? results.find(({ r }) => r.retail) ?? null;
+if (formulaTarget) {
+  writeFileSync(join(DIST, "formula.html"),
+    renderFormula(formulaTarget, cal.byArea[formulaTarget.property.location?.area] ?? null, houseDeals), "utf8");
+  console.log(`✓ formula.html(題材: ${formulaTarget.r.id})`);
+} else {
+  console.warn("⚠ formula.html スキップ(リテール比較が成立する物件なし)");
+}
 // データ探索ページ: 各行に検証状態と出所リンクを付与
 const verification = loadVerification();
 const vByKey = new Map((verification?.rows ?? []).map((v) => [v.key, v]));

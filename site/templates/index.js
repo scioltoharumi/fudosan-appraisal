@@ -88,7 +88,7 @@ export function renderIndex(results, { asOf, cal = null }) {
   const body = `
   <div class="panel">
     <h2>物件一覧(乖離額の小さい順 = 割安順)</h2>
-    <div class="note" style="margin:0 0 10px">はじめての方へ: 査定値の出所(公示地価・坪単価・建物残価・リテール比較法・判定スタンプの意味)は <a href="guide.html">査定の読み方 ── 前提知識ガイド</a> で解説しています。査定の土台の成約データ全件は <a href="data.html">成約データ台帳(検証と探索)</a> で出所リンク・二重照合結果つきで確認できます。</div>
+    <div class="note" style="margin:0 0 10px">はじめての方へ: 「総額 = 土地単価×坪数 + 建物残価 + 売主の期待」という値段の構造は <a href="formula.html">値段の解剖 ── 算出ロジック図解</a> が1ページで図解しています。査定値の出所(公示地価・坪単価・建物残価・リテール比較法・判定スタンプの意味)は <a href="guide.html">査定の読み方 ── 前提知識ガイド</a>、成約データ全件は <a href="data.html">成約データ台帳(検証と探索)</a> で出所リンク・二重照合結果つきで確認できます。</div>
     <div style="overflow-x:auto">
     <table class="list">
       <tr><th>判定</th><th>物件</th><th>状態</th><th>売出価格</th><th>適正中央値</th><th>リテール比較中央値</th><th>乖離</th><th>実質坪単価</th><th>仮定</th></tr>
