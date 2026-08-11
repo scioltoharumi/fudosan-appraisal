@@ -40,7 +40,9 @@ test("回帰値: YAML→evaluate経由の基準値(時点修正の年次別統�
   // 2026年の将来外挿を+6%に保守化(R3監査)後の値。v1.2原典(5952/6562)にほぼ回帰している
   assert.equal(Math.round(r.mid.fair), 5938);
   assert.equal(Math.round(r.hi.fair), 6547);
-  assert.equal(r.verdict.mark, "見送");  // ask 6560 vs hi 6547 の境界物件(差0.2%)
+  // 2026-08-11: 売出6560→6260の値下げを掲載元で確認しprice_historyへ追記。
+  // ask 6260 vs hi 6547 となり境界(差0.2%)の見送→レンジ内の保留へ反転(査定値自体は不変)
+  assert.equal(r.verdict.mark, "保留");
   // 修繕・解体・賃料のassumed項目が記録されていること(F1-3/監査性)
   assert.ok(r.assumptions.length >= 3, "assumed項目: " + JSON.stringify(r.assumptions));
 });
