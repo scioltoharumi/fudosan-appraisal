@@ -65,8 +65,10 @@ function calibrationPanel(results, cal) {
 }
 
 export function renderIndex(results, { asOf, cal = null }) {
-  // 乖離額の昇順 = 割安順(マイナスほど売出が査定より安い)
-  const sorted = [...results].sort((a, b) => a.r.premium - b.r.premium);
+  // 乖離額の昇順 = 割安順。判定基準に合わせ、リテール成立物件は対市場実勢(売主の期待)、
+  // 不成立物件は対適正中央値で並べる(2026-08-11: 判定の市場実勢基準化に追随)
+  const divergence = (r) => r.premiumMarket ?? r.premium;
+  const sorted = [...results].sort((a, b) => divergence(a.r) - divergence(b.r));
   const rows = sorted.map(({ r, property, hasMarketPage }) => {
     const v = r.verdict;
     const status = STATUS_LABEL[property.status] || property.status;
@@ -79,7 +81,7 @@ export function renderIndex(results, { asOf, cal = null }) {
       <td class="num">${fmtMan(r.state.ask)}<div class="note" style="margin-top:0">${esc(priceDate)}時点${ph.length > 1 ? ` / 改定${ph.length - 1}回` : ""}</div></td>
       <td class="num">${fmtMan(r.fairFinal.mid)}</td>
       <td class="num">${r.retail && hasMarketPage ? `<a href="property/${esc(r.id)}-market.html">${fmtMan(r.retail.mid)}</a>` : r.retail ? fmtMan(r.retail.mid) : "—"}</td>
-      <td class="num"${r.premium > 0 ? ' style="color:var(--stamp)"' : ""}>${r.premium >= 0 ? "+" : ""}${fmtMan(r.premium)}</td>
+      <td class="num"${divergence(r) > 0 ? ' style="color:var(--stamp)"' : ""}>${divergence(r) >= 0 ? "+" : ""}${fmtMan(divergence(r))}</td>
       <td class="num">${Math.round(r.state.ask / r.mid.tsubo).toLocaleString("en-US")}万/坪</td>
       <td class="num">${r.assumptions.length}件</td>
     </tr>`;
@@ -91,11 +93,11 @@ export function renderIndex(results, { asOf, cal = null }) {
     <div class="note" style="margin:0 0 10px">はじめての方へ: 「総額 = 土地単価×坪数 + 建物残価 + 売主の期待」という値段の構造は <a href="formula.html">値段の解剖 ── 算出ロジック図解</a> が1ページで図解しています。査定値の出所(公示地価・坪単価・建物残価・リテール比較法・判定スタンプの意味)は <a href="guide.html">査定の読み方 ── 前提知識ガイド</a>、成約データ全件は <a href="data.html">成約データ台帳(検証と探索)</a> で出所リンク・二重照合結果つきで確認できます。希望条件(間取り・設備等)を金額換算して妥協判断する方法は <a href="tradeoff.html">妥協の値段 ── A/B/C分類と工事費早見表</a> にまとめています。</div>
     <div style="overflow-x:auto">
     <table class="list">
-      <tr><th>判定</th><th>物件</th><th>状態</th><th>売出価格</th><th>適正中央値</th><th>リテール比較中央値</th><th>乖離</th><th>実質坪単価</th><th>仮定</th></tr>
+      <tr><th>判定</th><th>物件</th><th>状態</th><th>売出価格</th><th>適正中央値(参考)</th><th>市場実勢中央値</th><th>乖離(対市場)</th><th>実質坪単価</th><th>仮定</th></tr>
       ${rows}
     </table>
     </div>
-    <div class="note">乖離 = 売出価格 − 適正中央値(原価法とリテール比較法の重み付き調整・土地値下限)。リテール比較中央値 = 周辺の戸建成約(国交省データ)から時点・徒歩・築年差を補正した実需市場の水準(クリックで根拠ページへ)。判定の根拠は各物件の詳細ページ「算出根拠の全文開示」を参照。<br>
+    <div class="note">乖離(対市場) = 売出価格 − 市場実勢中央値(=売主の期待。判定スタンプもこの市場実勢基準。リテール比較不成立の物件のみ適正中央値との差)。市場実勢中央値 = 周辺の戸建成約(国交省データ)から時点・徒歩・築年差を補正した実需市場の水準(クリックで根拠ページへ)。適正中央値 = 原価法との重み付き調整で、市場実勢との差は「過熱感=相場調整時の下落余地」を測る参考。判定の根拠は各物件の詳細ページ「算出根拠の全文開示」を参照。<br>
     売出価格の下の日付は媒体で当該価格を確認した時点(情報提供日)、「取得」は台帳への登録日。査定値は全物件とも査定基準日 ${asOf} 時点で再計算している。</div>
     <div class="meta-line">査定基準日 ${asOf} / 掲載 ${results.length}件 / 本サイトは個人の検討用簡易査定であり、不動産鑑定評価・投資助言ではありません。</div>
   </div>

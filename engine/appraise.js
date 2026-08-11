@@ -9,7 +9,7 @@
 import { retailEstimate, districtOf } from "./retail.js";
 import { growthFactor } from "./timeadjust.js";
 
-export const ENGINE_VERSION = "2.4.0 (第4次監査反映: フロア表示統一・要調査判定・非近接減衰・境界表示)";
+export const ENGINE_VERSION = "2.5.0 (判定基準を市場実勢へ変更: リテール成立物件の保留/見送は成約分布で判定し、適正ブレンドとの乖離は過熱感の参考指標に降格)";
 
 // ---- 係数ブロック(根拠コメント付き) ----
 export const COEFFS = {
@@ -32,6 +32,8 @@ export const COEFFS = {
                                         // 維持不明の物件は繰延修繕控除(DEFAULT_REPAIR_MAN)が「維持されていた前提」との差分を埋める
   NO_REBUILD_ADJ: -0.30,                // 再建築不可等の重大制約(ローン不可・買い手が現金投資家に限定)
   PPT_UNCERTAINTY: 0.10,                // 基準坪単価の±10%でlo/hiレンジを構成
+  MARKET_NEGO_BAND: 0.05,               // 市場実勢基準の保留/見送境界 = 成約上位四分位×(1+この幅)。
+                                        // 売出価格は成約と違い交渉余地を含むため、通常交渉で吸収しうる幅(約5%)を許容
   DEFAULT_REBUILD_PPT: 95,              // 再調達単価(万円/坪)。2026年の木造実勢建築費90〜110万の保守側(監査で70→95)
   DEFAULT_DEMOLITION_MAN: 150,          // 解体費既定(万円)。木造2階4〜5万/延床坪、3階・準防火・道路狭小5〜8万
   DEFAULT_REPAIR_MAN: 800,              // 大規模修繕「未実施の可能性大」の想定(万円)
@@ -183,6 +185,31 @@ export function verdict(s, mid, lo, hi) {
     mark: "見送", cls: "",
     head: "査定上限を超過。プレミアムに払っている",
     body: "楽観側のシナリオ(原価法は坪単価+10%、リテール比較は上位四分位)を採用しても " + fmtMan(s.ask - hi.fair) + " の説明不能な上乗せ。売主に価格根拠を説明させるか、査定上限 " + fmtMan(hi.fair) + " 近辺への指値が前提。",
+  };
+}
+
+// ---- 判定(市場実勢基準・2026-08-11方針変更) ----
+// リテール比較が近接地区で成立する物件は、保留/見送の判定を「市場実勢(成約分布)」に従わせる。
+// 適正ブレンド(原価法との重み付き)は過熱感=下落余地を測る参考指標に降格。
+// 理由: 市場全体が原価法比で上振れしている局面では、ブレンド基準だとほぼ全物件が機械的に
+// 見送となり物件間の判別力を失うため。買・不能の資産防衛判定(土地フロア基準)は従来どおり。
+export function verdictMarket(s, rt, fairMid) {
+  const hiBand = rt.hi * (1 + COEFFS.MARKET_NEGO_BAND);
+  const expect = s.ask - rt.mid;                       // 売主の期待(市場実勢中央値との差)
+  const overheat = rt.mid - fairMid;                   // 市場の上振れ(過熱感・参考)
+  const sg = (x) => (x >= 0 ? "+" : "−") + fmtMan(Math.abs(x));
+  const ref = "参考(過熱感): 市場実勢の中央値自体が理論適正(原価法との重み付き " + fmtMan(fairMid) + ")より " + sg(overheat) + " 上振れしており、相場が冷えればこの分は物件によらず下落余地になる。";
+  if (s.ask <= hiBand) {
+    return {
+      mark: "保留", cls: "warn",
+      head: "市場実勢の圏内。交渉次第",
+      body: "周辺成約の中央値 " + fmtMan(rt.mid) + "(上位四分位 " + fmtMan(rt.hi) + "・" + rt.n + "件)に対し、売出は " + sg(expect) + " = 売主の期待。通常の交渉幅で市場水準に収まりうる。指値の錨は市場実勢中央値 " + fmtMan(rt.mid) + "。" + ref,
+    };
+  }
+  return {
+    mark: "見送", cls: "",
+    head: "市場実勢の上限も超過。相場でなく売主の希望に払う水準",
+    body: "周辺成約の上位四分位 " + fmtMan(rt.hi) + " に通常の交渉幅(" + Math.round(COEFFS.MARKET_NEGO_BAND * 100) + "%)を載せた " + fmtMan(hiBand) + " をなお " + fmtMan(s.ask - hiBand) + " 超過。市場実勢中央値との差 " + sg(expect) + "(売主の期待)は指値では埋まらず、値下げ改定を待つ案件。" + ref,
   };
 }
 
@@ -425,6 +452,12 @@ export function evaluate(property, areaConfig, { asOf = defaultAsOf(), seed = CO
     { ...mid, fair: fairMid, route: finalRoute, floorVal: floorEff.mid, floorNet: floorEff.netMid },
     { ...lo, fair: fairLo, floorVal: floorEff.lo, floorNet: floorEff.netLo },
     { ...hi, fair: fairHi, floorVal: floorEff.hi });
+  // 市場実勢基準への切替(2026-08-11): 近接地区でリテール比較が成立していれば、
+  // 保留/見送は成約分布(上位四分位+交渉幅)で判定する。買・不能は土地フロア基準を維持
+  const marketBasis = !!(retail && retail.districtScoped);
+  if (marketBasis && v.mark !== "買" && v.mark !== "不能") {
+    v = verdictMarket(s, retail, fairMid);
+  }
   // 商業系(リテール比較適用外)かつ土地単価が未検証overrideの物件は、検証手段が全て外れた
   // 状態で判定が単価1点に吊られるため「調査」判定に降格する(R4監査: jujonakahara2問題)
   if (!retailApplicable && pptSource === "override" && v.mark !== "不能") {
@@ -432,9 +465,13 @@ export function evaluate(property, areaConfig, { asOf = defaultAsOf(), seed = CO
       head: "商業系×未検証単価につき判定保留(要調査)",
       body: "本物件の適正価格は手入力の土地単価(" + Math.round(s.ppt) + "万/坪・未検証)にほぼ全面依存しており、リテール比較も適用外(商業系)のため機械判定を出さない。参考レンジは " + fmtMan(fairLo) + " 〜 " + fmtMan(fairHi) + "。土地成約3件以上の収集または業者査定でこの単価を検証してから判断すること。" };
   }
-  // 境界判定の開示: 楽観上限と売出の乖離が±5%未満ならスタンプは反転しうる(R4監査)
-  const borderline = Math.abs(s.ask - fairHi) / fairHi < 0.05;
-  const premium = s.ask - fairMid;
+  // 境界判定の開示: 判定境界(市場実勢基準=上位四分位×(1+交渉幅)、それ以外=楽観上限)と
+  // 売出の乖離が±5%未満ならスタンプは反転しうる(R4監査。2026-08-11に境界を判定基準へ追随)
+  const judgeHi = marketBasis ? retail.hi * (1 + COEFFS.MARKET_NEGO_BAND) : fairHi;
+  const borderline = Math.abs(s.ask - judgeHi) / judgeHi < 0.05;
+  const premium = s.ask - fairMid;                     // 対適正ブレンド(過熱感込み・参考)
+  const premiumMarket = retail ? s.ask - retail.mid : null;  // 対市場実勢(判定基準側)
+  const overheat = retail ? retail.mid - fairMid : null;     // 市場の上振れ(過熱感)
   // 修繕費は「住まいとして継続利用する」ルートの追加投資。土地ルートでは解体されるため、
   // リテール(事例の成約価格にも同様の繰延修繕が織り込み済み)ルートでは価値中立の別枠として、
   // いずれも即時含み損の取得コストには算入しない(第2次監査: 二重計上の解消)
@@ -454,7 +491,8 @@ export function evaluate(property, areaConfig, { asOf = defaultAsOf(), seed = CO
     mid, lo, hi,
     retail, fairFinal, isNewBuild, borderline,
     verdict: v,
-    premium, totalCost, instLoss, incomeVal,
+    verdictBasis: marketBasis ? "market" : "blend", judgeHi,
+    premium, premiumMarket, overheat, totalCost, instLoss, incomeVal,
     mc, tornado: tor,
   };
 }

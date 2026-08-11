@@ -37,7 +37,8 @@ function anatomyHtml(r, property, houseDeals) {
 
   const formulaPre = rt
     ? `<b>市場水準</b> = 残余単価 ${Math.round(rt.unitMid)}万/坪 × 実効${tsubo.toFixed(2)}坪 × 個別補正${rt.subjectFactor.toFixed(2)}(= <span style="color:#2E6E8E">土地 ${fmtMan(Math.round(rt.landPart))}</span>) + <span style="color:#B07C10">建物残価 ${fmtMan(Math.round(rt.bldgSubj))}</span> = <b>${fmtMan(Math.round(rt.mid))}</b>
-<b>売出価格</b> = 市場水準 ${fmtMan(Math.round(rt.mid))} + <span style="color:var(--stamp)"><b>売主の期待 ${gap >= 0 ? "+" : ""}${fmtMan(Math.round(gap))}</b>(市場水準比 ${gap >= 0 ? "+" : ""}${(100 * gap / marketMid).toFixed(1)}%)</span> = ${fmtMan(Math.round(s.ask))}`
+<b>売出価格</b> = 市場水準 ${fmtMan(Math.round(rt.mid))} + <span style="color:var(--stamp)"><b>売主の期待 ${gap >= 0 ? "+" : ""}${fmtMan(Math.round(gap))}</b>(市場水準比 ${gap >= 0 ? "+" : ""}${(100 * gap / marketMid).toFixed(1)}%)</span> = ${fmtMan(Math.round(s.ask))}
+<b>参考(過熱感)</b> = 適正中央値 ${fmtMan(Math.round(r.fairFinal.mid))} との乖離 ${r.premium >= 0 ? "+" : ""}${fmtMan(Math.round(r.premium))} = 市場の上振れ ${r.overheat >= 0 ? "+" : ""}${fmtMan(Math.round(r.overheat))} + 売主の期待 ${gap >= 0 ? "+" : ""}${fmtMan(Math.round(gap))}`
     : `<b>市場水準(原価法)</b> = ${r.fairFinal.route === "land"
       ? `<span style="color:#2E6E8E">土地 ${fmtMan(Math.round(mid.land2))}</span> − 解体費 ${fmtMan(Math.round(s.demo))}(土地として売る方が高い)`
       : `<span style="color:#2E6E8E">土地 ${fmtMan(Math.round(mid.land2))}</span> + <span style="color:#B07C10">建物残価(市場性・修繕控除後) ${fmtMan(Math.round(Math.max(0, marketMid - mid.land2)))}</span>`} = <b>${fmtMan(Math.round(marketMid))}</b>
@@ -68,7 +69,7 @@ function anatomyHtml(r, property, houseDeals) {
         ${svg}
         <pre style="font-family:var(--mono);font-size:.78rem;line-height:1.9;background:#F7F9FA;border:1px solid var(--grid);padding:12px 14px;overflow-x:auto;margin-top:10px">${formulaPre}</pre>
         ${residCheck}
-        <div class="note" style="margin-top:8px"><span style="color:#2E6E8E">■土地</span>は解体しても残る価値(下値フロアの源泉)、<span style="color:#B07C10">■建物</span>は住みながら消費する価値、<span style="color:var(--stamp)">▨売主の期待</span>は資産価値ゼロの上乗せで値下げ・交渉で削られていく部分${rt ? "" : "。本物件はリテール比較が不成立のため市場水準は原価法による"}。この書き方の一般形・各項の意味は<a href="../formula.html">値段の解剖(算出ロジック図解)</a>、希望条件の金額換算は<a href="../tradeoff.html">妥協の値段</a>を参照。</div>
+        <div class="note" style="margin-top:8px"><span style="color:#2E6E8E">■土地</span>は解体しても残る価値(下値フロアの源泉)、<span style="color:#B07C10">■建物</span>は住みながら消費する価値、<span style="color:var(--stamp)">▨売主の期待</span>は資産価値ゼロの上乗せで値下げ・交渉で削られていく部分${rt ? "。<b>判定スタンプは市場水準(成約実勢)基準</b>で、適正レンジとの差は「市場全体の過熱感=相場調整時の下落余地」を測る参考指標" : "。本物件はリテール比較が不成立のため市場水準は原価法により、判定もこれに従う"}。この書き方の一般形・各項の意味は<a href="../formula.html">値段の解剖(算出ロジック図解)</a>、希望条件の金額換算は<a href="../tradeoff.html">妥協の値段</a>を参照。</div>
       </div>
     </section>`;
 }
@@ -241,7 +242,9 @@ function kvTable(r) {
     ["リテール比較(戸建成約 " + (r.retail ? r.retail.n + "件" : "—") + ")", r.retail ? fmtMan(r.retail.lo) + " 〜 " + fmtMan(r.retail.mid) + " 〜 " + fmtMan(r.retail.hi) : (r.fairFinal.retailApplicable === false ? "商業系につき適用外(土地評価)" : "類似成約不足のため適用外")],
     ["売却ルート判定", r.fairFinal.route === "retail" ? "リテール(実需に家として売る)が優位。加重 リテール" + (r.fairFinal.weights.retail * 100).toFixed(0) + "%:原価" + (r.fairFinal.weights.cost * 100).toFixed(0) + "%" : r.fairFinal.route === "land" ? "土地として売る方が高い(解体前提)" : "住まいとして売る方が高い"],
     ["適正価格レンジ(重み付き調整・土地値下限)", fmtMan(r.fairFinal.lo) + " 〜 " + fmtMan(r.fairFinal.hi), "em"],
-    ["売出価格 − 査定中央値", (premium >= 0 ? "+" : "") + fmtMan(premium)],
+    ...(r.premiumMarket !== null && r.premiumMarket !== undefined
+      ? [["売出価格 − 市場実勢中央値(=売主の期待。" + (r.verdictBasis === "market" ? "判定はこちら基準" : "参考") + ")", (r.premiumMarket >= 0 ? "+" : "") + fmtMan(r.premiumMarket)]] : []),
+    ["売出価格 − 適正中央値(過熱感込み" + (r.verdictBasis === "market" ? "・参考" : "。判定はこちら基準") + ")", (premium >= 0 ? "+" : "") + fmtMan(premium)],
     ["実質坪単価(売出÷実効坪)", Math.round(s.ask / mid.tsubo).toLocaleString("en-US") + " 万円/坪"],
   ];
   if (incomeVal) rows.push(["収益価格(月" + s.rent + "万×12×(1−経費" + (s.expr * 100) + "%)÷" + (s.yld * 100).toFixed(1) + "%)", fmtMan(incomeVal)]);
@@ -404,7 +407,7 @@ export function renderProperty(r, property, marketCal = null, houseDeals = null)
       <div class="verdict-text">
         <div class="head">${v.head}</div>
         <div class="body">${v.body}</div>
-        ${r.borderline ? `<div class="caveat" style="margin-top:6px">※ 境界判定: 売出と査定上限の乖離が5%未満。時点修正等のノイズでスタンプが反転しうるため、スタンプでなくレンジで読むこと。</div>` : ""}
+        ${r.borderline ? `<div class="caveat" style="margin-top:6px">※ 境界判定: 売出と判定境界(${r.verdictBasis === "market" ? "市場実勢の上位四分位+交渉幅5%" : "査定上限"} ${fmtMan(Math.round(r.judgeHi))})の乖離が5%未満。時点修正等のノイズでスタンプが反転しうるため、スタンプでなくレンジで読むこと。</div>` : ""}
         ${r.isNewBuild ? `<div class="caveat" style="margin-top:6px">※ 新築物件: 本査定は「中古市場での再販価値」ベース。新築分譲価格には事業者利益・未入居プレミアムが含まれるのが通常で、乖離の一部はその剥落分と解釈すべき(査定がそのまま「ぼったくり」を意味しない)。</div>` : ""}
         ${r.fairFinal.floorBound ? `<div class="caveat" style="margin-top:6px">※ 本査定は土地換算値が下限として発火している(事例比較より土地値が高い)。土地単価が${r.fairFinal.pptSource === "calibrated" ? "成約較正済み" : "未検証(較正未成立)のため下限には×0.9のペナルティを適用済み"}。</div>` : ""}
       </div>

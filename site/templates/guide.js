@@ -62,8 +62,9 @@ export function renderGuide(r, property, areaCal = null) {
           <rect x="0" y="0" width="240" height="26" fill="#DCE3EA"/>
           <text x="8" y="18" font-size="11" fill="#43566B">道路(北側・約5.4m公道)</text>
           <rect x="150" y="26" width="34" height="70" fill="#BFD7E4" stroke="#2E6E8E"/>
-          <text x="190" y="66" font-size="10" fill="#43566B">路地状部分</text>
-          <text x="190" y="79" font-size="10" fill="#43566B">(約21.83m²)</text>
+          <text x="188" y="66" font-size="10" fill="#43566B">路地状</text>
+          <text x="188" y="79" font-size="10" fill="#43566B">部分 約</text>
+          <text x="188" y="92" font-size="10" fill="#43566B">21.83m²</text>
           <rect x="52" y="96" width="132" height="86" fill="#EFF2F5" stroke="#2E6E8E" stroke-width="1.5"/>
           <text x="70" y="134" font-size="11" fill="#16232E">建物の建つ宅地</text>
           <text x="70" y="150" font-size="10" fill="#43566B">(有効宅地 約48.23m²)</text>
@@ -183,11 +184,11 @@ export function renderGuide(r, property, areaCal = null) {
     <div class="logic-body">
       <table class="kv">
         <tr><td><span class="badge ok" style="width:36px;height:36px;font-size:.8rem">買</span></td><td>取得総額(価格+諸費用) ≦ 即時処分値(土地値×卸値90%×売却諸費用控除−解体費)。最悪業者に土地で即売りしても損しにくい構造</td></tr>
-        <tr><td><span class="badge warn" style="width:36px;height:36px;font-size:.8rem">保留</span></td><td>売出価格が適正レンジ内(楽観上限まで)。交渉・指値次第</td></tr>
-        <tr><td><span class="badge" style="width:36px;height:36px;font-size:.8rem">見送</span></td><td>売出価格が楽観上限すら超過。説明のつかない上乗せに払うことになる</td></tr>
+        <tr><td><span class="badge warn" style="width:36px;height:36px;font-size:.8rem">保留</span></td><td>売出価格が市場実勢の圏内(周辺成約の上位四分位+交渉幅5%まで)。通常の交渉・指値で市場水準に収まりうる。リテール比較が不成立の物件のみ、従来どおり適正レンジ(楽観上限)で判定</td></tr>
+        <tr><td><span class="badge" style="width:36px;height:36px;font-size:.8rem">見送</span></td><td>売出価格が市場実勢の上限+交渉幅すら超過。相場でなく売主の希望に払う水準で、値下げ改定待ち</td></tr>
       </table>
-      <div class="formula" style="margin-top:10px">この物件: 売出 ${man(s.ask)} vs 楽観上限 ${man(r.fairFinal.hi)} → 判定【${r.verdict.mark}】(乖離 ${r.premium >= 0 ? "+" : ""}${man(r.premium)})</div>
-      <p class="why">なお売出価格と査定が乖離していること自体は珍しくありません。売主の希望価格・住宅ローン前提の実需価格・リフォーム済プレミアムなどが上乗せされるためです。この査定は「資産防衛の観点でいくらまでなら払えるか」の物差しです。</p>
+      <div class="formula" style="margin-top:10px">この物件: 売出 ${man(s.ask)} vs 判定境界 ${man(Math.round(r.judgeHi))}(${r.verdictBasis === "market" ? "市場実勢の上位四分位+交渉幅5%" : "楽観上限"}) → 判定【${r.verdict.mark}】(対市場実勢 ${(r.premiumMarket ?? r.premium) >= 0 ? "+" : ""}${man(r.premiumMarket ?? r.premium)})</div>
+      <p class="why">なお売出価格と査定が乖離していること自体は珍しくありません。売主の希望価格・住宅ローン前提の実需価格・リフォーム済プレミアムなどが上乗せされるためです。保留/見送の判定は「いま市場が実際に払っている水準(成約分布)」を基準にし、原価法とブレンドした適正レンジとの差は「市場全体の過熱感=相場調整時の下落余地」を測る参考指標として別に表示します(買・不能の資産防衛判定は従来どおり土地フロア基準)。</p>
     </div>
   </div>
 
