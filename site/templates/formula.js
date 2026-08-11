@@ -158,6 +158,54 @@ function bldgCurveSvg(c) {
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="建物残価の築年カーブ" style="width:100%;height:auto">${el.join("")}</svg>`;
 }
 
+// ---- 図-1: 意思決定の二軸(データ軸×満足軸の四象限) ----
+function decisionAxesSvg(d) {
+  const W = 640, H = 292, x0 = 70, x1 = 610, y0 = 30, y1 = 250;
+  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+  const el = [];
+  // 象限の面(右上=買い / 左上=危険地帯 / 右下=条件次第 / 左下=論外)
+  el.push(`<rect x="${cx}" y="${y0}" width="${x1 - cx}" height="${cy - y0}" fill="#2C6E49" opacity="0.08"/>`);
+  el.push(`<rect x="${x0}" y="${y0}" width="${cx - x0}" height="${cy - y0}" fill="#C93A2B" opacity="0.07"/>`);
+  el.push(`<rect x="${cx}" y="${cy}" width="${x1 - cx}" height="${y1 - cy}" fill="#2E6E8E" opacity="0.06"/>`);
+  el.push(`<rect x="${x0}" y="${cy}" width="${cx - x0}" height="${y1 - cy}" fill="#43566B" opacity="0.10"/>`);
+  // 軸
+  el.push(`<line x1="${x0}" y1="${cy}" x2="${x1}" y2="${cy}" stroke="#16232E" stroke-width="1.4"/>`);
+  el.push(`<line x1="${cx}" y1="${y0}" x2="${cx}" y2="${y1}" stroke="#16232E" stroke-width="1.4"/>`);
+  el.push(`<text x="${x1}" y="${cy - 8}" font-size="10" font-weight="700" text-anchor="end" fill="#16232E">割安 →</text>`);
+  el.push(`<text x="${x0}" y="${cy - 8}" font-size="10" font-weight="700" text-anchor="start" fill="#16232E">← 割高</text>`);
+  el.push(`<text x="${cx}" y="${y0 - 8}" font-size="10" font-weight="700" text-anchor="middle" fill="#16232E">満足 高(判定できるのは自分だけ)</text>`);
+  el.push(`<text x="${cx}" y="${y1 + 16}" font-size="10" text-anchor="middle" fill="#43566B">満足 低</text>`);
+  // 象限ラベル
+  const q = (x, y, l1, l2, color, bold = true) => {
+    el.push(`<text x="${x}" y="${y}" font-size="10.5" ${bold ? 'font-weight="700"' : ""} text-anchor="middle" fill="${color}">${l1}</text>`);
+    el.push(`<text x="${x}" y="${y + 15}" font-size="9" text-anchor="middle" fill="${color}">${l2}</text>`);
+  };
+  q((cx + x1) / 2, 62, "割安 × 満足高", "迷わず買い", "#2C6E49");
+  q((x0 + cx) / 2 - 20, 62, "割高 × 満足高", "満足プレミアム上限内のみ可 ── 営業の狩場", "#C93A2B");
+  q((cx + x1) / 2, 210, "割安 × 満足低", "住まないなら買わない(投資は別基準)", "#2E6E8E");
+  q((x0 + cx) / 2 - 20, 210, "割高 × 満足低", "論外", "#43566B");
+  // 満足プレミアム上限(左上象限内の縦破線)
+  const px = cx - 62;
+  el.push(`<line x1="${px}" y1="${y0 + 62}" x2="${px}" y2="${cy}" stroke="#C93A2B" stroke-width="1.4" stroke-dasharray="5,3"/>`);
+  el.push(`<text x="${px}" y="${y0 + 56}" font-size="9" text-anchor="middle" fill="#C93A2B">満足プレミアム上限(事前に自分で決める)</text>`);
+  el.push(`<text x="${px - 6}" y="${cy - 10}" font-size="8.5" text-anchor="end" fill="#C93A2B">これより左は満足が高くても降りる</text>`);
+  // 営業トークの矢印(縦位置の錯覚)
+  const axx = x0 + 24;
+  el.push(`<line x1="${axx}" y1="${y1 - 28}" x2="${axx}" y2="${y0 + 66}" stroke="#B07C10" stroke-width="1.6" stroke-dasharray="4,3"/>`);
+  el.push(`<polygon points="${axx - 4},${y0 + 70} ${axx + 4},${y0 + 70} ${axx},${y0 + 62}" fill="#B07C10"/>`);
+  el.push(`<text x="${axx + 8}" y="${cy + 46}" font-size="8.5" fill="#B07C10">感情トークは縦位置の</text>`);
+  el.push(`<text x="${axx + 8}" y="${cy + 58}" font-size="8.5" fill="#B07C10">錯覚を作る(価格は不動)</text>`);
+  // データ軸上の実例(横位置=台帳の計算値、縦位置は読者が置く)
+  if (d) {
+    el.push(`<circle cx="150" cy="${cy}" r="5" fill="#C93A2B"/>`);
+    el.push(`<text x="150" y="${cy + 20}" font-size="9" text-anchor="middle" fill="#C93A2B">売出 ${fmtMan(d.ask)}</text>`);
+    el.push(`<circle cx="${cx - 12}" cy="${cy}" r="5" fill="#2C6E49"/>`);
+    el.push(`<text x="${cx - 12}" y="${cy + 20}" font-size="9" text-anchor="middle" fill="#2C6E49">指値 ${fmtMan(d.bidLo)}〜${fmtMan(d.bidHi)}</text>`);
+  }
+  el.push(`<text x="${x1}" y="${H - 6}" font-size="9" text-anchor="end" fill="#43566B">横位置(データ軸)は台帳が計算する ／ 縦位置(満足軸)はあなたにしか置けない</text>`);
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="意思決定の二軸: データ(割安か)×満足" style="width:100%;height:auto">${el.join("")}</svg>`;
+}
+
 // ---- 図0: 一般形 ── 価格形成の模式図(特定物件に依存しない) ----
 function genericSvg() {
   const W = 640, barY = 52, barH = 38, x0 = 24, x1 = 616;
@@ -376,6 +424,31 @@ export function renderFormula({ r, rRef, property }, calArea, houseDeals) {
   const boxStyle = 'border:1.5px solid var(--ink);background:#FDFDFC;padding:12px 14px;flex:1;min-width:250px';
   const stepStyle = 'font-size:.8rem;line-height:1.8;margin-top:8px';
   const body = `
+  <div class="panel">
+    <h2>意思決定の二軸 ── 「相場としてお得か」と「自分が満足するか」</h2>
+    <div class="logic-body">
+      <p class="why">家の購入判断は<b>データ軸(相場と比べてお得か)</b>と<b>満足軸(自分と家族が満足するか)</b>の二軸で決まる。どちらも本物の判断材料で、どちらか一方では買えない。ただし性質が正反対──データ軸は台帳が計算でき、満足軸はあなたにしか測れない。この2つを混ぜた瞬間に判断はブレる。</p>
+      ${decisionAxesSvg({ ask: Math.round(s.ask), bidLo: 5900, bidHi: 6100 })}
+      <div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:14px">
+        <div style="${boxStyle}">
+          <div style="font-weight:700;color:#2E6E8E;border-bottom:1px solid var(--grid);padding-bottom:6px">データ軸 ── 台帳が固定する</div>
+          <div style="${stepStyle}">
+            適正価格・指値の底は<b>家を見る前に確定済み</b>(下の評価の型1〜3)。内見や交渉の最中に動かさない──動かしたくなったら、それがブレのサイン。<br>
+            <b>相場価格で買えば、満足はタダで付いてくる</b>。周辺の買主はみな同じ値段で家+満足を手に入れている。
+          </div>
+        </div>
+        <div style="${boxStyle};border-color:#2C6E49">
+          <div style="font-weight:700;color:#2C6E49;border-bottom:1px solid var(--grid);padding-bottom:6px">満足軸 ── 上限を事前に自分で決める</div>
+          <div style="${stepStyle}">
+            相場を超えて払う分だけが<b>満足の購入代金</b>で、転売時に回収できない。だから「気に入ったら+○○万円まで」と<b>内見の前に紙に書く</b>。<br>
+            本物の個人的事情(学区・親との距離・介護の間取り)は正当なプレミアム。見分け方は「その理由を言い出したのは自分か、営業か」。
+          </div>
+        </div>
+      </div>
+      <div class="note" style="margin-top:12px;border:1px dashed var(--stamp);padding:10px 12px"><b style="color:var(--stamp)">営業トークの切り替わりを検知する</b> ── データで勝てないと見込んだ営業は、満足軸へ話を切り替えてくる。兆候は4つ: <b>①主語が物件→あなたに</b>変わる(「お客様にとって」) / <b>②時間軸が長期→短期に</b>変わる(「今週末には」「他の方が」) / <b>③数字が消える</b>(単価・成約事例→「ご縁」「出会い」) / <b>④反証不能な言葉</b>(「こういう物件はもう出ません」──実際は同条件帯の成約が約2ヶ月に1件ある)。検知したら<b>「相手は相場では勝てないと認めた」というシグナル</b>として読み、感情は否定せずに土俵を戻す:「気に入っているからこそ、数字はきちんと詰めさせてください」。データを先に固めてあるから、感情は安心して感じてよい──この順序が全て。</div>
+    </div>
+  </div>
+
   <div class="panel">
     <h2>買付側の評価の型 ── このページの使い方</h2>
     <div class="logic-body">
