@@ -1,0 +1,25 @@
+# 物件データ(1物件1ファイル)。記載ルール: 事実データと査定パラメータのみ。
+id: nishigaoka2-21096431
+status: considering
+source: "SUUMO掲載(2026-08-12日次クロールで発見)。新築戸建・西が丘2-19-10開発(総戸数4)のうち2LDK+2S棟"
+source_url: "https://suumo.jp/ikkodate/tokyo/sc_kita/nc_21096431/"   # 実在確認済み 2026-08-12
+captured_at: 2026-08-12
+price_history:
+  - {date: 2026-08-03, price_man: 7680}   # 媒体の情報提供日時点
+location: {area: akabanedai, address: "北区西が丘2"}
+layout: "2LDK+2S(納戸)"   # 間取り(媒体記載)
+station: {walk_min: 15, multi_station: true}   # 板橋本町15分/十条21分/赤羽23分
+land:
+  registered_m2: 60.66    # 18.34坪
+  setback_m2: 0
+  road: {width_m: 6.0, quality: good_4m, direction: N, corner: true, note: "北側6m公道・西側5.7m公道の角地"}
+  shape: regular          # 媒体に形状記載なし(assumed)
+  legal: {zoning: "2種低層", ownership: shoyuken, rebuildable: true}
+building:
+  built: 2026-12          # 完成予定(未完成)
+  floor_m2: 104.69
+  type: wood_3f_narrow    # 木造3階建
+  repair: {status: new_construction, cost_man: 0}
+costs: {fee_rate: 0.05, demolition_man: 180, demolition_assumed: true}   # 木造3F・延床31.7坪×約5.5万/坪
+income: {rent_man: 26, rent_assumed: true, expense_rate: 0.15, cap_rate: 0.045}
+checklist: {road_type_verified: false, retaining_wall: false, hazard: false, seismic: true}   # 新築につき現行基準

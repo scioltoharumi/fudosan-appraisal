@@ -1,0 +1,25 @@
+# 物件データ(1物件1ファイル)。記載ルール: 事実データと査定パラメータのみ。
+id: akabanenishi3-21383994
+status: considering
+source: "SUUMO掲載(2026-08-12日次クロールで発見)。RC造2階・土地144m2の大型区画。登録条件充足(所有権・延床70超・4LDK+S・1991築=新耐震・再建築可)"
+source_url: "https://suumo.jp/chukoikkodate/tokyo/sc_kita/nc_21383994/"   # 実在確認済み 2026-08-12
+captured_at: 2026-08-12
+price_history:
+  - {date: 2026-08-10, price_man: 8500}   # 媒体の情報提供日時点
+location: {area: akabane-nishi, address: "北区赤羽西3"}
+layout: "4LDK+S(納戸)"   # 間取り(媒体記載)
+station: {walk_min: 15, multi_station: true}   # 赤羽15分/東十条16分
+land:
+  registered_m2: 144.02
+  setback_m2: 0           # 媒体に「セットバック」文言あり・数量不明のため0仮置き(要確認。assumed)
+  road: {corner: false, note: "接道の幅員・方位の媒体記載なし(要現地確認。方位・質はエンジン既定=保守側)"}
+  shape: regular          # 媒体に形状記載なし(assumed)
+  legal: {zoning: "1種中高", ownership: shoyuken, rebuildable: true}
+building:
+  built: 1991-05
+  floor_m2: 120.90
+  type: wood_std          # 実際はRC2階建。エンジンの建物モデルは木造前提(30年逓減)のためRCの残存価値を過小評価する=保守側の査定になる点に留意
+  repair: {status: unknown_likely_none, assumed: true, cost_man: 800}
+costs: {fee_rate: 0.05, demolition_man: 300, demolition_assumed: true}   # RC造36.6坪×約8万/坪(木造より高い)
+income: {rent_man: 26, rent_assumed: true, expense_rate: 0.15, cap_rate: 0.045}
+checklist: {road_type_verified: false, retaining_wall: false, hazard: false, seismic: true}   # 1991築=新耐震
