@@ -72,13 +72,20 @@ export function renderIndex(results, { asOf, cal = null }) {
   const rows = sorted.map(({ r, property, hasMarketPage }) => {
     const v = r.verdict;
     const status = STATUS_LABEL[property.status] || property.status;
-    const ph = property.price_history || [];
+    const ph = [...(property.price_history || [])].sort((a, b) => new Date(a.date) - new Date(b.date));
     const priceDate = ph.length ? fmtDate(ph[ph.length - 1].date) : "—";
+    // 値下げ(値上げ)の明記: 初値→現在価格の累計差と率を2行目に表示。▼=値下げ(買い手に有利)/▲=値上げ
+    let reviseNote = "";
+    if (ph.length > 1) {
+      const first = ph[0].price_man, last = ph[ph.length - 1].price_man, diff = last - first;
+      reviseNote = diff === 0 ? `・改定${ph.length - 1}回(同値)` :
+        `・改定${ph.length - 1}回<br>初値${fmtMan(first)} <span style="color:${diff < 0 ? "#2E6E8E" : "var(--stamp)"};font-weight:700">${diff < 0 ? "▼" : "▲"}${fmtMan(Math.abs(diff))}(${diff < 0 ? "" : "+"}${(100 * diff / first).toFixed(1)}%)</span>`;
+    }
     return `<tr>
       <td><span class="badge ${v.cls}">${v.mark}</span></td>
       <td><a href="property/${esc(r.id)}.html">${esc(property.location?.address ?? r.id)}</a><div class="note" style="margin-top:0">${esc(r.id)} / ${esc(property.layout ?? "—")} / 築${r.state.age.toFixed(1)}年 / 徒歩${esc(property.station?.walk_min)}分 / 取得 ${esc(fmtDate(property.captured_at))}${safeUrl(property.source_url) ? ` / <a href="${esc(property.source_url)}" target="_blank" rel="noopener noreferrer">掲載元↗</a>` : ""}</div></td>
       <td><span class="status">${esc(status)}</span></td>
-      <td class="num">${fmtMan(r.state.ask)}<div class="note" style="margin-top:0">${esc(priceDate)}時点${ph.length > 1 ? ` / 改定${ph.length - 1}回` : ""}</div></td>
+      <td class="num">${fmtMan(r.state.ask)}<div class="note" style="margin-top:0">${esc(priceDate)}時点${reviseNote}</div></td>
       <td class="num">${r.retail && hasMarketPage ? `<a href="property/${esc(r.id)}-market.html">${fmtMan(r.retail.mid)}</a>` : r.retail ? fmtMan(r.retail.mid) : "—"}</td>
       <td class="num"${divergence(r) > 0 ? ' style="color:var(--stamp)"' : ""}>${divergence(r) >= 0 ? "+" : ""}${fmtMan(divergence(r))}</td>
       <td class="num">${r.assumptions.length}件</td>
