@@ -511,5 +511,15 @@
   "media": "athome",
   "land_m2": 79.72,
   "floor_m2": 114.56
+ },
+ "at_1106854114": {
+  "first_seen": "2026-08-12",
+  "price_man": 5980,
+  "address": "東京都北区西が丘2",
+  "walk_min": 4,
+  "kind": "shinchiku",
+  "media": "athome",
+  "land_m2": 58.53,
+  "floor_m2": 93.55
  }
 }
