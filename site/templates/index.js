@@ -6,20 +6,38 @@ import { layout, esc, STATUS_LABEL, fmtDate, safeUrl } from "./layout.js";
 // 「公示ベース査定は市場と無関係」批判への回答: エリアごとに採用単価と成約実勢を並べ、乖離を開示する
 function calibrationPanel(results, cal) {
   if (!cal) return "";
-  // 台帳で実際に使われている(エリア, 採用単価)の組を集める
+  // 台帳で実際に使われている(エリア, 採用単価)の組を集める。同一エリアでも用途地域が違えば
+  // 採用単価が分かれるため(例: 十条仲原=近隣商業300 / 1種中高230)、単価ごとに行を分ける。
+  // ただしエリア名・較正値・所見は全行で同じなのでrowspanで束ね、重複表示に見えないようにする
   const usedByArea = new Map();
   for (const { rRef, property } of results) {
     const area = property.location?.area;
-    if (!usedByArea.has(area)) usedByArea.set(area, new Set());
-    usedByArea.get(area).add(Math.round(rRef.state.ppt));
+    if (!usedByArea.has(area)) usedByArea.set(area, new Map());
+    const byPpt = usedByArea.get(area);
+    const ppt = Math.round(rRef.state.ppt);
+    if (!byPpt.has(ppt)) byPpt.set(ppt, []);
+    byPpt.get(ppt).push({ addr: property.location?.address ?? rRef.id, zoning: property.land?.legal?.zoning });
   }
   const rows = [];
-  for (const [area, ppts] of usedByArea) {
+  for (const [area, byPpt] of usedByArea) {
     const a = cal.byArea[area];
-    for (const used of [...ppts].sort((x, y) => x - y)) {
+    const ppts = [...byPpt.keys()].sort((x, y) => x - y);
+    const span = ppts.length;
+    ppts.forEach((used, i) => {
+      const users = byPpt.get(used);
+      // 同一エリア内で単価が分かれる場合のみ、どの物件がその単価を使っているかを添える
+      const who = span > 1
+        ? `<div class="note" style="margin-top:0">${users.map((u) => esc(u.addr) + (u.zoning ? `(${esc(u.zoning)})` : "")).join(" / ")}</div>`
+        : "";
+      const areaCell = i === 0
+        ? `<td rowspan="${span}" style="vertical-align:top">${esc(area)}${span > 1 ? `<div class="note" style="margin-top:0">用途地域差で採用単価が${span}通り</div>` : ""}</td>`
+        : "";
       if (!a?.chosen) {
-        rows.push(`<tr><td>${esc(area)}</td><td class="num">${used}万/坪</td><td>データ不足</td><td class="num">—</td><td>成約データ未整備</td></tr>`);
-        continue;
+        rows.push(`<tr>${areaCell}<td class="num">${used}万/坪${who}</td>` +
+          (i === 0 ? `<td rowspan="${span}" style="vertical-align:top">データ不足</td>` : "") +
+          `<td class="num">—</td>` +
+          (i === 0 ? `<td rowspan="${span}" style="vertical-align:top">成約データ未整備</td>` : "") + `</tr>`);
+        return;
       }
       const gap = a.chosen.ppt / used - 1;
       const adopted = a.chosen.level !== "reference";
@@ -27,13 +45,13 @@ function calibrationPanel(results, cal) {
         ? "較正値を本査定の土地単価として採用済み(2026-08第2次監査で本体接続)"
         : "信頼度不足(極小標本)のため未採用。従来値で査定し、較正値は参考表示";
       rows.push(`<tr>
-        <td>${esc(area)}</td>
-        <td class="num">${used}万/坪</td>
-        <td>${a.chosen.ppt}万/坪<div class="note" style="margin-top:0">${esc(a.chosen.basis)} / 信頼度:${esc(a.chosen.confidence)}</div></td>
+        ${areaCell}
+        <td class="num">${used}万/坪${who}</td>
+        ${i === 0 ? `<td rowspan="${span}" style="vertical-align:top">${a.chosen.ppt}万/坪<div class="note" style="margin-top:0">${esc(a.chosen.basis)} / 信頼度:${esc(a.chosen.confidence)}</div></td>` : ""}
         <td class="num"${gap < -0.08 ? ' style="color:var(--stamp)"' : ""}>${pct(gap)}</td>
-        <td style="font-size:.75rem">${view}</td>
+        ${i === 0 ? `<td rowspan="${span}" style="vertical-align:top;font-size:.75rem">${view}</td>` : ""}
       </tr>`);
-    }
+    });
   }
   const dealRows = Object.values(cal.byArea).flatMap((a) => a.deals.rows).sort((x, y) => String(y.date).localeCompare(String(x.date)));
   const dealTable = dealRows.map((d) =>
