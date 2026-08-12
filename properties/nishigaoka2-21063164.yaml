@@ -1,6 +1,7 @@
 # 物件データ(1物件1ファイル)。記載ルール: 事実データと査定パラメータのみ。
 id: nishigaoka2-21063164
 status: considering
+unit_label: "D号棟"   # 一覧で同一丁目の他物件と識別するための棟名・区画名
 source: "SUUMO掲載(2026-08-12日次クロールで発見)。新築戸建・西が丘2-19-10開発(総戸数4)のうちD号棟(4LDK)。nc_20504895は同一戸の別業者掲載。同開発のC号棟(2LDK+2S・7680万)は nishigaoka2-21096431 として別登録"
 source_url: "https://suumo.jp/ikkodate/tokyo/sc_kita/nc_21063164/"   # 実在確認済み 2026-08-12
 captured_at: 2026-08-12

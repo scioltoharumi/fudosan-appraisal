@@ -2,6 +2,7 @@
 # 指値方針・交渉メモ・個人的所感・写真・紹介文は書かない(publicリポジトリ運用・decisions D4)
 id: nishigaoka2-adcast-a
 status: viewed             # considering / viewed / declined / closed
+unit_label: "A号棟"   # 一覧で同一丁目の他物件と識別するための棟名・区画名
 source: "アドキャスト赤羽支店チラシ(媒介)・A号棟。新築戸建(未完成・2026年9月完成予定/9月下旬引渡予定・建築確認 第JAIC2025X0546A1号)"
 source_url: "https://suumo.jp/ikkodate/tokyo/sc_kita/nc_21261057/"   # 実在確認済み 2026-08-12。同一確認: 土地50.74実測・建物83.51(車庫8.96)・1LDK+2S(納戸)・完成2026-09・木造3F・北西4m の7項目一致
 captured_at: 2026-08-09

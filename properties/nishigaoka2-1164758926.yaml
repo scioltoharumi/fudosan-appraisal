@@ -1,0 +1,43 @@
+# 物件データ(1物件1ファイル)。記載ルール: 事実データと査定パラメータのみ。
+id: nishigaoka2-1164758926
+status: considering
+unit_label: "2号棟"
+source: "athome掲載(2026-08-12登録)。nishigaoka2-20767290(1号棟)と同一開発の2棟現場・2号棟。SUUMO側(nc_20767290)は区画情報に1号棟しか掲出しないため、戸別価格が取れるathome掲載をsource_urlに採用。1号棟より土地0.88m²・建物1.21m²広いが100万円安い"
+source_url: "https://www.athome.co.jp/kodate/1164758926/"   # 実在確認済み 2026-08-12
+captured_at: 2026-08-12
+price_history:
+  - {date: 2026-08-12, price_man: 5980}   # クロール確認日時点(athomeは情報公開日2026-07-07表記のため確認日を採用)
+location: {area: akabanedai, address: "北区西が丘2"}   # エリア区分「赤羽台・西が丘」
+layout: "3LDK+S(納戸)"   # 掲載は3SLDK(LDK14.8/洋5.2・5.2・4.6/S5.5)。台帳表記は1号棟と揃える
+station: {walk_min: 16, multi_station: true}   # 板橋本町16分/東十条17分/十条18分(athome記載。SUUMO側は十条17分表記で媒体差あり)
+land:
+  registered_m2: 58.53    # 実測
+  setback_m2: 0           # 掲載「私道負担面積: なし」「セットバック: −」
+  road: {width_m: 4.0, quality: good_4m, direction: S, corner: false, note: "南側4m・アスファルト舗装(1号棟と同一現場)。私道負担なし・セットバックなし(掲載明記)"}
+  shape: regular          # 1号棟の掲載に「整形地」記載あり(同一現場につき同等と判断。assumed)
+  legal: {zoning: "1種中高", bcr: 60, far: 150, ownership: shoyuken, rebuildable: true}
+building:
+  built: 2026-04          # 掲載「2026年4月 新築」(1号棟は2026年5月)
+  floor_m2: 93.55
+  type: wood_3f_narrow    # 木造3階建
+  repair: {status: new_construction, cost_man: 0}
+costs: {fee_rate: 0.05, demolition_man: 150, demolition_assumed: true}   # 木造3F・延床28.3坪×約5.5万/坪
+income: {rent_man: 24, rent_assumed: true, expense_rate: 0.15, cap_rate: 0.045}
+checklist: {road_type_verified: false, retaining_wall: false, hazard: false, seismic: true}   # 新築につき現行基準
+caveats:
+  - title: "容積率が指定を超過(ビルトインガレージによる不算入と推定)"
+    verdict_effect: "内訳の確認推奨"
+    detail: "延床93.55m² ÷ 土地58.53m² = 159.8%で、指定容積率150%を9.8ポイント超過している。掲載に駐車場「有・無料」の明記があり、ビルトインガレージ(延床の1/5まで不算入)で説明がつく可能性が高いが、車庫面積の内訳は掲載に記載がなく未確認。"
+    check: "検査済証と建築確認申請書で延床の内訳(容積対象床面積)を確認"
+  - title: "前面道路4mちょうど"
+    verdict_effect: "査定は減点していない"
+    detail: "前面道路は南側4mで、同帯の西が丘2物件(4.2〜7m)の中で最も狭い。査定エンジンは幅員4m以上を一律「良好(±0%)」として扱うため、4.2m以上との実勢差を減点していない。"
+    check: "現地で車両進入・工事車両の取り回し、42条区分(公道/私道)を確認"
+  - title: "駅徒歩が比較事例の範囲外"
+    verdict_effect: "遠隔物件は過大評価の傾向"
+    detail: "最寄りの板橋本町駅まで徒歩16分で、リテール比較に使った成約事例プールの最遠(16分)と同水準。徒歩補正は-1.2%/分の線形式のため、事例レンジの端では駅距離のペナルティを過小評価しうる。"
+    check: "実地で駅までの経路(勾配・信号・環七横断の有無)を歩いて確認"
+  - title: "完成済みで未販売・隣戸より広いのに安い"
+    verdict_effect: "市場自身の評価"
+    detail: "2026年4月完成の完成済み物件で、総戸数2のうち2戸とも販売中(2026-08-12時点)。本戸は隣の1号棟より土地0.88m²・建物1.21m²広いにもかかわらず100万円安く、開発全体が周辺成約水準(7,000万円前後)より低い値付けになっている。"
+    check: "売主・仲介に販売期間と反響状況、1号棟との価格差の理由を確認"

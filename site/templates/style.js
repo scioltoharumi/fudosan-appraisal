@@ -46,6 +46,7 @@ table.list td.num{font-family:var(--mono);text-align:right;white-space:nowrap}
 .badge.warn{border-color:var(--warn);color:var(--warn)}
 .status{font-size:.72rem;border:1px solid var(--ink-soft);padding:1px 7px;color:var(--ink-soft);white-space:nowrap}
 .status.viewed{background:#2E6E8E;border-color:#2E6E8E;color:#fff;font-weight:700}
+.unit-tag{display:inline-block;margin-left:6px;font-size:.68rem;padding:1px 6px;border:1px solid var(--band);color:var(--band);background:#F4F8FA;white-space:nowrap;vertical-align:middle}
 table.list th.sortable{cursor:pointer;user-select:none}
 table.list th.sortable:hover{color:var(--ink)}
 table.list th.sortable .arw{opacity:.45;font-size:.65rem}

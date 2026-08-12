@@ -1,6 +1,7 @@
 # 物件データ(1物件1ファイル)。記載ルール: 事実データと査定パラメータのみ。
 id: nishigaoka2-21096431
 status: considering
+unit_label: "C号棟"   # 一覧で同一丁目の他物件と識別するための棟名・区画名
 source: "SUUMO掲載(2026-08-12日次クロールで発見)。新築戸建・西が丘2-19-10開発(総戸数4)のうち2LDK+2S棟"
 source_url: "https://suumo.jp/ikkodate/tokyo/sc_kita/nc_21096431/"   # 実在確認済み 2026-08-12
 captured_at: 2026-08-12

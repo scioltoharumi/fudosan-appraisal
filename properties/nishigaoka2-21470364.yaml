@@ -1,6 +1,7 @@
 # 物件データ(1物件1ファイル)。記載ルール: 事実データと査定パラメータのみ。
 id: nishigaoka2-21470364
 status: considering
+unit_label: "野村2棟現場・60m²区画"   # 一覧で同一丁目の他物件と識別するための棟名・区画名
 source: "SUUMO掲載(2026-08-12日次クロールで発見)。新築戸建2棟現場のうち60.07m2区画(nc_21470365と同時掲載)"
 source_url: "https://suumo.jp/ikkodate/tokyo/sc_kita/nc_21470364/"   # 実在確認済み 2026-08-12
 captured_at: 2026-08-12

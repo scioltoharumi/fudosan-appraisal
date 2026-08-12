@@ -427,7 +427,7 @@ export function renderProperty(r, property, marketCal = null, houseDeals = null)
   const body = `
   <div style="margin-bottom:12px;font-size:.8rem"><a href="../index.html">← 物件一覧へ</a></div>
   <div class="panel">
-    <h2>${esc(property.location?.address ?? r.id)} <span class="status">${esc(status)}</span></h2>
+    <h2>${esc(property.location?.address ?? r.id)}${property.unit_label ? `<span class="unit-tag">${esc(property.unit_label)}</span>` : ""} <span class="status">${esc(status)}</span></h2>
     <div class="note">ID: ${esc(r.id)} / 出典: ${esc(property.source ?? "—")} / 取得日: ${esc(fmtDate(property.captured_at))} / 駅徒歩${esc(property.station?.walk_min)}分 / 土地${esc(property.land?.registered_m2)}m² / 延床${esc(property.building?.floor_m2)}m² / 築: ${esc(fmtDate(property.building?.built))}</div>
     ${safeUrl(property.source_url) ? `<a class="src-link" href="${esc(property.source_url)}" target="_blank" rel="noopener noreferrer">元の掲載ページを見る ↗</a>` : ""}
 

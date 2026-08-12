@@ -6,7 +6,7 @@ import {
   appraise, appraiseRange, evaluate, verdict,
   elapsedYears, monteCarlo, mulberry32,
 } from "../engine/appraise.js";
-import { loadAreaConfig, loadProperty } from "../engine/io.js";
+import { loadAreaConfig, loadProperty, listPropertyIds } from "../engine/io.js";
 
 const AS_OF = new Date(Date.UTC(2026, 6, 19));
 const ELAPSED = elapsedYears(AS_OF);
@@ -134,4 +134,20 @@ test("price_history: 日付ソートが時刻値ベースであること(String(
   // 実データ(nishigaoka2の値下げ)で顕在化したため、最新価格の採用を回帰テストで固定する
   const r = evaluate(loadProperty("nishigaoka2-adcast-a"), loadAreaConfig(), { asOf: AS_OF });
   assert.equal(r.state.ask, 6580);
+});
+
+test("データ規律: 全物件YAMLに必須フィールドが揃っている(編集時の欠落検出)", () => {
+  // 2026-08-12: YAMLの一括編集で source_url / price_history / layout を誤って削除した事故を受けて追加。
+  // 欠落しても保守側デフォルトで査定は通ってしまう項目があるため、機械的に検査する
+  const KEYS = ["id", "status", "source", "source_url", "captured_at", "price_history",
+    "location", "layout", "station", "land", "building", "costs", "income", "checklist"];
+  const SUB = { land: ["registered_m2", "road", "shape", "legal"], building: ["built", "floor_m2", "type", "repair"], location: ["area", "address"] };
+  for (const id of listPropertyIds()) {
+    const p = loadProperty(id);
+    for (const k of KEYS) assert.ok(p[k] !== undefined, `${id}: ${k} が欠落`);
+    assert.ok(Array.isArray(p.price_history) && p.price_history.length > 0, `${id}: price_history が空`);
+    for (const [k, subs] of Object.entries(SUB)) {
+      for (const x of subs) assert.ok(p[k][x] !== undefined, `${id}: ${k}.${x} が欠落`);
+    }
+  }
 });
