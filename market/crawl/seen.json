@@ -1,0 +1,100 @@
+{
+ "nc_20241697": {
+  "first_seen": "2026-08-12",
+  "price_man": 5280,
+  "address": "東京都北区志茂４",
+  "walk_min": 6,
+  "kind": "chuko"
+ },
+ "nc_21417249": {
+  "first_seen": "2026-08-12",
+  "price_man": 6680,
+  "address": "東京都北区上十条１",
+  "walk_min": 5,
+  "kind": "chuko"
+ },
+ "nc_21474554": {
+  "first_seen": "2026-08-12",
+  "price_man": 7580,
+  "address": "東京都北区赤羽西３",
+  "walk_min": 14,
+  "kind": "chuko"
+ },
+ "nc_78266571": {
+  "first_seen": "2026-08-12",
+  "price_man": 7780,
+  "address": "東京都北区岩淵町",
+  "walk_min": 5,
+  "kind": "chuko"
+ },
+ "nc_21333273": {
+  "first_seen": "2026-08-12",
+  "price_man": 9000,
+  "address": "東京都北区十条仲原２",
+  "walk_min": 8,
+  "kind": "chuko"
+ },
+ "nc_20767302": {
+  "first_seen": "2026-08-12",
+  "price_man": 6280,
+  "address": "東京都北区上十条３",
+  "walk_min": 8,
+  "kind": "shinchiku"
+ },
+ "nc_21264029": {
+  "first_seen": "2026-08-12",
+  "price_man": 5980,
+  "address": "東京都北区志茂５",
+  "walk_min": 11,
+  "kind": "shinchiku"
+ },
+ "nc_20767416": {
+  "first_seen": "2026-08-12",
+  "price_man": 5980,
+  "address": "東京都北区志茂５",
+  "walk_min": 12,
+  "kind": "shinchiku"
+ },
+ "nc_20767290": {
+  "first_seen": "2026-08-12",
+  "price_man": 5980,
+  "address": "東京都北区西が丘２",
+  "walk_min": 17,
+  "kind": "shinchiku"
+ },
+ "nc_21470427": {
+  "first_seen": "2026-08-12",
+  "price_man": 6180,
+  "address": "東京都北区赤羽西４-48",
+  "walk_min": 12,
+  "kind": "shinchiku"
+ },
+ "nc_21189713": {
+  "first_seen": "2026-08-12",
+  "price_man": 6380,
+  "address": "東京都北区岩淵町",
+  "walk_min": 5,
+  "kind": "shinchiku"
+ },
+ "nc_21261057": {
+  "first_seen": "2026-08-12",
+  "price_man": 6580,
+  "address": "東京都北区西が丘２",
+  "walk_min": 15,
+  "kind": "shinchiku"
+ },
+ "nc_20909438": {
+  "first_seen": "2026-08-12",
+  "price_man": 6680,
+  "address": "東京都北区赤羽北２",
+  "walk_min": 3,
+  "kind": "shinchiku"
+ },
+ "nc_21075314": {
+  "first_seen": "2026-08-12",
+  "price_man": 6980,
+  "address": "東京都北区赤羽台４",
+  "walk_min": 13,
+  "kind": "shinchiku"
+ }
+}

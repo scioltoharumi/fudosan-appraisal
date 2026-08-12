@@ -1,0 +1,37 @@
+---
+name: daily-crawl
+description: 台帳物件の値下げ・掲載終了チェックと新着物件の探索(SUUMO日次クロール)を実行し、差分を台帳へ反映してデプロイまで完了する。Routineからの定期実行、または「クロールして」「値下げチェックして」「新着確認して」と言われたら使用する。
+---
+
+# daily-crawl — 日次クロール運用手順
+
+仕様の正本は `docs/requirements-daily-crawl.md`。役割分担: **スクリプトが観測、Claudeが反映と検証**。
+
+## 手順
+
+1. `node crawler/daily.mjs` を実行し、stdoutのJSONレポートを読む(実行はネットワーク込みで2〜3分)
+2. **watch差分の反映**:
+   - `price_changed`: 該当 `properties/{id}.yaml` の `price_history` に追記。
+     dateは `info_date`(媒体の情報提供日)、コメントにクロール日を記す。
+     同日・同値の行が既にあれば追記しない(冪等)。反映後 `node engine/cli.js {id}` で再査定し、
+     判定(保留⇄見送など)が変わったか確認する
+   - `delisted_suspect`: YAMLに `delisted_observed: {date: クロール日, http: ステータス}` を追記。
+     **成約とは断定しない**。7日以内に再掲載を確認したらこの項目を外す
+   - `parse_error` / `fetch_error`: 台帳は触らず、報告にエラーとして含める
+3. **discover差分**: レポートの `new` / `price_changed` を報告に列挙する(価格/地区/面積/築年/徒歩/URL)。
+   **自動登録はしない**。ユーザーが登録を指示したら fudosan-appraisal スキルの登録フローを踏む。
+   seen.json はスクリプトが更新済みなので、変更があればコミットに含める
+4. **検証とデプロイ**(YAML変更があった場合のみ):
+   `npm test` を実行し **exit codeを直接確認**(パイプで潰さない。落ちたらpushせず原因修正)→
+   `node site/build.js` → 変更ページのSVG機械検査 → feature ブランチにコミット →
+   main へ ff-merge → push → 本番URLをcurlで確認
+5. **報告**: 値下げn件(物件名・幅・判定への影響)/ 新着n件 / 掲載終了疑いn件 / エラーn件。
+   すべてゼロの日は静かに終了してよい。**ただし月曜(JST)は変化ゼロでも1行の生存報告を出す**
+
+## 注意
+
+- 同一物件が別業者により別のnc番号で重複掲載されることがある(ncでは検知不能)。
+  discoverの新着が台帳物件と住所・面積・間取りで一致する場合は「重複掲載の疑い」として報告し、
+  ユーザー確認後にのみ source_url の追加や price_history への反映を行う
+- クロールのリクエスト間隔・ページ上限はスクリプト側で制御済み。手動で連打しない
+- 生HTMLやレポートJSONはリポジトリにコミットしない(コミット対象は properties/ と market/crawl/seen.json のみ)
