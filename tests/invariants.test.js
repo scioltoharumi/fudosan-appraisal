@@ -128,3 +128,10 @@ test("判定境界: ask<=floorで「買」、fair<0で「不能」、上限超�
   assert.ok(r2.mid.fair < 0);
   assert.equal(verdict(dead, r2.mid, r2.lo, r2.hi).mark, "不能");
 });
+
+test("price_history: 日付ソートが時刻値ベースであること(String(Date)の曜日名辞書順バグの回帰)", () => {
+  // 2026-08-09(日)→08-10(月)は String(Date) 辞書順だと "Mon..."<"Sun..." で逆転する。
+  // 実データ(nishigaoka2の値下げ)で顕在化したため、最新価格の採用を回帰テストで固定する
+  const r = evaluate(loadProperty("nishigaoka2-adcast-a"), loadAreaConfig(), { asOf: AS_OF });
+  assert.equal(r.state.ask, 6580);
+});

@@ -17,7 +17,7 @@
 
 ## 運用ルール
 
-1. 変更後は必ず `npm test`(21件) と `node site/build.js` を通す
+1. 変更後は必ず `npm test`(22件) と `node site/build.js` を通す(exit codeを直接確認。パイプで潰さない)
 2. 反映は feature ブランチ → main へ ff-merge → push(GitHub Pages が main から自動デプロイ)。
    デプロイ後に本番URLをcurlで確認する運用が確立している
 3. **公開リポジトリ**: 指値方針・交渉メモ・個人的所感・写真は書かない(決定事項D4)。

@@ -329,7 +329,9 @@ export function toState(property, areaConfig, asOf, { calChosen = null } = {}) {
     ppt = area.ppt_man;
   }
 
-  const ph = [...(property.price_history || [])].sort((a, b) => String(a.date) < String(b.date) ? -1 : 1);
+  // 日付ソートは時刻値で行う。String(Date)は曜日名始まり("Mon..."<"Sun...")のため
+  // 辞書順ソートだと日付順にならない(2026-08-12に西が丘2の値下げ反映漏れとして顕在化)
+  const ph = [...(property.price_history || [])].sort((a, b) => new Date(a.date) - new Date(b.date));
   if (ph.length === 0) throw new Error("price_historyが空です");
   const ask = ph[ph.length - 1].price_man;   // 日付ソート後の最新値(YAMLの記載順に依存しない)
 
