@@ -4,7 +4,7 @@
 // フラット圏の幅が保たれているかを確認した上で回帰値を更新すること。
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { ageCurveStats } from "../site/templates/formula.js";
+import { ageCurveStats, ageCurveCI } from "../site/templates/formula.js";
 import { loadHouseDeals } from "../engine/retail.js";
 
 const ac = ageCurveStats(loadHouseDeals());
@@ -39,4 +39,31 @@ test("築年カーブ: 算術的希釈の前提 ── 新築価格の過半は�
   assert.ok(ac.landShareNew > 0.5 && ac.landShareNew < 0.85,
     `新築の土地シェア: ${(ac.landShareNew * 100).toFixed(1)}%`);
   assert.ok(ac.newMedPrice > 4000 && ac.newMedPrice < 12000, `新築中央値: ${ac.newMedPrice}万`);
+});
+
+// ブートストラップ信頼区間(formula補論の「どこまで信じてよいか」表)。
+// 主張は2点のみ ── ①崖は有意 ②新築プレミアムの山は無い。それ以外の帯は1.00を含む(=判別不能)。
+// 乱数は固定シードのため、同じ台帳なら何度計算しても同じ値が出る(ページの再現性を担保)。
+test("築年カーブCI: 崖は有意(差の95%区間が0を跨がない)・新築に上乗せの山は無い", () => {
+  const ci = ageCurveCI(loadHouseDeals());
+  assert.equal(ci.total, 320, `有効標本数: ${ci.total}`);
+  assert.ok(ci.cliffLo > 0, `崖の差の下限が0超: ${ci.cliffLo.toFixed(3)}`);
+  assert.ok(Math.abs(ci.cliffDiff - 0.364) < 0.01, `崖の差: ${ci.cliffDiff.toFixed(3)}`);
+  const newB = ci.rows.find((b) => b.lo === 0);
+  assert.ok(newB.hi95 < 1, `築0〜3年の上限は1.00未満(=プレミアムの山なし): ${newB.hi95.toFixed(3)}`);
+});
+
+test("築年カーブCI: 築3〜30年はどの帯も1.00を含む(細かい起伏は判別できない)", () => {
+  const ci = ageCurveCI(loadHouseDeals());
+  for (const b of ci.rows.filter((x) => x.lo >= 3 && x.lo < 31)) {
+    assert.ok(b.lo95 <= 1 && b.hi95 >= 1,
+      `${b.label}の95%区間が1.00を含む: ${b.lo95.toFixed(3)}〜${b.hi95.toFixed(3)}`);
+  }
+});
+
+test("築年カーブCI: 決定論 ── 同じ入力なら同じ区間が出る", () => {
+  const deals = loadHouseDeals();
+  const a = ageCurveCI(deals), b = ageCurveCI(deals);
+  assert.deepEqual(a.rows.map((x) => [x.lo95, x.hi95]), b.rows.map((x) => [x.lo95, x.hi95]));
+  assert.equal(a.cliffLo, b.cliffLo);
 });

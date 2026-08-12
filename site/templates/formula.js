@@ -16,7 +16,7 @@ const RULE_LO = 1.1, RULE_HI = 1.2;   // 経験則: 実勢 ≒ 公示×1.1〜1.2
 // モデル価格(土地基準×坪×徒歩 + 建物線形残価)と比べる。比率1.00=線形減価どおりの値付け。
 // 新築プレミアムが実在すれば築0〜3年の比率が1を大きく超えて現れ、
 // 「築30年の崖」は築31年以降の比率の段差として現れる(2026-08 検証会話の定式化)。
-export function ageCurveStats(houseDeals) {
+function ageRatioBuckets(houseDeals) {
   const T = COEFFS.TSUBO_M2;
   const bldg = (d) => Math.max(0, COEFFS.DEFAULT_REBUILD_PPT * (d.floor_m2 / T) * Math.max(0, 1 - d.age / COEFFS.BUILDING_LIFE_Y)
     - Math.min(COEFFS.DEFAULT_REPAIR_MAN, RETAIL.REPAIR_PER_YEAR * d.age));
@@ -43,10 +43,58 @@ export function ageCurveStats(houseDeals) {
     buckets.find((b) => d.age >= b.lo && d.age < b.hi).ratios.push(d.price_man / (landPart + bldg(d)));
     if (d.age < 3) { newShares.push(landPart / d.price_man); newPrices.push(d.price_man); }
   }
+  return { districts: Object.keys(base).length, buckets, newShares, newPrices, med };
+}
+
+export function ageCurveStats(houseDeals) {
+  const { districts, buckets, newShares, newPrices, med } = ageRatioBuckets(houseDeals);
   return {
-    districts: Object.keys(base).length,
+    districts,
     buckets: buckets.map((b) => ({ lo: b.lo, hi: b.hi, n: b.ratios.length, ratio: b.ratios.length ? med(b.ratios) : null })),
     landShareNew: med(newShares), newMedPrice: med(newPrices), nNew: newShares.length,
+  };
+}
+
+// 標本の薄さを明示するための不確実性評価。各築年帯の中央値をブートストラップ(復元抽出)で
+// 4,000回引き直し、2.5%〜97.5%分位を95%信頼区間とする。乱数はLCG固定シードで決定論的
+// (ビルドのたびに数字が動くとページの再現性が失われるため)。
+export function ageCurveCI(houseDeals, resamples = 4000) {
+  const { districts, buckets, med } = ageRatioBuckets(houseDeals);
+  let seed = 20260812;
+  const rnd = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
+  const ci = (arr) => {
+    if (!arr.length) return [null, null];
+    const ms = [];
+    for (let k = 0; k < resamples; k++) {
+      const smp = new Array(arr.length);
+      for (let i = 0; i < arr.length; i++) smp[i] = arr[Math.floor(rnd() * arr.length)];
+      ms.push(med(smp));
+    }
+    ms.sort((a, b) => a - b);
+    return [ms[Math.floor(resamples * 0.025)], ms[Math.floor(resamples * 0.975)]];
+  };
+  const rows = buckets.filter((b) => b.ratios.length > 0).map((b) => {
+    const m = med(b.ratios), [lo95, hi95] = ci(b.ratios);
+    const thin = b.ratios.length < 10 ? "・標本が薄く実質情報なし" : "";
+    const verdict = hi95 < 1 ? `計算より安い${thin}` : lo95 > 1 ? `計算より高い${thin}` : `計算どおりの範囲(1.00を含む)${thin}`;
+    const label = b.hi === Infinity ? `築${b.lo}年〜` : `築${b.lo}〜${b.hi}年`;
+    return { lo: b.lo, hi: b.hi, label, n: b.ratios.length, m, lo95, hi95, verdict };
+  });
+  // 崖の検定: 築31年未満と築31年以上の中央値の差をブートストラップ(両群を同時に引き直す)
+  const young = buckets.filter((b) => b.lo < 31).flatMap((b) => b.ratios);
+  const old = buckets.filter((b) => b.lo >= 31).flatMap((b) => b.ratios);
+  const diffs = [];
+  for (let k = 0; k < resamples; k++) {
+    const a = new Array(young.length), c = new Array(old.length);
+    for (let i = 0; i < young.length; i++) a[i] = young[Math.floor(rnd() * young.length)];
+    for (let i = 0; i < old.length; i++) c[i] = old[Math.floor(rnd() * old.length)];
+    diffs.push(med(a) - med(c));
+  }
+  diffs.sort((a, b) => a - b);
+  return {
+    total: young.length + old.length, districts, rows,
+    cliffDiff: med(young) - med(old),
+    cliffLo: diffs[Math.floor(resamples * 0.025)], cliffHi: diffs[Math.floor(resamples * 0.975)],
   };
 }
 
@@ -84,7 +132,7 @@ function ageCurveSvg(ac) {
     el.push(`<text x="${X(i)}" y="${axisY + 14}" font-size="8.5" text-anchor="middle" fill="#43566B">${b.lo}${b.hi === Infinity ? "年〜" : "〜" + b.hi}</text>`);
     el.push(`<text x="${X(i)}" y="${axisY + 27}" font-size="8" text-anchor="middle" fill="#8A97A5" font-family="monospace">n=${b.n}</text>`);
   });
-  el.push(`<text x="${padL}" y="${H - 6}" font-size="9" fill="#43566B">縦軸: 成約価格 ÷ モデル価格(土地=地区基準 + 建物=線形減価)の中央値。1.0 = 線形減価モデルどおりの値付け</text>`);
+  el.push(`<text x="${padL}" y="${H - 6}" font-size="9" fill="#43566B">縦軸: 実際の成約価格 ÷ 素朴な計算(地区の土地代 + 築年数ぶん目減りさせた建物代)。1.0 = 計算どおりの値段で売れている</text>`);
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="築年帯別の成約/モデル価格比: 築30年までフラット、以降に崖" style="width:100%;height:auto">${el.join("")}</svg>`;
 }
 
@@ -452,6 +500,7 @@ export function renderFormula({ r, rRef, property }, calArea, houseDeals) {
   const askUnitResid = Math.round((s.ask - rt.bldgSubj) / (landTsubo * rt.subjectFactor));
   const midUnitResid = Math.round(rt.unitMid);
   const ac = ageCurveStats(houseDeals);
+  const acCI = ageCurveCI(houseDeals);
   const acFlat = ac.buckets.filter((b) => b.n > 0 && b.lo < 31);
   const acFlatLo = Math.min(...acFlat.map((b) => b.ratio)), acFlatHi = Math.max(...acFlat.map((b) => b.ratio));
   const acCliff = ac.buckets.find((b) => b.lo === 31), acOld = ac.buckets.find((b) => b.lo === 41);
@@ -622,9 +671,19 @@ export function renderFormula({ r, rRef, property }, calArea, houseDeals) {
   <div class="panel">
     <h2>補論: 築年カーブの実測 ── 「新築は買った瞬間2割下がる」は本当か</h2>
     <div class="logic-body">
-      <p class="why">俗説を台帳で検証する。地区ごとに成熟帯(築11〜25年)の残余から土地基準単価を置き、全成約を<b>モデル価格(土地基準+建物の線形減価)との比率</b>で並べると、市場が築年ごとにどう値付けしているかが1本のカーブで見える。比率1.00=線形減価モデルどおり。新築プレミアムが実在すれば築0〜3年が1.0を大きく超えるはず。</p>
+      <p class="why">「新築は買った瞬間に2割下がる」という話を、台帳の成約データで確かめる。やり方はこうだ。まず地区ごとに<b>土地の相場単価</b>を決める(その地区の築11〜25年の成約から、建物ぶんを引いた残りを土地の値段とみなす)。次に1件ずつ<b>素朴な計算での想定価格</b>を出す ── <b>「その地区の土地代 + 建物代を築年数ぶん目減りさせた残り」</b>。建物は新築時95万円/坪で、30年かけて真っ直ぐゼロに向かう、という単純な引き算だ。<br>
+      最後に<b>実際の成約価格 ÷ この想定価格</b>を築年別に並べる。<b>1.00なら「素朴な計算どおりの値段で売れている」</b>、1.00より大きければ計算より高く、小さければ安く売れている、という意味になる。もし新築に上乗せ(プレミアム)が実在するなら、築0〜3年だけが1.00を大きく超えるはずだ。</p>
       ${ageCurveSvg(ac)}
-      <div class="note"><b>読み方</b>: 築0〜31年の比率は${acFlatLo.toFixed(2)}〜${acFlatHi.toFixed(2)}に収まり(中古側は小標本で、この幅は誤差圏)、<b>新築${ac.buckets[0].ratio.toFixed(2)}=新築も中古と同じ物差しで値付けされている</b>。唯一の構造的な段差は築31年以降(${acCliff.ratio.toFixed(2)}→${acOld.ratio.toFixed(2)})で、建物ゼロは織り込み済みのモデルに対して更に3〜5割安──古家付き土地は「土地値−解体費−流動性引き」でしか売れない。<b>買う側の含意</b>: 保有中の減価キャリーは入口の築年に依らずほぼ一定(償却+修繕負債の積み上がりで延床95m²なら年約${carryExample}万)なので、効くのは入口でなく<b>出口の築年がこの崖を跨ぐかどうか</b>。10数年住むなら、出口が築30年の手前に収まる入口(新築〜築10年)か、最初から土地値で買う入口(築25年〜)の二択で、その中間(築12〜18年)は出口が崖に着地する。</div>
+      <div class="note"><b>結果の読み方</b>: 結論から言うと<b>新築だけ高い、という山は立たなかった</b>。築0〜3年は${ac.buckets[0].ratio.toFixed(2)}で、素朴な計算とほぼ同じか、むしろ気持ち安いくらい。中古も築30年あたりまで1.00の周りに並ぶ。<br>
+      <b>はっきり違うのは築31年から先だけ</b>だ(${acCliff.ratio.toFixed(2)}→${acOld.ratio.toFixed(2)})。この帯では計算上の建物価値はもうほぼゼロなので、比率${acOld.ratio.toFixed(2)}は「<b>土地の値段そのものが2〜4割引きでしか売れていない</b>」ことを意味する。買った人は古家を壊す前提なので、解体費と手間のぶん土地を買い叩く。つまり築30年を越えると、建物を失うだけでなく<b>土地まで値引きされる</b>。<br>
+      <b>買う側にとっての意味</b>: 持っている間に価値が減る速さは、新築で買っても築15年で買ってもほぼ同じだ(延床95m²で年約${carryExample}万円)。<b>入口の築年を古くしても、目減りからは逃げられない</b>。効いてくるのは入口ではなく<b>売るときの築年がこの崖(築31年)を越えているかどうか</b>。だから10数年住むなら、売るときに築30年手前で収まる<b>新築〜築10年</b>で入るか、最初から土地値で買って失うものを無くす<b>築25年〜</b>で入るかの二択になり、<b>その中間(築12〜18年)が最も損</b>をする ── 売るときにちょうど崖に着地するからだ。</div>
+      <div class="note" style="margin-top:8px"><b>この数字をどこまで信じてよいか(標本数と信頼区間)</b>: 有効標本${acCI.total}件・${acCI.districts}地区。各帯の95%信頼区間をブートストラップ法(4,000回リサンプリング)で出すと次のとおり。<b>確かなのは2点だけ</b>: ①築31年以上は明確に安い(築31年未満との差${acCI.cliffDiff.toFixed(2)}、95%信頼区間 ${acCI.cliffLo.toFixed(2)}〜${acCI.cliffHi.toFixed(2)}で0を跨がない=偶然では説明できない) ②新築に上乗せの山は無い(築0〜3年の区間は1.00を含まず、わずかに下)。<br>
+      逆に<b>築3〜30年の細かい起伏は、標本が薄く判別できない</b>(どの帯も信頼区間が1.00を含む)。とくに築26〜30年は6件しかなく事実上情報がない。したがって「築15年で建物価値が何%残るか」をこの台帳で断定はできず、言えるのは<b>「築30年までは素朴な計算と矛盾しない」</b>までだ。崖が始まるのが築31年ちょうどなのか、もっと手前なのか後なのかも特定できていない。
+      <div style="overflow-x:auto;margin-top:8px"><table class="list">
+        <tr><th>築年帯</th><th>件数</th><th>実際/計算</th><th>95%信頼区間</th><th>読み取れること</th></tr>
+        ${acCI.rows.map((b) => `<tr><td>${b.label}</td><td class="num">${b.n}</td><td class="num">${b.m.toFixed(2)}</td><td class="num">${b.lo95.toFixed(2)}〜${b.hi95.toFixed(2)}</td><td style="white-space:normal">${b.verdict}</td></tr>`).join("")}
+      </table></div>
+      <div style="margin-top:6px">標本を増やすには国交省の原典(不動産情報ライブラリ)からの直接取得が要る。本サイトは再掲サイト経由のため、個別取引の追加取得ができていない(API申請中)。</div></div>
       <p class="why" style="margin-top:14px">では、なぜ新築にプレミアムの山が立たないのか。最大の理由は算数で決まっている:</p>
       ${dilutionSvg({ share: ac.landShareNew, total: Math.round(ac.newMedPrice), land: acLand, bldg: acBldg, prem: acPrem, premPct: Math.round(100 * acPrem / ac.newMedPrice), n: ac.nNew })}
       <div class="note"><b>算術的希釈</b>: 新品の割増が乗りうるのは建物側だけで、土地は新築でも中古でも同じ土地。価格の${Math.round(ac.landShareNew * 100)}%が土地であるこのエリアでは、建物に25%の割増が乗っても総額の1割に届かない。加えて、この帯の新築は建売の競争供給(値引き後の成約がこの台帳)であり、上昇局面では業者の利幅が仕入れ土地の含み益から出るため、目に見える上乗せを積む必要自体が薄い。</div>
