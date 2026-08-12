@@ -398,6 +398,28 @@ function marketCalHtml(r, marketCal) {
     </section>`;
 }
 
+// ---- 査定が織り込めていない要確認事項(YAMLの caveats を描画) ----
+// 掲載元の精査で判明したが、エンジンが変数として持たないため査定額に反映できない事実を開示する。
+// 「安く出ている/高く出ている」理由が式の外にある場合、それを隠さないための欄(データ規律)
+function caveatsHtml(property) {
+  const cs = property.caveats;
+  if (!Array.isArray(cs) || cs.length === 0) return "";
+  const items = cs.map((c) => `
+    <li style="margin-bottom:10px">
+      <b>${esc(c.title)}</b>${c.verdict_effect ? `<span class="status" style="margin-left:6px">${esc(c.verdict_effect)}</span>` : ""}
+      <div style="font-size:.82rem;line-height:1.8;margin-top:3px">${esc(c.detail)}</div>
+      ${c.check ? `<div class="note" style="margin-top:2px">確認方法: ${esc(c.check)}</div>` : ""}
+    </li>`).join("");
+  return `
+    <section>
+      <h2 class="sub">この査定が織り込めていない要確認事項</h2>
+      <div class="logic-body">
+        <p class="why">掲載元の精査で判明したが、査定エンジンが変数として持たないため金額に反映されていない事項。<b>スタンプの判定はこれらを織り込む前の値</b>であり、実地確認の結果しだいで評価は下振れ(または上振れ)しうる。</p>
+        <ul style="margin:10px 0 0 18px;padding:0">${items}</ul>
+      </div>
+    </section>`;
+}
+
 // ---- ページ全体 ----
 export function renderProperty(r, property, marketCal = null, houseDeals = null) {
   const { state: s, mid, lo, hi, verdict: v, incomeVal } = r;
@@ -421,6 +443,8 @@ export function renderProperty(r, property, marketCal = null, houseDeals = null)
         ${r.fairFinal.floorBound ? `<div class="caveat" style="margin-top:6px">※ 本査定は土地換算値が下限として発火している(事例比較より土地値が高い)。土地単価が${r.fairFinal.pptSource === "calibrated" ? "成約較正済み" : "未検証(較正未成立)のため下限には×0.9のペナルティを適用済み"}。</div>` : ""}
       </div>
     </div>
+
+    ${caveatsHtml(property)}
 
     ${anatomyHtml(r, property, houseDeals)}
 
