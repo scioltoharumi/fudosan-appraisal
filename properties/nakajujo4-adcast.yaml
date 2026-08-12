@@ -1,6 +1,7 @@
 # 物件データ(1物件1ファイル)。記載ルール: 事実データと査定パラメータのみ。
 # 指値方針・交渉メモ・個人的所感・写真・紹介文は書かない(publicリポジトリ運用・decisions D4)
 id: nakajujo4-adcast
+source_url: "https://suumo.jp/chukoikkodate/tokyo/sc_kita/nc_77124432/"   # 実在確認済み 2026-08-12。同一確認: 中十条4・土地60.78公簿・建物91.79・3LDK・築2011-03・価格6880の6項目一致
 status: viewed             # considering / viewed / declined / closed
 source: "アドキャスト赤羽支店チラシ(媒介)"
 captured_at: 2026-08-09

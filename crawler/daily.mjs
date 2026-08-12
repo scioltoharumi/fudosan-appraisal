@@ -123,14 +123,15 @@ async function discover(ledgerNcs) {
   const seen = existsSync(SEEN_PATH) ? JSON.parse(readFileSync(SEEN_PATH, "utf8")) : {};
   const found = [];
   for (const src of LIST_SOURCES) {
-    for (let pn = 1; pn <= 6; pn++) {
-      const url = pn === 1 ? src.base : `${src.base}pn${pn}/`;
+    for (let pn = 1; pn <= 8; pn++) {
+      // SUUMOの一覧ページ送りは ?page=N 形式(pnN/形式は404にならず1ページ目が返るため誤判定に注意)
+      const url = pn === 1 ? src.base : `${src.base}?page=${pn}`;
       const { html, status, error } = await fetchPage(url);
-      if (error || status !== 200) { errors.push({ where: `discover:${src.kind}:pn${pn}`, detail: `http=${status} ${error ?? ""}` }); break; }
+      if (error || status !== 200) { errors.push({ where: `discover:${src.kind}:page${pn}`, detail: `http=${status} ${error ?? ""}` }); break; }
       const units = parseListUnits(html, src.kind);
       if (units.length === 0) break;   // 最終ページ超過
       found.push(...units);
-      if (!html.includes(`pn${pn + 1}`) && !html.includes(`pn=${pn + 1}`)) break;
+      if (!html.includes(`?page=${pn + 1}`)) break;   // 次ページへのリンクが無ければ最終ページ
     }
   }
   // 重複統合(同一ncは初出を採用)→ 条件フィルタ
