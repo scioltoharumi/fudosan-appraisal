@@ -28,4 +28,10 @@ building:
   repair: {status: sumstock_maintenance_history, assumed: true, cost_man: 400}
 costs: {fee_rate: 0.05, demolition_man: 160, demolition_assumed: true}   # 木造3F・延床23.25坪×約7万/坪(前面道路狭小)
 income: {rent_man: 21, rent_assumed: true, expense_rate: 0.15, cap_rate: 0.045}
+hazard_check:
+  checked_at: 2026-08-12
+  suumo: none        # 「その他制限事項」に記載なし
+  athome: none       # 備考(athomeBiko)の法令等制限に記載なし
+  athome_ref: at_1163350531
+  note: "掲載の法令等制限欄ベースの確認。公式マップ(重ねるハザードマップ・東京都土砂災害警戒区域等マップ)との照合は未実施"
 checklist: {road_type_verified: false, retaining_wall: false, hazard: false, seismic: false}

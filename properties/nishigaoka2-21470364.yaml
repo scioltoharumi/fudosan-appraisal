@@ -23,4 +23,9 @@ building:
   repair: {status: new_construction, cost_man: 0}
 costs: {fee_rate: 0.05, demolition_man: 180, demolition_assumed: true}
 income: {rent_man: 26, rent_assumed: true, expense_rate: 0.15, cap_rate: 0.045}
+hazard_check:
+  checked_at: 2026-08-12
+  suumo: none        # 「その他制限事項」に記載なし
+  athome: unchecked  # athome掲載が見つからず未確認(SUUMOは該当物件でも空欄のことがあるため単独では不十分)
+  note: "掲載の法令等制限欄ベースの確認。公式マップ(重ねるハザードマップ・東京都土砂災害警戒区域等マップ)との照合は未実施。athome未確認のため要検証"
 checklist: {road_type_verified: false, retaining_wall: false, hazard: false, seismic: true}   # 新築につき現行基準

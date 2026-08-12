@@ -23,4 +23,10 @@ building:
   repair: {status: recent_build, assumed: true, cost_man: 150}   # 築3.4年・修繕履歴記載なし。経年相当の軽微想定(既定800は築浅に過大)
 costs: {fee_rate: 0.05, demolition_man: 150, demolition_assumed: true}   # 木造3F・延床23.9坪×約6万/坪
 income: {rent_man: 22, rent_assumed: true, expense_rate: 0.15, cap_rate: 0.045}
+hazard_check:
+  checked_at: 2026-08-12
+  suumo: none        # 「その他制限事項」に記載なし
+  athome: none       # 備考(athomeBiko)の法令等制限に記載なし
+  athome_ref: at_1169008029
+  note: "掲載の法令等制限欄ベースの確認。公式マップ(重ねるハザードマップ・東京都土砂災害警戒区域等マップ)との照合は未実施"
 checklist: {road_type_verified: false, retaining_wall: false, hazard: false, seismic: true}   # 2023築につき現行基準

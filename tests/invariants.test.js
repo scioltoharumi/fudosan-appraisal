@@ -151,3 +151,17 @@ test("データ規律: 全物件YAMLに必須フィールドが揃っている(�
     }
   }
 });
+
+test("データ規律: 全物件に hazard_check があり、該当(hit)物件が台帳に残っていない", () => {
+  // 2026-08-12: 重要事項説明は契約直前に来るため、ハザードは検討の早期に潰す必要がある。
+  // 掲載の制限事項欄は該当物件でも空欄のことがあり(西が丘2の実例)、媒体単独の確認では不十分。
+  const OK = ["none", "hit", "unchecked", "na"];
+  for (const id of listPropertyIds()) {
+    const h = loadProperty(id).hazard_check;
+    assert.ok(h, `${id}: hazard_check が無い(ハザード確認状況の記録は必須)`);
+    for (const k of ["suumo", "athome"]) assert.ok(OK.includes(h[k]), `${id}: hazard_check.${k} が不正 (${h[k]})`);
+    assert.ok(h.checked_at, `${id}: hazard_check.checked_at が無い`);
+    assert.notEqual(h.suumo, "hit", `${id}: ハザード該当物件は台帳に載せない(excluded.jsonへ)`);
+    assert.notEqual(h.athome, "hit", `${id}: ハザード該当物件は台帳に載せない(excluded.jsonへ)`);
+  }
+});

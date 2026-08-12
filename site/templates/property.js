@@ -398,6 +398,27 @@ function marketCalHtml(r, marketCal) {
     </section>`;
 }
 
+// ---- ハザード検証状態(YAMLの hazard_check を描画) ----
+// 重要事項説明は契約直前に来るため、そこで初めてハザード指定が判明すると
+// サンクコストで判断が歪む。台帳側で「どこまで確認できているか」を常時可視化して、
+// 検討を進める前に潰せるようにする(2026-08-12: 西が丘2でSUUMO単独確認が破綻した反省)
+function hazardHtml(property) {
+  const h = property.hazard_check;
+  if (!h) return "";
+  const LABEL = { none: "記載なし", hit: "該当", unchecked: "未確認", na: "掲載なし" };
+  const pending = h.athome === "unchecked" || h.suumo === "unchecked";
+  const color = pending ? "var(--stamp)" : "#2E6E8E";
+  return `
+    <div style="border:1px solid ${color};background:${pending ? "#FDF4F3" : "#F4F8FA"};padding:9px 12px;margin-top:12px;font-size:.8rem;line-height:1.8">
+      <b style="color:${color}">ハザード確認状況${pending ? " ── 未検証あり" : ""}</b>
+      ／ SUUMO掲載: ${esc(LABEL[h.suumo] ?? h.suumo)}
+      ／ athome掲載: ${esc(LABEL[h.athome] ?? h.athome)}${h.athome_ref ? `(${esc(h.athome_ref)})` : ""}
+      ／ 確認日 ${esc(fmtDate(h.checked_at))}
+      <div class="note" style="margin-top:3px">${esc(h.note ?? "")}</div>
+      ${pending ? `<div class="note" style="margin-top:3px;color:var(--stamp)"><b>掲載の制限事項欄は該当物件でも空欄のことがある</b>(実例: 西が丘2の2棟現場はSUUMOが空欄で、athomeの4業者掲載のみが土砂災害特別警戒区域を明記)。<b>内見・申込より前に</b>、重ねるハザードマップと東京都の土砂災害警戒区域等マップで自分で照合し、仲介には法令上の制限の全項目を書面で出してもらうこと。重要事項説明は契約直前のため、そこまで進めてから判明すると引き返しにくい。</div>` : ""}
+    </div>`;
+}
+
 // ---- 査定が織り込めていない要確認事項(YAMLの caveats を描画) ----
 // 掲載元の精査で判明したが、エンジンが変数として持たないため査定額に反映できない事実を開示する。
 // 「安く出ている/高く出ている」理由が式の外にある場合、それを隠さないための欄(データ規律)
@@ -443,6 +464,8 @@ export function renderProperty(r, property, marketCal = null, houseDeals = null)
         ${r.fairFinal.floorBound ? `<div class="caveat" style="margin-top:6px">※ 本査定は土地換算値が下限として発火している(事例比較より土地値が高い)。土地単価が${r.fairFinal.pptSource === "calibrated" ? "成約較正済み" : "未検証(較正未成立)のため下限には×0.9のペナルティを適用済み"}。</div>` : ""}
       </div>
     </div>
+
+    ${hazardHtml(property)}
 
     ${caveatsHtml(property)}
 
