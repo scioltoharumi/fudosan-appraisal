@@ -7,13 +7,18 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { ROOT, loadProperty, listPropertyIds } from "../engine/io.js";
+import { buildExcludedIndex, matchExcludedSite, scanKO, koScreen } from "./screen.mjs";
 
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36";
 const SLEEP_MS = 2200;              // N1: リクエスト間隔2秒以上
 // N1: 1実行あたりの取得上限。watch(台帳件数ぶん)を先に消費し、残りがdiscoverの探索予算になる。
 // 到達しても例外にせず打ち切る(2026-08-12監査: 例外だとレポート不出力のまま異常終了し無人運用で沈黙した)。
-// 現在の最大需要は watch 17 + discover 32(4媒体×8頁) = 49
-const MAX_PAGES = 60;
+// 現在の最大需要は watch 17 + discover 32(4媒体×8頁) + KO詳細 8 = 57
+const MAX_PAGES = 72;
+// 新着のKO判定に使う詳細ページ取得の上限。一覧の走査に予算を食われてKO判定が
+// 「詳細未取得」で終わらないよう、この枠を先に取り置く(discover側が reserve として尊重する)
+const KO_DETAIL_MAX = 8;
+const EXCLUDED_PATH = join(ROOT, "market", "crawl", "excluded.json");
 const PRICE_RANGE = [5000, 9000];   // discover対象(万円)
 const WALK_MAX = 20;                // discover徒歩上限(分)
 export const DISTRICTS = ["上十条", "中十条", "十条仲原", "岩淵町", "志茂", "神谷", "西が丘", "赤羽", "赤羽北", "赤羽南", "赤羽台", "赤羽西"];
@@ -35,9 +40,10 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // 上限到達は例外にしない(投げるとレポートが1行も出ずに異常終了し、無人運用で沈黙する)。
 // budget切れは呼び出し側が判定できるよう exhausted フラグで返し、errors[]に開示する
-async function fetchPage(url) {
-  if (fetchCount >= MAX_PAGES) {
-    errors.push({ where: "fetchPage", detail: `ページ上限${MAX_PAGES}到達につき取得を打ち切り: ${url}` });
+async function fetchPage(url, reserve = 0) {
+  // reserve: この呼び出しが使ってはいけない取り置き枠(KO判定用の詳細取得ぶん)
+  if (fetchCount >= MAX_PAGES - reserve) {
+    errors.push({ where: "fetchPage", detail: `ページ上限${MAX_PAGES}(取り置き${reserve})到達につき取得を打ち切り: ${url}` });
     return { html: "", status: 0, exhausted: true, error: `page budget exhausted (${MAX_PAGES})` };
   }
   if (fetchCount > 0) await sleep(SLEEP_MS);
@@ -259,7 +265,8 @@ async function discover(ledgerNcs, ledgerFps, ledgerUnits) {
       // ページ送り: SUUMOは ?page=N、athomeは /list/pageN/(どちらも誤URLは404にならず1ページ目が返るため厳密に)
       const url = pn === 1 ? src.base
         : src.media === "suumo" ? `${src.base}?page=${pn}` : `${src.base}page${pn}/`;
-      const { html, status, error, exhausted: ex } = await fetchPage(url);
+      // 一覧の走査はKO判定用の枠を残して打ち切る(判定不能の新着を出さないため)
+      const { html, status, error, exhausted: ex } = await fetchPage(url, KO_DETAIL_MAX);
       // 予算切れは打ち切り(N2: 黙って減らさず errors[] に開示済み)。以降の媒体も走査しない
       if (ex) { exhausted = true; break; }
       if (error || status !== 200) { errors.push({ where: `discover:${src.media}:${src.kind}:page${pn}`, detail: `http=${status} ${error ?? ""}` }); break; }
@@ -292,17 +299,51 @@ async function discover(ledgerNcs, ledgerFps, ledgerUnits) {
   const seenFps = new Set(Object.entries(seen).map(([k, v]) =>
     fingerprint(DISTRICTS.find((d) => zen(String(v.address ?? "")).startsWith("東京都北区" + d)) ?? null,
       chomeOf(v.address), v.price_man, v.land_m2 ?? null, v.floor_m2 ?? null)).filter(Boolean));
+  // 除外済み現場の索引(ハザード等で見送った現場。業者を替えた別番号の再掲を止める)
+  const excluded = existsSync(EXCLUDED_PATH) ? JSON.parse(readFileSync(EXCLUDED_PATH, "utf8")) : {};
+  const exIndex = buildExcludedIndex(excluded);
+  let koFetches = 0;
   const report = [];
   for (const u of matches) {
     const prev = seen[u.nc];
     const fp = unitFingerprint(u, districtOf);
     if (!prev) {
       if (fp && seenFps.has(fp)) continue;       // 別キーで既見(媒体違いの同一物件)
-      seen[u.nc] = { first_seen: today, price_man: u.price_man, address: u.address, walk_min: u.walk_min, kind: u.kind, media: u.media, land_m2: u.land_m2, floor_m2: u.floor_m2 };
-      report.push({ ...u, district: districtOf(u.address), event: "new", sibling_hint: siblingHint(u, districtOf, ledgerUnits) });
+      const cand = { ...u, district: districtOf(u.address), chome: chomeOf(u.address) };
+      // 段階1(取得ゼロ): 除外済み現場との諸元照合。ここで確定するものは詳細を取りに行かない
+      const siteHit = matchExcludedSite(cand, exIndex);
+      // 段階2: 生き残りだけ詳細ページを1回取得し、KO信号と査定入力の実値を機械抽出する
+      let scan = null;
+      if (siteHit?.level !== "exact" && koFetches < KO_DETAIL_MAX) {
+        const d = await fetchPage(u.url);
+        if (!d.exhausted && !d.error && d.status === 200) { koFetches++; scan = scanKO(d.html, u.media); }
+        else errors.push({ where: `ko:${u.nc}`, detail: `詳細取得失敗 http=${d.status} ${d.error ?? ""}` });
+      }
+      const ko = koScreen({ unit: cand, siteHit, scan });
+      // 徒歩分は詳細ページの値を正とする(一覧カードは隣接カードを巻き込んで誤抽出することがある)
+      const walkDetail = ko.attrs?.walk_min ?? null;
+      const walk = walkDetail ?? u.walk_min;
+      const entry = { ...cand, walk_min: walk, walk_min_list: u.walk_min, ko,
+        sibling_hint: siblingHint(u, districtOf, ledgerUnits) };
+      seen[u.nc] = { first_seen: today, price_man: u.price_man, address: u.address, walk_min: walk,
+        kind: u.kind, media: u.media, land_m2: ko.attrs?.land_m2 ?? u.land_m2, floor_m2: ko.attrs?.floor_m2 ?? u.floor_m2 };
+      if (walkDetail != null && walkDetail > WALK_MAX) {
+        // 一覧の徒歩分が過小で通過していた圏外物件。以後の再判定が要らないよう seen に記録して落とす
+        seen[u.nc].out_of_scope = `徒歩${walkDetail}分(上限${WALK_MAX})`;
+        report.push({ ...entry, event: "new_out_of_scope" });
+      } else if (ko.verdict === "block") {
+        seen[u.nc].ko_blocked = true; seen[u.nc].ko_codes = ko.codes;
+        report.push({ ...entry, event: "new_ko_blocked" });
+      } else if (ko.verdict === "suspect") {
+        report.push({ ...entry, event: "new_ko_suspect" });
+      } else {
+        report.push({ ...entry, event: "new" });
+      }
     } else if (prev.price_man !== u.price_man) {
-      report.push({ ...u, district: districtOf(u.address), event: "price_changed", prev_price_man: prev.price_man, first_seen: prev.first_seen });
       seen[u.nc].price_man = u.price_man;
+      // KO済み・圏外と判定済みの掲載は値下げしても再提案しない(判断は現場属性で決まり価格で変わらない)
+      if (prev.ko_blocked || prev.out_of_scope) continue;
+      report.push({ ...u, district: districtOf(u.address), event: "price_changed", prev_price_man: prev.price_man, first_seen: prev.first_seen });
     }
   }
   mkdirSync(join(ROOT, "market", "crawl"), { recursive: true });
@@ -343,7 +384,12 @@ if (mode !== "--watch-only") out.discover = (await discover(ledgerNcs, ledgerFps
 out.summary = {
   price_changes: out.watch.filter((w) => w.status === "price_changed").length,
   delisted_suspects: out.watch.filter((w) => w.status === "delisted_suspect").length,
+  // new_listings = KOスクリーニングを通過し「自動登録の対象になる」件数。
+  // 落とした件数も黙って消さず開示する(ko_blocked / ko_suspects / out_of_scope)
   new_listings: out.discover.filter((d) => d.event === "new").length,
+  ko_blocked: out.discover.filter((d) => d.event === "new_ko_blocked").length,
+  ko_suspects: out.discover.filter((d) => d.event === "new_ko_suspect").length,
+  out_of_scope: out.discover.filter((d) => d.event === "new_out_of_scope").length,
   sibling_suspects: out.discover.filter((d) => d.sibling_hint).length,
   discover_price_changes: out.discover.filter((d) => d.event === "price_changed").length,
   errors: errors.length, pages_fetched: fetchCount, page_budget: MAX_PAGES,
