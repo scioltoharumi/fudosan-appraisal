@@ -90,10 +90,16 @@ function scaleSvg(s, v) {
     el.push(`<line x1="${x}" y1="96" x2="${x}" y2="104" stroke="#16232E" stroke-width="1"/>`);
     el.push(`<text x="${x}" y="120" font-size="9" text-anchor="middle" fill="#43566B" font-family="monospace">${(val / 10000).toFixed(2)}億</text>`);
   }
+  // 帯ラベルは帯の左端に置くが、右端からはみ出す位置ならアンカーを帯右端の末尾寄せに切替
+  // (レンジ位置はデータ依存のため。2026-08-12 西が丘2の値下げで見切れが顕在化)
+  const bandLabel = (x0, x1, y, text, estW, color) => {
+    const fits = x0 + estW <= 632;
+    return `<text x="${fits ? x0 : Math.min(x1, 632)}" y="${y}" font-size="10"${fits ? "" : ' text-anchor="end"'} fill="${color}">${text}</text>`;
+  };
   el.push(`<rect x="${X(v.floorLo)}" y="70" width="${Math.max(2, X(v.floorHi) - X(v.floorLo))}" height="14" fill="#2E6E8E" opacity="0.85"/>`);
-  el.push(`<text x="${X(v.floorLo)}" y="64" font-size="10" fill="#16232E">下値フロア(土地−解体費)</text>`);
+  el.push(bandLabel(X(v.floorLo), X(v.floorHi), 64, "下値フロア(土地−解体費)", 130, "#16232E"));
   el.push(`<rect x="${X(v.fairLo)}" y="86" width="${Math.max(2, X(v.fairHi) - X(v.fairLo))}" height="14" fill="#BFD7E4"/>`);
-  el.push(`<text x="${X(v.fairLo)}" y="136" font-size="10" fill="#43566B">適正価格レンジ(原価法×リテールの重み付き調整)</text>`);
+  el.push(bandLabel(X(v.fairLo), X(v.fairHi), 136, "適正価格レンジ(原価法×リテールの重み付き調整)", 228, "#43566B"));
   el.push(`<line x1="${X(v.fairMid)}" y1="66" x2="${X(v.fairMid)}" y2="102" stroke="#16232E" stroke-width="1" stroke-dasharray="3,2"/>`);
   if (v.income) {
     const ix = X(v.income);
