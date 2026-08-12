@@ -18,6 +18,7 @@ land:
   # 西側私道3.1m幅(4m未満)→再建築時セットバック想定 (4-3.1)/2×接道幅5.4m ≈2.43m2(実測未確認の推計)
   setback_m2: 2.43
   road: {width_m: 3.1, quality: setback_2ko, direction: W, corner: false, note: "西側私道3.1m幅(接道幅5.4m)・共有持分36.06m2×1/4(按分9.02m2)。42条区分と持分の登記面積算入は要確認"}
+  shape: regular          # 媒体に形状記載なし(assumed)
   legal: {zoning: "1種住居", bcr: 60, far: 160, ownership: shoyuken, rebuildable: true, note: "1種住居/建ぺい60%・容積160%/高度地区/準防火地域"}
 building:
   built: 2010-03

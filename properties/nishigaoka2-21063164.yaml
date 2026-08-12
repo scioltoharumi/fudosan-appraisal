@@ -1,23 +1,26 @@
 # 物件データ(1物件1ファイル)。記載ルール: 事実データと査定パラメータのみ。
 id: nishigaoka2-21063164
 status: considering
-source: "SUUMO掲載(2026-08-12日次クロールで発見)。新築戸建・西が丘2-19-10開発(総戸数4)のうち4LDK棟。nc_20504895は同一戸の別業者掲載(同仕様・同価格)"
+source: "SUUMO掲載(2026-08-12日次クロールで発見)。新築戸建・西が丘2-19-10開発(総戸数4)のうちD号棟(4LDK)。nc_20504895は同一戸の別業者掲載。同開発のC号棟(2LDK+2S・7680万)は nishigaoka2-21096431 として別登録"
 source_url: "https://suumo.jp/ikkodate/tokyo/sc_kita/nc_21063164/"   # 実在確認済み 2026-08-12
 captured_at: 2026-08-12
 price_history:
-  - {date: 2026-08-10, price_man: 7680}   # 媒体の情報提供日時点
+  # 2026-08-12訂正: 当初7680万で登録したが、これは同開発C号棟(2LDK+2S)の価格だった。
+  # 本YAMLの間取り4LDK・土地60.65・建物106.26はD号棟の諸元で、掲載の区画情報ではD号棟=7980万。
+  # 値上げではなく登録時の号棟取り違え
+  - {date: 2026-08-12, price_man: 7980}
 location: {area: akabanedai, address: "北区西が丘2"}
 layout: "4LDK"   # 間取り(媒体記載)
 station: {walk_min: 17, multi_station: true}   # 板橋本町17分/十条21分/赤羽23分
 land:
   registered_m2: 60.65
   setback_m2: 0
-  road: {width_m: 5.8, quality: good_4m, corner: false, note: "5.8〜7.1m・コンクリート舗装。方位の媒体記載なし(エンジン既定=保守側)"}
+  road: {width_m: 5.8, quality: good_4m, corner: false, note: "5.8〜7.1m・コンクリート舗装。方位の媒体記載なし(エンジン既定=西相当・中立±0%)。掲載の物件名に「角地あり」とあるが全4戸一括掲載のため本戸が角地かは特定不能→corner:falseで保守側"}
   shape: regular          # 媒体に形状記載なし(assumed)
-  legal: {zoning: "2種低層", ownership: shoyuken, rebuildable: true}
+  legal: {zoning: "2種低層", bcr: 60, far: 150, ownership: shoyuken, rebuildable: true}
 building:
   built: 2026-12          # 完成予定(未完成。掲載により2026年12月〜2027年1月と表記揺れ)
-  floor_m2: 106.26
+  floor_m2: 106.26        # 同一開発の別掲載(nc_21096431)は建物面積に車庫11.66〜14.05m2・備蓄倉庫を「含む」と明記。本戸も延床の1割強が車庫の可能性あり(要確認)
   type: wood_3f_narrow    # 木造3階建
   repair: {status: new_construction, cost_man: 0}
 costs: {fee_rate: 0.05, demolition_man: 180, demolition_assumed: true}

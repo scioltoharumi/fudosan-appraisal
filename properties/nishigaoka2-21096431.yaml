@@ -12,12 +12,16 @@ station: {walk_min: 15, multi_station: true}   # 板橋本町15分/十条21分/�
 land:
   registered_m2: 60.66    # 18.34坪
   setback_m2: 0
-  road: {width_m: 6.0, quality: good_4m, direction: N, corner: true, note: "北側6m公道・西側5.7m公道の角地"}
+  # 2026-08-12訂正: corner:true を撤回。掲載の道路欄「北側6m公道・西側5.7m公道」は開発全体(4戸)の
+  # 接道を指し、本戸(C号棟)が角地である裏付けはない(掲載に「角地」タグ・語が0回。同開発の別掲載
+  # nc_21063164 には角地タグがあり、SUUMO側の語彙不足でもない)。保守側で false
+  road: {width_m: 6.0, quality: good_4m, direction: N, corner: false, note: "開発全体の接道は北側6m公道・西側5.7m公道。本戸の接道方位・角地該当は掲載から特定不能(要確認)"}
   shape: regular          # 媒体に形状記載なし(assumed)
-  legal: {zoning: "2種低層", ownership: shoyuken, rebuildable: true}
+  legal: {zoning: "2種低層", bcr: 60, far: 150, ownership: shoyuken, rebuildable: true}
 building:
   built: 2026-12          # 完成予定(未完成)
-  floor_m2: 104.69
+  floor_m2: 104.69        # 掲載明記: 車庫面積11.66m2(C号棟)・備蓄倉庫1.75m2を含む延床。居室相当は約91m2
+
   type: wood_3f_narrow    # 木造3階建
   repair: {status: new_construction, cost_man: 0}
 costs: {fee_rate: 0.05, demolition_man: 180, demolition_assumed: true}   # 木造3F・延床31.7坪×約5.5万/坪

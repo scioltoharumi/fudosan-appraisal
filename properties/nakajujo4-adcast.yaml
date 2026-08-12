@@ -22,6 +22,7 @@ land:
   # 再建築時セットバック推計 (4-3.3)/2×間口約5m ≈1.75m2(間口不明のため概算・要実測)
   setback_m2: 1.75
   road: {width_m: 3.3, quality: setback_2ko, direction: E, corner: false, note: "東側 約3.3m公道(4m未満)・アスファルト舗装・高低差なし。私道負担3.98m2(別途)。42条区分・セットバック要否は要役所確認"}
+  shape: regular          # 媒体に形状記載なし(assumed)
   legal: {zoning: "1種住居", bcr: 60, far: 160, ownership: shoyuken, rebuildable: true, note: "1種住居/建ぺい60%・容積160%(前面道路幅員制限)/準防火/2種高度"}
 building:
   built: 2011-03

@@ -315,7 +315,10 @@ function specTable(r, property) {
   const cells = [
     ["間取り", property.layout ?? "—"],
     ["築年数", "築" + s.age.toFixed(1) + "年(" + esc(fmtDate(property.building?.built)) + "築)" + (r.isNewBuild ? " 新築" : "")],
-    ["用途地域 / 建ぺい・容積", legal.zoning ? esc(legal.zoning) + " / " + legal.bcr + "%・" + legal.far + "%" : "—(要調査)"],
+    // bcr/far が未記載のYAMLで "undefined%" が出力されていたため個別に判定(2026-08-12監査)
+    ["用途地域 / 建ぺい・容積", legal.zoning
+      ? esc(legal.zoning) + " / " + (legal.bcr != null && legal.far != null ? legal.bcr + "%・" + legal.far + "%" : "建ぺい・容積は要調査")
+      : "—(要調査)"],
     ["接道", (road.direction ? esc(String(road.direction)) + "側 " : "") + (road.width_m ? "幅員" + road.width_m + "m" : "—") + (s.roadq < 0 ? "(4m未満・減点" + pct(s.roadq) + ")" : "")],
     ["土地", s.land + "m²(" + landTsubo.toFixed(2) + "坪 / 実効" + effTsubo.toFixed(2) + "坪)"],
     ["延床", s.floor + "m²(" + floorTsubo.toFixed(2) + "坪)"],

@@ -5,18 +5,21 @@ source: "SUUMO掲載(2026-08-12日次クロールで発見)。新築戸建・総
 source_url: "https://suumo.jp/ikkodate/tokyo/sc_kita/nc_20767290/"   # 実在確認済み 2026-08-12
 captured_at: 2026-08-12
 price_history:
-  - {date: 2026-08-11, price_man: 5980}   # 媒体の情報提供日時点
+  # 2026-08-12訂正: 当初5980万で登録したが、これは一覧表示の下限値(=同開発の別戸の価格)だった。
+  # 掲載の「区画・住戸情報」では本戸(1号棟・土地57.65/建物92.34)の価格は6080万。値上げではなく
+  # 登録時の戸の取り違え。以後は詳細ページの区画情報を価格の一次情報とする
+  - {date: 2026-08-12, price_man: 6080}
 location: {area: akabanedai, address: "北区西が丘2"}   # エリア区分「赤羽台・西が丘」
 layout: "3LDK+S(納戸)"   # 間取り(媒体記載)
 station: {walk_min: 17, multi_station: true}   # 板橋本町17分/十条17分/東十条18分
 land:
   registered_m2: 57.65
   setback_m2: 0
-  road: {width_m: 4.2, quality: good_4m, direction: S, corner: false, note: "南側4.2〜5m公道・アスファルト舗装(私道負担無)"}
-  shape: regular          # 媒体に形状記載なし(assumed)
-  legal: {zoning: "1種中高", ownership: shoyuken, rebuildable: true}
+  road: {width_m: 4.0, quality: good_4m, direction: S, corner: false, note: "南側4m・アスファルト舗装(source_urlの記載。従来の4.2〜5mは別業者の重複掲載由来だったため訂正)。南向き・南側道路面すの記載あり"}
+  shape: regular          # 掲載の特徴ピックアップに「整形地」の実記載あり(2026-08-12に実データで確定)
+  legal: {zoning: "1種中高", bcr: 60, far: 150, ownership: shoyuken, rebuildable: true}
 building:
-  built: 2026-04          # 完成時期は掲載により2026年3〜5月と表記揺れ。中庸の4月を採用(assumed)
+  built: 2026-05          # source_urlの物件概要に2026年5月と明記(2026-08-12に実データで確定。従来は表記揺れのため4月をassumed採用)
   floor_m2: 92.34
   type: wood_3f_narrow    # 木造3階建(軸組)
   repair: {status: new_construction, cost_man: 0}

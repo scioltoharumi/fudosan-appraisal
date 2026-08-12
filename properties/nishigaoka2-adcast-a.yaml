@@ -10,11 +10,11 @@ price_history:
   - {date: 2026-08-10, price_man: 6580}   # SUUMO掲載で-400万を確認(2026-08-12照合。日付は媒体の情報提供日)
 location: {area: akabanedai, address: "北区西が丘2"}   # エリア区分「赤羽台・西が丘」
 layout: "1LDK+2S(納戸)"   # 間取り(媒体記載)
-station: {walk_min: 15, multi_station: true}   # 東十条15分/赤羽17分/都営三田線「板橋本町」18分
+station: {walk_min: 15, multi_station: true}   # 2026-08-12訂正(掲載元の交通欄): 埼京線「十条」15分/京浜東北線「東十条」17分/同「赤羽」18分。従来コメントの「東十条15分・板橋本町18分」はチラシ由来で掲載元に該当記載なし(最短15分は変わらず査定不変)
 land:
   registered_m2: 50.74     # 実測。私道負担1.40m2は土地面積とは別途
   setback_m2: 0
-  road: {width_m: 4.0, quality: good_4m, direction: NW, corner: false, note: "北西側 約4m公道・アスファルト舗装・高低差なし。私道負担はチラシ1.40m2/SUUMO6.02m2で表記不一致(いずれも土地面積とは別途。要確認)"}
+  road: {width_m: 4.0, quality: good_4m, direction: NW, corner: false, note: "北西4m幅・私道負担6.02m2(掲載明記。チラシは1.40m2で不一致=要確認)。土地面積50.74m2(実測)に含むか別途かは掲載に記載がなく未確認(公道/舗装/高低差なしはチラシ由来で掲載元では未確認)"}
   shape: regular           # チラシ「整形地」
   legal: {zoning: "1種中高", bcr: 60, far: 150, ownership: shoyuken, rebuildable: true, note: "1種中高/建ぺい60%・容積150%/準防火/2種高度"}
 building:

@@ -18,6 +18,7 @@ land:
   registered_m2: 59.51
   setback_m2: 0            # 私道負担・セットバック「無」(媒体記載)
   road: {width_m: 4.0, quality: good_4m, direction: SE, corner: false, note: "南東側 幅員4m。公道/私道の別は媒体記載なし・要確認"}
+  shape: regular          # 媒体に形状記載なし(assumed)
   legal: {zoning: "1種中高", bcr: 60, far: 200, ownership: shoyuken, rebuildable: true}   # 用途地域: 1種中高 / 建ぺい60%・容積200%
 building:
   built: 2007-07

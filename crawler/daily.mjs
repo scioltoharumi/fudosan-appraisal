@@ -9,7 +9,10 @@ import { ROOT, loadProperty, listPropertyIds } from "../engine/io.js";
 
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36";
 const SLEEP_MS = 2200;              // N1: リクエスト間隔2秒以上
-const MAX_PAGES = 45;               // N1: 1実行あたりの上限(Phase2でathome追加につき30→45)
+// N1: 1実行あたりの取得上限。watch(台帳件数ぶん)を先に消費し、残りがdiscoverの探索予算になる。
+// 到達しても例外にせず打ち切る(2026-08-12監査: 例外だとレポート不出力のまま異常終了し無人運用で沈黙した)。
+// 現在の最大需要は watch 17 + discover 32(4媒体×8頁) = 49
+const MAX_PAGES = 60;
 const PRICE_RANGE = [5000, 9000];   // discover対象(万円)
 const WALK_MAX = 20;                // discover徒歩上限(分)
 const DISTRICTS = ["上十条", "中十条", "十条仲原", "岩淵町", "志茂", "神谷", "西が丘", "赤羽", "赤羽北", "赤羽南", "赤羽台", "赤羽西"];
@@ -29,12 +32,18 @@ let fetchCount = 0;
 const errors = [];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// 上限到達は例外にしない(投げるとレポートが1行も出ずに異常終了し、無人運用で沈黙する)。
+// budget切れは呼び出し側が判定できるよう exhausted フラグで返し、errors[]に開示する
 async function fetchPage(url) {
-  if (fetchCount >= MAX_PAGES) throw new Error(`ページ上限${MAX_PAGES}超過: ${url}`);
+  if (fetchCount >= MAX_PAGES) {
+    errors.push({ where: "fetchPage", detail: `ページ上限${MAX_PAGES}到達につき取得を打ち切り: ${url}` });
+    return { html: "", status: 0, exhausted: true, error: `page budget exhausted (${MAX_PAGES})` };
+  }
   if (fetchCount > 0) await sleep(SLEEP_MS);
   fetchCount++;
   try {
     const out = execFileSync("curl", ["-sS", "-L", "--max-time", "30", "-A", UA,
+      "-H", "Accept-Language: ja,en;q=0.8",
       "-w", "\n@@HTTP_CODE@@%{http_code}", url], { maxBuffer: 16 * 1024 * 1024, encoding: "utf8" });
     const m = out.match(/@@HTTP_CODE@@(\d+)\s*$/);
     return { html: out.replace(/\n@@HTTP_CODE@@\d+\s*$/, ""), status: m ? Number(m[1]) : 0 };
@@ -65,6 +74,19 @@ function parseDetailPrice(html) {
   return best && best[1] >= 3 ? Number(best[0]) : null;   // 最低3回出現を本体価格の条件とする
 }
 
+// 複数戸掲載(新築分譲)のSUUMOページは号棟ごとの構造化データ(madoriList)を持つ。
+// 台帳YAMLの土地・建物面積で該当戸を特定して価格を取る(ページ代表価格を拾うと毎日
+// 誤って値下げ扱いになる。2026-08-12監査: nishigaoka2-21063164 で顕在化)。
+// 戸が特定できない場合は null を返し、呼び出し側でエラーとして開示する
+function parseUnitPriceSuumo(html, landM2, floorM2) {
+  const units = [...html.matchAll(/title\s*:\s*"([^"]{1,20}号棟[^"]{0,10})"[\s\S]{0,300}?kakakuDisp\s*:\s*"(\d+)"[\s\S]{0,400}?tochiMensekiDisp\s*:\s*"([\d.]+)"[\s\S]{0,200}?tatemonoMensekiDisp\s*:\s*"([\d.]+)"/g)]
+    .map((m) => ({ title: m[1], man: Math.round(Number(m[2]) / 10000), land: Number(m[3]), floor: Number(m[4]) }));
+  if (units.length < 2) return { multi: false };
+  const hit = units.filter((u) => Math.abs(u.land - landM2) < 0.02 && Math.abs(u.floor - floorM2) < 0.02);
+  if (hit.length !== 1) return { multi: true, price: null, units };
+  return { multi: true, price: hit[0].man, unit: hit[0].title, units };
+}
+
 // athome詳細: 広告枠の他物件価格が本体より高頻度に出るため、モード方式でなく
 // 「価格」ラベル直後の値を採用。複数ヒットが割れたら失敗扱い(誤検出を価格変動と誤認しない)
 function parseDetailPriceAthome(html) {
@@ -88,24 +110,48 @@ async function watch() {
     if (!p.source_url) { results.push({ id, status: "no_source_url" }); continue; }
     const ph = p.price_history ?? [];
     const last = ph[ph.length - 1] ?? {};
-    const { html, status, error } = await fetchPage(p.source_url);
+    const { html, status, error, exhausted } = await fetchPage(p.source_url);
+    if (exhausted) { results.push({ id, status: "skipped_budget" }); continue; }
     if (error || status !== 200) {
       const entry = { id, status: status === 404 ? "delisted_suspect" : "fetch_error", http: status, error };
       if (status !== 404) errors.push({ where: `watch:${id}`, detail: `http=${status} ${error ?? ""}` });
       results.push(entry); continue;
     }
     if (DELISTED_RE.test(strip(html))) { results.push({ id, status: "delisted_suspect", http: 200 }); continue; }
-    const price = /athome\.co\.jp/.test(p.source_url) ? parseDetailPriceAthome(html) : parseDetailPrice(html);
-    const infoDate = parseInfoDate(html);
+    const isAthome = /athome\.co\.jp/.test(p.source_url);
+    // 複数戸掲載は面積で戸を特定してから価格を取る(ページ代表価格の誤検出を防ぐ)
+    const unitInfo = isAthome ? { multi: false }
+      : parseUnitPriceSuumo(html, p.land?.registered_m2 ?? -1, p.building?.floor_m2 ?? -1);
+    let price, unitLabel = null;
+    if (unitInfo.multi) {
+      price = unitInfo.price; unitLabel = unitInfo.unit ?? null;
+      if (price === null) {
+        errors.push({ where: `watch:${id}`, detail: `複数戸掲載(${unitInfo.units.length}戸)で該当戸を面積特定できず。掲載の戸: ` +
+          unitInfo.units.map((u) => `${u.title} ${u.man}万/${u.land}/${u.floor}`).join(" | ") + ` (台帳: 土地${p.land?.registered_m2}/建物${p.building?.floor_m2})` });
+        results.push({ id, status: "unit_unresolved", http: 200, units: unitInfo.units }); continue;
+      }
+    } else {
+      price = isAthome ? parseDetailPriceAthome(html) : parseDetailPrice(html);
+    }
+    let infoDate = parseInfoDate(html);
+    // 抽出失敗は1回だけ再取得を試す(媒体側の一時的な応答差で毎日エラー通知が出るのを防ぐ)。
+    // それでも失敗ならエラーとして開示する(前回値の複写は絶対にしない)
     if (price === null) {
-      errors.push({ where: `watch:${id}`, detail: "価格抽出失敗(ページ構造変化の疑い)" });
+      const retry = await fetchPage(p.source_url);
+      if (retry.status === 200) {
+        price = isAthome ? parseDetailPriceAthome(retry.html) : parseDetailPrice(retry.html);
+        infoDate = parseInfoDate(retry.html) ?? infoDate;
+      }
+    }
+    if (price === null) {
+      errors.push({ where: `watch:${id}`, detail: "価格抽出失敗(再取得後も失敗。ページ構造変化の疑い)" });
       results.push({ id, status: "parse_error", http: 200 }); continue;
     }
     results.push({
       id, status: price === last.price_man ? "unchanged" : "price_changed",
       price_man: price, prev_price_man: last.price_man ?? null,
       diff_man: last.price_man != null ? price - last.price_man : null,
-      info_date: infoDate, url: p.source_url,
+      info_date: infoDate, url: p.source_url, unit: unitLabel,
     });
   }
   return results;
@@ -171,12 +217,16 @@ function unitFingerprint(u, districtOfFn) {
 async function discover(ledgerNcs, ledgerFps) {
   const seen = existsSync(SEEN_PATH) ? JSON.parse(readFileSync(SEEN_PATH, "utf8")) : {};
   const found = [];
+  let exhausted = false;
   for (const src of LIST_SOURCES) {
+    if (exhausted) break;
     for (let pn = 1; pn <= 8; pn++) {
       // ページ送り: SUUMOは ?page=N、athomeは /list/pageN/(どちらも誤URLは404にならず1ページ目が返るため厳密に)
       const url = pn === 1 ? src.base
         : src.media === "suumo" ? `${src.base}?page=${pn}` : `${src.base}page${pn}/`;
-      const { html, status, error } = await fetchPage(url);
+      const { html, status, error, exhausted: ex } = await fetchPage(url);
+      // 予算切れは打ち切り(N2: 黙って減らさず errors[] に開示済み)。以降の媒体も走査しない
+      if (ex) { exhausted = true; break; }
       if (error || status !== 200) { errors.push({ where: `discover:${src.media}:${src.kind}:page${pn}`, detail: `http=${status} ${error ?? ""}` }); break; }
       const units = src.media === "suumo" ? parseSuumoUnits(html, src.kind) : parseAthomeUnits(html, src.kind);
       if (units.length === 0) break;   // 最終ページ超過
@@ -248,6 +298,8 @@ out.summary = {
   delisted_suspects: out.watch.filter((w) => w.status === "delisted_suspect").length,
   new_listings: out.discover.filter((d) => d.event === "new").length,
   discover_price_changes: out.discover.filter((d) => d.event === "price_changed").length,
-  errors: errors.length, pages_fetched: fetchCount,
+  errors: errors.length, pages_fetched: fetchCount, page_budget: MAX_PAGES,
+  budget_exhausted: fetchCount >= MAX_PAGES,
+  watch_skipped: out.watch.filter((w) => w.status === "skipped_budget").length,
 };
 console.log(JSON.stringify(out, null, 1));

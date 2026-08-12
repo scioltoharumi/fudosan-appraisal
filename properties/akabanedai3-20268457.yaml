@@ -9,13 +9,14 @@ price_history:
   - {date: 2026-07-17, price_man: 6560}
   - {date: 2026-08-08, price_man: 6260}   # 値下げ-300万を掲載元で確認(2026-08-11クロール。日付は媒体の情報提供日)
 location: {area: akabanedai, address: "北区赤羽台3"}
+layout: "3DK"   # 間取り(掲載元記載。2026-08-12に補完)
 station: {walk_min: 11, multi_station: true}
 land:
   registered_m2: 91.44
   setback_m2: 14.04
-  road: {width_m: 3.7, quality: setback_2ko, direction: SE, corner: false, note: "南西3.7m/南東1.5m 要種別調査"}
+  road: {width_m: 3.7, quality: setback_2ko, direction: SW, corner: false, note: "二方接道: 南西3.7m幅(接道幅9.4m)・南東1.5m幅(接道幅5.1m)。主接道は幅員の広い南西側(2026-08-12訂正: directionをSEとしていたが3.7mは南西側。係数は同値のため査定額は不変)。42条区分は要調査"}
   shape: regular
-  legal: {ownership: shoyuken, rebuildable: true}
+  legal: {zoning: "1種中高", bcr: 60, far: 150, ownership: shoyuken, rebuildable: true}
 building:
   built: 1999-09
   floor_m2: 68.6

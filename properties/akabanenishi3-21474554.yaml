@@ -12,10 +12,10 @@ layout: "2LDK+S(納戸)"   # 間取り(媒体記載)
 station: {walk_min: 14, multi_station: true}   # 東十条14分/赤羽14分/十条17分
 land:
   registered_m2: 47.10    # 登記
-  setback_m2: 0           # 媒体に「セットバック」文言あり・数量不明のため0仮置き(要確認。assumed)
-  road: {width_m: 4.0, quality: good_4m, direction: S, corner: false, note: "南4m幅(私道負担無)。媒体のセットバック文言の中身は要確認"}
+  setback_m2: 0           # 掲載に「セットバック：済」「私道負担: 無」と明記。控除不要の確定値(2026-08-12にassumed解除)
+  road: {width_m: 4.0, quality: good_4m, direction: S, corner: false, note: "南4m幅・私道負担無・セットバック済(掲載明記)"}
   shape: regular          # 媒体に形状記載なし(assumed。整形前提)
-  legal: {zoning: "1種低層", ownership: shoyuken, rebuildable: true}
+  legal: {zoning: "1種低層", bcr: 60, far: 150, ownership: shoyuken, rebuildable: true}
 building:
   built: 2023-03
   floor_m2: 78.89
