@@ -81,10 +81,15 @@ export function renderIndex(results, { asOf, cal = null }) {
       reviseNote = diff === 0 ? `・改定${ph.length - 1}回(同値)` :
         `・改定${ph.length - 1}回<br>初値${fmtMan(first)} <span style="color:${diff < 0 ? "#2E6E8E" : "var(--stamp)"};font-weight:700">${diff < 0 ? "▼" : "▲"}${fmtMan(Math.abs(diff))}(${diff < 0 ? "" : "+"}${(100 * diff / first).toFixed(1)}%)</span>`;
     }
-    return `<tr>
+    // ソート/フィルタ用のデータ属性(判定は買→保留→調査→見送→不能の順位値)
+    const VORDER = { "買": 0, "保留": 1, "調査": 2, "見送": 3, "不能": 4 };
+    return `<tr data-verdict="${esc(v.mark)}" data-vord="${VORDER[v.mark] ?? 9}" data-status="${esc(status)}"
+      data-price="${Math.round(r.state.ask)}" data-market="${r.retail ? Math.round(r.retail.mid) : -1}"
+      data-div="${Math.round(divergence(r))}" data-assump="${r.assumptions.length}" data-fair="${Math.round(r.fairFinal.mid)}"
+      data-name="${esc(property.location?.address ?? r.id)}">
       <td><span class="badge ${v.cls}">${v.mark}</span></td>
       <td><a href="property/${esc(r.id)}.html">${esc(property.location?.address ?? r.id)}</a><div class="note" style="margin-top:0">${esc(r.id)} / ${esc(property.layout ?? "—")} / 築${r.state.age.toFixed(1)}年 / 徒歩${esc(property.station?.walk_min)}分 / 取得 ${esc(fmtDate(property.captured_at))}${safeUrl(property.source_url) ? ` / <a href="${esc(property.source_url)}" target="_blank" rel="noopener noreferrer">掲載元↗</a>` : ""}</div></td>
-      <td><span class="status">${esc(status)}</span></td>
+      <td><span class="status${property.status === "viewed" ? " viewed" : ""}">${esc(status)}</span></td>
       <td class="num">${fmtMan(r.state.ask)}<div class="note" style="margin-top:0">${esc(priceDate)}時点${reviseNote}</div></td>
       <td class="num">${r.retail && hasMarketPage ? `<a href="property/${esc(r.id)}-market.html">${fmtMan(r.retail.mid)}</a>` : r.retail ? fmtMan(r.retail.mid) : "—"}</td>
       <td class="num"${divergence(r) > 0 ? ' style="color:var(--stamp)"' : ""}>${divergence(r) >= 0 ? "+" : ""}${fmtMan(divergence(r))}</td>
@@ -93,16 +98,80 @@ export function renderIndex(results, { asOf, cal = null }) {
     </tr>`;
   }).join("");
 
+  // フィルタチップは実在する判定・状態から動的生成
+  const verdicts = [...new Set(sorted.map(({ r }) => r.verdict.mark))];
+  const statuses = [...new Set(sorted.map(({ property }) => STATUS_LABEL[property.status] || property.status))];
   const body = `
   <div class="panel">
     <h2>物件一覧(乖離額の小さい順 = 割安順)</h2>
+    <div class="cond-banner"><b>台帳掲載の条件</b>: 価格 5,000〜9,000万円 / 台地側(荒川低地の浸水想定域外)/ 所有権(借地権は除外)/ 延床70m²超 / 3室以上(納戸・サービスルーム可)/ 新耐震基準 / 再建築可 ── 赤羽駅西側・十条エリアの中古/新築戸建をSUUMO日次クロール+チラシで収集(ハザードの個別確認は検討段階で実施)</div>
     <div class="note" style="margin:0 0 10px">はじめての方へ: 「総額 = 土地単価×坪数 + 建物残価 + 売主の期待」という値段の構造は <a href="formula.html">値段の解剖 ── 算出ロジック図解</a> が1ページで図解しています。査定値の出所(公示地価・坪単価・建物残価・リテール比較法・判定スタンプの意味)は <a href="guide.html">査定の読み方 ── 前提知識ガイド</a>、成約データ全件は <a href="data.html">成約データ台帳(検証と探索)</a> で出所リンク・二重照合結果つきで確認できます。希望条件(間取り・設備等)を金額換算して妥協判断する方法は <a href="tradeoff.html">妥協の値段 ── A/B/C分類と工事費早見表</a> にまとめています。</div>
+    <div class="filterbar">
+      <span class="flabel">判定</span>${verdicts.map((m) => `<button class="chip" data-f="verdict" data-val="${esc(m)}">${esc(m)}</button>`).join("")}
+      <span class="flabel" style="margin-left:10px">状態</span>${statuses.map((s) => `<button class="chip" data-f="status" data-val="${esc(s)}">${esc(s)}</button>`).join("")}
+      <button class="chip" id="freset" style="margin-left:10px">リセット</button>
+      <span class="note" id="fcount" style="margin:0 0 0 6px"></span>
+    </div>
     <div style="overflow-x:auto">
-    <table class="list">
-      <tr><th>判定</th><th>物件</th><th>状態</th><th>売出価格</th><th>市場実勢中央値</th><th>乖離(対市場)</th><th>仮定</th><th>適正中央値(参考)</th></tr>
+    <table class="list" id="ptable">
+      <tr>
+        <th class="sortable" data-key="vord" data-num="1">判定 <span class="arw">↕</span></th>
+        <th class="sortable" data-key="name">物件 <span class="arw">↕</span></th>
+        <th class="sortable" data-key="status">状態 <span class="arw">↕</span></th>
+        <th class="sortable" data-key="price" data-num="1">売出価格 <span class="arw">↕</span></th>
+        <th class="sortable" data-key="market" data-num="1">市場実勢中央値 <span class="arw">↕</span></th>
+        <th class="sortable" data-key="div" data-num="1">乖離(対市場) <span class="arw">↕</span></th>
+        <th class="sortable" data-key="assump" data-num="1">仮定 <span class="arw">↕</span></th>
+        <th class="sortable" data-key="fair" data-num="1">適正中央値(参考) <span class="arw">↕</span></th>
+      </tr>
       ${rows}
     </table>
     </div>
+    <script>
+    (function(){
+      var table = document.getElementById("ptable");
+      var rows = Array.prototype.slice.call(table.querySelectorAll("tr[data-verdict]"));
+      var active = { verdict: new Set(), status: new Set() };
+      function apply(){
+        var shown = 0;
+        rows.forEach(function(tr){
+          var ok = (!active.verdict.size || active.verdict.has(tr.dataset.verdict)) &&
+                   (!active.status.size || active.status.has(tr.dataset.status));
+          tr.style.display = ok ? "" : "none";
+          if (ok) shown++;
+        });
+        document.getElementById("fcount").textContent = shown === rows.length ? "" : shown + "/" + rows.length + "件を表示中";
+      }
+      document.querySelectorAll(".chip[data-f]").forEach(function(ch){
+        ch.addEventListener("click", function(){
+          var set = active[ch.dataset.f];
+          if (set.has(ch.dataset.val)) { set.delete(ch.dataset.val); ch.classList.remove("on"); }
+          else { set.add(ch.dataset.val); ch.classList.add("on"); }
+          apply();
+        });
+      });
+      document.getElementById("freset").addEventListener("click", function(){
+        active.verdict.clear(); active.status.clear();
+        document.querySelectorAll(".chip.on").forEach(function(c){ c.classList.remove("on"); });
+        apply();
+      });
+      var dir = {};
+      document.querySelectorAll("th.sortable").forEach(function(th){
+        th.addEventListener("click", function(){
+          var k = th.dataset.key, num = !!th.dataset.num;
+          dir[k] = -(dir[k] || -1);   // 初回クリックは昇順
+          rows.sort(function(a, b){
+            var av = a.dataset[k], bv = b.dataset[k];
+            var c = num ? (Number(av) - Number(bv)) : String(av).localeCompare(String(bv), "ja");
+            return c * dir[k];
+          });
+          rows.forEach(function(tr){ table.appendChild(tr); });
+          document.querySelectorAll("th.sortable .arw").forEach(function(s){ s.textContent = "↕"; });
+          th.querySelector(".arw").textContent = dir[k] > 0 ? "↑" : "↓";
+        });
+      });
+    })();
+    </script>
     <div class="note">乖離(対市場) = 売出価格 − 市場実勢中央値(=売主の期待。判定スタンプもこの市場実勢基準。リテール比較不成立の物件のみ適正中央値との差)。市場実勢中央値 = 周辺の戸建成約(国交省データ)から時点・徒歩・築年差を補正した実需市場の水準(クリックで根拠ページへ)。適正中央値 = 原価法との重み付き調整で、市場実勢との差は「過熱感=相場調整時の下落余地」を測る参考。判定の根拠は各物件の詳細ページ「算出根拠の全文開示」を参照。<br>
     売出価格の下の日付は媒体で当該価格を確認した時点(情報提供日)、「取得」は台帳への登録日。査定値は全物件とも査定基準日 ${asOf} 時点で再計算している。</div>
     <div class="meta-line">査定基準日 ${asOf} / 掲載 ${results.length}件 / 本サイトは個人の検討用簡易査定であり、不動産鑑定評価・投資助言ではありません。</div>

@@ -45,6 +45,16 @@ table.list td.num{font-family:var(--mono);text-align:right;white-space:nowrap}
 .badge.ok{border-color:var(--ok);color:var(--ok)}
 .badge.warn{border-color:var(--warn);color:var(--warn)}
 .status{font-size:.72rem;border:1px solid var(--ink-soft);padding:1px 7px;color:var(--ink-soft);white-space:nowrap}
+.status.viewed{background:#2E6E8E;border-color:#2E6E8E;color:#fff;font-weight:700}
+table.list th.sortable{cursor:pointer;user-select:none}
+table.list th.sortable:hover{color:var(--ink)}
+table.list th.sortable .arw{opacity:.45;font-size:.65rem}
+.filterbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 10px}
+.filterbar .flabel{font-size:.7rem;color:var(--ink-soft);letter-spacing:.06em;margin-right:2px}
+.chip{font-size:.72rem;padding:2px 10px;border:1px solid var(--ink-soft);background:#FDFDFC;color:var(--ink-soft);cursor:pointer;border-radius:12px;font-family:inherit}
+.chip.on{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:700}
+.cond-banner{border:1px solid var(--band);background:#F4F8FA;padding:8px 12px;font-size:.76rem;margin:0 0 10px;line-height:1.7}
+.cond-banner b{color:#2E6E8E}
 .src-link{display:inline-block;margin-top:10px;padding:5px 12px;border:1px solid var(--band);color:var(--band);font-size:.78rem;text-decoration:none;font-weight:700;background:#FDFDFC}
 .src-link:hover{background:var(--band);color:#fff}
 .note{font-size:.7rem;color:var(--ink-soft);margin-top:6px}
