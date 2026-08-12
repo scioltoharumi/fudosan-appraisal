@@ -65,8 +65,16 @@ function parseDetailPrice(html) {
   return best && best[1] >= 3 ? Number(best[0]) : null;   // 最低3回出現を本体価格の条件とする
 }
 
+// athome詳細: 広告枠の他物件価格が本体より高頻度に出るため、モード方式でなく
+// 「価格」ラベル直後の値を採用。複数ヒットが割れたら失敗扱い(誤検出を価格変動と誤認しない)
+function parseDetailPriceAthome(html) {
+  const hits = [...strip(html).matchAll(/価格\s*([0-9][0-9,]{1,7})\s*万円/g)].map((m) => Number(m[1].replace(/,/g, "")));
+  if (!hits.length) return null;
+  return hits.every((v) => v === hits[0]) ? hits[0] : null;
+}
+
 function parseInfoDate(html) {
-  const m = strip(html).match(/情報提供日[\s:：]*([0-9]{4})年([0-9]{1,2})月([0-9]{1,2})日/);
+  const m = strip(html).match(/(?:情報提供日|情報公開日)[\s:：]*([0-9]{4})年([0-9]{1,2})月([0-9]{1,2})日/);
   return m ? `${m[1]}-${String(m[2]).padStart(2, "0")}-${String(m[3]).padStart(2, "0")}` : null;
 }
 
@@ -87,7 +95,7 @@ async function watch() {
       results.push(entry); continue;
     }
     if (DELISTED_RE.test(strip(html))) { results.push({ id, status: "delisted_suspect", http: 200 }); continue; }
-    const price = parseDetailPrice(html);
+    const price = /athome\.co\.jp/.test(p.source_url) ? parseDetailPriceAthome(html) : parseDetailPrice(html);
     const infoDate = parseInfoDate(html);
     if (price === null) {
       errors.push({ where: `watch:${id}`, detail: "価格抽出失敗(ページ構造変化の疑い)" });
@@ -219,7 +227,11 @@ async function discover(ledgerNcs, ledgerFps) {
 
 // ---- main ----
 const mode = process.argv[2] ?? "";
-const ledgerNcs = new Set(listPropertyIds().map((id) => (loadProperty(id).source_url ?? "").match(/nc_[0-9]+/)?.[0]).filter(Boolean));
+const ledgerNcs = new Set(listPropertyIds().flatMap((id) => {
+  const u = loadProperty(id).source_url ?? "";
+  const at = u.match(/athome\.co\.jp\/kodate\/([0-9]+)/)?.[1];
+  return [u.match(/nc_[0-9]+/)?.[0], at ? "at_" + at : null].filter(Boolean);
+}));
 // 台帳物件の指紋(他媒体の同一掲載を新着扱いしないため)
 const ledgerFps = new Set(listPropertyIds().map((id) => {
   const p = loadProperty(id);

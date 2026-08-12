@@ -1,0 +1,28 @@
+# 物件データ(1物件1ファイル)。記載ルール: 事実データと査定パラメータのみ。
+id: nakajujo4-6990281280
+status: considering
+source: "athome掲載(専任媒介・元付け(株)東京生活。2026-08-12クロールで発見=SUUMO非掲載でathome追加の契機となった物件)。現況賃貸中(オーナーチェンジ)・媒体表記: 年間賃料収入462万円=月38.5万円・表面利回り5.78%。周辺実勢家賃(月22〜24万目安)より大幅に高く契約形態・稼働実態の確認が必須。情報公開日: athome 2026-04-10/ニフティ再掲2026-06-24 → 売出開始は遅くとも4/10(約4ヶ月値下げなし)"
+source_url: "https://www.athome.co.jp/kodate/6990281280/"   # 実在確認済み 2026-08-12
+captured_at: 2026-08-12
+price_history:
+  - {date: 2026-08-12, price_man: 7990}   # クロール確認日時点(athomeは情報提供日でなく公開日表記のため確認日を採用)
+location: {area: nakajujo, address: "北区中十条4"}
+layout: "2SLDK"   # 間取り(媒体記載。2LDK+S=3室)
+# 中十条はエリア設定4区分(赤羽固定)の対象外のため基準坪単価を明示上書き(F2-3)。
+# 根拠: nakajujo4-adcastと同一(中十条の公示地価平均56.4万/m2(2025) ×3.30578×実勢1.15 ≈215万/坪。assumed・要再検証)
+ppt_man_override: 215
+station: {walk_min: 8, multi_station: false}   # 東十条8分(媒体記載はこの1駅のみ。十条も徒歩圏の可能性はあるが未記載につき保守側)
+land:
+  registered_m2: 44.71    # 公簿
+  setback_m2: 0           # 媒体表記「セットバック: 済」につき追加控除なし
+  road: {corner: false, note: "接道状況の媒体記載なし(幅員・方位とも要確認)。エンジン既定=4m未満扱いの保守側で査定。セットバック済表記"}
+  shape: regular          # 媒体に形状記載なし(assumed)
+  legal: {zoning: "1種住居", bcr: 60, far: 160, ownership: shoyuken, rebuildable: true, note: "再建築可は市街化区域・セットバック済表記からの推定(接道未確認のため要役所確認)"}
+building:
+  built: 2017-11
+  floor_m2: 71.04
+  type: wood_3f_narrow    # 木造3階建(ニフティ再掲の表記)・土地44.71m2の狭小
+  repair: {status: assumed_age_proportional, assumed: true, cost_man: 350}   # 築8.8年・修繕履歴記載なし。経年相当想定(既定800は築9年に過大)
+costs: {fee_rate: 0.05, demolition_man: 150, demolition_assumed: true}   # 木造3F・延床21.5坪×約7万/坪
+income: {rent_man: 38.5, expense_rate: 0.15, cap_rate: 0.045}   # 媒体記載の実賃料(年462万÷12)。実勢比+60%程度につき収益価格は過大の可能性(契約形態要確認)
+checklist: {road_type_verified: false, retaining_wall: false, hazard: false, seismic: true}   # 2017築=現行基準
