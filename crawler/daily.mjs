@@ -9,14 +9,20 @@ import { ROOT, loadProperty, listPropertyIds } from "../engine/io.js";
 
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36";
 const SLEEP_MS = 2200;              // N1: リクエスト間隔2秒以上
-const MAX_PAGES = 30;               // N1: 1実行あたりの上限
+const MAX_PAGES = 45;               // N1: 1実行あたりの上限(Phase2でathome追加につき30→45)
 const PRICE_RANGE = [5000, 9000];   // discover対象(万円)
 const WALK_MAX = 20;                // discover徒歩上限(分)
 const DISTRICTS = ["上十条", "中十条", "十条仲原", "岩淵町", "志茂", "神谷", "西が丘", "赤羽", "赤羽北", "赤羽南", "赤羽台", "赤羽西"];
+// 媒体横断の同一物件は指紋(地区丁目|価格|土地面積)で名寄せする。先頭の媒体を優先採用
+// するため、SUUMO(watch対象と同じ媒体・物件番号で台帳と直結)を先に置く
 const LIST_SOURCES = [
-  { kind: "chuko", label: "中古一戸建て", base: "https://suumo.jp/chukoikkodate/tokyo/sc_kita/" },
-  { kind: "shinchiku", label: "新築一戸建て", base: "https://suumo.jp/ikkodate/tokyo/sc_kita/" },
+  { media: "suumo", kind: "chuko", base: "https://suumo.jp/chukoikkodate/tokyo/sc_kita/" },
+  { media: "suumo", kind: "shinchiku", base: "https://suumo.jp/ikkodate/tokyo/sc_kita/" },
+  { media: "athome", kind: "chuko", base: "https://www.athome.co.jp/kodate/chuko/tokyo/kita-city/list/" },
+  { media: "athome", kind: "shinchiku", base: "https://www.athome.co.jp/kodate/shinchiku/tokyo/kita-city/list/" },
 ];
+// 全角英数字→半角(athomeは「７Ｋ」等の全角表記)
+const zen = (s) => String(s ?? "").replace(/[０-９Ａ-Ｚａ-ｚ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
 const SEEN_PATH = join(ROOT, "market", "crawl", "seen.json");
 
 let fetchCount = 0;
@@ -98,7 +104,7 @@ async function watch() {
 }
 
 // ---- discover: 新着探索(12地区・5000〜9000万・徒歩20分以内) ----
-function parseListUnits(html, kind) {
+function parseSuumoUnits(html, kind) {
   const units = [];
   const parts = html.split(/property_unit-title/).slice(1);
   for (const part of parts) {
@@ -112,43 +118,94 @@ function parseListUnits(html, kind) {
     const floor = (seg.match(/建物面積\s*([0-9.]+)\s*m/) ?? [])[1] ?? null;
     const layout = (seg.match(/間取り\s*([0-9SLDK+]+(?:\([^)]*\))?)/) ?? [])[1] ?? null;
     const built = (seg.match(/築年月\s*([0-9]{4}年[0-9]{1,2}月)/) ?? [])[1] ?? null;
-    units.push({ nc: link[2], url: "https://suumo.jp" + link[1], kind, price_man: price, address: addr,
+    units.push({ nc: link[2], media: "suumo", url: "https://suumo.jp" + link[1], kind, price_man: price, address: addr,
       walk_min: walks.length ? Math.min(...walks) : null, land_m2: land ? Number(land) : null,
       floor_m2: floor ? Number(floor) : null, layout, built });
   }
   return units;
 }
 
-async function discover(ledgerNcs) {
+// athome: Angular SSRのカード単位で分割。表記は全角混じりのため半角へ正規化してから抽出
+function parseAthomeUnits(html, kind) {
+  const units = [];
+  const parts = html.split("<athome-csite-pc-part-bukken-card-ryutsu-sell-living").slice(1);
+  for (const part of parts) {
+    const link = part.match(/href="\/kodate\/([0-9]+)\//);
+    if (!link) continue;
+    const seg = zen(strip(part.slice(0, 30000)));
+    const price = (() => { const m = seg.match(/([0-9]+億[0-9,]*万?円|[0-9][0-9,]{1,7}万円)/); return m ? parseMan(m[1]) : null; })();
+    const addrM = seg.match(/所在地\s+北区\s?(\S+?)(?:丁目)?(?:\s|$)/);
+    const addr = addrM ? "東京都北区" + addrM[1].replace(/丁目$/, "") : null;
+    const walks = [...seg.matchAll(/徒歩\s?([0-9]+)分/g)].map((m) => Number(m[1]));
+    const land = (seg.match(/土地面積\s+([0-9.]+)\s*m/) ?? [])[1] ?? null;
+    const floor = (seg.match(/建物面積\s+([0-9.]+)\s*m/) ?? [])[1] ?? null;
+    const layout = (seg.match(/間取り\s+([0-9SLDK+]+(?:\([^)]*\))?)/) ?? [])[1] ?? null;
+    const built = (seg.match(/築年月\s+([0-9]{4}年[0-9]{1,2}月)/) ?? [])[1] ?? null;
+    units.push({ nc: "at_" + link[1], media: "athome", url: `https://www.athome.co.jp/kodate/${link[1]}/`, kind,
+      price_man: price, address: addr, walk_min: walks.length ? Math.min(...walks) : null,
+      land_m2: land ? Number(land) : null, floor_m2: floor ? Number(floor) : null, layout, built });
+  }
+  return units;
+}
+
+// 媒体横断の同一物件指紋: 地区丁目|価格|土地面積(公簿は媒体間で一致するのが通常)。
+// 面積が取れない掲載は指紋なし=名寄せ対象外(重複の可能性はレポート側で人が判断)
+function fingerprint(district, chome, price, land) {
+  if (!district || price == null || land == null) return null;
+  return `${district}${chome ?? ""}|${price}|${land}`;
+}
+function unitFingerprint(u, districtOfFn) {
+  const d = districtOfFn(u.address);
+  const chome = (zen(u.address ?? "").match(/北区\D+([0-9]+)/) ?? [])[1] ?? null;
+  return fingerprint(d, chome, u.price_man, u.land_m2);
+}
+
+async function discover(ledgerNcs, ledgerFps) {
   const seen = existsSync(SEEN_PATH) ? JSON.parse(readFileSync(SEEN_PATH, "utf8")) : {};
   const found = [];
   for (const src of LIST_SOURCES) {
     for (let pn = 1; pn <= 8; pn++) {
-      // SUUMOの一覧ページ送りは ?page=N 形式(pnN/形式は404にならず1ページ目が返るため誤判定に注意)
-      const url = pn === 1 ? src.base : `${src.base}?page=${pn}`;
+      // ページ送り: SUUMOは ?page=N、athomeは /list/pageN/(どちらも誤URLは404にならず1ページ目が返るため厳密に)
+      const url = pn === 1 ? src.base
+        : src.media === "suumo" ? `${src.base}?page=${pn}` : `${src.base}page${pn}/`;
       const { html, status, error } = await fetchPage(url);
-      if (error || status !== 200) { errors.push({ where: `discover:${src.kind}:page${pn}`, detail: `http=${status} ${error ?? ""}` }); break; }
-      const units = parseListUnits(html, src.kind);
+      if (error || status !== 200) { errors.push({ where: `discover:${src.media}:${src.kind}:page${pn}`, detail: `http=${status} ${error ?? ""}` }); break; }
+      const units = src.media === "suumo" ? parseSuumoUnits(html, src.kind) : parseAthomeUnits(html, src.kind);
       if (units.length === 0) break;   // 最終ページ超過
       found.push(...units);
-      if (!html.includes(`?page=${pn + 1}`)) break;   // 次ページへのリンクが無ければ最終ページ
+      const nextMark = src.media === "suumo" ? `?page=${pn + 1}` : `/list/page${pn + 1}`;
+      if (!html.includes(nextMark)) break;   // 次ページへのリンクが無ければ最終ページ
     }
   }
-  // 重複統合(同一ncは初出を採用)→ 条件フィルタ
+  const districtOf = (addr) => DISTRICTS.find((d) => zen(String(addr ?? "")).startsWith("東京都北区" + d)) ?? null;
+  // 重複統合: ①同一キー(媒体内) ②媒体横断の指紋一致(LIST_SOURCES順=SUUMO優先で初出を採用)
   const byNc = new Map();
-  for (const u of found) if (!byNc.has(u.nc)) byNc.set(u.nc, u);
-  const districtOf = (addr) => DISTRICTS.find((d) => String(addr ?? "").startsWith("東京都北区" + d)) ?? null;
+  const fpSeen = new Set();
+  for (const u of found) {
+    if (byNc.has(u.nc)) continue;
+    const fp = unitFingerprint(u, districtOf);
+    if (fp && fpSeen.has(fp)) continue;          // 他媒体の同一物件
+    if (fp) fpSeen.add(fp);
+    byNc.set(u.nc, u);
+  }
   const matches = [...byNc.values()].filter((u) =>
     u.price_man !== null && u.price_man >= PRICE_RANGE[0] && u.price_man <= PRICE_RANGE[1] &&
     districtOf(u.address) !== null &&
     u.walk_min !== null && u.walk_min <= WALK_MAX &&
-    !ledgerNcs.has(u.nc));
+    !ledgerNcs.has(u.nc) &&
+    !(unitFingerprint(u, districtOf) && ledgerFps.has(unitFingerprint(u, districtOf))));   // 台帳物件の他媒体掲載
   const today = new Date().toISOString().slice(0, 10);
+  // 既見物件の媒体横断照合用: seen済みエントリの指紋(媒体が違ってもキーが違っても同一物件を再報告しない)
+  const seenFps = new Set(Object.entries(seen).map(([k, v]) =>
+    fingerprint(DISTRICTS.find((d) => zen(String(v.address ?? "")).startsWith("東京都北区" + d)) ?? null,
+      (zen(v.address ?? "").match(/北区\D+([0-9]+)/) ?? [])[1] ?? null, v.price_man, v.land_m2 ?? null)).filter(Boolean));
   const report = [];
   for (const u of matches) {
     const prev = seen[u.nc];
+    const fp = unitFingerprint(u, districtOf);
     if (!prev) {
-      seen[u.nc] = { first_seen: today, price_man: u.price_man, address: u.address, walk_min: u.walk_min, kind: u.kind };
+      if (fp && seenFps.has(fp)) continue;       // 別キーで既見(媒体違いの同一物件)
+      seen[u.nc] = { first_seen: today, price_man: u.price_man, address: u.address, walk_min: u.walk_min, kind: u.kind, media: u.media, land_m2: u.land_m2 };
       report.push({ ...u, district: districtOf(u.address), event: "new" });
     } else if (prev.price_man !== u.price_man) {
       report.push({ ...u, district: districtOf(u.address), event: "price_changed", prev_price_man: prev.price_man, first_seen: prev.first_seen });
@@ -163,9 +220,17 @@ async function discover(ledgerNcs) {
 // ---- main ----
 const mode = process.argv[2] ?? "";
 const ledgerNcs = new Set(listPropertyIds().map((id) => (loadProperty(id).source_url ?? "").match(/nc_[0-9]+/)?.[0]).filter(Boolean));
+// 台帳物件の指紋(他媒体の同一掲載を新着扱いしないため)
+const ledgerFps = new Set(listPropertyIds().map((id) => {
+  const p = loadProperty(id);
+  const ph = [...(p.price_history ?? [])].sort((a, b) => new Date(a.date) - new Date(b.date));
+  const d = DISTRICTS.find((x) => String(p.location?.address ?? "").startsWith("北区" + x)) ?? null;
+  const chome = (zen(p.location?.address ?? "").match(/北区\D+([0-9]+)/) ?? [])[1] ?? null;
+  return fingerprint(d, chome, ph.length ? ph[ph.length - 1].price_man : null, p.land?.registered_m2 ?? null);
+}).filter(Boolean));
 const out = { crawled_at: new Date().toISOString(), watch: [], discover: [], errors };
 if (mode !== "--discover-only") out.watch = await watch();
-if (mode !== "--watch-only") out.discover = (await discover(ledgerNcs)).report;
+if (mode !== "--watch-only") out.discover = (await discover(ledgerNcs, ledgerFps)).report;
 out.summary = {
   price_changes: out.watch.filter((w) => w.status === "price_changed").length,
   delisted_suspects: out.watch.filter((w) => w.status === "delisted_suspect").length,

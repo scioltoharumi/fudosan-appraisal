@@ -362,5 +362,104 @@
   "address": "東京都北区西が丘２",
   "walk_min": 13,
   "kind": "shinchiku"
+ },
+ "at_1017956387": {
+  "first_seen": "2026-08-12",
+  "price_man": 5180,
+  "address": "東京都北区赤羽北1",
+  "walk_min": 1,
+  "kind": "chuko",
+  "media": "athome",
+  "land_m2": 62.25
+ },
+ "at_1133588709": {
+  "first_seen": "2026-08-12",
+  "price_man": 5380,
+  "address": "東京都北区志茂1",
+  "walk_min": 6,
+  "kind": "chuko",
+  "media": "athome",
+  "land_m2": 37.69
+ },
+ "at_6988985269": {
+  "first_seen": "2026-08-12",
+  "price_man": 5700,
+  "address": "東京都北区志茂5",
+  "walk_min": 4,
+  "kind": "chuko",
+  "media": "athome",
+  "land_m2": 54.3
+ },
+ "at_1110292318": {
+  "first_seen": "2026-08-12",
+  "price_man": 6680,
+  "address": "東京都北区上十条1",
+  "walk_min": 3,
+  "kind": "chuko",
+  "media": "athome",
+  "land_m2": 91.5
+ },
+ "at_1176408215": {
+  "first_seen": "2026-08-12",
+  "price_man": 6790,
+  "address": "東京都北区岩淵町",
+  "walk_min": 2,
+  "kind": "chuko",
+  "media": "athome",
+  "land_m2": 56.33
+ },
+ "at_6990281280": {
+  "first_seen": "2026-08-12",
+  "price_man": 7990,
+  "address": "東京都北区中十条4",
+  "walk_min": 4,
+  "kind": "chuko",
+  "media": "athome",
+  "land_m2": 44.71
+ },
+ "at_1164758926": {
+  "first_seen": "2026-08-12",
+  "price_man": 5980,
+  "address": "東京都北区西が丘2",
+  "walk_min": 1,
+  "kind": "shinchiku",
+  "media": "athome",
+  "land_m2": 58.53
+ },
+ "at_1047110386": {
+  "first_seen": "2026-08-12",
+  "price_man": 6080,
+  "address": "東京都北区西が丘2",
+  "walk_min": 6,
+  "kind": "shinchiku",
+  "media": "athome",
+  "land_m2": 58.53
+ },
+ "at_1182428428": {
+  "first_seen": "2026-08-12",
+  "price_man": 6380,
+  "address": "東京都北区岩淵町",
+  "walk_min": 1,
+  "kind": "shinchiku",
+  "media": "athome",
+  "land_m2": 93.58
+ },
+ "at_1110250718": {
+  "first_seen": "2026-08-12",
+  "price_man": 7980,
+  "address": "東京都北区志茂3",
+  "walk_min": 3,
+  "kind": "shinchiku",
+  "media": "athome",
+  "land_m2": 74.07
+ },
+ "at_1013276179": {
+  "first_seen": "2026-08-12",
+  "price_man": 8980,
+  "address": "東京都北区志茂3",
+  "walk_min": 5,
+  "kind": "shinchiku",
+  "media": "athome",
+  "land_m2": 79.72
  }
 }
