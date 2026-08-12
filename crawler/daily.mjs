@@ -5,6 +5,7 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { ROOT, loadProperty, listPropertyIds } from "../engine/io.js";
 
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36";
@@ -15,7 +16,7 @@ const SLEEP_MS = 2200;              // N1: リクエスト間隔2秒以上
 const MAX_PAGES = 60;
 const PRICE_RANGE = [5000, 9000];   // discover対象(万円)
 const WALK_MAX = 20;                // discover徒歩上限(分)
-const DISTRICTS = ["上十条", "中十条", "十条仲原", "岩淵町", "志茂", "神谷", "西が丘", "赤羽", "赤羽北", "赤羽南", "赤羽台", "赤羽西"];
+export const DISTRICTS = ["上十条", "中十条", "十条仲原", "岩淵町", "志茂", "神谷", "西が丘", "赤羽", "赤羽北", "赤羽南", "赤羽台", "赤羽西"];
 // 媒体横断の同一物件は指紋(地区丁目|価格|土地面積)で名寄せする。先頭の媒体を優先採用
 // するため、SUUMO(watch対象と同じ媒体・物件番号で台帳と直結)を先に置く
 const LIST_SOURCES = [
@@ -202,19 +203,53 @@ function parseAthomeUnits(html, kind) {
   return units;
 }
 
-// 媒体横断の同一物件指紋: 地区丁目|価格|土地面積(公簿は媒体間で一致するのが通常)。
+// 媒体横断の同一物件指紋: 地区丁目|価格|土地面積|建物面積。
+// 2026-08-12: 建物面積を追加。新築の複数戸掲載は一覧が開発の代表価格(下限値)を出すため、
+// 価格+土地面積だけだと別戸どうしが同じ指紋になりうる(西が丘2の1号棟/2号棟で顕在化)。
 // 面積が取れない掲載は指紋なし=名寄せ対象外(重複の可能性はレポート側で人が判断)
-function fingerprint(district, chome, price, land) {
+export function fingerprint(district, chome, price, land, floor) {
   if (!district || price == null || land == null) return null;
-  return `${district}${chome ?? ""}|${price}|${land}`;
+  return `${district}${chome ?? ""}|${price}|${land}|${floor ?? "?"}`;
 }
+const chomeOf = (addr) => (zen(addr ?? "").match(/北区\D+([0-9]+)/) ?? [])[1] ?? null;
 function unitFingerprint(u, districtOfFn) {
-  const d = districtOfFn(u.address);
-  const chome = (zen(u.address ?? "").match(/北区\D+([0-9]+)/) ?? [])[1] ?? null;
-  return fingerprint(d, chome, u.price_man, u.land_m2);
+  return fingerprint(districtOfFn(u.address), chomeOf(u.address), u.price_man, u.land_m2, u.floor_m2);
+}
+// 「同一開発の別戸」候補の検出: 地区丁目が同じで、価格か面積のどちらかが一致するのに
+// 指紋は一致しない掲載。重複と誤断して取りこぼす事故(2026-08-12)を防ぐため明示的に旗を立てる
+export function siblingHint(u, districtOfFn, ledgerUnits) {
+  const d = districtOfFn(u.address), c = chomeOf(u.address);
+  if (!d) return null;
+  for (const L of ledgerUnits) {
+    if (L.district !== d || L.chome !== c) continue;
+    const samePrice = L.price_man === u.price_man;
+    const sameLand = L.land_m2 != null && u.land_m2 != null && Math.abs(L.land_m2 - u.land_m2) < 0.02;
+    const sameFloor = L.floor_m2 != null && u.floor_m2 != null && Math.abs(L.floor_m2 - u.floor_m2) < 0.02;
+    if (sameLand && sameFloor) continue;              // 完全一致は同一戸(別で除外済み)
+    const ref = `台帳の ${L.id}(${L.price_man}万・土地${L.land_m2}・建物${L.floor_m2})`;
+    // パターン別に確度を出し分ける。「価格一致・土地不一致」が2026-08-12に取りこぼした型
+    if (samePrice && sameLand) {
+      const d = (u.floor_m2 != null && L.floor_m2 != null) ? (u.floor_m2 - L.floor_m2).toFixed(2) : "?";
+      return `[同一戸の疑い] ${ref}と価格・土地面積が一致し建物面積のみ差${d}m²。` +
+        `媒体間の延床表記差(車庫の算入有無など)の可能性が高い。台帳の面積表記を見直す価値はあるが新規登録は不要な公算`;
+    }
+    if (samePrice && !sameLand) {
+      return `[別戸の可能性・要判断] ${ref}と価格が一致するが土地面積が違う(${L.land_m2}→${u.land_m2})。` +
+        `新築の複数戸掲載は一覧が開発の代表価格を出すため、価格一致は同一戸の根拠にならない。` +
+        `重複と断定せず、掲載元の区画情報で戸を特定して登録要否を判断すること`;
+    }
+    if (sameLand && !samePrice) {
+      return `[別戸または価格改定・要判断] ${ref}と土地面積が一致するが価格が違う(${L.price_man}→${u.price_man}万)。` +
+        `同一開発で区画面積が同じ別戸のことがある(西が丘2のC号棟/D号棟が実例)。掲載元で戸を特定すること`;
+    }
+    if (sameFloor) {
+      return `[別戸の可能性] ${ref}と建物面積が一致するが価格・土地面積が違う。同一プランの別区画の可能性`;
+    }
+  }
+  return null;
 }
 
-async function discover(ledgerNcs, ledgerFps) {
+async function discover(ledgerNcs, ledgerFps, ledgerUnits) {
   const seen = existsSync(SEEN_PATH) ? JSON.parse(readFileSync(SEEN_PATH, "utf8")) : {};
   const found = [];
   let exhausted = false;
@@ -256,15 +291,15 @@ async function discover(ledgerNcs, ledgerFps) {
   // 既見物件の媒体横断照合用: seen済みエントリの指紋(媒体が違ってもキーが違っても同一物件を再報告しない)
   const seenFps = new Set(Object.entries(seen).map(([k, v]) =>
     fingerprint(DISTRICTS.find((d) => zen(String(v.address ?? "")).startsWith("東京都北区" + d)) ?? null,
-      (zen(v.address ?? "").match(/北区\D+([0-9]+)/) ?? [])[1] ?? null, v.price_man, v.land_m2 ?? null)).filter(Boolean));
+      chomeOf(v.address), v.price_man, v.land_m2 ?? null, v.floor_m2 ?? null)).filter(Boolean));
   const report = [];
   for (const u of matches) {
     const prev = seen[u.nc];
     const fp = unitFingerprint(u, districtOf);
     if (!prev) {
       if (fp && seenFps.has(fp)) continue;       // 別キーで既見(媒体違いの同一物件)
-      seen[u.nc] = { first_seen: today, price_man: u.price_man, address: u.address, walk_min: u.walk_min, kind: u.kind, media: u.media, land_m2: u.land_m2 };
-      report.push({ ...u, district: districtOf(u.address), event: "new" });
+      seen[u.nc] = { first_seen: today, price_man: u.price_man, address: u.address, walk_min: u.walk_min, kind: u.kind, media: u.media, land_m2: u.land_m2, floor_m2: u.floor_m2 };
+      report.push({ ...u, district: districtOf(u.address), event: "new", sibling_hint: siblingHint(u, districtOf, ledgerUnits) });
     } else if (prev.price_man !== u.price_man) {
       report.push({ ...u, district: districtOf(u.address), event: "price_changed", prev_price_man: prev.price_man, first_seen: prev.first_seen });
       seen[u.nc].price_man = u.price_man;
@@ -276,6 +311,9 @@ async function discover(ledgerNcs, ledgerFps) {
 }
 
 // ---- main ----
+// import された場合(テスト等)は実行しない。直接起動時のみクロールする
+const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (isMain) {
 const mode = process.argv[2] ?? "";
 const ledgerNcs = new Set(listPropertyIds().flatMap((id) => {
   const u = loadProperty(id).source_url ?? "";
@@ -288,18 +326,29 @@ const ledgerFps = new Set(listPropertyIds().map((id) => {
   const ph = [...(p.price_history ?? [])].sort((a, b) => new Date(a.date) - new Date(b.date));
   const d = DISTRICTS.find((x) => String(p.location?.address ?? "").startsWith("北区" + x)) ?? null;
   const chome = (zen(p.location?.address ?? "").match(/北区\D+([0-9]+)/) ?? [])[1] ?? null;
-  return fingerprint(d, chome, ph.length ? ph[ph.length - 1].price_man : null, p.land?.registered_m2 ?? null);
+  return fingerprint(d, chome, ph.length ? ph[ph.length - 1].price_man : null, p.land?.registered_m2 ?? null, p.building?.floor_m2 ?? null);
 }).filter(Boolean));
+// 台帳物件の要約(別戸判定に使う)
+const ledgerUnits = listPropertyIds().map((id) => {
+  const p = loadProperty(id);
+  const ph = [...(p.price_history ?? [])].sort((a, b) => new Date(a.date) - new Date(b.date));
+  return { id, district: DISTRICTS.find((x) => String(p.location?.address ?? "").startsWith("北区" + x)) ?? null,
+    chome: (zen(p.location?.address ?? "").match(/北区\D+([0-9]+)/) ?? [])[1] ?? null,
+    price_man: ph.length ? ph[ph.length - 1].price_man : null,
+    land_m2: p.land?.registered_m2 ?? null, floor_m2: p.building?.floor_m2 ?? null };
+}).filter((x) => x.district);
 const out = { crawled_at: new Date().toISOString(), watch: [], discover: [], errors };
 if (mode !== "--discover-only") out.watch = await watch();
-if (mode !== "--watch-only") out.discover = (await discover(ledgerNcs, ledgerFps)).report;
+if (mode !== "--watch-only") out.discover = (await discover(ledgerNcs, ledgerFps, ledgerUnits)).report;
 out.summary = {
   price_changes: out.watch.filter((w) => w.status === "price_changed").length,
   delisted_suspects: out.watch.filter((w) => w.status === "delisted_suspect").length,
   new_listings: out.discover.filter((d) => d.event === "new").length,
+  sibling_suspects: out.discover.filter((d) => d.sibling_hint).length,
   discover_price_changes: out.discover.filter((d) => d.event === "price_changed").length,
   errors: errors.length, pages_fetched: fetchCount, page_budget: MAX_PAGES,
   budget_exhausted: fetchCount >= MAX_PAGES,
   watch_skipped: out.watch.filter((w) => w.status === "skipped_budget").length,
 };
 console.log(JSON.stringify(out, null, 1));
+}

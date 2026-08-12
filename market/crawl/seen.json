@@ -461,5 +461,55 @@
   "kind": "shinchiku",
   "media": "athome",
   "land_m2": 79.72
+ },
+ "at_1144376723": {
+  "first_seen": "2026-08-12",
+  "price_man": 5980,
+  "address": "東京都北区西が丘2",
+  "walk_min": 1,
+  "kind": "shinchiku",
+  "media": "athome",
+  "land_m2": 58.53,
+  "floor_m2": 101.58
+ },
+ "at_1144376623": {
+  "first_seen": "2026-08-12",
+  "price_man": 6080,
+  "address": "東京都北区西が丘2",
+  "walk_min": 1,
+  "kind": "shinchiku",
+  "media": "athome",
+  "land_m2": 57.65,
+  "floor_m2": 100.37
+ },
+ "at_1110186218": {
+  "first_seen": "2026-08-12",
+  "price_man": 7680,
+  "address": "東京都北区西が丘2",
+  "walk_min": 3,
+  "kind": "shinchiku",
+  "media": "athome",
+  "land_m2": 60.65,
+  "floor_m2": 106.93
+ },
+ "at_1013276679": {
+  "first_seen": "2026-08-12",
+  "price_man": 7980,
+  "address": "東京都北区志茂3",
+  "walk_min": 5,
+  "kind": "shinchiku",
+  "media": "athome",
+  "land_m2": 74.07,
+  "floor_m2": 104.13
+ },
+ "at_1110250618": {
+  "first_seen": "2026-08-12",
+  "price_man": 8980,
+  "address": "東京都北区志茂3",
+  "walk_min": 3,
+  "kind": "shinchiku",
+  "media": "athome",
+  "land_m2": 79.72,
+  "floor_m2": 114.56
  }
 }
