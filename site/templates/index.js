@@ -99,6 +99,14 @@ function hazardTag(property) {
   return tags.join("");
 }
 
+// 一覧の「登録名」= 表示している物件名。同一丁目に複数物件があるため、
+// unit_label(1号棟/A号棟等)と id を後ろに足して**並びが一意に定まる**ようにする
+// (同名が並ぶとソートのたびに順序が入れ替わって見え、どれを見たか分からなくなる)
+export function nameOf(property, r) {
+  const addr = property.location?.address ?? r.id;
+  return [addr, property.unit_label, r.id].filter(Boolean).join(" ");
+}
+
 export function renderIndex(results, { asOf, cal = null }) {
   // 乖離額の昇順 = 割安順。リテール成立物件は対市場実勢(売主の期待)、
   // 不成立物件は対適正中央値で並べる
@@ -121,7 +129,11 @@ export function renderIndex(results, { asOf, cal = null }) {
     return `<tr class="prow" data-id="${esc(r.id)}" data-seed="${esc(seed)}" data-status="${esc(seed)}" data-sord="${SORDER[seed] ?? 9}"
       data-price="${Math.round(r.state.ask)}" data-market="${r.retail ? Math.round(r.retail.mid) : -1}"
       data-div="${Math.round(divergence(r))}" data-assump="${r.assumptions.length}" data-fair="${Math.round(r.fairFinal.mid)}"
-      data-name="${esc(property.location?.address ?? r.id)}">
+      data-name="${esc(nameOf(property, r))}"
+      data-age="${Number.isFinite(r.state.age) ? r.state.age.toFixed(2) : ""}"
+      data-floor="${property.building?.floor_m2 ?? ""}"
+      data-land="${property.land?.registered_m2 ?? ""}"
+      data-walk="${property.station?.walk_min ?? ""}">
       <td><a href="property/${esc(r.id)}.html">${esc(property.location?.address ?? r.id)}</a>${property.unit_label ? `<span class="unit-tag">${esc(property.unit_label)}</span>` : ""}${hazardTag(property)}<div class="note" style="margin-top:0">${esc(property.layout ?? "—")} / 土地${esc(property.land?.registered_m2)}m²・延床${esc(property.building?.floor_m2)}m² / ${r.isNewBuild ? `完成${esc(fmtDate(property.building?.built)).slice(0, 7)}` : `築${r.state.age.toFixed(1)}年`} / 徒歩${esc(property.station?.walk_min)}分${safeUrl(property.source_url) ? ` / <a href="${esc(property.source_url)}" target="_blank" rel="noopener noreferrer">掲載元↗</a>` : ""}</div></td>
       <td><select class="stsel" aria-label="${esc(property.location?.address ?? r.id)}のステータス">${opts}</select><span class="unsync" title="台帳(リポジトリ)の値と違います。書き出して反映してください">未同期</span></td>
       <td class="num">${fmtMan(r.state.ask)}<div class="note" style="margin-top:0">${esc(priceDate)}時点${reviseNote}</div></td>
@@ -145,6 +157,17 @@ export function renderIndex(results, { asOf, cal = null }) {
       <button class="chip" data-f="memo" data-val="1" style="margin-left:10px">メモあり</button>
       <button class="chip" id="freset" style="margin-left:10px">リセット</button>
       <span class="note" id="fcount" style="margin:0 0 0 6px"></span>
+    </div>
+    <div class="filterbar" id="sortbar">
+      <span class="flabel">並び替え</span>
+      <button class="chip" data-s="name">登録名</button>
+      <button class="chip" data-s="age" data-num="1">築年数</button>
+      <button class="chip" data-s="floor" data-num="1">延床</button>
+      <button class="chip" data-s="land" data-num="1">土地</button>
+      <button class="chip" data-s="walk" data-num="1">徒歩分</button>
+      <button class="chip" data-s="price" data-num="1">売出価格</button>
+      <button class="chip" data-s="div" data-num="1">乖離</button>
+      <span class="note" style="margin:0 0 0 6px">同じ項目をもう一度押すと昇順↔降順が入れ替わります</span>
     </div>
     <div class="syncbar">
       <span class="flabel">記録の同期</span>
@@ -276,25 +299,48 @@ export function renderIndex(results, { asOf, cal = null }) {
       });
       document.getElementById("freset").addEventListener("click", function(){
         active.status.clear(); active.memo.clear();
-        document.querySelectorAll(".chip.on").forEach(function(c){ c.classList.remove("on"); });
+        // 絞り込みのチップだけを解除する。並び替えバーも .chip を使っているため、
+        // セレクタを [data-f] に限定しないとリセットで現在の並び順の表示まで消える
+        document.querySelectorAll(".chip[data-f].on").forEach(function(c){ c.classList.remove("on"); });
         apply();
       });
 
       // ---- ソート(メモ行は必ず対応する物件行の直後へ動かす) ----
+      // ヘッダのクリックと「並び替え」バーのどちらからも同じ関数を呼ぶ。
+      // 数値キーは空文字(データなし)を常に末尾へ送る ── 徒歩分や延床が未記入の物件が
+      // 昇順の先頭に来ると「徒歩0分の物件がある」ように見えてしまうため
       var dir = {};
-      document.querySelectorAll("th.sortable").forEach(function(th){
-        th.addEventListener("click", function(){
-          var k = th.dataset.key, num = !!th.dataset.num;
-          dir[k] = -(dir[k] || -1);   // 初回クリックは昇順
-          prows.sort(function(a, b){
-            var av = a.dataset[k], bv = b.dataset[k];
-            var c = num ? (Number(av) - Number(bv)) : String(av).localeCompare(String(bv), "ja");
-            return c * dir[k];
-          });
-          prows.forEach(function(tr){ tbody.appendChild(tr); tbody.appendChild(mrowOf[tr.dataset.id]); });
-          document.querySelectorAll("th.sortable .arw").forEach(function(s){ s.textContent = "↕"; });
-          th.querySelector(".arw").textContent = dir[k] > 0 ? "↑" : "↓";
+      function sortBy(k, num){
+        dir[k] = -(dir[k] || -1);   // 初回クリックは昇順
+        var d = dir[k];
+        prows.sort(function(a, b){
+          var av = a.dataset[k], bv = b.dataset[k];
+          if (num) {
+            var ae = (av === "" || av == null || isNaN(Number(av))), be = (bv === "" || bv == null || isNaN(Number(bv)));
+            if (ae && be) return 0;
+            if (ae) return 1;        // 欠測は方向によらず末尾
+            if (be) return -1;
+            return (Number(av) - Number(bv)) * d;
+          }
+          return String(av).localeCompare(String(bv), "ja") * d;
         });
+        prows.forEach(function(tr){ tbody.appendChild(tr); tbody.appendChild(mrowOf[tr.dataset.id]); });
+        // 現在の並び順の表示: ヘッダの矢印と、並び替えバーの選択状態を同時に更新する
+        document.querySelectorAll("th.sortable .arw").forEach(function(s){ s.textContent = "↕"; });
+        var th = document.querySelector('th.sortable[data-key="' + k + '"]');
+        if (th) th.querySelector(".arw").textContent = d > 0 ? "↑" : "↓";
+        document.querySelectorAll("#sortbar .chip").forEach(function(c){
+          var on = c.dataset.s === k;
+          c.classList.toggle("on", on);
+          c.dataset.dir = on ? (d > 0 ? "asc" : "desc") : "";
+          c.textContent = c.textContent.replace(/[ ↑↓]+$/, "") + (on ? (d > 0 ? " ↑" : " ↓") : "");
+        });
+      }
+      document.querySelectorAll("th.sortable").forEach(function(th){
+        th.addEventListener("click", function(){ sortBy(th.dataset.key, !!th.dataset.num); });
+      });
+      document.querySelectorAll("#sortbar .chip").forEach(function(c){
+        c.addEventListener("click", function(){ sortBy(c.dataset.s, !!c.dataset.num); });
       });
 
       // ---- 書き出し / 読み込み ----

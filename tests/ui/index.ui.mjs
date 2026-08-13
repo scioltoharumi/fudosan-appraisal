@@ -106,7 +106,61 @@ await T("この端末の記録を消せる", async () => {
   const seed = await r.getAttribute("data-seed");
   return (await r.locator(".stsel").inputValue()) === seed && !(await r.evaluate((e) => e.classList.contains("dirty")));
 });
-// 11. 物件ページに判定スタンプが無い
+// 11〜16. 並び替え(2026-08-13追加: 登録名の昇順降順 + 築年数/延床/土地/徒歩分)
+const vals = async (key) => p.$$eval("tr.prow", (rs, k) => rs.map((r) => r.dataset[k]), key);
+const isAsc = (a) => a.every((v, i) => i === 0 || a[i - 1] <= v);
+const numsOf = (a) => a.filter((v) => v !== "" && v != null).map(Number);
+
+await T("並び替えバーが7項目ある(登録名・築年数・延床・土地・徒歩分・売出価格・乖離)", async () => {
+  const labels = await p.$$eval("#sortbar .chip", (cs) => cs.map((c) => c.dataset.s));
+  return ["name", "age", "floor", "land", "walk", "price", "div"].every((k) => labels.includes(k));
+});
+
+await T("登録名: 1回目のクリックで昇順、2回目で降順になる", async () => {
+  await p.click('#sortbar .chip[data-s="name"]');
+  const asc = await vals("name");
+  const okAsc = asc.every((v, i) => i === 0 || asc[i - 1].localeCompare(v, "ja") <= 0);
+  await p.click('#sortbar .chip[data-s="name"]');
+  const desc = await vals("name");
+  const okDesc = desc.every((v, i) => i === 0 || desc[i - 1].localeCompare(v, "ja") >= 0);
+  return okAsc && okDesc && asc.length === desc.length && asc[0] === desc[desc.length - 1];
+});
+
+for (const [key, label] of [["age", "築年数"], ["floor", "延床"], ["land", "土地"], ["walk", "徒歩分"]]) {
+  await T(`${label}順: 昇順・降順とも数値順に並ぶ`, async () => {
+    await p.click(`#sortbar .chip[data-s="${key}"]`);
+    const a = numsOf(await vals(key));
+    const okA = a.every((v, i) => i === 0 || a[i - 1] <= v);
+    await p.click(`#sortbar .chip[data-s="${key}"]`);
+    const d = numsOf(await vals(key));
+    const okD = d.every((v, i) => i === 0 || d[i - 1] >= v);
+    return a.length > 1 && okA && okD;
+  });
+}
+
+await T("並び替えてもメモ行が対応する物件行の直後に付いてくる", async () => {
+  await p.click('#sortbar .chip[data-s="walk"]');
+  return p.$$eval("#ptable tr", (rs) => {
+    const list = rs.filter((r) => r.classList.contains("prow") || r.classList.contains("mrow"));
+    for (let i = 0; i < list.length; i += 2) {
+      if (!list[i].classList.contains("prow") || !list[i + 1] || !list[i + 1].classList.contains("mrow")) return false;
+      if (list[i].dataset.id !== list[i + 1].dataset.id) return false;
+    }
+    return true;
+  });
+});
+
+await T("現在の並び順が表示される(選択中のチップに矢印、ヘッダにも同期)", async () => {
+  await p.click('#sortbar .chip[data-s="age"]');
+  const chip = await p.textContent('#sortbar .chip[data-s="age"]');
+  const on = await p.locator('#sortbar .chip[data-s="age"].on').count();
+  // 絞り込みの「リセット」を押しても並び順の表示は消えない(セレクタが .chip[data-f] に限定されている)
+  await p.click("#freset");
+  const still = await p.locator('#sortbar .chip[data-s="age"].on').count();
+  return on === 1 && /[↑↓]/.test(chip) && still === 1;
+});
+
+// 17. 物件ページに判定スタンプが無い
 await T("物件ページに判定スタンプが無い", async () => {
   await p.goto(pathToFileURL("/home/user/fudosan-appraisal/site/dist/property/" + id + ".html").href);
   const t = await p.textContent("body");
