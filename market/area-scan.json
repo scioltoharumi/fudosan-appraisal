@@ -1,0 +1,10459 @@
+{
+ "_readme": "探索エリア候補の機械スクリーニング。再生成: node crawler/area-scan.mjs / verdict は clear=近傍25点ハザードなし partial=丁目内に混在(番地次第) caution=イエローあり exclude=面的な深い浸水 / keihin_walk_min は代表点からの直線距離×迂回率1.25÷80mの近似(掲載の徒歩分とは±2分ずれうる)",
+ "generated_at": "2026-08-13",
+ "source": "国土地理院ハザードマップポータル / 国土地理院 標高タイル / 国土地理院 住所検索API / 駅座標: OpenStreetMap",
+ "triangle": [
+  {
+   "name": "赤羽",
+   "lat": 35.77814,
+   "lon": 139.7208
+  },
+  {
+   "name": "王子",
+   "lat": 35.75235,
+   "lon": 139.73827
+  },
+  {
+   "name": "板橋",
+   "lat": 35.74527,
+   "lon": 139.71944
+  }
+ ],
+ "detour": 1.25,
+ "grid": "代表点±200mの5×5=25点",
+ "stations": [
+  {
+   "name": "赤羽",
+   "line": "京浜東北/埼京/湘南新宿",
+   "lat": 35.77814,
+   "lon": 139.7208,
+   "keihin": true
+  },
+  {
+   "name": "東十条",
+   "line": "京浜東北",
+   "lat": 35.76385,
+   "lon": 139.72687,
+   "keihin": true
+  },
+  {
+   "name": "王子",
+   "line": "京浜東北/南北",
+   "lat": 35.75235,
+   "lon": 139.73827,
+   "keihin": true
+  },
+  {
+   "name": "十条",
+   "line": "埼京",
+   "lat": 35.76001,
+   "lon": 139.72231
+  },
+  {
+   "name": "板橋",
+   "line": "埼京",
+   "lat": 35.74527,
+   "lon": 139.71944
+  },
+  {
+   "name": "上中里",
+   "line": "京浜東北",
+   "lat": 35.74658,
+   "lon": 139.74698,
+   "keihin": true
+  },
+  {
+   "name": "北赤羽",
+   "line": "埼京",
+   "lat": 35.78678,
+   "lon": 139.70603
+  },
+  {
+   "name": "赤羽岩淵",
+   "line": "南北",
+   "lat": 35.78345,
+   "lon": 139.7221
+  },
+  {
+   "name": "志茂",
+   "line": "南北",
+   "lat": 35.7779,
+   "lon": 139.73253
+  },
+  {
+   "name": "王子神谷",
+   "line": "南北",
+   "lat": 35.76506,
+   "lon": 139.73572
+  },
+  {
+   "name": "西ケ原",
+   "line": "南北",
+   "lat": 35.74605,
+   "lon": 139.74217
+  },
+  {
+   "name": "本蓮沼",
+   "line": "三田",
+   "lat": 35.76852,
+   "lon": 139.70244
+  },
+  {
+   "name": "板橋本町",
+   "line": "三田",
+   "lat": 35.76143,
+   "lon": 139.70552
+  },
+  {
+   "name": "新板橋",
+   "line": "三田",
+   "lat": 35.7488,
+   "lon": 139.7199
+  },
+  {
+   "name": "板橋区役所前",
+   "line": "三田",
+   "lat": 35.75135,
+   "lon": 139.71004
+  },
+  {
+   "name": "西巣鴨",
+   "line": "三田",
+   "lat": 35.74355,
+   "lon": 139.7287
+  },
+  {
+   "name": "下板橋",
+   "line": "東上",
+   "lat": 35.74525,
+   "lon": 139.71548
+  },
+  {
+   "name": "大山",
+   "line": "東上",
+   "lat": 35.74862,
+   "lon": 139.70243
+  }
+ ],
+ "rows": [
+  {
+   "ward": "北区",
+   "town": "赤羽",
+   "chome": 1,
+   "address": "東京都北区赤羽1丁目",
+   "lat": 35.78074,
+   "lon": 139.72061,
+   "matched": "東京都北区赤羽一丁目",
+   "elev_center_m": 4.5,
+   "elev_min_m": 3.3,
+   "elev_max_m": 19.9,
+   "flood_center": "0.5〜3.0m",
+   "flood_worst": "3.0〜5.0m",
+   "flood_worst_max_m": 5,
+   "flood_coverage": 0.92,
+   "flood_hist": {
+    "0.5〜3.0m": 12,
+    "3.0〜5.0m": 10,
+    "0.5m未満": 1
+   },
+   "flood_deep_pts": 10,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 1,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "標高4.5mの低地で代表点が浸水想定0.5〜3.0mに該当",
+    "土砂災害警戒区域(イエロー)が近傍1点",
+    "近傍の高低差17m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "赤羽",
+   "keihin_walk_min": 5,
+   "keihin_m": 289,
+   "nearest": {
+    "name": "赤羽",
+    "line": "京浜東北/埼京/湘南新宿",
+    "keihin": true,
+    "min": 5,
+    "m": 289
+   },
+   "walks": [
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 5,
+     "m": 289
+    },
+    {
+     "name": "赤羽岩淵",
+     "line": "南北",
+     "keihin": false,
+     "min": 6,
+     "m": 330
+    },
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 18,
+     "m": 1121
+    },
+    {
+     "name": "北赤羽",
+     "line": "埼京",
+     "keihin": false,
+     "min": 24,
+     "m": 1477
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 31,
+     "m": 1961
+    }
+   ],
+   "deals_n": 22,
+   "has_benchmark": true,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "赤羽",
+   "chome": 2,
+   "address": "東京都北区赤羽2丁目",
+   "lat": 35.77987,
+   "lon": 139.72449,
+   "matched": "東京都北区赤羽二丁目",
+   "elev_center_m": 3.3,
+   "elev_min_m": 3,
+   "elev_max_m": 4.9,
+   "flood_center": "3.0〜5.0m",
+   "flood_worst": "3.0〜5.0m",
+   "flood_worst_max_m": 5,
+   "flood_coverage": 1,
+   "flood_hist": {
+    "0.5〜3.0m": 4,
+    "3.0〜5.0m": 21
+   },
+   "flood_deep_pts": 21,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "浸水想定(想定最大規模)3.0〜5.0m。標高3.3mで近傍25点中21点が3m超"
+   ],
+   "in_triangle": false,
+   "keihin_station": "赤羽",
+   "keihin_walk_min": 6,
+   "keihin_m": 384,
+   "nearest": {
+    "name": "赤羽",
+    "line": "京浜東北/埼京/湘南新宿",
+    "keihin": true,
+    "min": 6,
+    "m": 384
+   },
+   "walks": [
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 6,
+     "m": 384
+    },
+    {
+     "name": "赤羽岩淵",
+     "line": "南北",
+     "keihin": false,
+     "min": 8,
+     "m": 453
+    },
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 12,
+     "m": 758
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 29,
+     "m": 1794
+    },
+    {
+     "name": "北赤羽",
+     "line": "埼京",
+     "keihin": false,
+     "min": 29,
+     "m": 1834
+    }
+   ],
+   "deals_n": 22,
+   "has_benchmark": true,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "赤羽",
+   "chome": 3,
+   "address": "東京都北区赤羽3丁目",
+   "lat": 35.78675,
+   "lon": 139.71831,
+   "matched": "東京都北区赤羽三丁目",
+   "elev_center_m": 3,
+   "elev_min_m": 2.6,
+   "elev_max_m": 19.8,
+   "flood_center": "5.0〜10.0m",
+   "flood_worst": "5.0〜10.0m",
+   "flood_worst_max_m": 10,
+   "flood_coverage": 0.76,
+   "flood_hist": {
+    "3.0〜5.0m": 12,
+    "0.5〜3.0m": 1,
+    "5.0〜10.0m": 6
+   },
+   "flood_deep_pts": 18,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 1,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "浸水想定(想定最大規模)5.0〜10.0m。標高3mで近傍25点中18点が3m超",
+    "土砂災害警戒区域(イエロー)が近傍1点",
+    "近傍の高低差17m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "赤羽",
+   "keihin_walk_min": 16,
+   "keihin_m": 984,
+   "nearest": {
+    "name": "赤羽岩淵",
+    "line": "南北",
+    "keihin": false,
+    "min": 8,
+    "m": 502
+   },
+   "walks": [
+    {
+     "name": "赤羽岩淵",
+     "line": "南北",
+     "keihin": false,
+     "min": 8,
+     "m": 502
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 16,
+     "m": 984
+    },
+    {
+     "name": "北赤羽",
+     "line": "埼京",
+     "keihin": false,
+     "min": 18,
+     "m": 1107
+    },
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 26,
+     "m": 1617
+    },
+    {
+     "name": "本蓮沼",
+     "line": "三田",
+     "keihin": false,
+     "min": 39,
+     "m": 2482
+    }
+   ],
+   "deals_n": 22,
+   "has_benchmark": true,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "赤羽台",
+   "chome": 1,
+   "address": "東京都北区赤羽台1丁目",
+   "lat": 35.77877,
+   "lon": 139.71614,
+   "matched": "東京都北区赤羽台一丁目",
+   "elev_center_m": 20.6,
+   "elev_min_m": 6.3,
+   "elev_max_m": 21.9,
+   "flood_center": null,
+   "flood_worst": "0.5〜3.0m",
+   "flood_worst_max_m": 3,
+   "flood_coverage": 0.12,
+   "flood_hist": {
+    "0.5m未満": 1,
+    "0.5〜3.0m": 2
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 1,
+   "sampled": 25,
+   "verdict": "caution",
+   "notes": [
+    "浸水想定0.5〜3.0mが近傍25点中2点",
+    "土砂災害警戒区域(イエロー)が近傍1点",
+    "近傍の高低差16m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "赤羽",
+   "keihin_walk_min": 7,
+   "keihin_m": 426,
+   "nearest": {
+    "name": "赤羽",
+    "line": "京浜東北/埼京/湘南新宿",
+    "keihin": true,
+    "min": 7,
+    "m": 426
+   },
+   "walks": [
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 7,
+     "m": 426
+    },
+    {
+     "name": "赤羽岩淵",
+     "line": "南北",
+     "keihin": false,
+     "min": 12,
+     "m": 748
+    },
+    {
+     "name": "北赤羽",
+     "line": "埼京",
+     "keihin": false,
+     "min": 20,
+     "m": 1275
+    },
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 24,
+     "m": 1482
+    },
+    {
+     "name": "本蓮沼",
+     "line": "三田",
+     "keihin": false,
+     "min": 27,
+     "m": 1681
+    }
+   ],
+   "deals_n": 30,
+   "has_benchmark": true,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "赤羽台",
+   "chome": 2,
+   "address": "東京都北区赤羽台2丁目",
+   "lat": 35.77629,
+   "lon": 139.71353,
+   "matched": "東京都北区赤羽台二丁目",
+   "elev_center_m": 21.8,
+   "elev_min_m": 7.6,
+   "elev_max_m": 22.8,
+   "flood_center": null,
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.04,
+   "flood_hist": {
+    "0.5m未満": 1
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 2,
+   "sampled": 25,
+   "verdict": "caution",
+   "notes": [
+    "土砂災害警戒区域(イエロー)が近傍2点",
+    "近傍の高低差15m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "赤羽",
+   "keihin_walk_min": 11,
+   "keihin_m": 687,
+   "nearest": {
+    "name": "赤羽",
+    "line": "京浜東北/埼京/湘南新宿",
+    "keihin": true,
+    "min": 11,
+    "m": 687
+   },
+   "walks": [
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 11,
+     "m": 687
+    },
+    {
+     "name": "赤羽岩淵",
+     "line": "南北",
+     "keihin": false,
+     "min": 18,
+     "m": 1110
+    },
+    {
+     "name": "本蓮沼",
+     "line": "三田",
+     "keihin": false,
+     "min": 21,
+     "m": 1322
+    },
+    {
+     "name": "北赤羽",
+     "line": "埼京",
+     "keihin": false,
+     "min": 22,
+     "m": 1348
+    },
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 27,
+     "m": 1723
+    }
+   ],
+   "deals_n": 30,
+   "has_benchmark": true,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "赤羽台",
+   "chome": 3,
+   "address": "東京都北区赤羽台3丁目",
+   "lat": 35.78173,
+   "lon": 139.71425,
+   "matched": "東京都北区赤羽台三丁目",
+   "elev_center_m": 6.1,
+   "elev_min_m": 4.4,
+   "elev_max_m": 20.1,
+   "flood_center": "0.5〜3.0m",
+   "flood_worst": "3.0〜5.0m",
+   "flood_worst_max_m": 5,
+   "flood_coverage": 0.32,
+   "flood_hist": {
+    "0.5m未満": 4,
+    "0.5〜3.0m": 3,
+    "3.0〜5.0m": 1
+   },
+   "flood_deep_pts": 1,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 1,
+   "sampled": 25,
+   "verdict": "edge",
+   "notes": [
+    "丁目の縁が低地に掛かる(近傍25点中1点が3m超の浸水想定・標高4.4〜20.1m)",
+    "土砂災害警戒区域(イエロー)が近傍1点",
+    "近傍の高低差16m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "赤羽",
+   "keihin_walk_min": 12,
+   "keihin_m": 713,
+   "nearest": {
+    "name": "赤羽",
+    "line": "京浜東北/埼京/湘南新宿",
+    "keihin": true,
+    "min": 12,
+    "m": 713
+   },
+   "walks": [
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 12,
+     "m": 713
+    },
+    {
+     "name": "赤羽岩淵",
+     "line": "南北",
+     "keihin": false,
+     "min": 12,
+     "m": 734
+    },
+    {
+     "name": "北赤羽",
+     "line": "埼京",
+     "keihin": false,
+     "min": 15,
+     "m": 930
+    },
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 27,
+     "m": 1703
+    },
+    {
+     "name": "本蓮沼",
+     "line": "三田",
+     "keihin": false,
+     "min": 29,
+     "m": 1814
+    }
+   ],
+   "deals_n": 30,
+   "has_benchmark": true,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "赤羽台",
+   "chome": 4,
+   "address": "東京都北区赤羽台4丁目",
+   "lat": 35.78428,
+   "lon": 139.71327,
+   "matched": "東京都北区赤羽台四丁目",
+   "elev_center_m": 20.1,
+   "elev_min_m": 3.6,
+   "elev_max_m": 20.6,
+   "flood_center": null,
+   "flood_worst": "3.0〜5.0m",
+   "flood_worst_max_m": 5,
+   "flood_coverage": 0.48,
+   "flood_hist": {
+    "0.5m未満": 4,
+    "0.5〜3.0m": 6,
+    "3.0〜5.0m": 2
+   },
+   "flood_deep_pts": 2,
+   "dosha_center": null,
+   "dosha_red_pts": 1,
+   "dosha_yellow_pts": 1,
+   "sampled": 25,
+   "verdict": "edge",
+   "notes": [
+    "丁目の縁が低地に掛かる(近傍25点中2点が3m超の浸水想定・標高3.6〜20.6m)",
+    "土砂災害特別警戒区域(レッド)が近傍1点",
+    "近傍の高低差17m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "赤羽",
+   "keihin_walk_min": 16,
+   "keihin_m": 963,
+   "nearest": {
+    "name": "北赤羽",
+    "line": "埼京",
+    "keihin": false,
+    "min": 12,
+    "m": 710
+   },
+   "walks": [
+    {
+     "name": "北赤羽",
+     "line": "埼京",
+     "keihin": false,
+     "min": 12,
+     "m": 710
+    },
+    {
+     "name": "赤羽岩淵",
+     "line": "南北",
+     "keihin": false,
+     "min": 13,
+     "m": 802
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 16,
+     "m": 963
+    },
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 30,
+     "m": 1876
+    },
+    {
+     "name": "本蓮沼",
+     "line": "三田",
+     "keihin": false,
+     "min": 32,
+     "m": 2006
+    }
+   ],
+   "deals_n": 30,
+   "has_benchmark": true,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "赤羽西",
+   "chome": 1,
+   "address": "東京都北区赤羽西1丁目",
+   "lat": 35.77673,
+   "lon": 139.71912,
+   "matched": "東京都北区赤羽西一丁目",
+   "elev_center_m": 11.6,
+   "elev_min_m": 4.8,
+   "elev_max_m": 20.4,
+   "flood_center": null,
+   "flood_worst": "0.5〜3.0m",
+   "flood_worst_max_m": 3,
+   "flood_coverage": 0.6,
+   "flood_hist": {
+    "0.5m未満": 2,
+    "0.5〜3.0m": 13
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 1,
+   "sampled": 25,
+   "verdict": "caution",
+   "notes": [
+    "浸水想定0.5〜3.0mが近傍25点中13点",
+    "土砂災害警戒区域(イエロー)が近傍1点",
+    "近傍の高低差16m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "赤羽",
+   "keihin_walk_min": 4,
+   "keihin_m": 218,
+   "nearest": {
+    "name": "赤羽",
+    "line": "京浜東北/埼京/湘南新宿",
+    "keihin": true,
+    "min": 4,
+    "m": 218
+   },
+   "walks": [
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 4,
+     "m": 218
+    },
+    {
+     "name": "赤羽岩淵",
+     "line": "南北",
+     "keihin": false,
+     "min": 13,
+     "m": 794
+    },
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 20,
+     "m": 1217
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 25,
+     "m": 1594
+    },
+    {
+     "name": "北赤羽",
+     "line": "埼京",
+     "keihin": false,
+     "min": 26,
+     "m": 1625
+    }
+   ],
+   "deals_n": 76,
+   "has_benchmark": true,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "赤羽西",
+   "chome": 2,
+   "address": "東京都北区赤羽西2丁目",
+   "lat": 35.77301,
+   "lon": 139.71985,
+   "matched": "東京都北区赤羽西二丁目",
+   "elev_center_m": 8.4,
+   "elev_min_m": 5.8,
+   "elev_max_m": 22.7,
+   "flood_center": "0.5m未満",
+   "flood_worst": "0.5〜3.0m",
+   "flood_worst_max_m": 3,
+   "flood_coverage": 0.36,
+   "flood_hist": {
+    "0.5〜3.0m": 6,
+    "0.5m未満": 3
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 1,
+   "sampled": 25,
+   "verdict": "caution",
+   "notes": [
+    "浸水想定0.5〜3.0mが近傍25点中6点",
+    "土砂災害警戒区域(イエロー)が近傍1点",
+    "近傍の高低差17m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "赤羽",
+   "keihin_walk_min": 10,
+   "keihin_m": 576,
+   "nearest": {
+    "name": "赤羽",
+    "line": "京浜東北/埼京/湘南新宿",
+    "keihin": true,
+    "min": 10,
+    "m": 576
+   },
+   "walks": [
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 10,
+     "m": 576
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 19,
+     "m": 1200
+    },
+    {
+     "name": "赤羽岩淵",
+     "line": "南北",
+     "keihin": false,
+     "min": 19,
+     "m": 1178
+    },
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 20,
+     "m": 1266
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 23,
+     "m": 1463
+    }
+   ],
+   "deals_n": 76,
+   "has_benchmark": true,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "赤羽西",
+   "chome": 3,
+   "address": "東京都北区赤羽西3丁目",
+   "lat": 35.77023,
+   "lon": 139.71875,
+   "matched": "東京都北区赤羽西三丁目",
+   "elev_center_m": 10.8,
+   "elev_min_m": 7,
+   "elev_max_m": 23.1,
+   "flood_center": null,
+   "flood_worst": "0.5〜3.0m",
+   "flood_worst_max_m": 3,
+   "flood_coverage": 0.32,
+   "flood_hist": {
+    "0.5m未満": 6,
+    "0.5〜3.0m": 2
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": "yellow",
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 3,
+   "sampled": 25,
+   "verdict": "caution",
+   "notes": [
+    "浸水想定0.5〜3.0mが近傍25点中2点",
+    "土砂災害警戒区域(イエロー)が近傍3点",
+    "近傍の高低差16m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "赤羽",
+   "keihin_walk_min": 15,
+   "keihin_m": 898,
+   "nearest": {
+    "name": "赤羽",
+    "line": "京浜東北/埼京/湘南新宿",
+    "keihin": true,
+    "min": 15,
+    "m": 898
+   },
+   "walks": [
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 15,
+     "m": 898
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 16,
+     "m": 1020
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 19,
+     "m": 1181
+    },
+    {
+     "name": "赤羽岩淵",
+     "line": "南北",
+     "keihin": false,
+     "min": 24,
+     "m": 1500
+    },
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 24,
+     "m": 1507
+    }
+   ],
+   "deals_n": 76,
+   "has_benchmark": true,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "赤羽西",
+   "chome": 4,
+   "address": "東京都北区赤羽西4丁目",
+   "lat": 35.77358,
+   "lon": 139.71567,
+   "matched": "東京都北区赤羽西四丁目",
+   "elev_center_m": 20.6,
+   "elev_min_m": 7.5,
+   "elev_max_m": 22.8,
+   "flood_center": "0.5m未満",
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.16,
+   "flood_hist": {
+    "0.5m未満": 4
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 1,
+   "sampled": 25,
+   "verdict": "caution",
+   "notes": [
+    "土砂災害警戒区域(イエロー)が近傍1点",
+    "近傍の高低差15m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "赤羽",
+   "keihin_walk_min": 11,
+   "keihin_m": 687,
+   "nearest": {
+    "name": "赤羽",
+    "line": "京浜東北/埼京/湘南新宿",
+    "keihin": true,
+    "min": 11,
+    "m": 687
+   },
+   "walks": [
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 11,
+     "m": 687
+    },
+    {
+     "name": "赤羽岩淵",
+     "line": "南北",
+     "keihin": false,
+     "min": 20,
+     "m": 1242
+    },
+    {
+     "name": "本蓮沼",
+     "line": "三田",
+     "keihin": false,
+     "min": 21,
+     "m": 1319
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 24,
+     "m": 1480
+    },
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 25,
+     "m": 1595
+    }
+   ],
+   "deals_n": 76,
+   "has_benchmark": true,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "赤羽西",
+   "chome": 5,
+   "address": "東京都北区赤羽西5丁目",
+   "lat": 35.77338,
+   "lon": 139.71054,
+   "matched": "東京都北区赤羽西五丁目",
+   "elev_center_m": 20.7,
+   "elev_min_m": 11.5,
+   "elev_max_m": 24.1,
+   "flood_center": null,
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.08,
+   "flood_hist": {
+    "0.5m未満": 2
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 1,
+   "dosha_yellow_pts": 1,
+   "sampled": 25,
+   "verdict": "edge",
+   "notes": [
+    "土砂災害特別警戒区域(レッド)が近傍1点",
+    "近傍の高低差13m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "赤羽",
+   "keihin_walk_min": 17,
+   "keihin_m": 1066,
+   "nearest": {
+    "name": "本蓮沼",
+    "line": "三田",
+    "keihin": false,
+    "min": 15,
+    "m": 909
+   },
+   "walks": [
+    {
+     "name": "本蓮沼",
+     "line": "三田",
+     "keihin": false,
+     "min": 15,
+     "m": 909
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 17,
+     "m": 1066
+    },
+    {
+     "name": "板橋本町",
+     "line": "三田",
+     "keihin": false,
+     "min": 22,
+     "m": 1404
+    },
+    {
+     "name": "赤羽岩淵",
+     "line": "南北",
+     "keihin": false,
+     "min": 24,
+     "m": 1530
+    },
+    {
+     "name": "北赤羽",
+     "line": "埼京",
+     "keihin": false,
+     "min": 25,
+     "m": 1545
+    }
+   ],
+   "deals_n": 76,
+   "has_benchmark": true,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "赤羽西",
+   "chome": 6,
+   "address": "東京都北区赤羽西6丁目",
+   "lat": 35.77251,
+   "lon": 139.70677,
+   "matched": "東京都北区赤羽西六丁目",
+   "elev_center_m": 23.2,
+   "elev_min_m": 16.6,
+   "elev_max_m": 24.5,
+   "flood_center": null,
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.08,
+   "flood_hist": {
+    "0.5m未満": 2
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "clear",
+   "notes": [
+    "0.5m未満の着色は近傍2点にあるが、台地上では通常出るため除外理由にしない"
+   ],
+   "in_triangle": false,
+   "keihin_station": "赤羽",
+   "keihin_walk_min": 23,
+   "keihin_m": 1412,
+   "nearest": {
+    "name": "本蓮沼",
+    "line": "三田",
+    "keihin": false,
+    "min": 10,
+    "m": 592
+   },
+   "walks": [
+    {
+     "name": "本蓮沼",
+     "line": "三田",
+     "keihin": false,
+     "min": 10,
+     "m": 592
+    },
+    {
+     "name": "板橋本町",
+     "line": "三田",
+     "keihin": false,
+     "min": 20,
+     "m": 1238
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 23,
+     "m": 1412
+    },
+    {
+     "name": "北赤羽",
+     "line": "埼京",
+     "keihin": false,
+     "min": 25,
+     "m": 1588
+    },
+    {
+     "name": "赤羽岩淵",
+     "line": "南北",
+     "keihin": false,
+     "min": 29,
+     "m": 1841
+    }
+   ],
+   "deals_n": 76,
+   "has_benchmark": true,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "赤羽南",
+   "chome": 1,
+   "address": "東京都北区赤羽南1丁目",
+   "lat": 35.77647,
+   "lon": 139.7238,
+   "matched": "東京都北区赤羽南一丁目",
+   "elev_center_m": 4.6,
+   "elev_min_m": 3,
+   "elev_max_m": 6.3,
+   "flood_center": "0.5〜3.0m",
+   "flood_worst": "3.0〜5.0m",
+   "flood_worst_max_m": 5,
+   "flood_coverage": 1,
+   "flood_hist": {
+    "0.5〜3.0m": 14,
+    "3.0〜5.0m": 11
+   },
+   "flood_deep_pts": 11,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "標高4.6mの低地で代表点が浸水想定0.5〜3.0mに該当"
+   ],
+   "in_triangle": false,
+   "keihin_station": "赤羽",
+   "keihin_walk_min": 6,
+   "keihin_m": 328,
+   "nearest": {
+    "name": "赤羽",
+    "line": "京浜東北/埼京/湘南新宿",
+    "keihin": true,
+    "min": 6,
+    "m": 328
+   },
+   "walks": [
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 6,
+     "m": 328
+    },
+    {
+     "name": "赤羽岩淵",
+     "line": "南北",
+     "keihin": false,
+     "min": 13,
+     "m": 791
+    },
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 13,
+     "m": 803
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 23,
+     "m": 1431
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 26,
+     "m": 1663
+    }
+   ],
+   "deals_n": 2,
+   "has_benchmark": false,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "赤羽南",
+   "chome": 2,
+   "address": "東京都北区赤羽南2丁目",
+   "lat": 35.77356,
+   "lon": 139.72391,
+   "matched": "東京都北区赤羽南二丁目",
+   "elev_center_m": 4.5,
+   "elev_min_m": 3.7,
+   "elev_max_m": 7.3,
+   "flood_center": "0.5〜3.0m",
+   "flood_worst": "3.0〜5.0m",
+   "flood_worst_max_m": 5,
+   "flood_coverage": 1,
+   "flood_hist": {
+    "0.5m未満": 1,
+    "0.5〜3.0m": 18,
+    "3.0〜5.0m": 6
+   },
+   "flood_deep_pts": 6,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "標高4.5mの低地で代表点が浸水想定0.5〜3.0mに該当"
+   ],
+   "in_triangle": false,
+   "keihin_station": "赤羽",
+   "keihin_walk_min": 10,
+   "keihin_m": 582,
+   "nearest": {
+    "name": "赤羽",
+    "line": "京浜東北/埼京/湘南新宿",
+    "keihin": true,
+    "min": 10,
+    "m": 582
+   },
+   "walks": [
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 10,
+     "m": 582
+    },
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 15,
+     "m": 916
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 18,
+     "m": 1112
+    },
+    {
+     "name": "赤羽岩淵",
+     "line": "南北",
+     "keihin": false,
+     "min": 18,
+     "m": 1112
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 23,
+     "m": 1424
+    }
+   ],
+   "deals_n": 2,
+   "has_benchmark": false,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "赤羽北",
+   "chome": 1,
+   "address": "東京都北区赤羽北1丁目",
+   "lat": 35.78793,
+   "lon": 139.71358,
+   "matched": "東京都北区赤羽北一丁目",
+   "elev_center_m": 2.6,
+   "elev_min_m": 0.7,
+   "elev_max_m": 12.7,
+   "flood_center": "5.0〜10.0m",
+   "flood_worst": "5.0〜10.0m",
+   "flood_worst_max_m": 10,
+   "flood_coverage": 0.64,
+   "flood_hist": {
+    "3.0〜5.0m": 7,
+    "0.5〜3.0m": 2,
+    "5.0〜10.0m": 7
+   },
+   "flood_deep_pts": 14,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 1,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "浸水想定(想定最大規模)5.0〜10.0m。標高2.6mで近傍25点中14点が3m超",
+    "土砂災害警戒区域(イエロー)が近傍1点",
+    "近傍の高低差12m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "赤羽",
+   "keihin_walk_min": 20,
+   "keihin_m": 1269,
+   "nearest": {
+    "name": "北赤羽",
+    "line": "埼京",
+    "keihin": false,
+    "min": 11,
+    "m": 693
+   },
+   "walks": [
+    {
+     "name": "北赤羽",
+     "line": "埼京",
+     "keihin": false,
+     "min": 11,
+     "m": 693
+    },
+    {
+     "name": "赤羽岩淵",
+     "line": "南北",
+     "keihin": false,
+     "min": 15,
+     "m": 916
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 20,
+     "m": 1269
+    },
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 32,
+     "m": 2041
+    },
+    {
+     "name": "本蓮沼",
+     "line": "三田",
+     "keihin": false,
+     "min": 38,
+     "m": 2381
+    }
+   ],
+   "deals_n": 30,
+   "has_benchmark": false,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "赤羽北",
+   "chome": 2,
+   "address": "東京都北区赤羽北2丁目",
+   "lat": 35.78522,
+   "lon": 139.70729,
+   "matched": "東京都北区赤羽北二丁目",
+   "elev_center_m": 4.3,
+   "elev_min_m": 2.7,
+   "elev_max_m": 21,
+   "flood_center": "3.0〜5.0m",
+   "flood_worst": "5.0〜10.0m",
+   "flood_worst_max_m": 10,
+   "flood_coverage": 0.84,
+   "flood_hist": {
+    "0.5〜3.0m": 3,
+    "3.0〜5.0m": 15,
+    "5.0〜10.0m": 3
+   },
+   "flood_deep_pts": 18,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 2,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "浸水想定(想定最大規模)5.0〜10.0m。標高4.3mで近傍25点中18点が3m超",
+    "土砂災害警戒区域(イエロー)が近傍2点",
+    "近傍の高低差18m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "赤羽",
+   "keihin_walk_min": 23,
+   "keihin_m": 1451,
+   "nearest": {
+    "name": "北赤羽",
+    "line": "埼京",
+    "keihin": false,
+    "min": 4,
+    "m": 207
+   },
+   "walks": [
+    {
+     "name": "北赤羽",
+     "line": "埼京",
+     "keihin": false,
+     "min": 4,
+     "m": 207
+    },
+    {
+     "name": "赤羽岩淵",
+     "line": "南北",
+     "keihin": false,
+     "min": 22,
+     "m": 1350
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 23,
+     "m": 1451
+    },
+    {
+     "name": "本蓮沼",
+     "line": "三田",
+     "keihin": false,
+     "min": 30,
+     "m": 1908
+    },
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 38,
+     "m": 2418
+    }
+   ],
+   "deals_n": 30,
+   "has_benchmark": false,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "赤羽北",
+   "chome": 3,
+   "address": "東京都北区赤羽北3丁目",
+   "lat": 35.78124,
+   "lon": 139.70512,
+   "matched": "東京都北区赤羽北三丁目",
+   "elev_center_m": 21.8,
+   "elev_min_m": 4.1,
+   "elev_max_m": 21.8,
+   "flood_center": null,
+   "flood_worst": "3.0〜5.0m",
+   "flood_worst_max_m": 5,
+   "flood_coverage": 0.28,
+   "flood_hist": {
+    "0.5m未満": 3,
+    "0.5〜3.0m": 2,
+    "3.0〜5.0m": 2
+   },
+   "flood_deep_pts": 2,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 1,
+   "sampled": 25,
+   "verdict": "edge",
+   "notes": [
+    "丁目の縁が低地に掛かる(近傍25点中2点が3m超の浸水想定・標高4.1〜21.8m)",
+    "土砂災害警戒区域(イエロー)が近傍1点",
+    "近傍の高低差18m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "赤羽",
+   "keihin_walk_min": 23,
+   "keihin_m": 1456,
+   "nearest": {
+    "name": "北赤羽",
+    "line": "埼京",
+    "keihin": false,
+    "min": 10,
+    "m": 621
+   },
+   "walks": [
+    {
+     "name": "北赤羽",
+     "line": "埼京",
+     "keihin": false,
+     "min": 10,
+     "m": 621
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 23,
+     "m": 1456
+    },
+    {
+     "name": "本蓮沼",
+     "line": "三田",
+     "keihin": false,
+     "min": 23,
+     "m": 1435
+    },
+    {
+     "name": "赤羽岩淵",
+     "line": "南北",
+     "keihin": false,
+     "min": 25,
+     "m": 1551
+    },
+    {
+     "name": "板橋本町",
+     "line": "三田",
+     "keihin": false,
+     "min": 35,
+     "m": 2203
+    }
+   ],
+   "deals_n": 30,
+   "has_benchmark": false,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "桐ケ丘",
+   "chome": 1,
+   "address": "東京都北区桐ケ丘1丁目",
+   "lat": 35.77732,
+   "lon": 139.70754,
+   "matched": "東京都北区桐ケ丘一丁目",
+   "elev_center_m": 21.9,
+   "elev_min_m": 18.8,
+   "elev_max_m": 22.2,
+   "flood_center": null,
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.04,
+   "flood_hist": {
+    "0.5m未満": 1
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "clear",
+   "notes": [
+    "0.5m未満の着色は近傍1点にあるが、台地上では通常出るため除外理由にしない"
+   ],
+   "in_triangle": false,
+   "keihin_station": "赤羽",
+   "keihin_walk_min": 19,
+   "keihin_m": 1200,
+   "nearest": {
+    "name": "北赤羽",
+    "line": "埼京",
+    "keihin": false,
+    "min": 17,
+    "m": 1060
+   },
+   "walks": [
+    {
+     "name": "北赤羽",
+     "line": "埼京",
+     "keihin": false,
+     "min": 17,
+     "m": 1060
+    },
+    {
+     "name": "本蓮沼",
+     "line": "三田",
+     "keihin": false,
+     "min": 17,
+     "m": 1082
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 19,
+     "m": 1200
+    },
+    {
+     "name": "赤羽岩淵",
+     "line": "南北",
+     "keihin": false,
+     "min": 24,
+     "m": 1480
+    },
+    {
+     "name": "板橋本町",
+     "line": "三田",
+     "keihin": false,
+     "min": 28,
+     "m": 1777
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "桐ケ丘",
+   "chome": 2,
+   "address": "東京都北区桐ケ丘2丁目",
+   "lat": 35.78123,
+   "lon": 139.71056,
+   "matched": "東京都北区桐ケ丘二丁目",
+   "elev_center_m": 19.3,
+   "elev_min_m": 8.8,
+   "elev_max_m": 20.9,
+   "flood_center": "0.5m未満",
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.2,
+   "flood_hist": {
+    "0.5m未満": 5
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "clear",
+   "notes": [
+    "近傍の高低差12m(崖線に掛かる)",
+    "0.5m未満の着色は近傍5点にあるが、台地上では通常出るため除外理由にしない"
+   ],
+   "in_triangle": false,
+   "keihin_station": "赤羽",
+   "keihin_walk_min": 16,
+   "keihin_m": 986,
+   "nearest": {
+    "name": "北赤羽",
+    "line": "埼京",
+    "keihin": false,
+    "min": 12,
+    "m": 740
+   },
+   "walks": [
+    {
+     "name": "北赤羽",
+     "line": "埼京",
+     "keihin": false,
+     "min": 12,
+     "m": 740
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 16,
+     "m": 986
+    },
+    {
+     "name": "赤羽岩淵",
+     "line": "南北",
+     "keihin": false,
+     "min": 17,
+     "m": 1070
+    },
+    {
+     "name": "本蓮沼",
+     "line": "三田",
+     "keihin": false,
+     "min": 25,
+     "m": 1592
+    },
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 32,
+     "m": 2017
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "岩淵町",
+   "chome": null,
+   "address": "東京都北区岩淵町",
+   "lat": 35.78545,
+   "lon": 139.72334,
+   "matched": "東京都北区岩淵町",
+   "elev_center_m": 3.1,
+   "elev_min_m": 1.3,
+   "elev_max_m": 11.5,
+   "flood_center": "3.0〜5.0m",
+   "flood_worst": "5.0〜10.0m",
+   "flood_worst_max_m": 10,
+   "flood_coverage": 1,
+   "flood_hist": {
+    "3.0〜5.0m": 19,
+    "5.0〜10.0m": 6
+   },
+   "flood_deep_pts": 25,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "浸水想定(想定最大規模)5.0〜10.0m。標高3.1mで近傍25点中25点が3m超",
+    "近傍の高低差10m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "赤羽",
+   "keihin_walk_min": 14,
+   "keihin_m": 844,
+   "nearest": {
+    "name": "赤羽岩淵",
+    "line": "南北",
+    "keihin": false,
+    "min": 4,
+    "m": 249
+   },
+   "walks": [
+    {
+     "name": "赤羽岩淵",
+     "line": "南北",
+     "keihin": false,
+     "min": 4,
+     "m": 249
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 14,
+     "m": 844
+    },
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 19,
+     "m": 1179
+    },
+    {
+     "name": "北赤羽",
+     "line": "埼京",
+     "keihin": false,
+     "min": 25,
+     "m": 1569
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 38,
+     "m": 2422
+    }
+   ],
+   "deals_n": 19,
+   "has_benchmark": false,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "志茂",
+   "chome": 1,
+   "address": "東京都北区志茂1丁目",
+   "lat": 35.77632,
+   "lon": 139.72961,
+   "matched": "東京都北区志茂一丁目",
+   "elev_center_m": 2.5,
+   "elev_min_m": 2.1,
+   "elev_max_m": 4.1,
+   "flood_center": "3.0〜5.0m",
+   "flood_worst": "5.0〜10.0m",
+   "flood_worst_max_m": 10,
+   "flood_coverage": 1,
+   "flood_hist": {
+    "3.0〜5.0m": 23,
+    "5.0〜10.0m": 2
+   },
+   "flood_deep_pts": 25,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "浸水想定(想定最大規模)5.0〜10.0m。標高2.5mで近傍25点中25点が3m超"
+   ],
+   "in_triangle": false,
+   "keihin_station": "赤羽",
+   "keihin_walk_min": 13,
+   "keihin_m": 820,
+   "nearest": {
+    "name": "志茂",
+    "line": "南北",
+    "keihin": false,
+    "min": 5,
+    "m": 316
+   },
+   "walks": [
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 5,
+     "m": 316
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 13,
+     "m": 820
+    },
+    {
+     "name": "赤羽岩淵",
+     "line": "南北",
+     "keihin": false,
+     "min": 17,
+     "m": 1043
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 22,
+     "m": 1368
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 23,
+     "m": 1409
+    }
+   ],
+   "deals_n": 70,
+   "has_benchmark": true,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "志茂",
+   "chome": 2,
+   "address": "東京都北区志茂2丁目",
+   "lat": 35.77947,
+   "lon": 139.72878,
+   "matched": "東京都北区志茂二丁目",
+   "elev_center_m": 2.2,
+   "elev_min_m": 1.8,
+   "elev_max_m": 3.3,
+   "flood_center": "5.0〜10.0m",
+   "flood_worst": "5.0〜10.0m",
+   "flood_worst_max_m": 10,
+   "flood_coverage": 1,
+   "flood_hist": {
+    "3.0〜5.0m": 18,
+    "5.0〜10.0m": 7
+   },
+   "flood_deep_pts": 25,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "浸水想定(想定最大規模)5.0〜10.0m。標高2.2mで近傍25点中25点が3m超"
+   ],
+   "in_triangle": false,
+   "keihin_station": "赤羽",
+   "keihin_walk_min": 12,
+   "keihin_m": 734,
+   "nearest": {
+    "name": "志茂",
+    "line": "南北",
+    "keihin": false,
+    "min": 6,
+    "m": 381
+   },
+   "walks": [
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 6,
+     "m": 381
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 12,
+     "m": 734
+    },
+    {
+     "name": "赤羽岩淵",
+     "line": "南北",
+     "keihin": false,
+     "min": 12,
+     "m": 747
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 27,
+     "m": 1720
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 28,
+     "m": 1745
+    }
+   ],
+   "deals_n": 70,
+   "has_benchmark": true,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "志茂",
+   "chome": 3,
+   "address": "東京都北区志茂3丁目",
+   "lat": 35.77824,
+   "lon": 139.7352,
+   "matched": "東京都北区志茂三丁目",
+   "elev_center_m": 1.9,
+   "elev_min_m": 0.6,
+   "elev_max_m": 2.7,
+   "flood_center": "5.0〜10.0m",
+   "flood_worst": "5.0〜10.0m",
+   "flood_worst_max_m": 10,
+   "flood_coverage": 1,
+   "flood_hist": {
+    "5.0〜10.0m": 22,
+    "3.0〜5.0m": 3
+   },
+   "flood_deep_pts": 25,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "浸水想定(想定最大規模)5.0〜10.0m。標高1.9mで近傍25点中25点が3m超"
+   ],
+   "in_triangle": false,
+   "keihin_station": "赤羽",
+   "keihin_walk_min": 21,
+   "keihin_m": 1299,
+   "nearest": {
+    "name": "志茂",
+    "line": "南北",
+    "keihin": false,
+    "min": 4,
+    "m": 244
+   },
+   "walks": [
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 4,
+     "m": 244
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 21,
+     "m": 1299
+    },
+    {
+     "name": "赤羽岩淵",
+     "line": "南北",
+     "keihin": false,
+     "min": 21,
+     "m": 1316
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 23,
+     "m": 1467
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 28,
+     "m": 1768
+    }
+   ],
+   "deals_n": 70,
+   "has_benchmark": true,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "志茂",
+   "chome": 4,
+   "address": "東京都北区志茂4丁目",
+   "lat": 35.78286,
+   "lon": 139.73482,
+   "matched": "東京都北区志茂四丁目",
+   "elev_center_m": 0.6,
+   "elev_min_m": 0.2,
+   "elev_max_m": 7.8,
+   "flood_center": "5.0〜10.0m",
+   "flood_worst": "10.0〜20.0m",
+   "flood_worst_max_m": 20,
+   "flood_coverage": 0.92,
+   "flood_hist": {
+    "3.0〜5.0m": 1,
+    "5.0〜10.0m": 21,
+    "10.0〜20.0m": 1
+   },
+   "flood_deep_pts": 23,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "浸水想定(想定最大規模)10.0〜20.0m。標高0.6mで近傍25点中23点が3m超"
+   ],
+   "in_triangle": false,
+   "keihin_station": "赤羽",
+   "keihin_walk_min": 22,
+   "keihin_m": 1369,
+   "nearest": {
+    "name": "志茂",
+    "line": "南北",
+    "keihin": false,
+    "min": 10,
+    "m": 589
+   },
+   "walks": [
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 10,
+     "m": 589
+    },
+    {
+     "name": "赤羽岩淵",
+     "line": "南北",
+     "keihin": false,
+     "min": 18,
+     "m": 1149
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 22,
+     "m": 1369
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 31,
+     "m": 1981
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 35,
+     "m": 2232
+    }
+   ],
+   "deals_n": 70,
+   "has_benchmark": true,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "志茂",
+   "chome": 5,
+   "address": "東京都北区志茂5丁目",
+   "lat": 35.78578,
+   "lon": 139.73033,
+   "matched": "東京都北区志茂五丁目",
+   "elev_center_m": 5.7,
+   "elev_min_m": 1.1,
+   "elev_max_m": 7.3,
+   "flood_center": "3.0〜5.0m",
+   "flood_worst": "5.0〜10.0m",
+   "flood_worst_max_m": 10,
+   "flood_coverage": 0.56,
+   "flood_hist": {
+    "3.0〜5.0m": 8,
+    "5.0〜10.0m": 6
+   },
+   "flood_deep_pts": 14,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "浸水想定(想定最大規模)5.0〜10.0m。標高5.7mで近傍25点中14点が3m超"
+   ],
+   "in_triangle": false,
+   "keihin_station": "赤羽",
+   "keihin_walk_min": 19,
+   "keihin_m": 1209,
+   "nearest": {
+    "name": "赤羽岩淵",
+    "line": "南北",
+    "keihin": false,
+    "min": 13,
+    "m": 786
+   },
+   "walks": [
+    {
+     "name": "赤羽岩淵",
+     "line": "南北",
+     "keihin": false,
+     "min": 13,
+     "m": 786
+    },
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 15,
+     "m": 898
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 19,
+     "m": 1209
+    },
+    {
+     "name": "北赤羽",
+     "line": "埼京",
+     "keihin": false,
+     "min": 35,
+     "m": 2195
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 37,
+     "m": 2354
+    }
+   ],
+   "deals_n": 70,
+   "has_benchmark": true,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "神谷",
+   "chome": 1,
+   "address": "東京都北区神谷1丁目",
+   "lat": 35.76853,
+   "lon": 139.73412,
+   "matched": "東京都北区神谷一丁目",
+   "elev_center_m": 2.6,
+   "elev_min_m": 1.3,
+   "elev_max_m": 3.7,
+   "flood_center": "3.0〜5.0m",
+   "flood_worst": "5.0〜10.0m",
+   "flood_worst_max_m": 10,
+   "flood_coverage": 1,
+   "flood_hist": {
+    "3.0〜5.0m": 14,
+    "5.0〜10.0m": 11
+   },
+   "flood_deep_pts": 25,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "浸水想定(想定最大規模)5.0〜10.0m。標高2.6mで近傍25点中25点が3m超"
+   ],
+   "in_triangle": false,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 14,
+   "keihin_m": 836,
+   "nearest": {
+    "name": "王子神谷",
+    "line": "南北",
+    "keihin": false,
+    "min": 7,
+    "m": 412
+   },
+   "walks": [
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 7,
+     "m": 412
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 14,
+     "m": 836
+    },
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 17,
+     "m": 1051
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 23,
+     "m": 1426
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 26,
+     "m": 1608
+    }
+   ],
+   "deals_n": 51,
+   "has_benchmark": false,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "神谷",
+   "chome": 2,
+   "address": "東京都北区神谷2丁目",
+   "lat": 35.77231,
+   "lon": 139.72789,
+   "matched": "東京都北区神谷二丁目",
+   "elev_center_m": 2.5,
+   "elev_min_m": 1.6,
+   "elev_max_m": 4.9,
+   "flood_center": "3.0〜5.0m",
+   "flood_worst": "5.0〜10.0m",
+   "flood_worst_max_m": 10,
+   "flood_coverage": 1,
+   "flood_hist": {
+    "0.5〜3.0m": 4,
+    "3.0〜5.0m": 19,
+    "5.0〜10.0m": 2
+   },
+   "flood_deep_pts": 21,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "浸水想定(想定最大規模)5.0〜10.0m。標高2.5mで近傍25点中21点が3m超"
+   ],
+   "in_triangle": false,
+   "keihin_station": "赤羽",
+   "keihin_walk_min": 15,
+   "keihin_m": 911,
+   "nearest": {
+    "name": "志茂",
+    "line": "南北",
+    "keihin": false,
+    "min": 12,
+    "m": 749
+   },
+   "walks": [
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 12,
+     "m": 749
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 15,
+     "m": 911
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 15,
+     "m": 945
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 17,
+     "m": 1072
+    },
+    {
+     "name": "赤羽岩淵",
+     "line": "南北",
+     "keihin": false,
+     "min": 22,
+     "m": 1344
+    }
+   ],
+   "deals_n": 51,
+   "has_benchmark": false,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "神谷",
+   "chome": 3,
+   "address": "東京都北区神谷3丁目",
+   "lat": 35.7721,
+   "lon": 139.73286,
+   "matched": "東京都北区神谷三丁目",
+   "elev_center_m": 2.2,
+   "elev_min_m": 1.2,
+   "elev_max_m": 4.5,
+   "flood_center": "3.0〜5.0m",
+   "flood_worst": "5.0〜10.0m",
+   "flood_worst_max_m": 10,
+   "flood_coverage": 1,
+   "flood_hist": {
+    "5.0〜10.0m": 13,
+    "3.0〜5.0m": 12
+   },
+   "flood_deep_pts": 25,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "浸水想定(想定最大規模)5.0〜10.0m。標高2.2mで近傍25点中25点が3m超"
+   ],
+   "in_triangle": false,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 17,
+   "keihin_m": 1065,
+   "nearest": {
+    "name": "志茂",
+    "line": "南北",
+    "keihin": false,
+    "min": 11,
+    "m": 645
+   },
+   "walks": [
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 11,
+     "m": 645
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 13,
+     "m": 824
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 17,
+     "m": 1065
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 20,
+     "m": 1279
+    },
+    {
+     "name": "赤羽岩淵",
+     "line": "南北",
+     "keihin": false,
+     "min": 25,
+     "m": 1592
+    }
+   ],
+   "deals_n": 51,
+   "has_benchmark": false,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "西が丘",
+   "chome": 1,
+   "address": "東京都北区西が丘1丁目",
+   "lat": 35.77018,
+   "lon": 139.71317,
+   "matched": "東京都北区西が丘一丁目",
+   "elev_center_m": 22.7,
+   "elev_min_m": 16.8,
+   "elev_max_m": 23.7,
+   "flood_center": "0.5m未満",
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.28,
+   "flood_hist": {
+    "0.5m未満": 7
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "clear",
+   "notes": [
+    "0.5m未満の着色は近傍7点にあるが、台地上では通常出るため除外理由にしない"
+   ],
+   "in_triangle": false,
+   "keihin_station": "赤羽",
+   "keihin_walk_min": 18,
+   "keihin_m": 1121,
+   "nearest": {
+    "name": "本蓮沼",
+    "line": "三田",
+    "keihin": false,
+    "min": 16,
+    "m": 985
+   },
+   "walks": [
+    {
+     "name": "本蓮沼",
+     "line": "三田",
+     "keihin": false,
+     "min": 16,
+     "m": 985
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 18,
+     "m": 1121
+    },
+    {
+     "name": "板橋本町",
+     "line": "三田",
+     "keihin": false,
+     "min": 19,
+     "m": 1193
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 22,
+     "m": 1400
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 23,
+     "m": 1423
+    }
+   ],
+   "deals_n": 35,
+   "has_benchmark": true,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "西が丘",
+   "chome": 2,
+   "address": "東京都北区西が丘2丁目",
+   "lat": 35.76624,
+   "lon": 139.7132,
+   "matched": "東京都北区西が丘二丁目",
+   "elev_center_m": 19.6,
+   "elev_min_m": 14.7,
+   "elev_max_m": 22.7,
+   "flood_center": null,
+   "flood_worst": "0.5〜3.0m",
+   "flood_worst_max_m": 3,
+   "flood_coverage": 0.16,
+   "flood_hist": {
+    "0.5m未満": 3,
+    "0.5〜3.0m": 1
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "caution",
+   "notes": [
+    "浸水想定0.5〜3.0mが近傍25点中1点"
+   ],
+   "in_triangle": false,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 20,
+   "keihin_m": 1262,
+   "nearest": {
+    "name": "板橋本町",
+    "line": "三田",
+    "keihin": false,
+    "min": 14,
+    "m": 875
+   },
+   "walks": [
+    {
+     "name": "板橋本町",
+     "line": "三田",
+     "keihin": false,
+     "min": 14,
+     "m": 875
+    },
+    {
+     "name": "本蓮沼",
+     "line": "三田",
+     "keihin": false,
+     "min": 16,
+     "m": 1003
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 17,
+     "m": 1075
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 20,
+     "m": 1262
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 24,
+     "m": 1490
+    }
+   ],
+   "deals_n": 35,
+   "has_benchmark": true,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "西が丘",
+   "chome": 3,
+   "address": "東京都北区西が丘3丁目",
+   "lat": 35.76698,
+   "lon": 139.70895,
+   "matched": "東京都北区西が丘三丁目",
+   "elev_center_m": 22.2,
+   "elev_min_m": 18.6,
+   "elev_max_m": 23.6,
+   "flood_center": null,
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.2,
+   "flood_hist": {
+    "0.5m未満": 5
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "clear",
+   "notes": [
+    "0.5m未満の着色は近傍5点にあるが、台地上では通常出るため除外理由にしない"
+   ],
+   "in_triangle": false,
+   "keihin_station": "赤羽",
+   "keihin_walk_min": 26,
+   "keihin_m": 1637,
+   "nearest": {
+    "name": "本蓮沼",
+    "line": "三田",
+    "keihin": false,
+    "min": 10,
+    "m": 612
+   },
+   "walks": [
+    {
+     "name": "本蓮沼",
+     "line": "三田",
+     "keihin": false,
+     "min": 10,
+     "m": 612
+    },
+    {
+     "name": "板橋本町",
+     "line": "三田",
+     "keihin": false,
+     "min": 11,
+     "m": 691
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 23,
+     "m": 1433
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 26,
+     "m": 1637
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 26,
+     "m": 1654
+    }
+   ],
+   "deals_n": 35,
+   "has_benchmark": true,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "上十条",
+   "chome": 1,
+   "address": "東京都北区上十条1丁目",
+   "lat": 35.75966,
+   "lon": 139.72409,
+   "matched": "東京都北区上十条一丁目",
+   "elev_center_m": 20.9,
+   "elev_min_m": 19,
+   "elev_max_m": 23.9,
+   "flood_center": null,
+   "flood_worst": "0.5〜3.0m",
+   "flood_worst_max_m": 3,
+   "flood_coverage": 0.24,
+   "flood_hist": {
+    "0.5m未満": 5,
+    "0.5〜3.0m": 1
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "caution",
+   "notes": [
+    "浸水想定0.5〜3.0mが近傍25点中1点"
+   ],
+   "in_triangle": true,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 9,
+   "keihin_m": 529,
+   "nearest": {
+    "name": "十条",
+    "line": "埼京",
+    "keihin": false,
+    "min": 3,
+    "m": 165
+   },
+   "walks": [
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 3,
+     "m": 165
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 9,
+     "m": 529
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 19,
+     "m": 1209
+    },
+    {
+     "name": "新板橋",
+     "line": "三田",
+     "keihin": false,
+     "min": 20,
+     "m": 1265
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 24,
+     "m": 1516
+    }
+   ],
+   "deals_n": 64,
+   "has_benchmark": false,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "上十条",
+   "chome": 2,
+   "address": "東京都北区上十条2丁目",
+   "lat": 35.7595,
+   "lon": 139.72078,
+   "matched": "東京都北区上十条二丁目",
+   "elev_center_m": 21,
+   "elev_min_m": 20.1,
+   "elev_max_m": 22.9,
+   "flood_center": "0.5〜3.0m",
+   "flood_worst": "0.5〜3.0m",
+   "flood_worst_max_m": 3,
+   "flood_coverage": 0.44,
+   "flood_hist": {
+    "0.5m未満": 9,
+    "0.5〜3.0m": 2
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "caution",
+   "notes": [
+    "浸水想定0.5〜3.0mが近傍25点中2点(代表点を含む)"
+   ],
+   "in_triangle": true,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 12,
+   "keihin_m": 732,
+   "nearest": {
+    "name": "十条",
+    "line": "埼京",
+    "keihin": false,
+    "min": 3,
+    "m": 149
+   },
+   "walks": [
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 3,
+     "m": 149
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 12,
+     "m": 732
+    },
+    {
+     "name": "新板橋",
+     "line": "三田",
+     "keihin": false,
+     "min": 19,
+     "m": 1193
+    },
+    {
+     "name": "板橋区役所前",
+     "line": "三田",
+     "keihin": false,
+     "min": 21,
+     "m": 1327
+    },
+    {
+     "name": "板橋本町",
+     "line": "三田",
+     "keihin": false,
+     "min": 22,
+     "m": 1393
+    }
+   ],
+   "deals_n": 64,
+   "has_benchmark": false,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "上十条",
+   "chome": 3,
+   "address": "東京都北区上十条3丁目",
+   "lat": 35.76104,
+   "lon": 139.71794,
+   "matched": "東京都北区上十条三丁目",
+   "elev_center_m": 22.8,
+   "elev_min_m": 20.6,
+   "elev_max_m": 23.8,
+   "flood_center": null,
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.24,
+   "flood_hist": {
+    "0.5m未満": 6
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "clear",
+   "notes": [
+    "0.5m未満の着色は近傍6点にあるが、台地上では通常出るため除外理由にしない"
+   ],
+   "in_triangle": false,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 14,
+   "keihin_m": 864,
+   "nearest": {
+    "name": "十条",
+    "line": "埼京",
+    "keihin": false,
+    "min": 7,
+    "m": 411
+   },
+   "walks": [
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 7,
+     "m": 411
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 14,
+     "m": 864
+    },
+    {
+     "name": "板橋本町",
+     "line": "三田",
+     "keihin": false,
+     "min": 18,
+     "m": 1122
+    },
+    {
+     "name": "板橋区役所前",
+     "line": "三田",
+     "keihin": false,
+     "min": 21,
+     "m": 1292
+    },
+    {
+     "name": "新板橋",
+     "line": "三田",
+     "keihin": false,
+     "min": 22,
+     "m": 1373
+    }
+   ],
+   "deals_n": 64,
+   "has_benchmark": false,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "上十条",
+   "chome": 4,
+   "address": "東京都北区上十条4丁目",
+   "lat": 35.76329,
+   "lon": 139.71535,
+   "matched": "東京都北区上十条四丁目",
+   "elev_center_m": 21.2,
+   "elev_min_m": 17.9,
+   "elev_max_m": 23.7,
+   "flood_center": null,
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.16,
+   "flood_hist": {
+    "0.5m未満": 4
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "clear",
+   "notes": [
+    "0.5m未満の着色は近傍4点にあるが、台地上では通常出るため除外理由にしない"
+   ],
+   "in_triangle": false,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 17,
+   "keihin_m": 1042,
+   "nearest": {
+    "name": "十条",
+    "line": "埼京",
+    "keihin": false,
+    "min": 12,
+    "m": 726
+   },
+   "walks": [
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 12,
+     "m": 726
+    },
+    {
+     "name": "板橋本町",
+     "line": "三田",
+     "keihin": false,
+     "min": 15,
+     "m": 910
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 17,
+     "m": 1042
+    },
+    {
+     "name": "本蓮沼",
+     "line": "三田",
+     "keihin": false,
+     "min": 21,
+     "m": 1302
+    },
+    {
+     "name": "板橋区役所前",
+     "line": "三田",
+     "keihin": false,
+     "min": 23,
+     "m": 1411
+    }
+   ],
+   "deals_n": 64,
+   "has_benchmark": false,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "上十条",
+   "chome": 5,
+   "address": "東京都北区上十条5丁目",
+   "lat": 35.7658,
+   "lon": 139.71664,
+   "matched": "東京都北区上十条五丁目",
+   "elev_center_m": 23.1,
+   "elev_min_m": 10.1,
+   "elev_max_m": 24.3,
+   "flood_center": null,
+   "flood_worst": "0.5〜3.0m",
+   "flood_worst_max_m": 3,
+   "flood_coverage": 0.2,
+   "flood_hist": {
+    "0.5〜3.0m": 2,
+    "0.5m未満": 3
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 1,
+   "sampled": 25,
+   "verdict": "caution",
+   "notes": [
+    "浸水想定0.5〜3.0mが近傍25点中2点",
+    "土砂災害警戒区域(イエロー)が近傍1点",
+    "近傍の高低差14m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 15,
+   "keihin_m": 948,
+   "nearest": {
+    "name": "十条",
+    "line": "埼京",
+    "keihin": false,
+    "min": 13,
+    "m": 822
+   },
+   "walks": [
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 13,
+     "m": 822
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 15,
+     "m": 948
+    },
+    {
+     "name": "板橋本町",
+     "line": "三田",
+     "keihin": false,
+     "min": 18,
+     "m": 1115
+    },
+    {
+     "name": "本蓮沼",
+     "line": "三田",
+     "keihin": false,
+     "min": 21,
+     "m": 1317
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 23,
+     "m": 1422
+    }
+   ],
+   "deals_n": 64,
+   "has_benchmark": false,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "中十条",
+   "chome": 1,
+   "address": "東京都北区中十条1丁目",
+   "lat": 35.75916,
+   "lon": 139.72832,
+   "matched": "東京都北区中十条一丁目",
+   "elev_center_m": 19.8,
+   "elev_min_m": 5.1,
+   "elev_max_m": 24.3,
+   "flood_center": null,
+   "flood_worst": "0.5〜3.0m",
+   "flood_worst_max_m": 3,
+   "flood_coverage": 0.24,
+   "flood_hist": {
+    "0.5m未満": 4,
+    "0.5〜3.0m": 2
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 1,
+   "sampled": 25,
+   "verdict": "caution",
+   "notes": [
+    "浸水想定0.5〜3.0mが近傍25点中2点",
+    "土砂災害警戒区域(イエロー)が近傍1点",
+    "近傍の高低差19m(崖線に掛かる)"
+   ],
+   "in_triangle": true,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 9,
+   "keihin_m": 537,
+   "nearest": {
+    "name": "東十条",
+    "line": "京浜東北",
+    "keihin": true,
+    "min": 9,
+    "m": 537
+   },
+   "walks": [
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 9,
+     "m": 537
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 9,
+     "m": 550
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 15,
+     "m": 936
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 19,
+     "m": 1175
+    },
+    {
+     "name": "新板橋",
+     "line": "三田",
+     "keihin": false,
+     "min": 22,
+     "m": 1380
+    }
+   ],
+   "deals_n": 46,
+   "has_benchmark": true,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "中十条",
+   "chome": 2,
+   "address": "東京都北区中十条2丁目",
+   "lat": 35.76177,
+   "lon": 139.72485,
+   "matched": "東京都北区中十条二丁目",
+   "elev_center_m": 22,
+   "elev_min_m": 8.2,
+   "elev_max_m": 24.1,
+   "flood_center": null,
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.04,
+   "flood_hist": {
+    "0.5m未満": 1
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "clear",
+   "notes": [
+    "近傍の高低差16m(崖線に掛かる)",
+    "0.5m未満の着色は近傍1点にあるが、台地上では通常出るため除外理由にしない"
+   ],
+   "in_triangle": true,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 5,
+   "keihin_m": 294,
+   "nearest": {
+    "name": "東十条",
+    "line": "京浜東北",
+    "keihin": true,
+    "min": 5,
+    "m": 294
+   },
+   "walks": [
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 5,
+     "m": 294
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 5,
+     "m": 302
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 17,
+     "m": 1047
+    },
+    {
+     "name": "新板橋",
+     "line": "三田",
+     "keihin": false,
+     "min": 24,
+     "m": 1510
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 26,
+     "m": 1601
+    }
+   ],
+   "deals_n": 46,
+   "has_benchmark": true,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "中十条",
+   "chome": 3,
+   "address": "東京都北区中十条3丁目",
+   "lat": 35.76481,
+   "lon": 139.72403,
+   "matched": "東京都北区中十条三丁目",
+   "elev_center_m": 20.6,
+   "elev_min_m": 5,
+   "elev_max_m": 23.3,
+   "flood_center": "0.5m未満",
+   "flood_worst": "0.5〜3.0m",
+   "flood_worst_max_m": 3,
+   "flood_coverage": 0.2,
+   "flood_hist": {
+    "0.5m未満": 4,
+    "0.5〜3.0m": 1
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "caution",
+   "notes": [
+    "浸水想定0.5〜3.0mが近傍25点中1点",
+    "近傍の高低差18m(崖線に掛かる)"
+   ],
+   "in_triangle": true,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 5,
+   "keihin_m": 278,
+   "nearest": {
+    "name": "東十条",
+    "line": "京浜東北",
+    "keihin": true,
+    "min": 5,
+    "m": 278
+   },
+   "walks": [
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 5,
+     "m": 278
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 9,
+     "m": 556
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 17,
+     "m": 1055
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 24,
+     "m": 1510
+    },
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 26,
+     "m": 1645
+    }
+   ],
+   "deals_n": 46,
+   "has_benchmark": true,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "中十条",
+   "chome": 4,
+   "address": "東京都北区中十条4丁目",
+   "lat": 35.76903,
+   "lon": 139.72275,
+   "matched": "東京都北区中十条四丁目",
+   "elev_center_m": 11.3,
+   "elev_min_m": 4.3,
+   "elev_max_m": 23.9,
+   "flood_center": "0.5m未満",
+   "flood_worst": "0.5〜3.0m",
+   "flood_worst_max_m": 3,
+   "flood_coverage": 0.52,
+   "flood_hist": {
+    "0.5m未満": 7,
+    "0.5〜3.0m": 6
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 1,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "edge",
+   "notes": [
+    "浸水想定0.5〜3.0mが近傍25点中6点",
+    "土砂災害特別警戒区域(レッド)が近傍1点",
+    "近傍の高低差20m(崖線に掛かる)"
+   ],
+   "in_triangle": true,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 11,
+   "keihin_m": 686,
+   "nearest": {
+    "name": "東十条",
+    "line": "京浜東北",
+    "keihin": true,
+    "min": 11,
+    "m": 686
+   },
+   "walks": [
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 11,
+     "m": 686
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 16,
+     "m": 1004
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 17,
+     "m": 1028
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 20,
+     "m": 1251
+    },
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 21,
+     "m": 1323
+    }
+   ],
+   "deals_n": 46,
+   "has_benchmark": true,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "十条仲原",
+   "chome": 1,
+   "address": "東京都北区十条仲原1丁目",
+   "lat": 35.76285,
+   "lon": 139.72052,
+   "matched": "東京都北区十条仲原一丁目",
+   "elev_center_m": 21.2,
+   "elev_min_m": 19.8,
+   "elev_max_m": 23.9,
+   "flood_center": null,
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.2,
+   "flood_hist": {
+    "0.5m未満": 5
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "clear",
+   "notes": [
+    "0.5m未満の着色は近傍5点にあるが、台地上では通常出るため除外理由にしない"
+   ],
+   "in_triangle": true,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 10,
+   "keihin_m": 584,
+   "nearest": {
+    "name": "十条",
+    "line": "埼京",
+    "keihin": false,
+    "min": 6,
+    "m": 355
+   },
+   "walks": [
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 6,
+     "m": 355
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 10,
+     "m": 584
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 22,
+     "m": 1393
+    },
+    {
+     "name": "板橋本町",
+     "line": "三田",
+     "keihin": false,
+     "min": 22,
+     "m": 1363
+    },
+    {
+     "name": "新板橋",
+     "line": "三田",
+     "keihin": false,
+     "min": 25,
+     "m": 1564
+    }
+   ],
+   "deals_n": 36,
+   "has_benchmark": true,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "十条仲原",
+   "chome": 2,
+   "address": "東京都北区十条仲原2丁目",
+   "lat": 35.76503,
+   "lon": 139.72038,
+   "matched": "東京都北区十条仲原二丁目",
+   "elev_center_m": 21.6,
+   "elev_min_m": 14,
+   "elev_max_m": 24.1,
+   "flood_center": null,
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.08,
+   "flood_hist": {
+    "0.5m未満": 2
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "clear",
+   "notes": [
+    "近傍の高低差10m(崖線に掛かる)",
+    "0.5m未満の着色は近傍2点にあるが、台地上では通常出るため除外理由にしない"
+   ],
+   "in_triangle": true,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 10,
+   "keihin_m": 600,
+   "nearest": {
+    "name": "東十条",
+    "line": "京浜東北",
+    "keihin": true,
+    "min": 10,
+    "m": 600
+   },
+   "walks": [
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 10,
+     "m": 600
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 10,
+     "m": 585
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 22,
+     "m": 1384
+    },
+    {
+     "name": "板橋本町",
+     "line": "三田",
+     "keihin": false,
+     "min": 22,
+     "m": 1400
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 23,
+     "m": 1458
+    }
+   ],
+   "deals_n": 36,
+   "has_benchmark": true,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "十条仲原",
+   "chome": 3,
+   "address": "東京都北区十条仲原3丁目",
+   "lat": 35.7664,
+   "lon": 139.72014,
+   "matched": "東京都北区十条仲原三丁目",
+   "elev_center_m": 23.2,
+   "elev_min_m": 12,
+   "elev_max_m": 24.2,
+   "flood_center": null,
+   "flood_worst": "0.5〜3.0m",
+   "flood_worst_max_m": 3,
+   "flood_coverage": 0.16,
+   "flood_hist": {
+    "0.5m未満": 2,
+    "0.5〜3.0m": 2
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 1,
+   "sampled": 25,
+   "verdict": "caution",
+   "notes": [
+    "浸水想定0.5〜3.0mが近傍25点中2点",
+    "土砂災害警戒区域(イエロー)が近傍1点",
+    "近傍の高低差12m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 11,
+   "keihin_m": 670,
+   "nearest": {
+    "name": "東十条",
+    "line": "京浜東北",
+    "keihin": true,
+    "min": 11,
+    "m": 670
+   },
+   "walks": [
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 11,
+     "m": 670
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 12,
+     "m": 737
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 21,
+     "m": 1307
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 23,
+     "m": 1414
+    },
+    {
+     "name": "板橋本町",
+     "line": "三田",
+     "keihin": false,
+     "min": 23,
+     "m": 1430
+    }
+   ],
+   "deals_n": 36,
+   "has_benchmark": true,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "十条仲原",
+   "chome": 4,
+   "address": "東京都北区十条仲原4丁目",
+   "lat": 35.76881,
+   "lon": 139.72015,
+   "matched": "東京都北区十条仲原四丁目",
+   "elev_center_m": 15.1,
+   "elev_min_m": 6.5,
+   "elev_max_m": 23.6,
+   "flood_center": null,
+   "flood_worst": "0.5〜3.0m",
+   "flood_worst_max_m": 3,
+   "flood_coverage": 0.28,
+   "flood_hist": {
+    "0.5m未満": 6,
+    "0.5〜3.0m": 1
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": "red",
+   "dosha_red_pts": 1,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "edge",
+   "notes": [
+    "浸水想定0.5〜3.0mが近傍25点中1点",
+    "土砂災害特別警戒区域(レッド)が近傍1点",
+    "近傍の高低差17m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 13,
+   "keihin_m": 819,
+   "nearest": {
+    "name": "東十条",
+    "line": "京浜東北",
+    "keihin": true,
+    "min": 13,
+    "m": 819
+   },
+   "walks": [
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 13,
+     "m": 819
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 16,
+     "m": 997
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 17,
+     "m": 1040
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 23,
+     "m": 1465
+    },
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 24,
+     "m": 1506
+    }
+   ],
+   "deals_n": 36,
+   "has_benchmark": true,
+   "in_crawl_scope": true
+  },
+  {
+   "ward": "北区",
+   "town": "十条台",
+   "chome": 1,
+   "address": "東京都北区十条台1丁目",
+   "lat": 35.75496,
+   "lon": 139.72551,
+   "matched": "東京都北区十条台一丁目",
+   "elev_center_m": 20.9,
+   "elev_min_m": 19.9,
+   "elev_max_m": 25.2,
+   "flood_center": null,
+   "flood_worst": null,
+   "flood_worst_max_m": null,
+   "flood_coverage": 0,
+   "flood_hist": {},
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "clear",
+   "notes": [],
+   "in_triangle": true,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 16,
+   "keihin_m": 997,
+   "nearest": {
+    "name": "十条",
+    "line": "埼京",
+    "keihin": false,
+    "min": 10,
+    "m": 632
+   },
+   "walks": [
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 10,
+     "m": 632
+    },
+    {
+     "name": "新板橋",
+     "line": "三田",
+     "keihin": false,
+     "min": 14,
+     "m": 851
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 16,
+     "m": 997
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 19,
+     "m": 1187
+    },
+    {
+     "name": "板橋",
+     "line": "埼京",
+     "keihin": false,
+     "min": 19,
+     "m": 1208
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "十条台",
+   "chome": 2,
+   "address": "東京都北区十条台2丁目",
+   "lat": 35.75651,
+   "lon": 139.72092,
+   "matched": "東京都北区十条台二丁目",
+   "elev_center_m": 22.1,
+   "elev_min_m": 19.1,
+   "elev_max_m": 25.2,
+   "flood_center": null,
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.2,
+   "flood_hist": {
+    "0.5m未満": 5
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "clear",
+   "notes": [
+    "0.5m未満の着色は近傍5点にあるが、台地上では通常出るため除外理由にしない"
+   ],
+   "in_triangle": true,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 16,
+   "keihin_m": 977,
+   "nearest": {
+    "name": "十条",
+    "line": "埼京",
+    "keihin": false,
+    "min": 7,
+    "m": 409
+   },
+   "walks": [
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 7,
+     "m": 409
+    },
+    {
+     "name": "新板橋",
+     "line": "三田",
+     "keihin": false,
+     "min": 14,
+     "m": 862
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 16,
+     "m": 977
+    },
+    {
+     "name": "板橋区役所前",
+     "line": "三田",
+     "keihin": false,
+     "min": 18,
+     "m": 1137
+    },
+    {
+     "name": "板橋",
+     "line": "埼京",
+     "keihin": false,
+     "min": 20,
+     "m": 1257
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "東十条",
+   "chome": 1,
+   "address": "東京都北区東十条1丁目",
+   "lat": 35.76093,
+   "lon": 139.73114,
+   "matched": "東京都北区東十条一丁目",
+   "elev_center_m": 4.9,
+   "elev_min_m": 3.6,
+   "elev_max_m": 24.4,
+   "flood_center": "0.5〜3.0m",
+   "flood_worst": "0.5〜3.0m",
+   "flood_worst_max_m": 3,
+   "flood_coverage": 0.84,
+   "flood_hist": {
+    "0.5m未満": 2,
+    "0.5〜3.0m": 19
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "標高4.9mの低地で代表点が浸水想定0.5〜3.0mに該当",
+    "近傍の高低差21m(崖線に掛かる)"
+   ],
+   "in_triangle": true,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 8,
+   "keihin_m": 504,
+   "nearest": {
+    "name": "東十条",
+    "line": "京浜東北",
+    "keihin": true,
+    "min": 8,
+    "m": 504
+   },
+   "walks": [
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 8,
+     "m": 504
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 10,
+     "m": 618
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 13,
+     "m": 803
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 18,
+     "m": 1151
+    },
+    {
+     "name": "新板橋",
+     "line": "三田",
+     "keihin": false,
+     "min": 27,
+     "m": 1688
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "東十条",
+   "chome": 2,
+   "address": "東京都北区東十条2丁目",
+   "lat": 35.76323,
+   "lon": 139.73027,
+   "matched": "東京都北区東十条二丁目",
+   "elev_center_m": 4.6,
+   "elev_min_m": 3.7,
+   "elev_max_m": 15.9,
+   "flood_center": "0.5〜3.0m",
+   "flood_worst": "3.0〜5.0m",
+   "flood_worst_max_m": 5,
+   "flood_coverage": 0.84,
+   "flood_hist": {
+    "0.5m未満": 1,
+    "0.5〜3.0m": 19,
+    "3.0〜5.0m": 1
+   },
+   "flood_deep_pts": 1,
+   "dosha_center": null,
+   "dosha_red_pts": 1,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "標高4.6mの低地で代表点が浸水想定0.5〜3.0mに該当",
+    "土砂災害特別警戒区域(レッド)が近傍1点",
+    "近傍の高低差12m(崖線に掛かる)"
+   ],
+   "in_triangle": true,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 5,
+   "keihin_m": 314,
+   "nearest": {
+    "name": "東十条",
+    "line": "京浜東北",
+    "keihin": true,
+    "min": 5,
+    "m": 314
+   },
+   "walks": [
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 5,
+     "m": 314
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 9,
+     "m": 532
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 13,
+     "m": 803
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 23,
+     "m": 1409
+    },
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 26,
+     "m": 1644
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "東十条",
+   "chome": 3,
+   "address": "東京都北区東十条3丁目",
+   "lat": 35.76506,
+   "lon": 139.7287,
+   "matched": "東京都北区東十条三丁目",
+   "elev_center_m": 4.9,
+   "elev_min_m": 3.6,
+   "elev_max_m": 23.6,
+   "flood_center": "0.5〜3.0m",
+   "flood_worst": "3.0〜5.0m",
+   "flood_worst_max_m": 5,
+   "flood_coverage": 0.76,
+   "flood_hist": {
+    "0.5〜3.0m": 15,
+    "3.0〜5.0m": 4
+   },
+   "flood_deep_pts": 4,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 1,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "標高4.9mの低地で代表点が浸水想定0.5〜3.0mに該当",
+    "土砂災害警戒区域(イエロー)が近傍1点",
+    "近傍の高低差20m(崖線に掛かる)"
+   ],
+   "in_triangle": true,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 4,
+   "keihin_m": 213,
+   "nearest": {
+    "name": "東十条",
+    "line": "京浜東北",
+    "keihin": true,
+    "min": 4,
+    "m": 213
+   },
+   "walks": [
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 4,
+     "m": 213
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 10,
+     "m": 633
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 13,
+     "m": 805
+    },
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 23,
+     "m": 1469
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 26,
+     "m": 1620
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "東十条",
+   "chome": 4,
+   "address": "東京都北区東十条4丁目",
+   "lat": 35.76696,
+   "lon": 139.7278,
+   "matched": "東京都北区東十条四丁目",
+   "elev_center_m": 4.6,
+   "elev_min_m": 2.8,
+   "elev_max_m": 12.8,
+   "flood_center": "0.5〜3.0m",
+   "flood_worst": "3.0〜5.0m",
+   "flood_worst_max_m": 5,
+   "flood_coverage": 0.88,
+   "flood_hist": {
+    "0.5〜3.0m": 14,
+    "3.0〜5.0m": 7,
+    "0.5m未満": 1
+   },
+   "flood_deep_pts": 7,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "標高4.6mの低地で代表点が浸水想定0.5〜3.0mに該当",
+    "近傍の高低差10m(崖線に掛かる)"
+   ],
+   "in_triangle": true,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 6,
+   "keihin_m": 356,
+   "nearest": {
+    "name": "東十条",
+    "line": "京浜東北",
+    "keihin": true,
+    "min": 6,
+    "m": 356
+   },
+   "walks": [
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 6,
+     "m": 356
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 12,
+     "m": 745
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 15,
+     "m": 918
+    },
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 21,
+     "m": 1289
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 22,
+     "m": 1394
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "東十条",
+   "chome": 5,
+   "address": "東京都北区東十条5丁目",
+   "lat": 35.7686,
+   "lon": 139.7261,
+   "matched": "東京都北区東十条五丁目",
+   "elev_center_m": 4.7,
+   "elev_min_m": 2.6,
+   "elev_max_m": 22,
+   "flood_center": "0.5〜3.0m",
+   "flood_worst": "3.0〜5.0m",
+   "flood_worst_max_m": 5,
+   "flood_coverage": 0.84,
+   "flood_hist": {
+    "0.5〜3.0m": 15,
+    "3.0〜5.0m": 6
+   },
+   "flood_deep_pts": 6,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "標高4.7mの低地で代表点が浸水想定0.5〜3.0mに該当",
+    "近傍の高低差19m(崖線に掛かる)"
+   ],
+   "in_triangle": true,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 9,
+   "keihin_m": 533,
+   "nearest": {
+    "name": "東十条",
+    "line": "京浜東北",
+    "keihin": true,
+    "min": 9,
+    "m": 533
+   },
+   "walks": [
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 9,
+     "m": 533
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 15,
+     "m": 953
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 16,
+     "m": 1015
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 19,
+     "m": 1164
+    },
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 19,
+     "m": 1185
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "東十条",
+   "chome": 6,
+   "address": "東京都北区東十条6丁目",
+   "lat": 35.77082,
+   "lon": 139.7245,
+   "matched": "東京都北区東十条六丁目",
+   "elev_center_m": 4.6,
+   "elev_min_m": 3.2,
+   "elev_max_m": 13,
+   "flood_center": "0.5〜3.0m",
+   "flood_worst": "3.0〜5.0m",
+   "flood_worst_max_m": 5,
+   "flood_coverage": 0.88,
+   "flood_hist": {
+    "0.5〜3.0m": 18,
+    "0.5m未満": 1,
+    "3.0〜5.0m": 3
+   },
+   "flood_deep_pts": 3,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "標高4.6mの低地で代表点が浸水想定0.5〜3.0mに該当"
+   ],
+   "in_triangle": true,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 13,
+   "keihin_m": 804,
+   "nearest": {
+    "name": "東十条",
+    "line": "京浜東北",
+    "keihin": true,
+    "min": 13,
+    "m": 804
+   },
+   "walks": [
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 13,
+     "m": 804
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 14,
+     "m": 880
+    },
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 17,
+     "m": 1070
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 19,
+     "m": 1197
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 20,
+     "m": 1218
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "王子",
+   "chome": 1,
+   "address": "東京都北区王子1丁目",
+   "lat": 35.75436,
+   "lon": 139.73935,
+   "matched": "東京都北区王子一丁目",
+   "elev_center_m": 5.2,
+   "elev_min_m": 2.5,
+   "elev_max_m": 12.6,
+   "flood_center": "0.5〜3.0m",
+   "flood_worst": "3.0〜5.0m",
+   "flood_worst_max_m": 5,
+   "flood_coverage": 0.92,
+   "flood_hist": {
+    "0.5〜3.0m": 17,
+    "3.0〜5.0m": 5,
+    "0.5m未満": 1
+   },
+   "flood_deep_pts": 5,
+   "dosha_center": null,
+   "dosha_red_pts": 1,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "edge",
+   "notes": [
+    "丁目の縁が低地に掛かる(近傍25点中5点が3m超の浸水想定・標高2.5〜12.6m)",
+    "土砂災害特別警戒区域(レッド)が近傍1点",
+    "近傍の高低差10m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "王子",
+   "keihin_walk_min": 4,
+   "keihin_m": 243,
+   "nearest": {
+    "name": "王子",
+    "line": "京浜東北/南北",
+    "keihin": true,
+    "min": 4,
+    "m": 243
+   },
+   "walks": [
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 4,
+     "m": 243
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 15,
+     "m": 958
+    },
+    {
+     "name": "上中里",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 18,
+     "m": 1105
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 20,
+     "m": 1234
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 25,
+     "m": 1543
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "王子",
+   "chome": 2,
+   "address": "東京都北区王子2丁目",
+   "lat": 35.75779,
+   "lon": 139.73616,
+   "matched": "東京都北区王子二丁目",
+   "elev_center_m": 4.1,
+   "elev_min_m": 3.4,
+   "elev_max_m": 8,
+   "flood_center": "0.5〜3.0m",
+   "flood_worst": "3.0〜5.0m",
+   "flood_worst_max_m": 5,
+   "flood_coverage": 1,
+   "flood_hist": {
+    "0.5〜3.0m": 18,
+    "3.0〜5.0m": 7
+   },
+   "flood_deep_pts": 7,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "標高4.1mの低地で代表点が浸水想定0.5〜3.0mに該当"
+   ],
+   "in_triangle": false,
+   "keihin_station": "王子",
+   "keihin_walk_min": 10,
+   "keihin_m": 634,
+   "nearest": {
+    "name": "王子",
+    "line": "京浜東北/南北",
+    "keihin": true,
+    "min": 10,
+    "m": 634
+   },
+   "walks": [
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 10,
+     "m": 634
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 13,
+     "m": 810
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 17,
+     "m": 1076
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 20,
+     "m": 1274
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 23,
+     "m": 1413
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "王子",
+   "chome": 3,
+   "address": "東京都北区王子3丁目",
+   "lat": 35.76111,
+   "lon": 139.73764,
+   "matched": "東京都北区王子三丁目",
+   "elev_center_m": 2.5,
+   "elev_min_m": 2,
+   "elev_max_m": 4.6,
+   "flood_center": "3.0〜5.0m",
+   "flood_worst": "5.0〜10.0m",
+   "flood_worst_max_m": 10,
+   "flood_coverage": 1,
+   "flood_hist": {
+    "0.5〜3.0m": 11,
+    "3.0〜5.0m": 13,
+    "5.0〜10.0m": 1
+   },
+   "flood_deep_pts": 14,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "浸水想定(想定最大規模)5.0〜10.0m。標高2.5mで近傍25点中14点が3m超"
+   ],
+   "in_triangle": false,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 16,
+   "keihin_m": 1018,
+   "nearest": {
+    "name": "王子神谷",
+    "line": "南北",
+    "keihin": false,
+    "min": 8,
+    "m": 472
+   },
+   "walks": [
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 8,
+     "m": 472
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 16,
+     "m": 1018
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 16,
+     "m": 976
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 22,
+     "m": 1389
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 27,
+     "m": 1724
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "王子",
+   "chome": 4,
+   "address": "東京都北区王子4丁目",
+   "lat": 35.76224,
+   "lon": 139.73541,
+   "matched": "東京都北区王子四丁目",
+   "elev_center_m": 3,
+   "elev_min_m": 1.9,
+   "elev_max_m": 4.8,
+   "flood_center": "3.0〜5.0m",
+   "flood_worst": "5.0〜10.0m",
+   "flood_worst_max_m": 10,
+   "flood_coverage": 1,
+   "flood_hist": {
+    "0.5〜3.0m": 3,
+    "3.0〜5.0m": 21,
+    "5.0〜10.0m": 1
+   },
+   "flood_deep_pts": 22,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "浸水想定(想定最大規模)5.0〜10.0m。標高3mで近傍25点中22点が3m超"
+   ],
+   "in_triangle": false,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 13,
+   "keihin_m": 791,
+   "nearest": {
+    "name": "王子神谷",
+    "line": "南北",
+    "keihin": false,
+    "min": 5,
+    "m": 315
+   },
+   "walks": [
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 5,
+     "m": 315
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 13,
+     "m": 791
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 18,
+     "m": 1130
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 19,
+     "m": 1208
+    },
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 28,
+     "m": 1761
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "王子",
+   "chome": 5,
+   "address": "東京都北区王子5丁目",
+   "lat": 35.76375,
+   "lon": 139.73305,
+   "matched": "東京都北区王子五丁目",
+   "elev_center_m": 4.1,
+   "elev_min_m": 2.2,
+   "elev_max_m": 4.5,
+   "flood_center": "0.5〜3.0m",
+   "flood_worst": "3.0〜5.0m",
+   "flood_worst_max_m": 5,
+   "flood_coverage": 1,
+   "flood_hist": {
+    "0.5〜3.0m": 14,
+    "3.0〜5.0m": 11
+   },
+   "flood_deep_pts": 11,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "標高4.1mの低地で代表点が浸水想定0.5〜3.0mに該当"
+   ],
+   "in_triangle": false,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 9,
+   "keihin_m": 557,
+   "nearest": {
+    "name": "王子神谷",
+    "line": "南北",
+    "keihin": false,
+    "min": 5,
+    "m": 282
+   },
+   "walks": [
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 5,
+     "m": 282
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 9,
+     "m": 557
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 17,
+     "m": 1054
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 22,
+     "m": 1352
+    },
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 25,
+     "m": 1574
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "王子",
+   "chome": 6,
+   "address": "東京都北区王子6丁目",
+   "lat": 35.7615,
+   "lon": 139.74046,
+   "matched": "東京都北区王子六丁目",
+   "elev_center_m": 4.2,
+   "elev_min_m": 2.5,
+   "elev_max_m": 5,
+   "flood_center": "0.5〜3.0m",
+   "flood_worst": "3.0〜5.0m",
+   "flood_worst_max_m": 5,
+   "flood_coverage": 1,
+   "flood_hist": {
+    "0.5〜3.0m": 17,
+    "3.0〜5.0m": 8
+   },
+   "flood_deep_pts": 8,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "標高4.2mの低地で代表点が浸水想定0.5〜3.0mに該当"
+   ],
+   "in_triangle": false,
+   "keihin_station": "王子",
+   "keihin_walk_min": 17,
+   "keihin_m": 1037,
+   "nearest": {
+    "name": "王子神谷",
+    "line": "南北",
+    "keihin": false,
+    "min": 10,
+    "m": 583
+   },
+   "walks": [
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 10,
+     "m": 583
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 17,
+     "m": 1037
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 20,
+     "m": 1254
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 26,
+     "m": 1646
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 27,
+     "m": 1725
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "王子本町",
+   "chome": 1,
+   "address": "東京都北区王子本町1丁目",
+   "lat": 35.75376,
+   "lon": 139.73386,
+   "matched": "東京都北区王子本町一丁目",
+   "elev_center_m": 16.9,
+   "elev_min_m": 5.1,
+   "elev_max_m": 24.8,
+   "flood_center": null,
+   "flood_worst": "0.5〜3.0m",
+   "flood_worst_max_m": 3,
+   "flood_coverage": 0.36,
+   "flood_hist": {
+    "0.5〜3.0m": 5,
+    "0.5m未満": 4
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 1,
+   "sampled": 25,
+   "verdict": "caution",
+   "notes": [
+    "浸水想定0.5〜3.0mが近傍25点中5点",
+    "土砂災害警戒区域(イエロー)が近傍1点",
+    "近傍の高低差20m(崖線に掛かる)"
+   ],
+   "in_triangle": true,
+   "keihin_station": "王子",
+   "keihin_walk_min": 7,
+   "keihin_m": 428,
+   "nearest": {
+    "name": "王子",
+    "line": "京浜東北/南北",
+    "keihin": true,
+    "min": 7,
+    "m": 428
+   },
+   "walks": [
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 7,
+     "m": 428
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 18,
+     "m": 1139
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 20,
+     "m": 1253
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 20,
+     "m": 1268
+    },
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 20,
+     "m": 1227
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "王子本町",
+   "chome": 2,
+   "address": "東京都北区王子本町2丁目",
+   "lat": 35.75532,
+   "lon": 139.73109,
+   "matched": "東京都北区王子本町二丁目",
+   "elev_center_m": 23.6,
+   "elev_min_m": 5.5,
+   "elev_max_m": 25,
+   "flood_center": "0.5m未満",
+   "flood_worst": "0.5〜3.0m",
+   "flood_worst_max_m": 3,
+   "flood_coverage": 0.08,
+   "flood_hist": {
+    "0.5m未満": 1,
+    "0.5〜3.0m": 1
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 1,
+   "dosha_yellow_pts": 1,
+   "sampled": 25,
+   "verdict": "edge",
+   "notes": [
+    "浸水想定0.5〜3.0mが近傍25点中1点",
+    "土砂災害特別警戒区域(レッド)が近傍1点",
+    "近傍の高低差20m(崖線に掛かる)"
+   ],
+   "in_triangle": true,
+   "keihin_station": "王子",
+   "keihin_walk_min": 12,
+   "keihin_m": 727,
+   "nearest": {
+    "name": "王子",
+    "line": "京浜東北/南北",
+    "keihin": true,
+    "min": 12,
+    "m": 727
+   },
+   "walks": [
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 12,
+     "m": 727
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 15,
+     "m": 949
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 16,
+     "m": 1022
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 19,
+     "m": 1160
+    },
+    {
+     "name": "新板橋",
+     "line": "三田",
+     "keihin": false,
+     "min": 20,
+     "m": 1244
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "王子本町",
+   "chome": 3,
+   "address": "東京都北区王子本町3丁目",
+   "lat": 35.75351,
+   "lon": 139.7291,
+   "matched": "東京都北区王子本町三丁目",
+   "elev_center_m": 23,
+   "elev_min_m": 8.3,
+   "elev_max_m": 23.8,
+   "flood_center": null,
+   "flood_worst": "3.0〜5.0m",
+   "flood_worst_max_m": 5,
+   "flood_coverage": 0.04,
+   "flood_hist": {
+    "3.0〜5.0m": 1
+   },
+   "flood_deep_pts": 1,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 1,
+   "sampled": 25,
+   "verdict": "edge",
+   "notes": [
+    "丁目の縁が低地に掛かる(近傍25点中1点が3m超の浸水想定・標高8.3〜23.8m)",
+    "土砂災害警戒区域(イエロー)が近傍1点",
+    "近傍の高低差16m(崖線に掛かる)"
+   ],
+   "in_triangle": true,
+   "keihin_station": "王子",
+   "keihin_walk_min": 14,
+   "keihin_m": 838,
+   "nearest": {
+    "name": "王子",
+    "line": "京浜東北/南北",
+    "keihin": true,
+    "min": 14,
+    "m": 838
+   },
+   "walks": [
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 14,
+     "m": 838
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 15,
+     "m": 948
+    },
+    {
+     "name": "新板橋",
+     "line": "三田",
+     "keihin": false,
+     "min": 16,
+     "m": 981
+    },
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 18,
+     "m": 1108
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 19,
+     "m": 1168
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "岸町",
+   "chome": 1,
+   "address": "東京都北区岸町1丁目",
+   "lat": 35.75576,
+   "lon": 139.7343,
+   "matched": "東京都北区岸町一丁目",
+   "elev_center_m": 5.8,
+   "elev_min_m": 3.9,
+   "elev_max_m": 24.8,
+   "flood_center": "0.5〜3.0m",
+   "flood_worst": "0.5〜3.0m",
+   "flood_worst_max_m": 3,
+   "flood_coverage": 0.56,
+   "flood_hist": {
+    "0.5m未満": 2,
+    "0.5〜3.0m": 12
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 2,
+   "sampled": 25,
+   "verdict": "caution",
+   "notes": [
+    "浸水想定0.5〜3.0mが近傍25点中12点(代表点を含む)",
+    "土砂災害警戒区域(イエロー)が近傍2点",
+    "近傍の高低差21m(崖線に掛かる)"
+   ],
+   "in_triangle": true,
+   "keihin_station": "王子",
+   "keihin_walk_min": 9,
+   "keihin_m": 521,
+   "nearest": {
+    "name": "王子",
+    "line": "京浜東北/南北",
+    "keihin": true,
+    "min": 9,
+    "m": 521
+   },
+   "walks": [
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 9,
+     "m": 521
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 17,
+     "m": 1042
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 18,
+     "m": 1122
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 19,
+     "m": 1181
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 21,
+     "m": 1292
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "岸町",
+   "chome": 2,
+   "address": "東京都北区岸町2丁目",
+   "lat": 35.76023,
+   "lon": 139.72996,
+   "matched": "東京都北区岸町二丁目",
+   "elev_center_m": 6.7,
+   "elev_min_m": 3.9,
+   "elev_max_m": 24.4,
+   "flood_center": "0.5m未満",
+   "flood_worst": "0.5〜3.0m",
+   "flood_worst_max_m": 3,
+   "flood_coverage": 0.56,
+   "flood_hist": {
+    "0.5〜3.0m": 12,
+    "0.5m未満": 2
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 1,
+   "sampled": 25,
+   "verdict": "caution",
+   "notes": [
+    "浸水想定0.5〜3.0mが近傍25点中12点",
+    "土砂災害警戒区域(イエロー)が近傍1点",
+    "近傍の高低差21m(崖線に掛かる)"
+   ],
+   "in_triangle": true,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 8,
+   "keihin_m": 490,
+   "nearest": {
+    "name": "東十条",
+    "line": "京浜東北",
+    "keihin": true,
+    "min": 8,
+    "m": 490
+   },
+   "walks": [
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 8,
+     "m": 490
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 11,
+     "m": 691
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 12,
+     "m": 747
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 19,
+     "m": 1153
+    },
+    {
+     "name": "新板橋",
+     "line": "三田",
+     "keihin": false,
+     "min": 25,
+     "m": 1562
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "豊島",
+   "chome": 1,
+   "address": "東京都北区豊島1丁目",
+   "lat": 35.75767,
+   "lon": 139.74045,
+   "matched": "東京都北区豊島一丁目",
+   "elev_center_m": 3.3,
+   "elev_min_m": 1,
+   "elev_max_m": 4.4,
+   "flood_center": "3.0〜5.0m",
+   "flood_worst": "5.0〜10.0m",
+   "flood_worst_max_m": 10,
+   "flood_coverage": 1,
+   "flood_hist": {
+    "0.5〜3.0m": 7,
+    "3.0〜5.0m": 17,
+    "5.0〜10.0m": 1
+   },
+   "flood_deep_pts": 18,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "浸水想定(想定最大規模)5.0〜10.0m。標高3.3mで近傍25点中18点が3m超"
+   ],
+   "in_triangle": false,
+   "keihin_station": "王子",
+   "keihin_walk_min": 10,
+   "keihin_m": 623,
+   "nearest": {
+    "name": "王子",
+    "line": "京浜東北/南北",
+    "keihin": true,
+    "min": 10,
+    "m": 623
+   },
+   "walks": [
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 10,
+     "m": 623
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 15,
+     "m": 926
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 21,
+     "m": 1302
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 22,
+     "m": 1405
+    },
+    {
+     "name": "上中里",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 22,
+     "m": 1367
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "豊島",
+   "chome": 2,
+   "address": "東京都北区豊島2丁目",
+   "lat": 35.75812,
+   "lon": 139.74429,
+   "matched": "東京都北区豊島二丁目",
+   "elev_center_m": 2.2,
+   "elev_min_m": 1.8,
+   "elev_max_m": 4.9,
+   "flood_center": "3.0〜5.0m",
+   "flood_worst": "3.0〜5.0m",
+   "flood_worst_max_m": 5,
+   "flood_coverage": 1,
+   "flood_hist": {
+    "3.0〜5.0m": 21,
+    "0.5〜3.0m": 4
+   },
+   "flood_deep_pts": 21,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "浸水想定(想定最大規模)3.0〜5.0m。標高2.2mで近傍25点中21点が3m超"
+   ],
+   "in_triangle": false,
+   "keihin_station": "王子",
+   "keihin_walk_min": 14,
+   "keihin_m": 841,
+   "nearest": {
+    "name": "王子",
+    "line": "京浜東北/南北",
+    "keihin": true,
+    "min": 14,
+    "m": 841
+   },
+   "walks": [
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 14,
+     "m": 841
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 18,
+     "m": 1092
+    },
+    {
+     "name": "上中里",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 21,
+     "m": 1306
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 22,
+     "m": 1356
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 27,
+     "m": 1696
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "豊島",
+   "chome": 3,
+   "address": "東京都北区豊島3丁目",
+   "lat": 35.76089,
+   "lon": 139.74553,
+   "matched": "東京都北区豊島三丁目",
+   "elev_center_m": 2.6,
+   "elev_min_m": 1.6,
+   "elev_max_m": 3.1,
+   "flood_center": "3.0〜5.0m",
+   "flood_worst": "3.0〜5.0m",
+   "flood_worst_max_m": 5,
+   "flood_coverage": 1,
+   "flood_hist": {
+    "3.0〜5.0m": 25
+   },
+   "flood_deep_pts": 25,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "浸水想定(想定最大規模)3.0〜5.0m。標高2.6mで近傍25点中25点が3m超"
+   ],
+   "in_triangle": false,
+   "keihin_station": "王子",
+   "keihin_walk_min": 19,
+   "keihin_m": 1154,
+   "nearest": {
+    "name": "王子神谷",
+    "line": "南北",
+    "keihin": false,
+    "min": 16,
+    "m": 999
+   },
+   "walks": [
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 16,
+     "m": 999
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 19,
+     "m": 1154
+    },
+    {
+     "name": "上中里",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 25,
+     "m": 1597
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 27,
+     "m": 1715
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 27,
+     "m": 1678
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "豊島",
+   "chome": 4,
+   "address": "東京都北区豊島4丁目",
+   "lat": 35.76212,
+   "lon": 139.74988,
+   "matched": "東京都北区豊島四丁目",
+   "elev_center_m": 1.3,
+   "elev_min_m": 1.3,
+   "elev_max_m": 6.1,
+   "flood_center": "5.0〜10.0m",
+   "flood_worst": "5.0〜10.0m",
+   "flood_worst_max_m": 10,
+   "flood_coverage": 1,
+   "flood_hist": {
+    "3.0〜5.0m": 21,
+    "5.0〜10.0m": 4
+   },
+   "flood_deep_pts": 25,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "浸水想定(想定最大規模)5.0〜10.0m。標高1.3mで近傍25点中25点が3m超"
+   ],
+   "in_triangle": false,
+   "keihin_station": "王子",
+   "keihin_walk_min": 24,
+   "keihin_m": 1509,
+   "nearest": {
+    "name": "王子神谷",
+    "line": "南北",
+    "keihin": false,
+    "min": 21,
+    "m": 1319
+   },
+   "walks": [
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 21,
+     "m": 1319
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 24,
+     "m": 1509
+    },
+    {
+     "name": "上中里",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 28,
+     "m": 1748
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 30,
+     "m": 1917
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 33,
+     "m": 2085
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "豊島",
+   "chome": 5,
+   "address": "東京都北区豊島5丁目",
+   "lat": 35.76628,
+   "lon": 139.7547,
+   "matched": "東京都北区豊島五丁目",
+   "elev_center_m": 3.2,
+   "elev_min_m": 2.9,
+   "elev_max_m": 9.4,
+   "flood_center": "3.0〜5.0m",
+   "flood_worst": "3.0〜5.0m",
+   "flood_worst_max_m": 5,
+   "flood_coverage": 0.68,
+   "flood_hist": {
+    "3.0〜5.0m": 6,
+    "0.5〜3.0m": 9,
+    "0.5m未満": 2
+   },
+   "flood_deep_pts": 6,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "浸水想定(想定最大規模)3.0〜5.0m。標高3.2mで近傍25点中6点が3m超"
+   ],
+   "in_triangle": false,
+   "keihin_station": "王子",
+   "keihin_walk_min": 34,
+   "keihin_m": 2144,
+   "nearest": {
+    "name": "王子神谷",
+    "line": "南北",
+    "keihin": false,
+    "min": 27,
+    "m": 1718
+   },
+   "walks": [
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 27,
+     "m": 1718
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 34,
+     "m": 2144
+    },
+    {
+     "name": "上中里",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 36,
+     "m": 2299
+    },
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 38,
+     "m": 2381
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 40,
+     "m": 2525
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "豊島",
+   "chome": 6,
+   "address": "東京都北区豊島6丁目",
+   "lat": 35.76517,
+   "lon": 139.74649,
+   "matched": "東京都北区豊島六丁目",
+   "elev_center_m": 2,
+   "elev_min_m": 1.5,
+   "elev_max_m": 4.8,
+   "flood_center": "3.0〜5.0m",
+   "flood_worst": "5.0〜10.0m",
+   "flood_worst_max_m": 10,
+   "flood_coverage": 1,
+   "flood_hist": {
+    "3.0〜5.0m": 19,
+    "5.0〜10.0m": 4,
+    "0.5〜3.0m": 2
+   },
+   "flood_deep_pts": 23,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "浸水想定(想定最大規模)5.0〜10.0m。標高2mで近傍25点中23点が3m超"
+   ],
+   "in_triangle": false,
+   "keihin_station": "王子",
+   "keihin_walk_min": 26,
+   "keihin_m": 1607,
+   "nearest": {
+    "name": "王子神谷",
+    "line": "南北",
+    "keihin": false,
+    "min": 16,
+    "m": 972
+   },
+   "walks": [
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 16,
+     "m": 972
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 26,
+     "m": 1607
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 28,
+     "m": 1776
+    },
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 30,
+     "m": 1895
+    },
+    {
+     "name": "上中里",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 33,
+     "m": 2068
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "豊島",
+   "chome": 7,
+   "address": "東京都北区豊島7丁目",
+   "lat": 35.76411,
+   "lon": 139.74387,
+   "matched": "東京都北区豊島七丁目",
+   "elev_center_m": 1.4,
+   "elev_min_m": 1.4,
+   "elev_max_m": 4.2,
+   "flood_center": "5.0〜10.0m",
+   "flood_worst": "5.0〜10.0m",
+   "flood_worst_max_m": 10,
+   "flood_coverage": 1,
+   "flood_hist": {
+    "0.5〜3.0m": 2,
+    "3.0〜5.0m": 20,
+    "5.0〜10.0m": 3
+   },
+   "flood_deep_pts": 23,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "浸水想定(想定最大規模)5.0〜10.0m。標高1.4mで近傍25点中23点が3m超"
+   ],
+   "in_triangle": false,
+   "keihin_station": "王子",
+   "keihin_walk_min": 22,
+   "keihin_m": 1402,
+   "nearest": {
+    "name": "王子神谷",
+    "line": "南北",
+    "keihin": false,
+    "min": 12,
+    "m": 742
+   },
+   "walks": [
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 12,
+     "m": 742
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 22,
+     "m": 1402
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 24,
+     "m": 1534
+    },
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 29,
+     "m": 1843
+    },
+    {
+     "name": "上中里",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 31,
+     "m": 1970
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "豊島",
+   "chome": 8,
+   "address": "東京都北区豊島8丁目",
+   "lat": 35.76603,
+   "lon": 139.74019,
+   "matched": "東京都北区豊島八丁目",
+   "elev_center_m": 2.6,
+   "elev_min_m": 1.8,
+   "elev_max_m": 3.2,
+   "flood_center": "3.0〜5.0m",
+   "flood_worst": "5.0〜10.0m",
+   "flood_worst_max_m": 10,
+   "flood_coverage": 1,
+   "flood_hist": {
+    "3.0〜5.0m": 23,
+    "5.0〜10.0m": 2
+   },
+   "flood_deep_pts": 25,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "浸水想定(想定最大規模)5.0〜10.0m。標高2.6mで近傍25点中25点が3m超"
+   ],
+   "in_triangle": false,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 20,
+   "keihin_m": 1226,
+   "nearest": {
+    "name": "王子神谷",
+    "line": "南北",
+    "keihin": false,
+    "min": 7,
+    "m": 417
+   },
+   "walks": [
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 7,
+     "m": 417
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 20,
+     "m": 1226
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 24,
+     "m": 1531
+    },
+    {
+     "name": "志茂",
+     "line": "南北",
+     "keihin": false,
+     "min": 24,
+     "m": 1490
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 28,
+     "m": 1746
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "堀船",
+   "chome": 1,
+   "address": "東京都北区堀船1丁目",
+   "lat": 35.75297,
+   "lon": 139.74352,
+   "matched": "東京都北区堀船一丁目",
+   "elev_center_m": 3.5,
+   "elev_min_m": 2.3,
+   "elev_max_m": 5.1,
+   "flood_center": "3.0〜5.0m",
+   "flood_worst": "5.0〜10.0m",
+   "flood_worst_max_m": 10,
+   "flood_coverage": 1,
+   "flood_hist": {
+    "0.5〜3.0m": 10,
+    "3.0〜5.0m": 14,
+    "5.0〜10.0m": 1
+   },
+   "flood_deep_pts": 15,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "浸水想定(想定最大規模)5.0〜10.0m。標高3.5mで近傍25点中15点が3m超"
+   ],
+   "in_triangle": false,
+   "keihin_station": "王子",
+   "keihin_walk_min": 8,
+   "keihin_m": 478,
+   "nearest": {
+    "name": "王子",
+    "line": "京浜東北/南北",
+    "keihin": true,
+    "min": 8,
+    "m": 478
+   },
+   "walks": [
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 8,
+     "m": 478
+    },
+    {
+     "name": "上中里",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 13,
+     "m": 777
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 13,
+     "m": 779
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 24,
+     "m": 1517
+    },
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 27,
+     "m": 1699
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "堀船",
+   "chome": 2,
+   "address": "東京都北区堀船2丁目",
+   "lat": 35.7548,
+   "lon": 139.74603,
+   "matched": "東京都北区堀船二丁目",
+   "elev_center_m": 3.1,
+   "elev_min_m": 2.1,
+   "elev_max_m": 4.4,
+   "flood_center": "3.0〜5.0m",
+   "flood_worst": "3.0〜5.0m",
+   "flood_worst_max_m": 5,
+   "flood_coverage": 1,
+   "flood_hist": {
+    "3.0〜5.0m": 17,
+    "0.5〜3.0m": 8
+   },
+   "flood_deep_pts": 17,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "浸水想定(想定最大規模)3.0〜5.0m。標高3.1mで近傍25点中17点が3m超"
+   ],
+   "in_triangle": false,
+   "keihin_station": "王子",
+   "keihin_walk_min": 12,
+   "keihin_m": 752,
+   "nearest": {
+    "name": "王子",
+    "line": "京浜東北/南北",
+    "keihin": true,
+    "min": 12,
+    "m": 752
+   },
+   "walks": [
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 12,
+     "m": 752
+    },
+    {
+     "name": "上中里",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 15,
+     "m": 918
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 17,
+     "m": 1034
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 23,
+     "m": 1472
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 32,
+     "m": 2000
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "堀船",
+   "chome": 3,
+   "address": "東京都北区堀船3丁目",
+   "lat": 35.75482,
+   "lon": 139.74924,
+   "matched": "東京都北区堀船三丁目",
+   "elev_center_m": 3,
+   "elev_min_m": 1.4,
+   "elev_max_m": 5,
+   "flood_center": "3.0〜5.0m",
+   "flood_worst": "3.0〜5.0m",
+   "flood_worst_max_m": 5,
+   "flood_coverage": 1,
+   "flood_hist": {
+    "3.0〜5.0m": 23,
+    "0.5〜3.0m": 1,
+    "0.5m未満": 1
+   },
+   "flood_deep_pts": 23,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "浸水想定(想定最大規模)3.0〜5.0m。標高3mで近傍25点中23点が3m超"
+   ],
+   "in_triangle": false,
+   "keihin_station": "上中里",
+   "keihin_walk_min": 15,
+   "keihin_m": 939,
+   "nearest": {
+    "name": "上中里",
+    "line": "京浜東北",
+    "keihin": true,
+    "min": 15,
+    "m": 939
+   },
+   "walks": [
+    {
+     "name": "上中里",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 15,
+     "m": 939
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 17,
+     "m": 1027
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 19,
+     "m": 1165
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 27,
+     "m": 1668
+    },
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 35,
+     "m": 2237
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "堀船",
+   "chome": 4,
+   "address": "東京都北区堀船4丁目",
+   "lat": 35.75453,
+   "lon": 139.75418,
+   "matched": "東京都北区堀船四丁目",
+   "elev_center_m": 2.8,
+   "elev_min_m": 0.4,
+   "elev_max_m": 5,
+   "flood_center": "3.0〜5.0m",
+   "flood_worst": "5.0〜10.0m",
+   "flood_worst_max_m": 10,
+   "flood_coverage": 1,
+   "flood_hist": {
+    "3.0〜5.0m": 21,
+    "0.5〜3.0m": 1,
+    "0.5m未満": 1,
+    "5.0〜10.0m": 2
+   },
+   "flood_deep_pts": 23,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "浸水想定(想定最大規模)5.0〜10.0m。標高2.8mで近傍25点中23点が3m超"
+   ],
+   "in_triangle": false,
+   "keihin_station": "上中里",
+   "keihin_walk_min": 18,
+   "keihin_m": 1097,
+   "nearest": {
+    "name": "上中里",
+    "line": "京浜東北",
+    "keihin": true,
+    "min": 18,
+    "m": 1097
+   },
+   "walks": [
+    {
+     "name": "上中里",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 18,
+     "m": 1097
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 23,
+     "m": 1456
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 23,
+     "m": 1437
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 32,
+     "m": 2036
+    },
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 41,
+     "m": 2603
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "昭和町",
+   "chome": 1,
+   "address": "東京都北区昭和町1丁目",
+   "lat": 35.74646,
+   "lon": 139.75639,
+   "matched": "東京都北区昭和町一丁目",
+   "elev_center_m": 3.5,
+   "elev_min_m": 2.4,
+   "elev_max_m": 5.4,
+   "flood_center": "0.5〜3.0m",
+   "flood_worst": "3.0〜5.0m",
+   "flood_worst_max_m": 5,
+   "flood_coverage": 1,
+   "flood_hist": {
+    "0.5〜3.0m": 16,
+    "3.0〜5.0m": 9
+   },
+   "flood_deep_pts": 9,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "標高3.5mの低地で代表点が浸水想定0.5〜3.0mに該当"
+   ],
+   "in_triangle": false,
+   "keihin_station": "上中里",
+   "keihin_walk_min": 14,
+   "keihin_m": 850,
+   "nearest": {
+    "name": "上中里",
+    "line": "京浜東北",
+    "keihin": true,
+    "min": 14,
+    "m": 850
+   },
+   "walks": [
+    {
+     "name": "上中里",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 14,
+     "m": 850
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 21,
+     "m": 1284
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 28,
+     "m": 1762
+    },
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 40,
+     "m": 2520
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 44,
+     "m": 2785
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "昭和町",
+   "chome": 2,
+   "address": "東京都北区昭和町2丁目",
+   "lat": 35.748,
+   "lon": 139.75328,
+   "matched": "東京都北区昭和町二丁目",
+   "elev_center_m": 3.1,
+   "elev_min_m": 2.2,
+   "elev_max_m": 5,
+   "flood_center": "0.5〜3.0m",
+   "flood_worst": "3.0〜5.0m",
+   "flood_worst_max_m": 5,
+   "flood_coverage": 1,
+   "flood_hist": {
+    "0.5〜3.0m": 12,
+    "3.0〜5.0m": 13
+   },
+   "flood_deep_pts": 13,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "浸水想定(想定最大規模)3.0〜5.0m。標高3.1mで近傍25点中13点が3m超"
+   ],
+   "in_triangle": false,
+   "keihin_station": "上中里",
+   "keihin_walk_min": 10,
+   "keihin_m": 590,
+   "nearest": {
+    "name": "上中里",
+    "line": "京浜東北",
+    "keihin": true,
+    "min": 10,
+    "m": 590
+   },
+   "walks": [
+    {
+     "name": "上中里",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 10,
+     "m": 590
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 17,
+     "m": 1026
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 23,
+     "m": 1439
+    },
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 36,
+     "m": 2273
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 39,
+     "m": 2472
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "昭和町",
+   "chome": 3,
+   "address": "東京都北区昭和町3丁目",
+   "lat": 35.7491,
+   "lon": 139.75055,
+   "matched": "東京都北区昭和町三丁目",
+   "elev_center_m": 3.2,
+   "elev_min_m": 2.2,
+   "elev_max_m": 4.8,
+   "flood_center": "3.0〜5.0m",
+   "flood_worst": "3.0〜5.0m",
+   "flood_worst_max_m": 5,
+   "flood_coverage": 1,
+   "flood_hist": {
+    "0.5〜3.0m": 12,
+    "3.0〜5.0m": 13
+   },
+   "flood_deep_pts": 13,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "浸水想定(想定最大規模)3.0〜5.0m。標高3.2mで近傍25点中13点が3m超"
+   ],
+   "in_triangle": false,
+   "keihin_station": "上中里",
+   "keihin_walk_min": 7,
+   "keihin_m": 427,
+   "nearest": {
+    "name": "上中里",
+    "line": "京浜東北",
+    "keihin": true,
+    "min": 7,
+    "m": 427
+   },
+   "walks": [
+    {
+     "name": "上中里",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 7,
+     "m": 427
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 13,
+     "m": 829
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 19,
+     "m": 1165
+    },
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 33,
+     "m": 2066
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 35,
+     "m": 2222
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "栄町",
+   "chome": null,
+   "address": "東京都北区栄町",
+   "lat": 35.74986,
+   "lon": 139.74385,
+   "matched": "東京都北区栄町",
+   "elev_center_m": 4.7,
+   "elev_min_m": 2.7,
+   "elev_max_m": 24.2,
+   "flood_center": "0.5〜3.0m",
+   "flood_worst": "3.0〜5.0m",
+   "flood_worst_max_m": 5,
+   "flood_coverage": 0.72,
+   "flood_hist": {
+    "0.5〜3.0m": 11,
+    "0.5m未満": 1,
+    "3.0〜5.0m": 6
+   },
+   "flood_deep_pts": 6,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 1,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "標高4.7mの低地で代表点が浸水想定0.5〜3.0mに該当",
+    "土砂災害警戒区域(イエロー)が近傍1点",
+    "近傍の高低差22m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "上中里",
+   "keihin_walk_min": 8,
+   "keihin_m": 462,
+   "nearest": {
+    "name": "上中里",
+    "line": "京浜東北",
+    "keihin": true,
+    "min": 8,
+    "m": 462
+   },
+   "walks": [
+    {
+     "name": "上中里",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 8,
+     "m": 462
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 8,
+     "m": 450
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 9,
+     "m": 575
+    },
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 25,
+     "m": 1537
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 29,
+     "m": 1842
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "滝野川",
+   "chome": 1,
+   "address": "東京都北区滝野川1丁目",
+   "lat": 35.74786,
+   "lon": 139.73558,
+   "matched": "東京都北区滝野川一丁目",
+   "elev_center_m": 15.7,
+   "elev_min_m": 13.6,
+   "elev_max_m": 23.5,
+   "flood_center": null,
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.08,
+   "flood_hist": {
+    "0.5m未満": 2
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "clear",
+   "notes": [
+    "0.5m未満の着色は近傍2点にあるが、台地上では通常出るため除外理由にしない"
+   ],
+   "in_triangle": false,
+   "keihin_station": "王子",
+   "keihin_walk_min": 9,
+   "keihin_m": 556,
+   "nearest": {
+    "name": "王子",
+    "line": "京浜東北/南北",
+    "keihin": true,
+    "min": 9,
+    "m": 556
+   },
+   "walks": [
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 9,
+     "m": 556
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 10,
+     "m": 628
+    },
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 13,
+     "m": 784
+    },
+    {
+     "name": "上中里",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 17,
+     "m": 1039
+    },
+    {
+     "name": "新板橋",
+     "line": "三田",
+     "keihin": false,
+     "min": 23,
+     "m": 1419
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "滝野川",
+   "chome": 2,
+   "address": "東京都北区滝野川2丁目",
+   "lat": 35.74986,
+   "lon": 139.73337,
+   "matched": "東京都北区滝野川二丁目",
+   "elev_center_m": 16.5,
+   "elev_min_m": 12.9,
+   "elev_max_m": 23,
+   "flood_center": null,
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.08,
+   "flood_hist": {
+    "0.5m未満": 2
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 1,
+   "sampled": 25,
+   "verdict": "caution",
+   "notes": [
+    "土砂災害警戒区域(イエロー)が近傍1点",
+    "近傍の高低差10m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "王子",
+   "keihin_walk_min": 9,
+   "keihin_m": 522,
+   "nearest": {
+    "name": "王子",
+    "line": "京浜東北/南北",
+    "keihin": true,
+    "min": 9,
+    "m": 522
+   },
+   "walks": [
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 9,
+     "m": 522
+    },
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 13,
+     "m": 818
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 15,
+     "m": 900
+    },
+    {
+     "name": "新板橋",
+     "line": "三田",
+     "keihin": false,
+     "min": 20,
+     "m": 1221
+    },
+    {
+     "name": "上中里",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 21,
+     "m": 1281
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "滝野川",
+   "chome": 3,
+   "address": "東京都北区滝野川3丁目",
+   "lat": 35.74847,
+   "lon": 139.72908,
+   "matched": "東京都北区滝野川三丁目",
+   "elev_center_m": 17.6,
+   "elev_min_m": 14.5,
+   "elev_max_m": 26.1,
+   "flood_center": null,
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.16,
+   "flood_hist": {
+    "0.5m未満": 4
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "clear",
+   "notes": [
+    "近傍の高低差12m(崖線に掛かる)",
+    "0.5m未満の着色は近傍4点にあるが、台地上では通常出るため除外理由にしない"
+   ],
+   "in_triangle": false,
+   "keihin_station": "王子",
+   "keihin_walk_min": 15,
+   "keihin_m": 935,
+   "nearest": {
+    "name": "西巣鴨",
+    "line": "三田",
+    "keihin": false,
+    "min": 9,
+    "m": 548
+   },
+   "walks": [
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 9,
+     "m": 548
+    },
+    {
+     "name": "新板橋",
+     "line": "三田",
+     "keihin": false,
+     "min": 13,
+     "m": 829
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 15,
+     "m": 935
+    },
+    {
+     "name": "板橋",
+     "line": "埼京",
+     "keihin": false,
+     "min": 15,
+     "m": 940
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 19,
+     "m": 1212
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "滝野川",
+   "chome": 4,
+   "address": "東京都北区滝野川4丁目",
+   "lat": 35.75143,
+   "lon": 139.72665,
+   "matched": "東京都北区滝野川四丁目",
+   "elev_center_m": 14.9,
+   "elev_min_m": 13.3,
+   "elev_max_m": 24.7,
+   "flood_center": null,
+   "flood_worst": "0.5〜3.0m",
+   "flood_worst_max_m": 3,
+   "flood_coverage": 0.28,
+   "flood_hist": {
+    "0.5m未満": 5,
+    "0.5〜3.0m": 2
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "caution",
+   "notes": [
+    "浸水想定0.5〜3.0mが近傍25点中2点",
+    "近傍の高低差11m(崖線に掛かる)"
+   ],
+   "in_triangle": true,
+   "keihin_station": "王子",
+   "keihin_walk_min": 17,
+   "keihin_m": 1053,
+   "nearest": {
+    "name": "新板橋",
+    "line": "三田",
+    "keihin": false,
+    "min": 11,
+    "m": 676
+   },
+   "walks": [
+    {
+     "name": "新板橋",
+     "line": "三田",
+     "keihin": false,
+     "min": 11,
+     "m": 676
+    },
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 14,
+     "m": 895
+    },
+    {
+     "name": "板橋",
+     "line": "埼京",
+     "keihin": false,
+     "min": 15,
+     "m": 945
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 17,
+     "m": 1053
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 17,
+     "m": 1032
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "滝野川",
+   "chome": 5,
+   "address": "東京都北区滝野川5丁目",
+   "lat": 35.74769,
+   "lon": 139.72498,
+   "matched": "東京都北区滝野川五丁目",
+   "elev_center_m": 25.9,
+   "elev_min_m": 15.7,
+   "elev_max_m": 28.6,
+   "flood_center": null,
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.12,
+   "flood_hist": {
+    "0.5m未満": 3
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "clear",
+   "notes": [
+    "近傍の高低差13m(崖線に掛かる)",
+    "0.5m未満の着色は近傍3点にあるが、台地上では通常出るため除外理由にしない"
+   ],
+   "in_triangle": true,
+   "keihin_station": "王子",
+   "keihin_walk_min": 21,
+   "keihin_m": 1307,
+   "nearest": {
+    "name": "新板橋",
+    "line": "三田",
+    "keihin": false,
+    "min": 8,
+    "m": 474
+   },
+   "walks": [
+    {
+     "name": "新板橋",
+     "line": "三田",
+     "keihin": false,
+     "min": 8,
+     "m": 474
+    },
+    {
+     "name": "板橋",
+     "line": "埼京",
+     "keihin": false,
+     "min": 9,
+     "m": 568
+    },
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 9,
+     "m": 570
+    },
+    {
+     "name": "下板橋",
+     "line": "東上",
+     "keihin": false,
+     "min": 15,
+     "m": 899
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 21,
+     "m": 1307
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "滝野川",
+   "chome": 6,
+   "address": "東京都北区滝野川6丁目",
+   "lat": 35.74518,
+   "lon": 139.72429,
+   "matched": "東京都北区滝野川六丁目",
+   "elev_center_m": 26.1,
+   "elev_min_m": 22.8,
+   "elev_max_m": 28.1,
+   "flood_center": "0.5m未満",
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.16,
+   "flood_hist": {
+    "0.5m未満": 4
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "clear",
+   "notes": [
+    "0.5m未満の着色は近傍4点にあるが、台地上では通常出るため除外理由にしない"
+   ],
+   "in_triangle": false,
+   "keihin_station": "王子",
+   "keihin_walk_min": 24,
+   "keihin_m": 1493,
+   "nearest": {
+    "name": "板橋",
+    "line": "埼京",
+    "keihin": false,
+    "min": 7,
+    "m": 438
+   },
+   "walks": [
+    {
+     "name": "板橋",
+     "line": "埼京",
+     "keihin": false,
+     "min": 7,
+     "m": 438
+    },
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 7,
+     "m": 437
+    },
+    {
+     "name": "新板橋",
+     "line": "三田",
+     "keihin": false,
+     "min": 9,
+     "m": 565
+    },
+    {
+     "name": "下板橋",
+     "line": "東上",
+     "keihin": false,
+     "min": 13,
+     "m": 795
+    },
+    {
+     "name": "板橋区役所前",
+     "line": "三田",
+     "keihin": false,
+     "min": 23,
+     "m": 1458
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "滝野川",
+   "chome": 7,
+   "address": "東京都北区滝野川7丁目",
+   "lat": 35.74314,
+   "lon": 139.72189,
+   "matched": "東京都北区滝野川七丁目",
+   "elev_center_m": 22.6,
+   "elev_min_m": 19.9,
+   "elev_max_m": 26.8,
+   "flood_center": null,
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.28,
+   "flood_hist": {
+    "0.5m未満": 7
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "clear",
+   "notes": [
+    "0.5m未満の着色は近傍7点にあるが、台地上では通常出るため除外理由にしない"
+   ],
+   "in_triangle": false,
+   "keihin_station": "王子",
+   "keihin_walk_min": 29,
+   "keihin_m": 1798,
+   "nearest": {
+    "name": "板橋",
+    "line": "埼京",
+    "keihin": false,
+    "min": 6,
+    "m": 324
+   },
+   "walks": [
+    {
+     "name": "板橋",
+     "line": "埼京",
+     "keihin": false,
+     "min": 6,
+     "m": 324
+    },
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 10,
+     "m": 616
+    },
+    {
+     "name": "下板橋",
+     "line": "東上",
+     "keihin": false,
+     "min": 10,
+     "m": 625
+    },
+    {
+     "name": "新板橋",
+     "line": "三田",
+     "keihin": false,
+     "min": 11,
+     "m": 655
+    },
+    {
+     "name": "板橋区役所前",
+     "line": "三田",
+     "keihin": false,
+     "min": 22,
+     "m": 1407
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "西ケ原",
+   "chome": 1,
+   "address": "東京都北区西ケ原1丁目",
+   "lat": 35.74177,
+   "lon": 139.74603,
+   "matched": "東京都北区西ケ原一丁目",
+   "elev_center_m": 16.1,
+   "elev_min_m": 13.1,
+   "elev_max_m": 23.5,
+   "flood_center": null,
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.4,
+   "flood_hist": {
+    "0.5m未満": 10
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "clear",
+   "notes": [
+    "近傍の高低差10m(崖線に掛かる)",
+    "0.5m未満の着色は近傍10点にあるが、台地上では通常出るため除外理由にしない"
+   ],
+   "in_triangle": false,
+   "keihin_station": "上中里",
+   "keihin_walk_min": 9,
+   "keihin_m": 541,
+   "nearest": {
+    "name": "上中里",
+    "line": "京浜東北",
+    "keihin": true,
+    "min": 9,
+    "m": 541
+   },
+   "walks": [
+    {
+     "name": "上中里",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 9,
+     "m": 541
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 10,
+     "m": 590
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 22,
+     "m": 1369
+    },
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 25,
+     "m": 1577
+    },
+    {
+     "name": "板橋",
+     "line": "埼京",
+     "keihin": false,
+     "min": 38,
+     "m": 2431
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "西ケ原",
+   "chome": 2,
+   "address": "東京都北区西ケ原2丁目",
+   "lat": 35.74757,
+   "lon": 139.74141,
+   "matched": "東京都北区西ケ原二丁目",
+   "elev_center_m": 24.1,
+   "elev_min_m": 5.4,
+   "elev_max_m": 24.4,
+   "flood_center": "0.5m未満",
+   "flood_worst": "0.5〜3.0m",
+   "flood_worst_max_m": 3,
+   "flood_coverage": 0.2,
+   "flood_hist": {
+    "0.5m未満": 3,
+    "0.5〜3.0m": 2
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 1,
+   "sampled": 25,
+   "verdict": "caution",
+   "notes": [
+    "浸水想定0.5〜3.0mが近傍25点中2点",
+    "土砂災害警戒区域(イエロー)が近傍1点",
+    "近傍の高低差19m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "上中里",
+   "keihin_walk_min": 9,
+   "keihin_m": 515,
+   "nearest": {
+    "name": "西ケ原",
+    "line": "南北",
+    "keihin": false,
+    "min": 3,
+    "m": 183
+   },
+   "walks": [
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 3,
+     "m": 183
+    },
+    {
+     "name": "上中里",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 9,
+     "m": 515
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 10,
+     "m": 602
+    },
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 20,
+     "m": 1231
+    },
+    {
+     "name": "新板橋",
+     "line": "三田",
+     "keihin": false,
+     "min": 31,
+     "m": 1946
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "西ケ原",
+   "chome": 3,
+   "address": "東京都北区西ケ原3丁目",
+   "lat": 35.74455,
+   "lon": 139.7403,
+   "matched": "東京都北区西ケ原三丁目",
+   "elev_center_m": 23.4,
+   "elev_min_m": 15.5,
+   "elev_max_m": 24.5,
+   "flood_center": null,
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.12,
+   "flood_hist": {
+    "0.5m未満": 3
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "clear",
+   "notes": [
+    "0.5m未満の着色は近傍3点にあるが、台地上では通常出るため除外理由にしない"
+   ],
+   "in_triangle": false,
+   "keihin_station": "上中里",
+   "keihin_walk_min": 11,
+   "keihin_m": 644,
+   "nearest": {
+    "name": "西ケ原",
+    "line": "南北",
+    "keihin": false,
+    "min": 4,
+    "m": 238
+   },
+   "walks": [
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 4,
+     "m": 238
+    },
+    {
+     "name": "上中里",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 11,
+     "m": 644
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 14,
+     "m": 887
+    },
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 17,
+     "m": 1052
+    },
+    {
+     "name": "板橋",
+     "line": "埼京",
+     "keihin": false,
+     "min": 30,
+     "m": 1884
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "西ケ原",
+   "chome": 4,
+   "address": "東京都北区西ケ原4丁目",
+   "lat": 35.74329,
+   "lon": 139.73511,
+   "matched": "東京都北区西ケ原四丁目",
+   "elev_center_m": 20.5,
+   "elev_min_m": 15.4,
+   "elev_max_m": 25.5,
+   "flood_center": null,
+   "flood_worst": null,
+   "flood_worst_max_m": null,
+   "flood_coverage": 0,
+   "flood_hist": {},
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "clear",
+   "notes": [
+    "近傍の高低差10m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "王子",
+   "keihin_walk_min": 17,
+   "keihin_m": 1047,
+   "nearest": {
+    "name": "西巣鴨",
+    "line": "三田",
+    "keihin": false,
+    "min": 10,
+    "m": 579
+   },
+   "walks": [
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 10,
+     "m": 579
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 12,
+     "m": 707
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 17,
+     "m": 1047
+    },
+    {
+     "name": "上中里",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 18,
+     "m": 1132
+    },
+    {
+     "name": "板橋",
+     "line": "埼京",
+     "keihin": false,
+     "min": 23,
+     "m": 1431
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "中里",
+   "chome": 1,
+   "address": "東京都北区中里1丁目",
+   "lat": 35.73796,
+   "lon": 139.75148,
+   "matched": "東京都北区中里一丁目",
+   "elev_center_m": 12.6,
+   "elev_min_m": 10.9,
+   "elev_max_m": 21.9,
+   "flood_center": null,
+   "flood_worst": "0.5〜3.0m",
+   "flood_worst_max_m": 3,
+   "flood_coverage": 0.44,
+   "flood_hist": {
+    "0.5m未満": 8,
+    "0.5〜3.0m": 3
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "caution",
+   "notes": [
+    "浸水想定0.5〜3.0mが近傍25点中3点",
+    "近傍の高低差11m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "上中里",
+   "keihin_walk_min": 17,
+   "keihin_m": 1041,
+   "nearest": {
+    "name": "上中里",
+    "line": "京浜東北",
+    "keihin": true,
+    "min": 17,
+    "m": 1041
+   },
+   "walks": [
+    {
+     "name": "上中里",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 17,
+     "m": 1041
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 20,
+     "m": 1231
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 32,
+     "m": 1995
+    },
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 34,
+     "m": 2148
+    },
+    {
+     "name": "板橋",
+     "line": "埼京",
+     "keihin": false,
+     "min": 47,
+     "m": 3004
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "中里",
+   "chome": 2,
+   "address": "東京都北区中里2丁目",
+   "lat": 35.73909,
+   "lon": 139.74999,
+   "matched": "東京都北区中里二丁目",
+   "elev_center_m": 12.9,
+   "elev_min_m": 11.3,
+   "elev_max_m": 23.4,
+   "flood_center": "0.5m未満",
+   "flood_worst": "0.5〜3.0m",
+   "flood_worst_max_m": 3,
+   "flood_coverage": 0.44,
+   "flood_hist": {
+    "0.5m未満": 10,
+    "0.5〜3.0m": 1
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "caution",
+   "notes": [
+    "浸水想定0.5〜3.0mが近傍25点中1点",
+    "近傍の高低差12m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "上中里",
+   "keihin_walk_min": 14,
+   "keihin_m": 875,
+   "nearest": {
+    "name": "上中里",
+    "line": "京浜東北",
+    "keihin": true,
+    "min": 14,
+    "m": 875
+   },
+   "walks": [
+    {
+     "name": "上中里",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 14,
+     "m": 875
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 17,
+     "m": 1047
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 29,
+     "m": 1814
+    },
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 31,
+     "m": 1984
+    },
+    {
+     "name": "板橋",
+     "line": "埼京",
+     "keihin": false,
+     "min": 45,
+     "m": 2841
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "中里",
+   "chome": 3,
+   "address": "東京都北区中里3丁目",
+   "lat": 35.74139,
+   "lon": 139.75246,
+   "matched": "東京都北区中里三丁目",
+   "elev_center_m": 23.3,
+   "elev_min_m": 5.7,
+   "elev_max_m": 23.9,
+   "flood_center": null,
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.28,
+   "flood_hist": {
+    "0.5m未満": 7
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "clear",
+   "notes": [
+    "近傍の高低差18m(崖線に掛かる)",
+    "0.5m未満の着色は近傍7点にあるが、台地上では通常出るため除外理由にしない"
+   ],
+   "in_triangle": false,
+   "keihin_station": "上中里",
+   "keihin_walk_min": 12,
+   "keihin_m": 760,
+   "nearest": {
+    "name": "上中里",
+    "line": "京浜東北",
+    "keihin": true,
+    "min": 12,
+    "m": 760
+   },
+   "walks": [
+    {
+     "name": "上中里",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 12,
+     "m": 760
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 17,
+     "m": 1063
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 28,
+     "m": 1767
+    },
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 34,
+     "m": 2157
+    },
+    {
+     "name": "板橋",
+     "line": "埼京",
+     "keihin": false,
+     "min": 48,
+     "m": 3011
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "上中里",
+   "chome": 1,
+   "address": "東京都北区上中里1丁目",
+   "lat": 35.7446,
+   "lon": 139.74756,
+   "matched": "東京都北区上中里一丁目",
+   "elev_center_m": 23.7,
+   "elev_min_m": 4.1,
+   "elev_max_m": 24.6,
+   "flood_center": null,
+   "flood_worst": "0.5〜3.0m",
+   "flood_worst_max_m": 3,
+   "flood_coverage": 0.16,
+   "flood_hist": {
+    "0.5m未満": 3,
+    "0.5〜3.0m": 1
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "caution",
+   "notes": [
+    "浸水想定0.5〜3.0mが近傍25点中1点",
+    "近傍の高低差21m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "上中里",
+   "keihin_walk_min": 4,
+   "keihin_m": 226,
+   "nearest": {
+    "name": "上中里",
+    "line": "京浜東北",
+    "keihin": true,
+    "min": 4,
+    "m": 226
+   },
+   "walks": [
+    {
+     "name": "上中里",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 4,
+     "m": 226
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 9,
+     "m": 512
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 19,
+     "m": 1202
+    },
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 27,
+     "m": 1706
+    },
+    {
+     "name": "板橋",
+     "line": "埼京",
+     "keihin": false,
+     "min": 40,
+     "m": 2539
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "上中里",
+   "chome": 2,
+   "address": "東京都北区上中里2丁目",
+   "lat": 35.74544,
+   "lon": 139.75296,
+   "matched": "東京都北区上中里二丁目",
+   "elev_center_m": 4.5,
+   "elev_min_m": 2.9,
+   "elev_max_m": 23.5,
+   "flood_center": "0.5〜3.0m",
+   "flood_worst": "3.0〜5.0m",
+   "flood_worst_max_m": 5,
+   "flood_coverage": 0.88,
+   "flood_hist": {
+    "0.5m未満": 5,
+    "0.5〜3.0m": 16,
+    "3.0〜5.0m": 1
+   },
+   "flood_deep_pts": 1,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "標高4.5mの低地で代表点が浸水想定0.5〜3.0mに該当",
+    "近傍の高低差21m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "上中里",
+   "keihin_walk_min": 9,
+   "keihin_m": 554,
+   "nearest": {
+    "name": "上中里",
+    "line": "京浜東北",
+    "keihin": true,
+    "min": 9,
+    "m": 554
+   },
+   "walks": [
+    {
+     "name": "上中里",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 9,
+     "m": 554
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 16,
+     "m": 976
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 24,
+     "m": 1532
+    },
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 35,
+     "m": 2200
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 42,
+     "m": 2679
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "上中里",
+   "chome": 3,
+   "address": "東京都北区上中里3丁目",
+   "lat": 35.75003,
+   "lon": 139.74823,
+   "matched": "東京都北区上中里三丁目",
+   "elev_center_m": 3.2,
+   "elev_min_m": 2,
+   "elev_max_m": 4.7,
+   "flood_center": "3.0〜5.0m",
+   "flood_worst": "3.0〜5.0m",
+   "flood_worst_max_m": 5,
+   "flood_coverage": 1,
+   "flood_hist": {
+    "0.5〜3.0m": 10,
+    "3.0〜5.0m": 15
+   },
+   "flood_deep_pts": 15,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "浸水想定(想定最大規模)3.0〜5.0m。標高3.2mで近傍25点中15点が3m超"
+   ],
+   "in_triangle": false,
+   "keihin_station": "上中里",
+   "keihin_walk_min": 7,
+   "keihin_m": 400,
+   "nearest": {
+    "name": "上中里",
+    "line": "京浜東北",
+    "keihin": true,
+    "min": 7,
+    "m": 400
+   },
+   "walks": [
+    {
+     "name": "上中里",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 7,
+     "m": 400
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 11,
+     "m": 704
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 15,
+     "m": 935
+    },
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 30,
+     "m": 1904
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 32,
+     "m": 2017
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "田端",
+   "chome": 1,
+   "address": "東京都北区田端1丁目",
+   "lat": 35.73493,
+   "lon": 139.76155,
+   "matched": "東京都北区田端一丁目",
+   "elev_center_m": 13.2,
+   "elev_min_m": 5.7,
+   "elev_max_m": 23.5,
+   "flood_center": null,
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.24,
+   "flood_hist": {
+    "0.5m未満": 6
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": "yellow",
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 1,
+   "sampled": 25,
+   "verdict": "caution",
+   "notes": [
+    "土砂災害警戒区域(イエロー)が近傍1点",
+    "近傍の高低差18m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "上中里",
+   "keihin_walk_min": 29,
+   "keihin_m": 1846,
+   "nearest": {
+    "name": "上中里",
+    "line": "京浜東北",
+    "keihin": true,
+    "min": 29,
+    "m": 1846
+   },
+   "walks": [
+    {
+     "name": "上中里",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 29,
+     "m": 1846
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 34,
+     "m": 2142
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 45,
+     "m": 2858
+    },
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 49,
+     "m": 3116
+    },
+    {
+     "name": "板橋",
+     "line": "埼京",
+     "keihin": false,
+     "min": 63,
+     "m": 3971
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "田端",
+   "chome": 2,
+   "address": "東京都北区田端2丁目",
+   "lat": 35.73468,
+   "lon": 139.75822,
+   "matched": "東京都北区田端二丁目",
+   "elev_center_m": 12.1,
+   "elev_min_m": 8.2,
+   "elev_max_m": 23.3,
+   "flood_center": null,
+   "flood_worst": "0.5〜3.0m",
+   "flood_worst_max_m": 3,
+   "flood_coverage": 0.4,
+   "flood_hist": {
+    "0.5m未満": 9,
+    "0.5〜3.0m": 1
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "caution",
+   "notes": [
+    "浸水想定0.5〜3.0mが近傍25点中1点",
+    "近傍の高低差15m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "上中里",
+   "keihin_walk_min": 27,
+   "keihin_m": 1668,
+   "nearest": {
+    "name": "上中里",
+    "line": "京浜東北",
+    "keihin": true,
+    "min": 27,
+    "m": 1668
+   },
+   "walks": [
+    {
+     "name": "上中里",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 27,
+     "m": 1668
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 31,
+     "m": 1923
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 42,
+     "m": 2665
+    },
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 45,
+     "m": 2841
+    },
+    {
+     "name": "板橋",
+     "line": "埼京",
+     "keihin": false,
+     "min": 58,
+     "m": 3693
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "田端",
+   "chome": 3,
+   "address": "東京都北区田端3丁目",
+   "lat": 35.73584,
+   "lon": 139.75546,
+   "matched": "東京都北区田端三丁目",
+   "elev_center_m": 15.1,
+   "elev_min_m": 9.1,
+   "elev_max_m": 23,
+   "flood_center": null,
+   "flood_worst": "0.5〜3.0m",
+   "flood_worst_max_m": 3,
+   "flood_coverage": 0.44,
+   "flood_hist": {
+    "0.5m未満": 9,
+    "0.5〜3.0m": 2
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "caution",
+   "notes": [
+    "浸水想定0.5〜3.0mが近傍25点中2点",
+    "近傍の高低差14m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "上中里",
+   "keihin_walk_min": 23,
+   "keihin_m": 1419,
+   "nearest": {
+    "name": "上中里",
+    "line": "京浜東北",
+    "keihin": true,
+    "min": 23,
+    "m": 1419
+   },
+   "walks": [
+    {
+     "name": "上中里",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 23,
+     "m": 1419
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 26,
+     "m": 1652
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 38,
+     "m": 2404
+    },
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 41,
+     "m": 2563
+    },
+    {
+     "name": "板橋",
+     "line": "埼京",
+     "keihin": false,
+     "min": 54,
+     "m": 3416
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "田端",
+   "chome": 4,
+   "address": "東京都北区田端4丁目",
+   "lat": 35.73753,
+   "lon": 139.75388,
+   "matched": "東京都北区田端四丁目",
+   "elev_center_m": 14.1,
+   "elev_min_m": 10.4,
+   "elev_max_m": 23.2,
+   "flood_center": null,
+   "flood_worst": "0.5〜3.0m",
+   "flood_worst_max_m": 3,
+   "flood_coverage": 0.4,
+   "flood_hist": {
+    "0.5m未満": 9,
+    "0.5〜3.0m": 1
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "caution",
+   "notes": [
+    "浸水想定0.5〜3.0mが近傍25点中1点",
+    "近傍の高低差13m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "上中里",
+   "keihin_walk_min": 19,
+   "keihin_m": 1183,
+   "nearest": {
+    "name": "上中里",
+    "line": "京浜東北",
+    "keihin": true,
+    "min": 19,
+    "m": 1183
+   },
+   "walks": [
+    {
+     "name": "上中里",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 19,
+     "m": 1183
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 23,
+     "m": 1419
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 34,
+     "m": 2167
+    },
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 38,
+     "m": 2369
+    },
+    {
+     "name": "板橋",
+     "line": "埼京",
+     "keihin": false,
+     "min": 51,
+     "m": 3225
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "田端",
+   "chome": 5,
+   "address": "東京都北区田端5丁目",
+   "lat": 35.73783,
+   "lon": 139.75711,
+   "matched": "東京都北区田端五丁目",
+   "elev_center_m": 23,
+   "elev_min_m": 5.6,
+   "elev_max_m": 23.9,
+   "flood_center": null,
+   "flood_worst": "0.5〜3.0m",
+   "flood_worst_max_m": 3,
+   "flood_coverage": 0.24,
+   "flood_hist": {
+    "0.5m未満": 5,
+    "0.5〜3.0m": 1
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "caution",
+   "notes": [
+    "浸水想定0.5〜3.0mが近傍25点中1点",
+    "近傍の高低差18m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "上中里",
+   "keihin_walk_min": 21,
+   "keihin_m": 1335,
+   "nearest": {
+    "name": "上中里",
+    "line": "京浜東北",
+    "keihin": true,
+    "min": 21,
+    "m": 1335
+   },
+   "walks": [
+    {
+     "name": "上中里",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 21,
+     "m": 1335
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 26,
+     "m": 1629
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 37,
+     "m": 2345
+    },
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 42,
+     "m": 2642
+    },
+    {
+     "name": "板橋",
+     "line": "埼京",
+     "keihin": false,
+     "min": 55,
+     "m": 3499
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "北区",
+   "town": "田端",
+   "chome": 6,
+   "address": "東京都北区田端6丁目",
+   "lat": 35.73965,
+   "lon": 139.7576,
+   "matched": "東京都北区田端六丁目",
+   "elev_center_m": 23.7,
+   "elev_min_m": 5,
+   "elev_max_m": 23.7,
+   "flood_center": null,
+   "flood_worst": "0.5〜3.0m",
+   "flood_worst_max_m": 3,
+   "flood_coverage": 0.6,
+   "flood_hist": {
+    "0.5m未満": 14,
+    "0.5〜3.0m": 1
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "caution",
+   "notes": [
+    "浸水想定0.5〜3.0mが近傍25点中1点",
+    "近傍の高低差19m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "上中里",
+   "keihin_walk_min": 20,
+   "keihin_m": 1230,
+   "nearest": {
+    "name": "上中里",
+    "line": "京浜東北",
+    "keihin": true,
+    "min": 20,
+    "m": 1230
+   },
+   "walks": [
+    {
+     "name": "上中里",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 20,
+     "m": 1230
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 25,
+     "m": 1564
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 36,
+     "m": 2244
+    },
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 42,
+     "m": 2644
+    },
+    {
+     "name": "王子神谷",
+     "line": "南北",
+     "keihin": false,
+     "min": 54,
+     "m": 3447
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "板橋区",
+   "town": "板橋",
+   "chome": 1,
+   "address": "東京都板橋区板橋1丁目",
+   "lat": 35.74713,
+   "lon": 139.71808,
+   "matched": "東京都板橋区板橋一丁目",
+   "elev_center_m": 24.8,
+   "elev_min_m": 22.2,
+   "elev_max_m": 28.8,
+   "flood_center": null,
+   "flood_worst": "0.5〜3.0m",
+   "flood_worst_max_m": 3,
+   "flood_coverage": 0.4,
+   "flood_hist": {
+    "0.5〜3.0m": 6,
+    "0.5m未満": 4
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "caution",
+   "notes": [
+    "浸水想定0.5〜3.0mが近傍25点中6点"
+   ],
+   "in_triangle": false,
+   "keihin_station": "王子",
+   "keihin_walk_min": 30,
+   "keihin_m": 1912,
+   "nearest": {
+    "name": "板橋",
+    "line": "埼京",
+    "keihin": false,
+    "min": 4,
+    "m": 240
+   },
+   "walks": [
+    {
+     "name": "板橋",
+     "line": "埼京",
+     "keihin": false,
+     "min": 4,
+     "m": 240
+    },
+    {
+     "name": "新板橋",
+     "line": "三田",
+     "keihin": false,
+     "min": 4,
+     "m": 248
+    },
+    {
+     "name": "下板橋",
+     "line": "東上",
+     "keihin": false,
+     "min": 5,
+     "m": 314
+    },
+    {
+     "name": "板橋区役所前",
+     "line": "三田",
+     "keihin": false,
+     "min": 14,
+     "m": 864
+    },
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 17,
+     "m": 1038
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "板橋区",
+   "town": "板橋",
+   "chome": 2,
+   "address": "東京都板橋区板橋2丁目",
+   "lat": 35.74817,
+   "lon": 139.71109,
+   "matched": "東京都板橋区板橋二丁目",
+   "elev_center_m": 26.5,
+   "elev_min_m": 24.4,
+   "elev_max_m": 32,
+   "flood_center": null,
+   "flood_worst": "0.5〜3.0m",
+   "flood_worst_max_m": 3,
+   "flood_coverage": 0.52,
+   "flood_hist": {
+    "0.5〜3.0m": 7,
+    "0.5m未満": 6
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "caution",
+   "notes": [
+    "浸水想定0.5〜3.0mが近傍25点中7点"
+   ],
+   "in_triangle": false,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 36,
+   "keihin_m": 2252,
+   "nearest": {
+    "name": "板橋区役所前",
+    "line": "三田",
+    "keihin": false,
+    "min": 6,
+    "m": 367
+   },
+   "walks": [
+    {
+     "name": "板橋区役所前",
+     "line": "三田",
+     "keihin": false,
+     "min": 6,
+     "m": 367
+    },
+    {
+     "name": "下板橋",
+     "line": "東上",
+     "keihin": false,
+     "min": 8,
+     "m": 512
+    },
+    {
+     "name": "板橋",
+     "line": "埼京",
+     "keihin": false,
+     "min": 13,
+     "m": 819
+    },
+    {
+     "name": "新板橋",
+     "line": "三田",
+     "keihin": false,
+     "min": 13,
+     "m": 798
+    },
+    {
+     "name": "大山",
+     "line": "東上",
+     "keihin": false,
+     "min": 13,
+     "m": 783
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "板橋区",
+   "town": "板橋",
+   "chome": 3,
+   "address": "東京都板橋区板橋3丁目",
+   "lat": 35.75182,
+   "lon": 139.71381,
+   "matched": "東京都板橋区板橋三丁目",
+   "elev_center_m": 28.5,
+   "elev_min_m": 18.4,
+   "elev_max_m": 29,
+   "flood_center": null,
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.08,
+   "flood_hist": {
+    "0.5m未満": 2
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "clear",
+   "notes": [
+    "近傍の高低差11m(崖線に掛かる)",
+    "0.5m未満の着色は近傍2点にあるが、台地上では通常出るため除外理由にしない"
+   ],
+   "in_triangle": false,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 28,
+   "keihin_m": 1783,
+   "nearest": {
+    "name": "板橋区役所前",
+    "line": "三田",
+    "keihin": false,
+    "min": 6,
+    "m": 344
+   },
+   "walks": [
+    {
+     "name": "板橋区役所前",
+     "line": "三田",
+     "keihin": false,
+     "min": 6,
+     "m": 344
+    },
+    {
+     "name": "新板橋",
+     "line": "三田",
+     "keihin": false,
+     "min": 11,
+     "m": 644
+    },
+    {
+     "name": "下板橋",
+     "line": "東上",
+     "keihin": false,
+     "min": 12,
+     "m": 746
+    },
+    {
+     "name": "板橋",
+     "line": "埼京",
+     "keihin": false,
+     "min": 14,
+     "m": 888
+    },
+    {
+     "name": "大山",
+     "line": "東上",
+     "keihin": false,
+     "min": 17,
+     "m": 1086
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "板橋区",
+   "town": "板橋",
+   "chome": 4,
+   "address": "東京都板橋区板橋4丁目",
+   "lat": 35.75075,
+   "lon": 139.71898,
+   "matched": "東京都板橋区板橋四丁目",
+   "elev_center_m": 18.1,
+   "elev_min_m": 16.6,
+   "elev_max_m": 28.7,
+   "flood_center": "0.5m未満",
+   "flood_worst": "0.5〜3.0m",
+   "flood_worst_max_m": 3,
+   "flood_coverage": 0.32,
+   "flood_hist": {
+    "0.5m未満": 5,
+    "0.5〜3.0m": 3
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "caution",
+   "notes": [
+    "浸水想定0.5〜3.0mが近傍25点中3点",
+    "近傍の高低差12m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 26,
+   "keihin_m": 1621,
+   "nearest": {
+    "name": "新板橋",
+    "line": "三田",
+    "keihin": false,
+    "min": 4,
+    "m": 232
+   },
+   "walks": [
+    {
+     "name": "新板橋",
+     "line": "三田",
+     "keihin": false,
+     "min": 4,
+     "m": 232
+    },
+    {
+     "name": "板橋",
+     "line": "埼京",
+     "keihin": false,
+     "min": 10,
+     "m": 611
+    },
+    {
+     "name": "下板橋",
+     "line": "東上",
+     "keihin": false,
+     "min": 11,
+     "m": 688
+    },
+    {
+     "name": "板橋区役所前",
+     "line": "三田",
+     "keihin": false,
+     "min": 13,
+     "m": 809
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 17,
+     "m": 1073
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "板橋区",
+   "town": "稲荷台",
+   "chome": null,
+   "address": "東京都板橋区稲荷台",
+   "lat": 35.76105,
+   "lon": 139.71217,
+   "matched": "東京都板橋区稲荷台",
+   "elev_center_m": 20.7,
+   "elev_min_m": 15.3,
+   "elev_max_m": 24.4,
+   "flood_center": null,
+   "flood_worst": "3.0〜5.0m",
+   "flood_worst_max_m": 5,
+   "flood_coverage": 0.24,
+   "flood_hist": {
+    "0.5m未満": 4,
+    "3.0〜5.0m": 1,
+    "0.5〜3.0m": 1
+   },
+   "flood_deep_pts": 1,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "edge",
+   "notes": [
+    "丁目の縁が低地に掛かる(近傍25点中1点が3m超の浸水想定・標高15.3〜24.4m)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 22,
+   "keihin_m": 1362,
+   "nearest": {
+    "name": "板橋本町",
+    "line": "三田",
+    "keihin": false,
+    "min": 10,
+    "m": 602
+   },
+   "walks": [
+    {
+     "name": "板橋本町",
+     "line": "三田",
+     "keihin": false,
+     "min": 10,
+     "m": 602
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 15,
+     "m": 922
+    },
+    {
+     "name": "板橋区役所前",
+     "line": "三田",
+     "keihin": false,
+     "min": 18,
+     "m": 1095
+    },
+    {
+     "name": "本蓮沼",
+     "line": "三田",
+     "keihin": false,
+     "min": 19,
+     "m": 1209
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 22,
+     "m": 1362
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "板橋区",
+   "town": "大和町",
+   "chome": null,
+   "address": "東京都板橋区大和町",
+   "lat": 35.7588,
+   "lon": 139.7047,
+   "matched": "東京都板橋区大和町",
+   "elev_center_m": 26.8,
+   "elev_min_m": 18.3,
+   "elev_max_m": 29,
+   "flood_center": null,
+   "flood_worst": "0.5〜3.0m",
+   "flood_worst_max_m": 3,
+   "flood_coverage": 0.4,
+   "flood_hist": {
+    "0.5m未満": 9,
+    "0.5〜3.0m": 1
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "caution",
+   "notes": [
+    "浸水想定0.5〜3.0mが近傍25点中1点",
+    "近傍の高低差11m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 33,
+   "keihin_m": 2078,
+   "nearest": {
+    "name": "板橋本町",
+    "line": "三田",
+    "keihin": false,
+    "min": 5,
+    "m": 302
+   },
+   "walks": [
+    {
+     "name": "板橋本町",
+     "line": "三田",
+     "keihin": false,
+     "min": 5,
+     "m": 302
+    },
+    {
+     "name": "板橋区役所前",
+     "line": "三田",
+     "keihin": false,
+     "min": 15,
+     "m": 959
+    },
+    {
+     "name": "本蓮沼",
+     "line": "三田",
+     "keihin": false,
+     "min": 18,
+     "m": 1100
+    },
+    {
+     "name": "大山",
+     "line": "東上",
+     "keihin": false,
+     "min": 18,
+     "m": 1150
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 25,
+     "m": 1595
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "板橋区",
+   "town": "清水町",
+   "chome": null,
+   "address": "東京都板橋区清水町",
+   "lat": 35.76485,
+   "lon": 139.70685,
+   "matched": "東京都板橋区清水町",
+   "elev_center_m": 23.9,
+   "elev_min_m": 22,
+   "elev_max_m": 24.7,
+   "flood_center": null,
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.08,
+   "flood_hist": {
+    "0.5m未満": 2
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "clear",
+   "notes": [
+    "0.5m未満の着色は近傍2点にあるが、台地上では通常出るため除外理由にしない"
+   ],
+   "in_triangle": false,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 29,
+   "keihin_m": 1810,
+   "nearest": {
+    "name": "板橋本町",
+    "line": "三田",
+    "keihin": false,
+    "min": 7,
+    "m": 398
+   },
+   "walks": [
+    {
+     "name": "板橋本町",
+     "line": "三田",
+     "keihin": false,
+     "min": 7,
+     "m": 398
+    },
+    {
+     "name": "本蓮沼",
+     "line": "三田",
+     "keihin": false,
+     "min": 9,
+     "m": 570
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 24,
+     "m": 1495
+    },
+    {
+     "name": "板橋区役所前",
+     "line": "三田",
+     "keihin": false,
+     "min": 24,
+     "m": 1528
+    },
+    {
+     "name": "東十条",
+     "line": "京浜東北",
+     "keihin": true,
+     "min": 29,
+     "m": 1810
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "板橋区",
+   "town": "氷川町",
+   "chome": null,
+   "address": "東京都板橋区氷川町",
+   "lat": 35.75399,
+   "lon": 139.70645,
+   "matched": "東京都板橋区氷川町",
+   "elev_center_m": 27.9,
+   "elev_min_m": 18.6,
+   "elev_max_m": 29.5,
+   "flood_center": null,
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.16,
+   "flood_hist": {
+    "0.5m未満": 4
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "clear",
+   "notes": [
+    "近傍の高低差11m(崖線に掛かる)",
+    "0.5m未満の着色は近傍4点にあるが、台地上では通常出るため除外理由にしない"
+   ],
+   "in_triangle": false,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 34,
+   "keihin_m": 2144,
+   "nearest": {
+    "name": "板橋区役所前",
+    "line": "三田",
+    "keihin": false,
+    "min": 7,
+    "m": 437
+   },
+   "walks": [
+    {
+     "name": "板橋区役所前",
+     "line": "三田",
+     "keihin": false,
+     "min": 7,
+     "m": 437
+    },
+    {
+     "name": "大山",
+     "line": "東上",
+     "keihin": false,
+     "min": 11,
+     "m": 699
+    },
+    {
+     "name": "板橋本町",
+     "line": "三田",
+     "keihin": false,
+     "min": 13,
+     "m": 832
+    },
+    {
+     "name": "下板橋",
+     "line": "東上",
+     "keihin": false,
+     "min": 20,
+     "m": 1268
+    },
+    {
+     "name": "新板橋",
+     "line": "三田",
+     "keihin": false,
+     "min": 21,
+     "m": 1344
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "板橋区",
+   "town": "仲宿",
+   "chome": null,
+   "address": "東京都板橋区仲宿",
+   "lat": 35.75538,
+   "lon": 139.70985,
+   "matched": "東京都板橋区仲宿",
+   "elev_center_m": 19.9,
+   "elev_min_m": 17.3,
+   "elev_max_m": 28.6,
+   "flood_center": null,
+   "flood_worst": "3.0〜5.0m",
+   "flood_worst_max_m": 5,
+   "flood_coverage": 0.28,
+   "flood_hist": {
+    "0.5m未満": 5,
+    "3.0〜5.0m": 1,
+    "0.5〜3.0m": 1
+   },
+   "flood_deep_pts": 1,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "edge",
+   "notes": [
+    "丁目の縁が低地に掛かる(近傍25点中1点が3m超の浸水想定・標高17.3〜28.6m)",
+    "近傍の高低差11m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 29,
+   "keihin_m": 1801,
+   "nearest": {
+    "name": "板橋区役所前",
+    "line": "三田",
+    "keihin": false,
+    "min": 8,
+    "m": 449
+   },
+   "walks": [
+    {
+     "name": "板橋区役所前",
+     "line": "三田",
+     "keihin": false,
+     "min": 8,
+     "m": 449
+    },
+    {
+     "name": "板橋本町",
+     "line": "三田",
+     "keihin": false,
+     "min": 13,
+     "m": 778
+    },
+    {
+     "name": "大山",
+     "line": "東上",
+     "keihin": false,
+     "min": 16,
+     "m": 1007
+    },
+    {
+     "name": "新板橋",
+     "line": "三田",
+     "keihin": false,
+     "min": 19,
+     "m": 1165
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 20,
+     "m": 1236
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "板橋区",
+   "town": "本町",
+   "chome": null,
+   "address": "東京都板橋区本町",
+   "lat": 35.75985,
+   "lon": 139.70854,
+   "matched": "東京都板橋区本町",
+   "elev_center_m": 19.5,
+   "elev_min_m": 16.6,
+   "elev_max_m": 26.7,
+   "flood_center": "0.5m未満",
+   "flood_worst": "0.5〜3.0m",
+   "flood_worst_max_m": 3,
+   "flood_coverage": 0.2,
+   "flood_hist": {
+    "0.5〜3.0m": 3,
+    "0.5m未満": 2
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "caution",
+   "notes": [
+    "浸水想定0.5〜3.0mが近傍25点中3点",
+    "近傍の高低差10m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 27,
+   "keihin_m": 1713,
+   "nearest": {
+    "name": "板橋本町",
+    "line": "三田",
+    "keihin": false,
+    "min": 6,
+    "m": 325
+   },
+   "walks": [
+    {
+     "name": "板橋本町",
+     "line": "三田",
+     "keihin": false,
+     "min": 6,
+     "m": 325
+    },
+    {
+     "name": "板橋区役所前",
+     "line": "三田",
+     "keihin": false,
+     "min": 15,
+     "m": 954
+    },
+    {
+     "name": "本蓮沼",
+     "line": "三田",
+     "keihin": false,
+     "min": 18,
+     "m": 1111
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 20,
+     "m": 1242
+    },
+    {
+     "name": "大山",
+     "line": "東上",
+     "keihin": false,
+     "min": 22,
+     "m": 1365
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "板橋区",
+   "town": "双葉町",
+   "chome": null,
+   "address": "東京都板橋区双葉町",
+   "lat": 35.75798,
+   "lon": 139.69891,
+   "matched": "東京都板橋区双葉町",
+   "elev_center_m": 25.3,
+   "elev_min_m": 19.5,
+   "elev_max_m": 28.6,
+   "flood_center": null,
+   "flood_worst": "3.0〜5.0m",
+   "flood_worst_max_m": 5,
+   "flood_coverage": 0.28,
+   "flood_hist": {
+    "0.5m未満": 4,
+    "0.5〜3.0m": 2,
+    "3.0〜5.0m": 1
+   },
+   "flood_deep_pts": 1,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "edge",
+   "notes": [
+    "丁目の縁が低地に掛かる(近傍25点中1点が3m超の浸水想定・標高19.5〜28.6m)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "東十条",
+   "keihin_walk_min": 41,
+   "keihin_m": 2606,
+   "nearest": {
+    "name": "板橋本町",
+    "line": "三田",
+    "keihin": false,
+    "min": 12,
+    "m": 709
+   },
+   "walks": [
+    {
+     "name": "板橋本町",
+     "line": "三田",
+     "keihin": false,
+     "min": 12,
+     "m": 709
+    },
+    {
+     "name": "大山",
+     "line": "東上",
+     "keihin": false,
+     "min": 17,
+     "m": 1088
+    },
+    {
+     "name": "本蓮沼",
+     "line": "三田",
+     "keihin": false,
+     "min": 19,
+     "m": 1215
+    },
+    {
+     "name": "板橋区役所前",
+     "line": "三田",
+     "keihin": false,
+     "min": 20,
+     "m": 1245
+    },
+    {
+     "name": "下板橋",
+     "line": "東上",
+     "keihin": false,
+     "min": 33,
+     "m": 2059
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "板橋区",
+   "town": "蓮沼町",
+   "chome": null,
+   "address": "東京都板橋区蓮沼町",
+   "lat": 35.77066,
+   "lon": 139.70316,
+   "matched": "東京都板橋区蓮沼町",
+   "elev_center_m": 23.9,
+   "elev_min_m": 22.1,
+   "elev_max_m": 24.6,
+   "flood_center": null,
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.2,
+   "flood_hist": {
+    "0.5m未満": 5
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "clear",
+   "notes": [
+    "0.5m未満の着色は近傍5点にあるが、台地上では通常出るため除外理由にしない"
+   ],
+   "in_triangle": false,
+   "keihin_station": "赤羽",
+   "keihin_walk_min": 29,
+   "keihin_m": 1796,
+   "nearest": {
+    "name": "本蓮沼",
+    "line": "三田",
+    "keihin": false,
+    "min": 4,
+    "m": 246
+   },
+   "walks": [
+    {
+     "name": "本蓮沼",
+     "line": "三田",
+     "keihin": false,
+     "min": 4,
+     "m": 246
+    },
+    {
+     "name": "板橋本町",
+     "line": "三田",
+     "keihin": false,
+     "min": 17,
+     "m": 1048
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 29,
+     "m": 1796
+    },
+    {
+     "name": "北赤羽",
+     "line": "埼京",
+     "keihin": false,
+     "min": 29,
+     "m": 1811
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 33,
+     "m": 2095
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "板橋区",
+   "town": "泉町",
+   "chome": null,
+   "address": "東京都板橋区泉町",
+   "lat": 35.76685,
+   "lon": 139.70076,
+   "matched": "東京都板橋区泉町",
+   "elev_center_m": 20.3,
+   "elev_min_m": 16.4,
+   "elev_max_m": 27.5,
+   "flood_center": null,
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.08,
+   "flood_hist": {
+    "0.5m未満": 2
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "clear",
+   "notes": [
+    "近傍の高低差11m(崖線に掛かる)",
+    "0.5m未満の着色は近傍2点にあるが、台地上では通常出るため除外理由にしない"
+   ],
+   "in_triangle": false,
+   "keihin_station": "赤羽",
+   "keihin_walk_min": 35,
+   "keihin_m": 2201,
+   "nearest": {
+    "name": "本蓮沼",
+    "line": "三田",
+    "keihin": false,
+    "min": 4,
+    "m": 240
+   },
+   "walks": [
+    {
+     "name": "本蓮沼",
+     "line": "三田",
+     "keihin": false,
+     "min": 4,
+     "m": 240
+    },
+    {
+     "name": "板橋本町",
+     "line": "三田",
+     "keihin": false,
+     "min": 12,
+     "m": 740
+    },
+    {
+     "name": "板橋区役所前",
+     "line": "三田",
+     "keihin": false,
+     "min": 30,
+     "m": 1916
+    },
+    {
+     "name": "大山",
+     "line": "東上",
+     "keihin": false,
+     "min": 32,
+     "m": 2033
+    },
+    {
+     "name": "十条",
+     "line": "埼京",
+     "keihin": false,
+     "min": 33,
+     "m": 2088
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "板橋区",
+   "town": "小豆沢",
+   "chome": 1,
+   "address": "東京都板橋区小豆沢1丁目",
+   "lat": 35.77394,
+   "lon": 139.70027,
+   "matched": "東京都板橋区小豆沢一丁目",
+   "elev_center_m": 21.8,
+   "elev_min_m": 21.4,
+   "elev_max_m": 23.2,
+   "flood_center": "0.5m未満",
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.36,
+   "flood_hist": {
+    "0.5m未満": 9
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "clear",
+   "notes": [
+    "0.5m未満の着色は近傍9点にあるが、台地上では通常出るため除外理由にしない"
+   ],
+   "in_triangle": false,
+   "keihin_station": "赤羽",
+   "keihin_walk_min": 30,
+   "keihin_m": 1910,
+   "nearest": {
+    "name": "本蓮沼",
+    "line": "三田",
+    "keihin": false,
+    "min": 10,
+    "m": 633
+   },
+   "walks": [
+    {
+     "name": "本蓮沼",
+     "line": "三田",
+     "keihin": false,
+     "min": 10,
+     "m": 633
+    },
+    {
+     "name": "板橋本町",
+     "line": "三田",
+     "keihin": false,
+     "min": 23,
+     "m": 1469
+    },
+    {
+     "name": "北赤羽",
+     "line": "埼京",
+     "keihin": false,
+     "min": 24,
+     "m": 1520
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 30,
+     "m": 1910
+    },
+    {
+     "name": "赤羽岩淵",
+     "line": "南北",
+     "keihin": false,
+     "min": 35,
+     "m": 2235
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "板橋区",
+   "town": "小豆沢",
+   "chome": 2,
+   "address": "東京都板橋区小豆沢2丁目",
+   "lat": 35.77683,
+   "lon": 139.69994,
+   "matched": "東京都板橋区小豆沢二丁目",
+   "elev_center_m": 21.7,
+   "elev_min_m": 18.2,
+   "elev_max_m": 23.2,
+   "flood_center": null,
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.08,
+   "flood_hist": {
+    "0.5m未満": 2
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "clear",
+   "notes": [
+    "0.5m未満の着色は近傍2点にあるが、台地上では通常出るため除外理由にしない"
+   ],
+   "in_triangle": false,
+   "keihin_station": "赤羽",
+   "keihin_walk_min": 30,
+   "keihin_m": 1888,
+   "nearest": {
+    "name": "本蓮沼",
+    "line": "三田",
+    "keihin": false,
+    "min": 15,
+    "m": 951
+   },
+   "walks": [
+    {
+     "name": "本蓮沼",
+     "line": "三田",
+     "keihin": false,
+     "min": 15,
+     "m": 951
+    },
+    {
+     "name": "北赤羽",
+     "line": "埼京",
+     "keihin": false,
+     "min": 20,
+     "m": 1236
+    },
+    {
+     "name": "板橋本町",
+     "line": "三田",
+     "keihin": false,
+     "min": 28,
+     "m": 1785
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 30,
+     "m": 1888
+    },
+    {
+     "name": "赤羽岩淵",
+     "line": "南北",
+     "keihin": false,
+     "min": 34,
+     "m": 2131
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "板橋区",
+   "town": "小豆沢",
+   "chome": 3,
+   "address": "東京都板橋区小豆沢3丁目",
+   "lat": 35.77866,
+   "lon": 139.69548,
+   "matched": "東京都板橋区小豆沢三丁目",
+   "elev_center_m": 24.2,
+   "elev_min_m": 3.3,
+   "elev_max_m": 24.2,
+   "flood_center": null,
+   "flood_worst": "5.0〜10.0m",
+   "flood_worst_max_m": 10,
+   "flood_coverage": 0.36,
+   "flood_hist": {
+    "0.5〜3.0m": 3,
+    "3.0〜5.0m": 5,
+    "5.0〜10.0m": 1
+   },
+   "flood_deep_pts": 6,
+   "dosha_center": null,
+   "dosha_red_pts": 1,
+   "dosha_yellow_pts": 1,
+   "sampled": 25,
+   "verdict": "edge",
+   "notes": [
+    "丁目の縁が低地に掛かる(近傍25点中6点が3m超の浸水想定・標高3.3〜24.2m)",
+    "土砂災害特別警戒区域(レッド)が近傍1点",
+    "近傍の高低差21m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "赤羽",
+   "keihin_walk_min": 36,
+   "keihin_m": 2285,
+   "nearest": {
+    "name": "北赤羽",
+    "line": "埼京",
+    "keihin": false,
+    "min": 21,
+    "m": 1312
+   },
+   "walks": [
+    {
+     "name": "北赤羽",
+     "line": "埼京",
+     "keihin": false,
+     "min": 21,
+     "m": 1312
+    },
+    {
+     "name": "本蓮沼",
+     "line": "三田",
+     "keihin": false,
+     "min": 21,
+     "m": 1291
+    },
+    {
+     "name": "板橋本町",
+     "line": "三田",
+     "keihin": false,
+     "min": 34,
+     "m": 2119
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 36,
+     "m": 2285
+    },
+    {
+     "name": "赤羽岩淵",
+     "line": "南北",
+     "keihin": false,
+     "min": 39,
+     "m": 2460
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "板橋区",
+   "town": "小豆沢",
+   "chome": 4,
+   "address": "東京都板橋区小豆沢4丁目",
+   "lat": 35.78114,
+   "lon": 139.69936,
+   "matched": "東京都板橋区小豆沢四丁目",
+   "elev_center_m": 4.8,
+   "elev_min_m": 2,
+   "elev_max_m": 23.1,
+   "flood_center": "3.0〜5.0m",
+   "flood_worst": "5.0〜10.0m",
+   "flood_worst_max_m": 10,
+   "flood_coverage": 0.64,
+   "flood_hist": {
+    "0.5〜3.0m": 3,
+    "0.5m未満": 1,
+    "3.0〜5.0m": 7,
+    "5.0〜10.0m": 5
+   },
+   "flood_deep_pts": 12,
+   "dosha_center": null,
+   "dosha_red_pts": 2,
+   "dosha_yellow_pts": 1,
+   "sampled": 25,
+   "verdict": "exclude",
+   "notes": [
+    "浸水想定(想定最大規模)5.0〜10.0m。標高4.8mで近傍25点中12点が3m超",
+    "土砂災害特別警戒区域(レッド)が近傍2点",
+    "近傍の高低差21m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "赤羽",
+   "keihin_walk_min": 31,
+   "keihin_m": 1963,
+   "nearest": {
+    "name": "北赤羽",
+    "line": "埼京",
+    "keihin": false,
+    "min": 14,
+    "m": 869
+   },
+   "walks": [
+    {
+     "name": "北赤羽",
+     "line": "埼京",
+     "keihin": false,
+     "min": 14,
+     "m": 869
+    },
+    {
+     "name": "本蓮沼",
+     "line": "三田",
+     "keihin": false,
+     "min": 23,
+     "m": 1430
+    },
+    {
+     "name": "赤羽",
+     "line": "京浜東北/埼京/湘南新宿",
+     "keihin": true,
+     "min": 31,
+     "m": 1963
+    },
+    {
+     "name": "赤羽岩淵",
+     "line": "南北",
+     "keihin": false,
+     "min": 33,
+     "m": 2068
+    },
+    {
+     "name": "板橋本町",
+     "line": "三田",
+     "keihin": false,
+     "min": 36,
+     "m": 2261
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "豊島区",
+   "town": "西巣鴨",
+   "chome": 1,
+   "address": "東京都豊島区西巣鴨1丁目",
+   "lat": 35.73756,
+   "lon": 139.72527,
+   "matched": "東京都豊島区西巣鴨一丁目",
+   "elev_center_m": 20,
+   "elev_min_m": 17.6,
+   "elev_max_m": 28.9,
+   "flood_center": null,
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.48,
+   "flood_hist": {
+    "0.5m未満": 12
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "clear",
+   "notes": [
+    "近傍の高低差11m(崖線に掛かる)",
+    "0.5m未満の着色は近傍12点にあるが、台地上では通常出るため除外理由にしない"
+   ],
+   "in_triangle": false,
+   "keihin_station": "王子",
+   "keihin_walk_min": 32,
+   "keihin_m": 2020,
+   "nearest": {
+    "name": "西巣鴨",
+    "line": "三田",
+    "keihin": false,
+    "min": 12,
+    "m": 735
+   },
+   "walks": [
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 12,
+     "m": 735
+    },
+    {
+     "name": "板橋",
+     "line": "埼京",
+     "keihin": false,
+     "min": 16,
+     "m": 1006
+    },
+    {
+     "name": "下板橋",
+     "line": "東上",
+     "keihin": false,
+     "min": 20,
+     "m": 1229
+    },
+    {
+     "name": "新板橋",
+     "line": "三田",
+     "keihin": false,
+     "min": 21,
+     "m": 1340
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 29,
+     "m": 1794
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "豊島区",
+   "town": "西巣鴨",
+   "chome": 2,
+   "address": "東京都豊島区西巣鴨2丁目",
+   "lat": 35.73941,
+   "lon": 139.72818,
+   "matched": "東京都豊島区西巣鴨二丁目",
+   "elev_center_m": 27.6,
+   "elev_min_m": 20.7,
+   "elev_max_m": 27.6,
+   "flood_center": null,
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.08,
+   "flood_hist": {
+    "0.5m未満": 2
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "clear",
+   "notes": [
+    "0.5m未満の着色は近傍2点にあるが、台地上では通常出るため除外理由にしない"
+   ],
+   "in_triangle": false,
+   "keihin_station": "王子",
+   "keihin_walk_min": 27,
+   "keihin_m": 1702,
+   "nearest": {
+    "name": "西巣鴨",
+    "line": "三田",
+    "keihin": false,
+    "min": 8,
+    "m": 462
+   },
+   "walks": [
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 8,
+     "m": 462
+    },
+    {
+     "name": "板橋",
+     "line": "埼京",
+     "keihin": false,
+     "min": 16,
+     "m": 1023
+    },
+    {
+     "name": "新板橋",
+     "line": "三田",
+     "keihin": false,
+     "min": 21,
+     "m": 1284
+    },
+    {
+     "name": "下板橋",
+     "line": "東上",
+     "keihin": false,
+     "min": 21,
+     "m": 1317
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 23,
+     "m": 1462
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "豊島区",
+   "town": "西巣鴨",
+   "chome": 3,
+   "address": "東京都豊島区西巣鴨3丁目",
+   "lat": 35.74188,
+   "lon": 139.72844,
+   "matched": "東京都豊島区西巣鴨三丁目",
+   "elev_center_m": 26.1,
+   "elev_min_m": 24.9,
+   "elev_max_m": 27.4,
+   "flood_center": null,
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.2,
+   "flood_hist": {
+    "0.5m未満": 5
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "clear",
+   "notes": [
+    "0.5m未満の着色は近傍5点にあるが、台地上では通常出るため除外理由にしない"
+   ],
+   "in_triangle": false,
+   "keihin_station": "王子",
+   "keihin_walk_min": 23,
+   "keihin_m": 1464,
+   "nearest": {
+    "name": "西巣鴨",
+    "line": "三田",
+    "keihin": false,
+    "min": 3,
+    "m": 188
+   },
+   "walks": [
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 3,
+     "m": 188
+    },
+    {
+     "name": "板橋",
+     "line": "埼京",
+     "keihin": false,
+     "min": 14,
+     "m": 896
+    },
+    {
+     "name": "新板橋",
+     "line": "三田",
+     "keihin": false,
+     "min": 18,
+     "m": 1089
+    },
+    {
+     "name": "下板橋",
+     "line": "東上",
+     "keihin": false,
+     "min": 20,
+     "m": 1228
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 21,
+     "m": 1323
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "豊島区",
+   "town": "西巣鴨",
+   "chome": 4,
+   "address": "東京都豊島区西巣鴨4丁目",
+   "lat": 35.74323,
+   "lon": 139.73038,
+   "matched": "東京都豊島区西巣鴨四丁目",
+   "elev_center_m": 26,
+   "elev_min_m": 24,
+   "elev_max_m": 28.1,
+   "flood_center": null,
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.16,
+   "flood_hist": {
+    "0.5m未満": 4
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "clear",
+   "notes": [
+    "0.5m未満の着色は近傍4点にあるが、台地上では通常出るため除外理由にしない"
+   ],
+   "in_triangle": false,
+   "keihin_station": "王子",
+   "keihin_walk_min": 20,
+   "keihin_m": 1239,
+   "nearest": {
+    "name": "西巣鴨",
+    "line": "三田",
+    "keihin": false,
+    "min": 3,
+    "m": 155
+   },
+   "walks": [
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 3,
+     "m": 155
+    },
+    {
+     "name": "板橋",
+     "line": "埼京",
+     "keihin": false,
+     "min": 16,
+     "m": 1013
+    },
+    {
+     "name": "西ケ原",
+     "line": "南北",
+     "keihin": false,
+     "min": 18,
+     "m": 1109
+    },
+    {
+     "name": "新板橋",
+     "line": "三田",
+     "keihin": false,
+     "min": 18,
+     "m": 1130
+    },
+    {
+     "name": "王子",
+     "line": "京浜東北/南北",
+     "keihin": true,
+     "min": 20,
+     "m": 1239
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "豊島区",
+   "town": "上池袋",
+   "chome": 1,
+   "address": "東京都豊島区上池袋1丁目",
+   "lat": 35.73607,
+   "lon": 139.72215,
+   "matched": "東京都豊島区上池袋一丁目",
+   "elev_center_m": 29.1,
+   "elev_min_m": 18.6,
+   "elev_max_m": 31.5,
+   "flood_center": null,
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.28,
+   "flood_hist": {
+    "0.5m未満": 7
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "clear",
+   "notes": [
+    "近傍の高低差13m(崖線に掛かる)",
+    "0.5m未満の着色は近傍7点にあるが、台地上では通常出るため除外理由にしない"
+   ],
+   "in_triangle": false,
+   "keihin_station": "王子",
+   "keihin_walk_min": 37,
+   "keihin_m": 2322,
+   "nearest": {
+    "name": "西巣鴨",
+    "line": "三田",
+    "keihin": false,
+    "min": 16,
+    "m": 1020
+   },
+   "walks": [
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 16,
+     "m": 1020
+    },
+    {
+     "name": "板橋",
+     "line": "埼京",
+     "keihin": false,
+     "min": 17,
+     "m": 1052
+    },
+    {
+     "name": "下板橋",
+     "line": "東上",
+     "keihin": false,
+     "min": 19,
+     "m": 1185
+    },
+    {
+     "name": "新板橋",
+     "line": "三田",
+     "keihin": false,
+     "min": 23,
+     "m": 1430
+    },
+    {
+     "name": "板橋区役所前",
+     "line": "三田",
+     "keihin": false,
+     "min": 32,
+     "m": 2020
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "豊島区",
+   "town": "上池袋",
+   "chome": 2,
+   "address": "東京都豊島区上池袋2丁目",
+   "lat": 35.73642,
+   "lon": 139.71732,
+   "matched": "東京都豊島区上池袋二丁目",
+   "elev_center_m": 31.1,
+   "elev_min_m": 25.3,
+   "elev_max_m": 33.4,
+   "flood_center": null,
+   "flood_worst": "0.5〜3.0m",
+   "flood_worst_max_m": 3,
+   "flood_coverage": 0.36,
+   "flood_hist": {
+    "0.5〜3.0m": 4,
+    "0.5m未満": 5
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "caution",
+   "notes": [
+    "浸水想定0.5〜3.0mが近傍25点中4点"
+   ],
+   "in_triangle": false,
+   "keihin_station": "王子",
+   "keihin_walk_min": 41,
+   "keihin_m": 2591,
+   "nearest": {
+    "name": "板橋",
+    "line": "埼京",
+    "keihin": false,
+    "min": 16,
+    "m": 1003
+   },
+   "walks": [
+    {
+     "name": "板橋",
+     "line": "埼京",
+     "keihin": false,
+     "min": 16,
+     "m": 1003
+    },
+    {
+     "name": "下板橋",
+     "line": "東上",
+     "keihin": false,
+     "min": 16,
+     "m": 996
+    },
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 21,
+     "m": 1298
+    },
+    {
+     "name": "新板橋",
+     "line": "三田",
+     "keihin": false,
+     "min": 22,
+     "m": 1397
+    },
+    {
+     "name": "板橋区役所前",
+     "line": "三田",
+     "keihin": false,
+     "min": 28,
+     "m": 1786
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "豊島区",
+   "town": "上池袋",
+   "chome": 3,
+   "address": "東京都豊島区上池袋3丁目",
+   "lat": 35.739,
+   "lon": 139.71948,
+   "matched": "東京都豊島区上池袋三丁目",
+   "elev_center_m": 30.7,
+   "elev_min_m": 21.1,
+   "elev_max_m": 31.7,
+   "flood_center": null,
+   "flood_worst": "0.5〜3.0m",
+   "flood_worst_max_m": 3,
+   "flood_coverage": 0.28,
+   "flood_hist": {
+    "0.5m未満": 6,
+    "0.5〜3.0m": 1
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "caution",
+   "notes": [
+    "浸水想定0.5〜3.0mが近傍25点中1点",
+    "近傍の高低差11m(崖線に掛かる)"
+   ],
+   "in_triangle": false,
+   "keihin_station": "王子",
+   "keihin_walk_min": 36,
+   "keihin_m": 2253,
+   "nearest": {
+    "name": "板橋",
+    "line": "埼京",
+    "keihin": false,
+    "min": 11,
+    "m": 697
+   },
+   "walks": [
+    {
+     "name": "板橋",
+     "line": "埼京",
+     "keihin": false,
+     "min": 11,
+     "m": 697
+    },
+    {
+     "name": "下板橋",
+     "line": "東上",
+     "keihin": false,
+     "min": 13,
+     "m": 783
+    },
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 16,
+     "m": 974
+    },
+    {
+     "name": "新板橋",
+     "line": "三田",
+     "keihin": false,
+     "min": 18,
+     "m": 1090
+    },
+    {
+     "name": "板橋区役所前",
+     "line": "三田",
+     "keihin": false,
+     "min": 26,
+     "m": 1616
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  },
+  {
+   "ward": "豊島区",
+   "town": "上池袋",
+   "chome": 4,
+   "address": "東京都豊島区上池袋4丁目",
+   "lat": 35.74102,
+   "lon": 139.72023,
+   "matched": "東京都豊島区上池袋四丁目",
+   "elev_center_m": 23.5,
+   "elev_min_m": 19.8,
+   "elev_max_m": 31.1,
+   "flood_center": null,
+   "flood_worst": "0.5m未満",
+   "flood_worst_max_m": 0.5,
+   "flood_coverage": 0.16,
+   "flood_hist": {
+    "0.5m未満": 4
+   },
+   "flood_deep_pts": 0,
+   "dosha_center": null,
+   "dosha_red_pts": 0,
+   "dosha_yellow_pts": 0,
+   "sampled": 25,
+   "verdict": "clear",
+   "notes": [
+    "近傍の高低差11m(崖線に掛かる)",
+    "0.5m未満の着色は近傍4点にあるが、台地上では通常出るため除外理由にしない"
+   ],
+   "in_triangle": false,
+   "keihin_station": "王子",
+   "keihin_walk_min": 33,
+   "keihin_m": 2059,
+   "nearest": {
+    "name": "板橋",
+    "line": "埼京",
+    "keihin": false,
+    "min": 8,
+    "m": 478
+   },
+   "walks": [
+    {
+     "name": "板橋",
+     "line": "埼京",
+     "keihin": false,
+     "min": 8,
+     "m": 478
+    },
+    {
+     "name": "下板橋",
+     "line": "東上",
+     "keihin": false,
+     "min": 10,
+     "m": 637
+    },
+    {
+     "name": "西巣鴨",
+     "line": "三田",
+     "keihin": false,
+     "min": 13,
+     "m": 815
+    },
+    {
+     "name": "新板橋",
+     "line": "三田",
+     "keihin": false,
+     "min": 14,
+     "m": 866
+    },
+    {
+     "name": "板橋区役所前",
+     "line": "三田",
+     "keihin": false,
+     "min": 23,
+     "m": 1472
+    }
+   ],
+   "deals_n": 0,
+   "has_benchmark": false,
+   "in_crawl_scope": false
+  }
+ ]
+}
