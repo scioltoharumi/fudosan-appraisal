@@ -88,6 +88,8 @@ export function loadHouseDeals() {
       age_y: +row.age_y,
       walk_min: +row.walk_min,
       shape: row.shape || null,          // 出典の「土地形状」。空欄=出典に記載なし(推測で埋めない)
+      road_type: row.road_type || null,  // private=私道 / public=公道系(国交省API由来)
+      breadth_m: row.breadth_m ? Number(row.breadth_m) : null,   // 前面道路の幅員(m・同上)
       source_url: row.source_url,
     };
   }).filter((d) =>
@@ -130,7 +132,7 @@ function quarterMid(q) {
   return new Date(Date.UTC(+m[1], (+m[2] - 1) * 3 + 1, 15));  // growthFactorと同じ四半期中間月
 }
 
-function normalizeLandUnit(d, asOf) {
+export function normalizeLandUnit(d, asOf) {
   const yearsAgo = Math.max(0, (asOf.getTime() - quarterMid(d.quarter).getTime()) / 31557600000);
   const bldgAtDeal = buildingValue(d.floor_m2, d.age_y) / Math.pow(1 + CONSTR_INFL, yearsAgo);
   // 修繕上限も取引時点の価格水準へ割引き(建物控除と時点基準を揃える・R4監査)

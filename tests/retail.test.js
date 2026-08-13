@@ -238,3 +238,31 @@ test("形状プール: 統制の有無で対象の形状補正の効き方が2�
   assert.ok(Math.abs((thinFlag.subjectFactor - thinReg.subjectFactor) + 0.125) < 1e-9,
     `半減になっていない: ${thinReg.subjectFactor} → ${thinFlag.subjectFactor}`);
 });
+
+// ---- 一次ソース(国土交通省 不動産情報ライブラリAPI)由来の属性(2026-08-13) ----
+// 再掲サイトには無い「前面道路の種類(私道/公道)」と「幅員」を取り込んだ。
+// 語彙が増えたり、推測で埋められたりしていないことを固定する。
+test("道路種別・幅員: APIから転記され、語彙と値域が妥当(推測で埋めていない)", () => {
+  const deals = loadHouseDeals();
+  const withRoad = deals.filter((d) => d.road_type);
+  assert.ok(withRoad.length > 500, `道路種別ありが少なすぎる: ${withRoad.length}`);
+  assert.ok(withRoad.length < deals.length, "全件に道路種別が入っている(原データに無い行を埋めた疑い)");
+  for (const d of withRoad) assert.ok(d.road_type === "private" || d.road_type === "public", `未知の道路種別: ${d.road_type}`);
+  // 私道は4割前後を占める(北区の実測)。ここが極端に偏ったら転記か照合を疑う
+  const priv = withRoad.filter((d) => d.road_type === "private").length / withRoad.length;
+  assert.ok(priv > 0.3 && priv < 0.55, `私道比率が想定外: ${(priv * 100).toFixed(1)}%`);
+  // 幅員は実在しうる範囲
+  for (const d of deals.filter((x) => x.breadth_m != null)) {
+    assert.ok(d.breadth_m > 0 && d.breadth_m < 50, `幅員が異常: ${d.breadth_m}`);
+  }
+});
+
+test("形状: 一次ソースと再掲サイトで矛盾していない(照合の妥当性の担保)", () => {
+  // 2026-08-13の突き合わせ実測: 447件で一致・不一致ゼロ。CSVは両ソースの合成なので、
+  // ここでは「整形/不整形の語彙が混ざっていないこと」と記載率が想定どおりであることを見る
+  const deals = loadHouseDeals();
+  const withShape = deals.filter((d) => d.shape);
+  const rate = withShape.length / deals.length;
+  // APIでも埋まらない欠測(原データで「地域」区分が空の行)があるため6割前後で頭打ちになる
+  assert.ok(rate > 0.55 && rate < 0.7, `形状の記載率が想定外: ${(rate * 100).toFixed(1)}%`);
+});

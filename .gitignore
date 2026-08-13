@@ -1,2 +1,6 @@
 node_modules/
 site/dist/
+
+# APIキー等の秘密情報(公開リポジトリのため絶対にコミットしない)
+.env
+.env.*
