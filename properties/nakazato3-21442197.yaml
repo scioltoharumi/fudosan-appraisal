@@ -1,0 +1,45 @@
+# 物件データ(1物件1ファイル)。記載ルール: 事実データと査定パラメータのみ。
+# 指値方針・交渉メモ・個人的所感・写真・紹介文は書かない(publicリポジトリ運用・decisions D4)
+id: nakazato3-21442197
+status: new                # 2026-08-13の日次クロールで自動登録。人はまだ見ていない
+source: "SUUMO nc_21442197(2026-08-13日次クロールで発見)。探索エリア拡張(docs/area-expansion-2026-08.md)で
+  中里が対象になったことにより初めて掲載範囲に入った物件"
+source_url: "https://suumo.jp/chukoikkodate/tokyo/sc_kita/nc_21442197/"   # 実在確認済み 2026-08-13
+captured_at: 2026-08-13
+price_history:
+  - {date: 2026-08-07, price_man: 8880}   # 掲載の情報提供日
+location: {area: nakazato, address: "北区中里3"}
+layout: "4LDK"
+# 掲載の交通は JR山手線「駒込」8分 / **JR京浜東北線「田端」12分** / JR高崎線「尾久」22分
+station: {walk_min: 8, multi_station: true}
+land:
+  registered_m2: 69.29
+  setback_m2: 0            # セットバックの記載なし
+  road: {width_m: 4.0, quality: good_4m, direction: SE, corner: false,
+    note: "掲載の私道負担・道路欄は「無、南東4m幅」。42条区分は要調査"}
+  shape: regular          # 媒体に土地形状の記載なし(assumed)
+  legal: {zoning: "1種中高", bcr: 60, far: 150, ownership: shoyuken, rebuildable: true,
+    note: "その他制限事項: 準防火地域。駐車場は車庫"}
+building:
+  built: 2007-03
+  floor_m2: 111.1
+  type: wood_3f_narrow    # 掲載の構造は「木造3階」
+  repair: {status: unknown_likely_none, assumed: true, cost_man: 600}
+costs: {fee_rate: 0.05, demolition_man: 200, demolition_assumed: true}
+income: {rent_man: 29, rent_assumed: true, expense_rate: 0.15, cap_rate: 0.045}
+checklist: {road_type_verified: false, retaining_wall: false, hazard: false, seismic: true}   # 築2007-03=新耐震。42条区分は未確認
+hazard_check:
+  checked_at: 2026-08-13
+  suumo: none        # 「その他制限事項」は準防火のみ。土砂・浸水の記載なし
+  athome: unchecked  # 同一物件のathome掲載が見つからず未確認
+  note: "suumo/athomeは掲載の法令等制限欄ベースの確認。**この欄に洪水浸水想定は原則載らない**ため、浸水は下の official で公式マップと照合する"
+  official:
+    checked_at: 2026-08-13
+    query: "東京都北区中里3丁目"
+    point: "35.74139,139.75246"
+    elevation_m: 23.2
+    flood_l2: null
+    flood_coverage: "0/25点"
+    hits: []
+    verdict: pass
+    area_scan: "clear(crawler/area-scan.mjs・代表点±200mの25点グリッドでも土砂の該当なし)"

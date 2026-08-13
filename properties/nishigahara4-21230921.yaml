@@ -1,0 +1,48 @@
+# 物件データ(1物件1ファイル)。記載ルール: 事実データと査定パラメータのみ。
+# 指値方針・交渉メモ・個人的所感・写真・紹介文は書かない(publicリポジトリ運用・decisions D4)
+id: nishigahara4-21230921
+status: new                # 2026-08-13の日次クロールで自動登録。人はまだ見ていない
+source: "SUUMO nc_21230921(2026-08-13日次クロールで発見)。探索エリア拡張(docs/area-expansion-2026-08.md)で
+  西ケ原が対象になったことにより初めて掲載範囲に入った物件"
+source_url: "https://suumo.jp/chukoikkodate/tokyo/sc_kita/nc_21230921/"   # 実在確認済み 2026-08-13
+captured_at: 2026-08-13
+price_history:
+  - {date: 2026-08-12, price_man: 6980}   # 掲載の情報提供日
+location: {area: nishigahara, address: "北区西ケ原4"}
+layout: "2LDK+2S"   # 掲載記載は「2LDK+2S(納戸)」
+# 掲載の交通は 都営三田線「西巣鴨」8分 / 都電荒川線「西ヶ原四丁目」3分 / 東京メトロ南北線「西ケ原」12分。
+# **京浜東北線の駅は掲載されていない**(上中里駅は徒歩圏だが媒体に記載がないため walk_min には採らない)
+station: {walk_min: 8, multi_station: true}
+land:
+  registered_m2: 55.96
+  setback_m2: 4.6          # その他制限事項「セットバック：要4.6m2」
+  road: {width_m: 3.3, quality: setback_2ko, direction: W, corner: false,
+    note: "掲載の私道負担・道路欄は「無、西3.3m幅」。幅員4m未満のためセットバックを要する(上記setback_m2)。42条区分は要調査"}
+  shape: regular          # 媒体に土地形状の記載なし(assumed)。地下室があるため間口・高低差は現地確認が要る
+  legal: {zoning: "1種中高", bcr: 60, far: 160, ownership: shoyuken, rebuildable: true,
+    note: "その他制限事項: セットバック要4.6m2・高度地区・準防火地域・売主指定司法書士"}
+building:
+  built: 2000-02
+  floor_m2: 106.68        # 掲載記載(登記)。**うち地下室32.18m2**を含む。
+  # 地下室は容積率不算入だが採光・換気の制約があり、居室相当の面積は約74.5m2。
+  # 査定は掲載の延床で行っているため、地下部分の市場評価は過大に出ている可能性がある(要確認)
+  type: wood_3f_narrow    # 掲載の構造は「木・RC造3階地下1階建」。敷地55.96m2の3階建として狭小区分を適用
+  repair: {status: unknown_likely_none, assumed: true, cost_man: 800}
+costs: {fee_rate: 0.05, demolition_man: 300, demolition_assumed: true}   # 地下1階RCを含むため解体費は木造2階より高く見込む
+income: {rent_man: 28, rent_assumed: true, expense_rate: 0.15, cap_rate: 0.045}
+checklist: {road_type_verified: false, retaining_wall: false, hazard: false, seismic: true}   # 築2000-02=新耐震。42条区分・地下室まわりの擁壁は未確認
+hazard_check:
+  checked_at: 2026-08-13
+  suumo: none        # 「その他制限事項」はセットバック・高度地区・準防火のみ。土砂・浸水の記載なし
+  athome: unchecked  # 同一物件のathome掲載が見つからず未確認(SUUMOは該当物件でも空欄のことがあるため単独では不十分)
+  note: "suumo/athomeは掲載の法令等制限欄ベースの確認。**この欄に洪水浸水想定は原則載らない**ため、浸水は下の official で公式マップと照合する"
+  official:            # 国土地理院ハザードマップタイルとの機械照合(crawler/geohazard.mjs)
+    checked_at: 2026-08-13
+    query: "東京都北区西ケ原4丁目"
+    point: "35.74329,139.73511"
+    elevation_m: 20.4
+    flood_l2: null       # 代表点で該当なし
+    flood_coverage: "0/25点"
+    hits: []
+    verdict: pass
+    area_scan: "clear(crawler/area-scan.mjs・代表点±200mの25点グリッドでも浸水・土砂の該当なし)"

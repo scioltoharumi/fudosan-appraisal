@@ -68,7 +68,10 @@ export function matchExcludedSite(unit, index) {
 // (「借地期間・地代」「告知事項」等)。ラベル語だけで旗を立てない。
 const HAZARD_RE = /土砂災害特別警戒区域|土砂災害警戒区域|急傾斜地崩壊|がけ条例|建築安全条例第[6六]条|宅地造成(?:及び特定盛土等)?規制|宅地造成工事規制区域|浸水想定|洪水浸水/;
 const NO_REBUILD_RE = /再建築不可|再建築[はが]不可|接道義務を?満た(?:さ|しま?せ)ない|建築不可/;
-const LEASEHOLD_RE = /定期借地|旧法借地|普通借地|借地権付|地上権/;
+// 2026-08-13: 「賃借権(旧)、借地期間新規20年」(滝野川4 nc_21480100)を取りこぼした。
+// SUUMOの権利欄は「借地権」ではなく**「賃借権」**と書くことがあり、下の own 判定の選択肢にも
+// 入っていなかったため ownership=null のまま pass していた。借地の言い回しを網羅する
+const LEASEHOLD_RE = /定期借地|旧法借地|普通借地|借地権付|地上権|賃借権|転借地|借地期間/;
 const DISCLOSURE_RE = /告知事項\s*(?:あり|有)|心理的瑕疵|事故物件/;
 
 // 詳細ページから査定入力に使う実値を取る。一覧の値は当てにしない
@@ -120,7 +123,7 @@ export function parseDetailAttrs(html, media) {
     layout: fieldStr("layout", "([0-9]{1,2}[SLDKR+]{1,10})"),
     built: builtM ? `${builtM[1]}-${String(builtM[2]).padStart(2, "0")}` : null,
     walk_min: walks.length ? Math.min(...walks) : null,
-    ownership: fieldStr("ownership", "(所有権|借地権|定期借地権?|地上権)"),
+    ownership: fieldStr("ownership", "(所有権|借地権|定期借地権?|地上権|賃借権|転借地権?)"),
     // 接道は「南 4.2m 公道」のように空白で区切られるため、方位+幅員+種別まで1値として拾い、
     // 次の欄のラベルを巻き込んだぶんを落とす
     road: (() => {
@@ -179,7 +182,7 @@ export function scanKO(html, media) {
   const attrs = parseDetailAttrs(html, media);
   // 権利は媒体でラベルが違う(SUUMO=土地の権利形態 / athome=土地権利)。取りこぼすと
   // 借地物件を登録してしまうため、ここは媒体を問わず両方のラベルで見る
-  const own = (t.match(/(?:土地の権利形態|土地権利|権利形態)\s*(?:ヒント\s*)?(所有権|借地権|定期借地権?|地上権)/) ?? [])[1]
+  const own = (t.match(/(?:土地の権利形態|土地権利|権利形態)\s*(?:ヒント\s*)?(所有権|借地権|定期借地権?|地上権|賃借権|転借地権?)/) ?? [])[1]
     ?? attrs.ownership;
   if ((own && own !== "所有権") || LEASEHOLD_RE.test(t)) {
     flags.push({ code: "KO2_ownership", label: "所有権以外(借地権等)", evidence: own ?? eviOf(LEASEHOLD_RE) });

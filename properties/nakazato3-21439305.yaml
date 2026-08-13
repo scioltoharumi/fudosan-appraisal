@@ -1,0 +1,46 @@
+# 物件データ(1物件1ファイル)。記載ルール: 事実データと査定パラメータのみ。
+# 指値方針・交渉メモ・個人的所感・写真・紹介文は書かない(publicリポジトリ運用・decisions D4)
+id: nakazato3-21439305
+status: new                # 2026-08-13の日次クロールで自動登録。人はまだ見ていない
+source: "SUUMO nc_21439305(2026-08-13日次クロールで発見)。探索エリア拡張(docs/area-expansion-2026-08.md)で
+  中里が対象になったことにより初めて掲載範囲に入った物件"
+source_url: "https://suumo.jp/chukoikkodate/tokyo/sc_kita/nc_21439305/"   # 実在確認済み 2026-08-13
+captured_at: 2026-08-13
+price_history:
+  - {date: 2026-08-12, price_man: 7580}   # 掲載の情報提供日
+location: {area: nakazato, address: "北区中里3"}
+layout: "2LDK+S"   # 掲載記載は「2LDK+S(納戸)」
+# 掲載の交通は JR山手線「駒込」10分 / JR山手線「田端」11分 / **JR京浜東北線「上中里」12分**。
+# 主たる利用は山手線側で、京浜東北線は12分(希望条件の10分以内には入らない)
+station: {walk_min: 10, multi_station: true}
+land:
+  registered_m2: 66.94
+  setback_m2: 5.76         # その他制限事項「セットバック：要5.76m2」= 私道負担欄の5.76m2と同値
+  road: {width_m: 4.0, quality: good_4m, direction: NW, corner: false,
+    note: "掲載の私道負担・道路欄は「5.76m2、北西4m幅」。私道負担面積とセットバック要面積が同値のため同一のものと解した。42条区分は要調査"}
+  shape: regular          # 媒体に土地形状の記載なし(assumed)
+  legal: {zoning: "1種中高", bcr: 60, far: 150, ownership: shoyuken, rebuildable: true,
+    note: "その他制限事項はセットバック要5.76m2のみ。駐車場はカーポート"}
+building:
+  built: 2005-06
+  floor_m2: 94.39
+  type: wood_3f_narrow    # 掲載の構造は「木造3階」
+  repair: {status: unknown_likely_none, assumed: true, cost_man: 600}
+costs: {fee_rate: 0.05, demolition_man: 180, demolition_assumed: true}
+income: {rent_man: 25, rent_assumed: true, expense_rate: 0.15, cap_rate: 0.045}
+checklist: {road_type_verified: false, retaining_wall: false, hazard: false, seismic: true}   # 築2005-06=新耐震。42条区分は未確認
+hazard_check:
+  checked_at: 2026-08-13
+  suumo: none        # 「その他制限事項」はセットバックのみ。土砂・浸水の記載なし
+  athome: unchecked  # 同一物件のathome掲載が見つからず未確認(SUUMOは該当物件でも空欄のことがあるため単独では不十分)
+  note: "suumo/athomeは掲載の法令等制限欄ベースの確認。**この欄に洪水浸水想定は原則載らない**ため、浸水は下の official で公式マップと照合する"
+  official:
+    checked_at: 2026-08-13
+    query: "東京都北区中里3丁目"
+    point: "35.74139,139.75246"
+    elevation_m: 23.2
+    flood_l2: null
+    flood_coverage: "0/25点"
+    hits: []
+    verdict: pass
+    area_scan: "clear(crawler/area-scan.mjs・代表点±200mの25点グリッドでも土砂の該当なし。浸水は0.5m未満が7点のみで台地上の通常範囲)"

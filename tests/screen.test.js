@@ -218,3 +218,25 @@ test("丁目ハザードは詳細ページの有無に依らずKO4で止め、ed
   assert.equal(koScreen({ unit, siteHit: null, areaHazard: null,
     scan: { flags: [], attrs: { land_m2: 60, floor_m2: 95 }, hazard_media: "athome" } }).verdict, "pass");
 });
+
+// ---- 借地の言い回し(2026-08-13の取りこぼし) ----
+// 滝野川4 nc_21480100 の権利欄は「賃借権(旧)、借地期間新規20年」。SUUMOは「借地権」ではなく
+// **「賃借権」**と書くことがあり、KO2の選択肢にも LEASEHOLD_RE にも入っていなかったため、
+// ownership=null のまま verdict=pass で自動登録の候補に上がった。
+test("KO2: 借地の言い回しを網羅する(賃借権・借地期間・転借地)", () => {
+  const mk = (own) => `土地の権利形態 ヒント ${own} 構造・工法 ヒント 木造3階 土地面積 ヒント 49.71m 2 建物面積 ヒント 71.41m 2`;
+  for (const own of ["賃借権", "借地権", "定期借地権", "地上権", "転借地権"]) {
+    const scan = scanKO(mk(own), "suumo");
+    assert.ok(scan.flags.some((f) => f.code === "KO2_ownership"), `${own}がKO2で拾われない`);
+    assert.equal(scan.attrs.ownership, own, `${own}が attrs に出ない`);
+  }
+  // 実際の掲載文言(賃借権(旧)、借地期間新規20年)でも拾う
+  const real = scanKO("土地の権利形態 ヒント 賃借権（旧）、借地期間新規20年 土地面積 ヒント 49.71m 2 建物面積 ヒント 71.41m 2", "suumo");
+  assert.ok(real.flags.some((f) => f.code === "KO2_ownership"));
+  const ko = koScreen({ unit: { price_man: 5490, district: "滝野川", chome: "4" }, siteHit: null, scan: real });
+  assert.equal(ko.verdict, "block");
+  // 所有権は当然ながら通す(この修正で所有権物件を巻き込んでいないこと)
+  const ok = scanKO(mk("所有権"), "suumo");
+  assert.ok(!ok.flags.some((f) => f.code === "KO2_ownership"));
+  assert.equal(ok.attrs.ownership, "所有権");
+});

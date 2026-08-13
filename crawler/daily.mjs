@@ -22,6 +22,18 @@ const EXCLUDED_PATH = join(ROOT, "market", "crawl", "excluded.json");
 const AREA_SCAN_PATH = join(ROOT, "market", "area-scan.json");
 const PRICE_RANGE = [5000, 9000];   // discover対象(万円)
 const WALK_MAX = 20;                // discover徒歩上限(分)
+const FLOOR_MIN_M2 = 70;            // 掲載条件「延床70m2超」(CLAUDE.md)。これ以下は自動登録候補から外す
+const ROOMS_MIN = 3;                // 掲載条件「3室以上」。2LDK=2室 / 2LDK+S=3室 / 4LDK=4室
+// 間取り文字列から居室数を数える。「2LDK+2S(納戸)」=4室、「2LDK+S」=3室、「4LDK」=4室。
+// 数えられない表記(「1DKK+」のような媒体側の崩れ)は null を返し、条件判定を行わない(誤って落とさない)
+export function roomsOf(layout) {
+  const t = zen(String(layout ?? "")).replace(/＋/g, "+");   // ＋(U+FF0B)は zen の変換対象外
+  const m = t.match(/^([0-9]{1,2})\s*[SLDKR]/);
+  if (!m) return null;
+  let n = Number(m[1]);
+  for (const s of t.slice(m[0].length - 1).matchAll(/\+\s*([0-9]{1,2})?\s*S/g)) n += s[1] ? Number(s[1]) : 1;
+  return n;
+}
 // 探索対象の地区。2026-08-13にユーザー決定で王子・上中里方面へ拡張(docs/area-expansion-2026-08.md)。
 // 追加分は「京浜東北線(赤羽・東十条・王子・上中里)徒歩10分前後 かつ 台地側」で選んだ6地区。
 // 低地の地区(志茂・神谷・岩淵町・赤羽南など)が残っているのは、値下げ追跡と相場観測の母集団としては
@@ -336,10 +348,19 @@ async function discover(ledgerNcs, ledgerFps, ledgerUnits) {
         sibling_hint: siblingHint(u, districtOf, ledgerUnits) };
       seen[u.nc] = { first_seen: today, price_man: u.price_man, address: u.address, walk_min: walk,
         kind: u.kind, media: u.media, land_m2: ko.attrs?.land_m2 ?? u.land_m2, floor_m2: ko.attrs?.floor_m2 ?? u.floor_m2 };
-      if (walkDetail != null && walkDetail > WALK_MAX) {
-        // 一覧の徒歩分が過小で通過していた圏外物件。以後の再判定が要らないよう seen に記録して落とす
-        seen[u.nc].out_of_scope = `徒歩${walkDetail}分(上限${WALK_MAX})`;
-        report.push({ ...entry, event: "new_out_of_scope" });
+      // 掲載条件(CLAUDE.md「登録条件」)のうち掲載から機械判定できるもの。KOではなく「圏外」扱いにして、
+      // 報告には出しつつ自動登録の候補から外す。2026-08-13: 滝野川1の2件(延床65.24/65.72)が
+      // verdict=pass のまま自動登録候補に上がり、人が延床70m2超の条件で弾く必要があった
+      const floor = ko.attrs?.floor_m2 ?? null;
+      const rooms = roomsOf(ko.attrs?.layout);
+      const scopeMiss = walkDetail != null && walkDetail > WALK_MAX ? `徒歩${walkDetail}分(上限${WALK_MAX})`
+        : floor != null && floor <= FLOOR_MIN_M2 ? `延床${floor}m2(条件は${FLOOR_MIN_M2}m2超)`
+        : rooms != null && rooms < ROOMS_MIN ? `${ko.attrs.layout}=${rooms}室(条件は${ROOMS_MIN}室以上)`
+        : null;
+      if (scopeMiss) {
+        // 以後の再判定が要らないよう seen に記録して落とす(諸元は掲載が変わらない限り動かない)
+        seen[u.nc].out_of_scope = scopeMiss;
+        report.push({ ...entry, event: "new_out_of_scope", out_of_scope: scopeMiss });
       } else if (ko.verdict === "block") {
         seen[u.nc].ko_blocked = true; seen[u.nc].ko_codes = ko.codes;
         report.push({ ...entry, event: "new_ko_blocked" });

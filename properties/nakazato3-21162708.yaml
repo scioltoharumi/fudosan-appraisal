@@ -1,0 +1,48 @@
+# 物件データ(1物件1ファイル)。記載ルール: 事実データと査定パラメータのみ。
+# 指値方針・交渉メモ・個人的所感・写真・紹介文は書かない(publicリポジトリ運用・decisions D4)
+id: nakazato3-21162708
+status: new                # 2026-08-13の日次クロールで自動登録。人はまだ見ていない
+source: "SUUMO nc_21162708(2026-08-13日次クロールで発見)。探索エリア拡張(docs/area-expansion-2026-08.md)で
+  中里が対象になったことにより初めて掲載範囲に入った物件"
+source_url: "https://suumo.jp/chukoikkodate/tokyo/sc_kita/nc_21162708/"   # 実在確認済み 2026-08-13
+captured_at: 2026-08-13
+price_history:
+  - {date: 2026-08-13, price_man: 8380}   # 掲載の情報提供日
+location: {area: nakazato, address: "北区中里3"}
+layout: "4LDK"
+# 掲載の交通は JR山手線「駒込」8分 / JR山手線「田端」13分 / **JR京浜東北線「上中里」13分**
+station: {walk_min: 8, multi_station: true}
+land:
+  registered_m2: 60.67
+  setback_m2: 0            # セットバックの記載なし
+  road: {width_m: 4.0, quality: good_4m, direction: W, corner: false,
+    note: "掲載の私道負担・道路欄は「無、西4m幅(接道幅2.5m)」。**接道幅2.5mは路地状敷地(旗竿地)の可能性を示す**が、
+      掲載に土地形状の記載がないため shape は未記入のまま(エンジン既定=整形地±0%)。
+      旗竿(-25%)なら査定額が大きく下がるため、区画図・現地で最優先に確認すること"}
+  shape: regular          # **仮置き**。掲載に土地形状の記載がないため既定の整形地を置いているだけで、
+                          # 上記のとおり接道幅2.5mは路地状敷地を示唆する。確認が取れるまでこの査定値は上振れの可能性がある
+  legal: {zoning: "1種中高", bcr: 60, far: 150, ownership: shoyuken, rebuildable: true,
+    note: "その他制限事項: 防火地域・準防火地域"}
+building:
+  built: 2017-03
+  floor_m2: 81.89
+  type: wood_3f_narrow    # 掲載の構造は「木造3階」
+  repair: {status: unknown_likely_none, assumed: true, cost_man: 200}   # 築9年のため大規模修繕は想定薄
+costs: {fee_rate: 0.05, demolition_man: 180, demolition_assumed: true}
+income: {rent_man: 24, rent_assumed: true, expense_rate: 0.15, cap_rate: 0.045}
+checklist: {road_type_verified: false, retaining_wall: false, hazard: false, seismic: true}   # 築2017-03=新耐震。42条区分・路地状敷地の別は未確認
+hazard_check:
+  checked_at: 2026-08-13
+  suumo: none        # 「その他制限事項」は防火・準防火のみ。土砂・浸水の記載なし
+  athome: unchecked  # 同一物件のathome掲載が見つからず未確認
+  note: "suumo/athomeは掲載の法令等制限欄ベースの確認。**この欄に洪水浸水想定は原則載らない**ため、浸水は下の official で公式マップと照合する"
+  official:
+    checked_at: 2026-08-13
+    query: "東京都北区中里3丁目"
+    point: "35.74139,139.75246"
+    elevation_m: 23.2
+    flood_l2: null
+    flood_coverage: "0/25点"
+    hits: []
+    verdict: pass
+    area_scan: "clear(crawler/area-scan.mjs・代表点±200mの25点グリッドでも土砂の該当なし)"

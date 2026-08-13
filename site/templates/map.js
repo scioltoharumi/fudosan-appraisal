@@ -141,7 +141,10 @@ function elevMap(g, points) {
 
 // ---- 図3: 想定浸水深と家の高さ ── 「3〜5m」が何を意味するか ----
 function depthVsHouse(groups) {
-  const W = 640, H = 250, base = 200, mPerPx = 11.5 / 165;   // 0〜11.5mを165pxに
+  // 2026-08-13: エリア拡張で1グループに積むラベルが増え(区域外の地区が6件に)、
+  // 固定高さ250だと5件目以降が viewBox の外に出て見切れた。ラベル行数で高さを伸ばす
+  const labelRows = Math.max(1, ...groups.map((g) => g.labels.length));
+  const W = 640, base = 200, H = Math.max(250, base + 20 + labelRows * 11 + 18), mPerPx = 11.5 / 165;   // 0〜11.5mを165pxに
   const yOf = (m) => base - m / mPerPx;
   const el = [];
   el.push(`<line x1="30" y1="${base}" x2="${W - 12}" y2="${base}" stroke="#16232E" stroke-width="1.5"/>`);

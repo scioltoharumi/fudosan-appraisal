@@ -521,5 +521,367 @@
   "media": "athome",
   "land_m2": 58.53,
   "floor_m2": 93.55
+ },
+ "nc_21480100": {
+  "first_seen": "2026-08-13",
+  "price_man": 5490,
+  "address": "東京都北区滝野川４",
+  "walk_min": 12,
+  "kind": "chuko",
+  "media": "suumo",
+  "land_m2": 49.71,
+  "floor_m2": 71.41
+ },
+ "nc_21230921": {
+  "first_seen": "2026-08-13",
+  "price_man": 6980,
+  "address": "東京都北区西ケ原４",
+  "walk_min": 8,
+  "kind": "chuko",
+  "media": "suumo",
+  "land_m2": 55.96,
+  "floor_m2": 106.68
+ },
+ "nc_21394250": {
+  "first_seen": "2026-08-13",
+  "price_man": 8380,
+  "address": "東京都北区上中里３",
+  "walk_min": 3,
+  "kind": "chuko",
+  "media": "suumo",
+  "land_m2": 60.14,
+  "floor_m2": 98.81,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
+ },
+ "nc_21186616": {
+  "first_seen": "2026-08-13",
+  "price_man": 5680,
+  "address": "東京都北区志茂１",
+  "walk_min": 10,
+  "kind": "chuko",
+  "media": "suumo",
+  "land_m2": 47.09,
+  "floor_m2": 76.87,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
+ },
+ "nc_20706806": {
+  "first_seen": "2026-08-13",
+  "price_man": 6480,
+  "address": "東京都北区志茂３",
+  "walk_min": 4,
+  "kind": "chuko",
+  "media": "suumo",
+  "land_m2": 59.51,
+  "floor_m2": 89.1,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
+ },
+ "nc_21063287": {
+  "first_seen": "2026-08-13",
+  "price_man": 6980,
+  "address": "東京都北区滝野川１",
+  "walk_min": 4,
+  "kind": "chuko",
+  "media": "suumo",
+  "land_m2": 64.29,
+  "floor_m2": 65.24
+ },
+ "nc_79190442": {
+  "first_seen": "2026-08-13",
+  "price_man": 6980,
+  "address": "東京都北区滝野川１",
+  "walk_min": 5,
+  "kind": "chuko",
+  "media": "suumo",
+  "land_m2": 54.27,
+  "floor_m2": 65.72
+ },
+ "nc_21439305": {
+  "first_seen": "2026-08-13",
+  "price_man": 7580,
+  "address": "東京都北区中里３",
+  "walk_min": 10,
+  "kind": "chuko",
+  "media": "suumo",
+  "land_m2": 66.94,
+  "floor_m2": 94.39
+ },
+ "nc_21162708": {
+  "first_seen": "2026-08-13",
+  "price_man": 8380,
+  "address": "東京都北区中里３",
+  "walk_min": 8,
+  "kind": "chuko",
+  "media": "suumo",
+  "land_m2": 60.67,
+  "floor_m2": 81.89
+ },
+ "nc_21442197": {
+  "first_seen": "2026-08-13",
+  "price_man": 8880,
+  "address": "東京都北区中里３",
+  "walk_min": 8,
+  "kind": "chuko",
+  "media": "suumo",
+  "land_m2": 69.29,
+  "floor_m2": 111.1
+ },
+ "nc_21306453": {
+  "first_seen": "2026-08-13",
+  "price_man": 6480,
+  "address": "東京都北区上中里２",
+  "walk_min": 5,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 46.52,
+  "floor_m2": 81.41,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
+ },
+ "nc_21127648": {
+  "first_seen": "2026-08-13",
+  "price_man": 6780,
+  "address": "東京都北区滝野川１",
+  "walk_min": 6,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 41.84,
+  "floor_m2": 58.94
+ },
+ "nc_78725635": {
+  "first_seen": "2026-08-13",
+  "price_man": 6880,
+  "address": "東京都北区中里３",
+  "walk_min": 8,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 60.12,
+  "floor_m2": 101.85
+ },
+ "nc_20708232": {
+  "first_seen": "2026-08-13",
+  "price_man": 7980,
+  "address": "東京都北区滝野川２",
+  "walk_min": 12,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 51.43,
+  "floor_m2": 86.71
+ },
+ "nc_20655341": {
+  "first_seen": "2026-08-13",
+  "price_man": 7980,
+  "address": "東京都北区西ケ原４",
+  "walk_min": 3,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 45.25,
+  "floor_m2": 72.03
+ },
+ "nc_21211514": {
+  "first_seen": "2026-08-13",
+  "price_man": 6980,
+  "address": "東京都北区上中里２",
+  "walk_min": 6,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 53.52,
+  "floor_m2": 85.91,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
+ },
+ "nc_21133135": {
+  "first_seen": "2026-08-13",
+  "price_man": 6180,
+  "address": "東京都北区滝野川３",
+  "walk_min": 6,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 33.92,
+  "floor_m2": 68.48
+ },
+ "nc_20781324": {
+  "first_seen": "2026-08-13",
+  "price_man": 8190,
+  "address": "東京都北区滝野川６",
+  "walk_min": 6,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 67.27,
+  "floor_m2": 66.61
+ },
+ "nc_21106162": {
+  "first_seen": "2026-08-13",
+  "price_man": 6280,
+  "address": "東京都北区滝野川３",
+  "walk_min": 7,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 38.72,
+  "floor_m2": 70.3
+ },
+ "nc_20926829": {
+  "first_seen": "2026-08-13",
+  "price_man": 6480,
+  "address": "東京都北区上中里２",
+  "walk_min": 8,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 46.53,
+  "floor_m2": 81.41,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
+ },
+ "nc_21485594": {
+  "first_seen": "2026-08-13",
+  "price_man": 7180,
+  "address": "東京都北区岸町２",
+  "walk_min": 9,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 55.09,
+  "floor_m2": null
+ },
+ "nc_21461107": {
+  "first_seen": "2026-08-13",
+  "price_man": 8390,
+  "address": "東京都北区西ケ原３",
+  "walk_min": 7,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 117.25,
+  "floor_m2": 121.49
+ },
+ "nc_21062938": {
+  "first_seen": "2026-08-13",
+  "price_man": 8990,
+  "address": "東京都北区上中里３",
+  "walk_min": 7,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 49.11,
+  "floor_m2": 94.44,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
+ },
+ "at_6991731596": {
+  "first_seen": "2026-08-13",
+  "price_man": 6880,
+  "address": "東京都北区西ケ原3",
+  "walk_min": 4,
+  "kind": "chuko",
+  "media": "athome",
+  "land_m2": 46.94,
+  "floor_m2": 70.21
+ },
+ "at_1127269513": {
+  "first_seen": "2026-08-13",
+  "price_man": 7500,
+  "address": "東京都北区西ケ原1",
+  "walk_min": 4,
+  "kind": "chuko",
+  "media": "athome",
+  "land_m2": 61.15,
+  "floor_m2": 207.06
+ },
+ "at_1182375628": {
+  "first_seen": "2026-08-13",
+  "price_man": 6780,
+  "address": "東京都北区滝野川1",
+  "walk_min": 1,
+  "kind": "shinchiku",
+  "media": "athome",
+  "land_m2": 58.89,
+  "floor_m2": 58.94
+ },
+ "at_1152286428": {
+  "first_seen": "2026-08-13",
+  "price_man": 6980,
+  "address": "東京都北区中里3",
+  "walk_min": 5,
+  "kind": "shinchiku",
+  "media": "athome",
+  "land_m2": 60.12,
+  "floor_m2": 101.85
+ },
+ "at_1020714091": {
+  "first_seen": "2026-08-13",
+  "price_man": 7180,
+  "address": "東京都北区岸町2",
+  "walk_min": 1,
+  "kind": "shinchiku",
+  "media": "athome",
+  "land_m2": 55.09,
+  "floor_m2": 90.89
+ },
+ "at_1187524310": {
+  "first_seen": "2026-08-13",
+  "price_man": 7280,
+  "address": "東京都北区上中里2",
+  "walk_min": 6,
+  "kind": "shinchiku",
+  "media": "athome",
+  "land_m2": 53.52,
+  "floor_m2": 85.91,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
+ },
+ "at_1182375728": {
+  "first_seen": "2026-08-13",
+  "price_man": 7380,
+  "address": "東京都北区滝野川1",
+  "walk_min": 1,
+  "kind": "shinchiku",
+  "media": "athome",
+  "land_m2": 41.84,
+  "floor_m2": 65.3
+ },
+ "at_6991209592": {
+  "first_seen": "2026-08-13",
+  "price_man": 7980,
+  "address": "東京都北区滝野川2",
+  "walk_min": 5,
+  "kind": "shinchiku",
+  "media": "athome",
+  "land_m2": 51.43,
+  "floor_m2": 89.48
+ },
+ "at_1144148223": {
+  "first_seen": "2026-08-13",
+  "price_man": 8080,
+  "address": "東京都北区滝野川2",
+  "walk_min": 1,
+  "kind": "shinchiku",
+  "media": "athome",
+  "land_m2": 51.44,
+  "floor_m2": 86.71
+ },
+ "at_1110236618": {
+  "first_seen": "2026-08-13",
+  "price_man": 8680,
+  "address": "東京都北区滝野川4",
+  "walk_min": 4,
+  "kind": "shinchiku",
+  "media": "athome",
+  "land_m2": 61.53,
+  "floor_m2": 107.06
  }
 }

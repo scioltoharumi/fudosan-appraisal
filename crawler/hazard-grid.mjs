@@ -19,8 +19,12 @@ import { decodePng, pixelAt, tileXY, depthLabel, DEPTH_LEGEND, geocode, doshaCla
 
 const OUT = join(ROOT, "market", "hazard-grid.json");
 
-// 台帳エリア(赤羽西・西が丘・赤羽台・十条仲原・中十条・志茂)を余白込みで覆う範囲
-const BBOX = { lat0: 35.7596, lat1: 35.7871, lon0: 139.7066, lon1: 139.7418 };
+// 台帳エリアを余白込みで覆う範囲。
+// 2026-08-13: 探索エリア拡張(docs/area-expansion-2026-08.md)で王子・上中里方面が入り、
+// 西ケ原4(35.743,139.735)・中里3(35.741,139.753)が旧BBOX(南端35.7596・東端139.7418)の外に出た。
+// 地図の地区マーカーは代表点をこのJSONから引くため、覆えていないと「代表点が未取得」警告になる。
+// 南へ約2.4km・東へ約1.6km広げ、赤羽台(北端)から中里・田端(南東端)までを1枚で覆う
+const BBOX = { lat0: 35.7380, lat1: 35.7871, lon0: 139.7066, lon1: 139.7560 };
 const M_PER_DEG_LAT = 111132;
 const cellArg = process.argv.indexOf("--cell");
 const CELL_M = cellArg > 0 ? Number(process.argv[cellArg + 1]) : 25;

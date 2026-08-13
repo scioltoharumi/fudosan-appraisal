@@ -3,7 +3,7 @@
 // 事故の型: 新築の複数戸掲載は一覧が開発の代表価格(下限値)を出すため、価格が一致しても別戸でありうる。
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { fingerprint, siblingHint, DISTRICTS } from "../crawler/daily.mjs";
+import { fingerprint, siblingHint, DISTRICTS, roomsOf } from "../crawler/daily.mjs";
 
 const districtOf = (addr) => DISTRICTS.find((d) => String(addr ?? "").startsWith("東京都北区" + d)) ?? null;
 // 事故当時の台帳(1号棟のみ登録・価格は誤って5980万だった)
@@ -47,4 +47,34 @@ test("完全一致(同一戸)には旗を立てない / 別丁目にも立てな
     "完全一致は同一戸として別経路で除外されるため旗不要");
   assert.equal(siblingHint({ address: "東京都北区志茂3", price_man: 5980, land_m2: 58.53, floor_m2: 93.55 }, districtOf, LEDGER), null,
     "別地区には旗を立てない");
+});
+
+// ---- 掲載条件の機械判定(2026-08-13追加) ----
+// 事故の型: 滝野川1の2件(延床65.24 / 65.72)が KO非該当のまま「自動登録の候補」として上がり、
+// 人が掲載条件(延床70m2超・3室以上)で弾く必要があった。KOではないので block にはできないが、
+// 登録できないものを自動登録候補に混ぜてはいけない。out_of_scope で分離する。
+test("間取り文字列から居室数を数える(納戸・全角表記・媒体の崩れに耐える)", () => {
+  assert.equal(roomsOf("4LDK"), 4);
+  assert.equal(roomsOf("2LDK"), 2);
+  assert.equal(roomsOf("2LDK+S"), 3);
+  assert.equal(roomsOf("2LDK+2S（納戸）"), 4);      // 実データ: 西ケ原4 nc_21230921
+  assert.equal(roomsOf("2LDK+S（納戸）"), 3);       // 実データ: 中里3 nc_21439305
+  // athomeは全角。＋(U+FF0B)は英数の全角変換の対象外なので個別に潰している
+  assert.equal(roomsOf("２ＬＤＫ＋Ｓ"), 3);
+  assert.equal(roomsOf("２ＬＤＫ＋２Ｓ"), 4);
+  // 数えられない表記は null(=条件判定をしない)。誤って落とすより人に見せる
+  assert.equal(roomsOf(null), null);
+  assert.equal(roomsOf(""), null);
+  assert.equal(roomsOf("メゾネット"), null);
+});
+
+test("拡張した探索地区が DISTRICTS に入っており、住所からの地区判定が効く", () => {
+  for (const d of ["王子本町", "岸町", "滝野川", "西ケ原", "中里", "上中里"]) {
+    assert.ok(DISTRICTS.includes(d), `${d}が探索対象に入っていない`);
+    assert.equal(districtOf(`東京都北区${d}３丁目`), d);
+  }
+  // 拡張前の12地区が落ちていないこと
+  for (const d of ["赤羽西", "西が丘", "赤羽台", "中十条", "十条仲原", "上十条", "志茂"]) {
+    assert.ok(DISTRICTS.includes(d), `${d}が探索対象から消えた`);
+  }
 });
