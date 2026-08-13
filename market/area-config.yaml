@@ -22,5 +22,36 @@ areas:
     ppt_man: 200
     source: koji_fallback
 
+  # ---- 2026-08-13 探索エリア拡張(docs/area-expansion-2026-08.md)。ユーザー決定で王子・上中里方面を追加 ----
+  # 初期値は既存4エリアと同じ作り方(公示地価×実勢係数1.15)。公示は2026年・住宅地域の地点のみを使い、
+  # 商業地・高層マンション地点は除いた。成約が貯まった地区は calibrate が個別成約側へ寄せる。
+  oji-honcho:
+    label: 王子本町
+    ppt_man: 293          # 公示2026 255万/坪(王子本町2丁目27-6・王子駅8.1分・住宅地域)×1.15
+    source: koji_fallback
+  kishimachi:
+    label: 岸町
+    ppt_man: 240          # 公示2026 208万/坪(岸町1丁目17-14・王子駅8.4分・住宅地域)×1.15
+    source: koji_fallback
+  takinogawa:
+    label: 滝野川
+    ppt_man: 247          # 公示2026 住宅地域3地点平均 215万/坪(滝野川5/6/2丁目)×1.15。
+                          # うち王子駅圏の滝野川2丁目は202万/坪と最も低い(王子寄りは相対的に安い)
+    source: koji_fallback
+  nishigahara:
+    label: 西ケ原
+    ppt_man: 273          # 公示2026 237万/坪(西ケ原3丁目40-9・西ケ原駅6.5分・住宅地域)×1.15
+    source: koji_fallback
+  kaminakazato:
+    label: 上中里
+    ppt_man: 298          # 公示2026 259万/坪(上中里1丁目26-18・上中里駅4.6分・住宅地域)×1.15。
+                          # この地点は台地側の1丁目。2/3丁目は荒川低地で掲載条件外(area-scan.jsonでexclude)
+    source: koji_fallback
+  nakazato:
+    label: 中里
+    ppt_man: 340          # 中里には公示の住宅地点が無いため、土地成約(住宅地・2022+・9件)の中央値342.6を採用。
+                          # 駒込駅至近の取引が押し上げている可能性があり信頼度は低い
+    source: deals_median_2026-08
+
 # 時点修正の年率地価上昇率(赤羽の直近実勢+10〜14%の保守側)
 rise_rate: 0.10

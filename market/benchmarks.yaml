@@ -18,3 +18,25 @@ benchmarks:
      source_url: "https://utinokati.com/details/土地相場・不動産相場/エリア/東京都-北区-十条仲原/"}
   - {area: nakajujo, district: 中十条, period: "2022-09〜2026-03", window_mid: 2024-06-15, n: 27, avg_ppt: 191, recent: true,
      source_url: "https://utinokati.com/details/土地相場・不動産相場/エリア/東京都-北区-中十条/"}
+  # ---- 2026-08-13 探索エリア拡張(docs/area-expansion-2026-08.md)で追加した6地区 ----
+  # n は土地成約のうち「地域区分=住宅地・2022年3月以降・土地400m2以下」に限定した件数。
+  # 商業地・工業地を混ぜると住宅地の土地単価が歪むため除いてある(既存12地区は用途列を持たないまま
+  # 収載されているので、その点で母集団の作り方が揃っていない。再取得時に揃えること)
+  - {area: takinogawa, district: 滝野川, period: "2022-03〜2025-12", window_mid: 2024-02-15, n: 42, avg_ppt: 215, median_ppt: 203.8, recent: true,
+     source_url: "https://utinokati.com/details/土地相場・不動産相場/エリア/東京都-北区-滝野川/"}
+  - {area: nishigahara, district: 西ケ原, period: "2022-03〜2026-03", window_mid: 2024-03-15, n: 30, avg_ppt: 241, median_ppt: 241.6, recent: true,
+     source_url: "https://utinokati.com/details/土地相場・不動産相場/エリア/東京都-北区-西ケ原/"}
+  - {area: kaminakazato, district: 上中里, period: "2023-03〜2026-03", window_mid: 2024-09-15, n: 22, avg_ppt: 225, median_ppt: 221.6, recent: true,
+     caveat: "上中里は1丁目が台地(公示259万/坪)・2/3丁目が荒川低地で準工業。成約は丁目を持たないため低地側を含む混合値",
+     source_url: "https://utinokati.com/details/土地相場・不動産相場/エリア/東京都-北区-上中里/"}
+  - {area: nakazato, district: 中里, period: "2023-09〜2025-12", window_mid: 2024-11-15, n: 9, avg_ppt: 341, median_ppt: 342.6, recent: true,
+     caveat: "小標本(9件)。駒込駅至近の取引が押し上げている可能性がある。公示地価の住宅地点が中里には無い",
+     source_url: "https://utinokati.com/details/土地相場・不動産相場/エリア/東京都-北区-中里/"}
+  - {area: kishimachi, district: 岸町, period: "2024-06〜2025-09", window_mid: 2025-02-15, n: 4, avg_ppt: 190, median_ppt: 187.3, recent: true,
+     caveat: "極小標本(4件)。公示地価2026(岸町1丁目・住宅地域)は208万/坪",
+     source_url: "https://utinokati.com/details/土地相場・不動産相場/エリア/東京都-北区-岸町/"}
+  # recent:false にしてある。n=2の平均に時点補正を掛けると較正値が358万/坪(公示255の+40%)まで跳ね、
+  # 2件の偶然が査定額を動かしてしまうため。参考表示に留め、坪単価は area-config の公示ベース値を使う
+  - {area: oji-honcho, district: 王子本町, period: "2023-03〜2024-03", window_mid: 2023-09-15, n: 2, avg_ppt: 294, median_ppt: 294.3, recent: false,
+     caveat: "極小標本(2件)のため較正には使わない(recent:false)。公示地価2026(王子本町2丁目・住宅地域)は255万/坪",
+     source_url: "https://utinokati.com/details/土地相場・不動産相場/エリア/東京都-北区-王子本町/"}

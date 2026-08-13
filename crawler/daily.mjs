@@ -7,7 +7,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { ROOT, loadProperty, listPropertyIds } from "../engine/io.js";
-import { buildExcludedIndex, matchExcludedSite, scanKO, koScreen } from "./screen.mjs";
+import { buildExcludedIndex, matchExcludedSite, scanKO, koScreen, buildAreaHazardIndex, areaHazardBlock } from "./screen.mjs";
 
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36";
 const SLEEP_MS = 2200;              // N1: リクエスト間隔2秒以上
@@ -19,9 +19,15 @@ const MAX_PAGES = 72;
 // 「詳細未取得」で終わらないよう、この枠を先に取り置く(discover側が reserve として尊重する)
 const KO_DETAIL_MAX = 8;
 const EXCLUDED_PATH = join(ROOT, "market", "crawl", "excluded.json");
+const AREA_SCAN_PATH = join(ROOT, "market", "area-scan.json");
 const PRICE_RANGE = [5000, 9000];   // discover対象(万円)
 const WALK_MAX = 20;                // discover徒歩上限(分)
-export const DISTRICTS = ["上十条", "中十条", "十条仲原", "岩淵町", "志茂", "神谷", "西が丘", "赤羽", "赤羽北", "赤羽南", "赤羽台", "赤羽西"];
+// 探索対象の地区。2026-08-13にユーザー決定で王子・上中里方面へ拡張(docs/area-expansion-2026-08.md)。
+// 追加分は「京浜東北線(赤羽・東十条・王子・上中里)徒歩10分前後 かつ 台地側」で選んだ6地区。
+// 低地の地区(志茂・神谷・岩淵町・赤羽南など)が残っているのは、値下げ追跡と相場観測の母集団としては
+// 使うため。**登録可否は丁目単位のハザード判定(screen.mjs の areaHazardBlock)で別途止める**
+export const DISTRICTS = ["上十条", "中十条", "十条仲原", "岩淵町", "志茂", "神谷", "西が丘", "赤羽", "赤羽北", "赤羽南", "赤羽台", "赤羽西",
+  "王子本町", "岸町", "滝野川", "西ケ原", "中里", "上中里"];
 // 媒体横断の同一物件は指紋(地区丁目|価格|土地面積)で名寄せする。先頭の媒体を優先採用
 // するため、SUUMO(watch対象と同じ媒体・物件番号で台帳と直結)を先に置く
 const LIST_SOURCES = [
@@ -302,6 +308,9 @@ async function discover(ledgerNcs, ledgerFps, ledgerUnits) {
   // 除外済み現場の索引(ハザード等で見送った現場。業者を替えた別番号の再掲を止める)
   const excluded = existsSync(EXCLUDED_PATH) ? JSON.parse(readFileSync(EXCLUDED_PATH, "utf8")) : {};
   const exIndex = buildExcludedIndex(excluded);
+  // 丁目単位のハザード索引。町名が同じでも丁目で台地/低地が分かれる地区(上中里・岸町・王子本町等)を
+  // 掲載欄の記載に依らず止める。ファイルが無ければ索引は空になり、従来どおりの判定に戻る
+  const areaIndex = buildAreaHazardIndex(existsSync(AREA_SCAN_PATH) ? JSON.parse(readFileSync(AREA_SCAN_PATH, "utf8")) : null);
   let koFetches = 0;
   const report = [];
   for (const u of matches) {
@@ -319,7 +328,7 @@ async function discover(ledgerNcs, ledgerFps, ledgerUnits) {
         if (!d.exhausted && !d.error && d.status === 200) { koFetches++; scan = scanKO(d.html, u.media); }
         else errors.push({ where: `ko:${u.nc}`, detail: `詳細取得失敗 http=${d.status} ${d.error ?? ""}` });
       }
-      const ko = koScreen({ unit: cand, siteHit, scan });
+      const ko = koScreen({ unit: cand, siteHit, scan, areaHazard: areaHazardBlock(cand, areaIndex) });
       // 徒歩分は詳細ページの値を正とする(一覧カードは隣接カードを巻き込んで誤抽出することがある)
       const walkDetail = ko.attrs?.walk_min ?? null;
       const walk = walkDetail ?? u.walk_min;

@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { ROOT } from "../engine/io.js";
-import { buildExcludedIndex, matchExcludedSite, scanKO, koScreen, parseDetailAttrs } from "../crawler/screen.mjs";
+import { buildExcludedIndex, matchExcludedSite, scanKO, koScreen, parseDetailAttrs, buildAreaHazardIndex, areaHazardBlock } from "../crawler/screen.mjs";
 
 const EXCLUDED = JSON.parse(readFileSync(join(ROOT, "market", "crawl", "excluded.json"), "utf8"));
 const index = buildExcludedIndex(EXCLUDED);
@@ -167,4 +167,54 @@ test("詳細未取得(予算切れ)は pass にせず unknown として開示す
   const ko = koScreen({ unit: { price_man: 6500, district: "赤羽西", chome: "4" }, siteHit: null, scan: null });
   assert.equal(ko.verdict, "unknown");
   assert.ok(ko.codes.includes("NO_DETAIL"));
+});
+
+// ---- 丁目単位のハザード遮断(2026-08-13の探索エリア拡張で追加) ----
+// 王子・上中里方面へ広げたことで「町名が同じでも丁目で台地/低地が分かれる」地区が探索対象に入った。
+// 上中里1丁目=標高23.7mの台地 / 上中里2・3丁目=標高3〜4.5mで浸水想定3〜5m。
+// 掲載の法令等制限欄に洪水浸水想定は原則載らないため、ここを掲載欄に頼ると志茂の登録ミスを繰り返す。
+const AREA_SCAN = JSON.parse(readFileSync(join(ROOT, "market", "area-scan.json"), "utf8"));
+const AREA_INDEX = buildAreaHazardIndex(AREA_SCAN);
+
+test("エリア索引: 台帳エリアと新規拡張エリアの丁目がすべて索引に載る", () => {
+  for (const key of ["赤羽西4", "西が丘2", "上中里1", "上中里3", "王子本町1", "岸町1", "滝野川1", "西ケ原1", "中里3"]) {
+    assert.ok(AREA_INDEX.has(key), `${key}が索引に無い`);
+  }
+  assert.ok(AREA_INDEX.size >= 100, `索引が小さすぎる (${AREA_INDEX.size})`);
+});
+
+test("同じ町名でも丁目で判定が割れる地区を、丁目単位で止める", () => {
+  // 上中里は1丁目が台地、2・3丁目が荒川低地。町名だけで通すと低地を登録してしまう
+  assert.equal(AREA_INDEX.get("上中里3").verdict, "exclude");
+  assert.equal(areaHazardBlock({ district: "上中里", chome: "3" }, AREA_INDEX).level, "block");
+  assert.equal(areaHazardBlock({ district: "上中里", chome: "1" }, AREA_INDEX), null, "台地側の1丁目まで止めてはいけない");
+  // 既知の除外地区(2026-08-13に台帳から外した志茂)も同じ経路で止まる
+  assert.equal(areaHazardBlock({ district: "志茂", chome: "1" }, AREA_INDEX).level, "block");
+  // 既存台帳の地区は止まらない(拡張で既存物件が巻き込まれないことの確認)
+  for (const [d, c] of [["赤羽西", "4"], ["西が丘", "2"], ["中十条", "4"], ["十条仲原", "2"]]) {
+    const hit = areaHazardBlock({ district: d, chome: c }, AREA_INDEX);
+    assert.notEqual(hit?.level, "block", `${d}${c}がblockになった`);
+  }
+});
+
+test("丁目ハザードは詳細ページの有無に依らずKO4で止め、edgeはsuspectに落とす", () => {
+  const unit = { price_man: 6500, district: "上中里", chome: "3" };
+  const ko = koScreen({ unit, siteHit: null, scan: null, areaHazard: areaHazardBlock(unit, AREA_INDEX) });
+  assert.equal(ko.verdict, "block", "詳細未取得でもエリアで止まる");
+  assert.ok(ko.codes.includes("KO4_area_hazard"));
+  assert.match(ko.reasons[0], /掲載条件外/);
+
+  // edge(丁目の縁がハザードに掛かる)は人の判断へ回す。自動でpassにはしない
+  const edgeUnit = { price_man: 6500, district: "赤羽台", chome: "3" };
+  const edge = areaHazardBlock(edgeUnit, AREA_INDEX);
+  assert.equal(edge?.level, "suspect", "赤羽台3は近傍にレッドがあり edge のはず");
+  const koEdge = koScreen({ unit: edgeUnit, siteHit: null, areaHazard: edge,
+    scan: { flags: [], attrs: { land_m2: 91.4, floor_m2: 68.6 }, hazard_media: "athome" } });
+  assert.equal(koEdge.verdict, "suspect");
+  assert.ok(koEdge.codes.includes("AREA_EDGE"));
+
+  // 索引が無い環境(area-scan.json 未生成)では従来どおりの判定に戻る
+  assert.equal(areaHazardBlock(unit, null), null);
+  assert.equal(koScreen({ unit, siteHit: null, areaHazard: null,
+    scan: { flags: [], attrs: { land_m2: 60, floor_m2: 95 }, hazard_media: "athome" } }).verdict, "pass");
 });

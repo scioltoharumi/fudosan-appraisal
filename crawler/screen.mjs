@@ -187,10 +187,42 @@ export function scanKO(html, media) {
   return { flags, attrs, hazard_media: media };
 }
 
+// ---- 丁目単位のハザード遮断(market/area-scan.json 由来) ----
+// 2026-08-13、探索エリアを王子・上中里方面へ広げたことで**町名だけでは可否が決まらない地区**が入った。
+// 上中里1丁目は標高23.7mの台地だが、上中里2・3丁目は標高3〜4.5mの荒川低地で浸水想定3〜5m。
+// 岸町・王子本町も石神井川の谷と台地が同じ町名の中に同居する。クロールの探索対象は町名単位なので、
+// 丁目で止める層をここに置く(掲載欄チェック・除外台帳の突き合わせとは独立した第3の関門)。
+// 正本は market/area-scan.json(再生成: node crawler/area-scan.mjs)。
+export function buildAreaHazardIndex(areaScan) {
+  const map = new Map();
+  for (const r of areaScan?.rows ?? []) {
+    if (r.error || r.ward !== "北区") continue;
+    map.set(`${r.town}${r.chome ?? ""}`, { verdict: r.verdict, notes: r.notes ?? [] });
+  }
+  return map;
+}
+
+// exclude=丁目のほぼ全域が深い浸水想定 → block / edge=丁目の縁に掛かる → suspect(人の判断)
+export function areaHazardBlock(unit, index) {
+  if (!index || !unit?.district) return null;
+  const hit = index.get(`${unit.district}${unit.chome ?? ""}`) ?? (unit.chome ? null : index.get(unit.district));
+  if (!hit) return null;
+  if (hit.verdict === "exclude") return { level: "block", verdict: hit.verdict, notes: hit.notes };
+  if (hit.verdict === "edge") return { level: "suspect", verdict: hit.verdict, notes: hit.notes };
+  return null;
+}
+
 // ---- 総合判定 ----
 // block = 登録しない / suspect = 登録せず人の判断を仰ぐ / pass = 自動登録してよい
-export function koScreen({ unit, siteHit, scan }) {
+export function koScreen({ unit, siteHit, scan, areaHazard = null }) {
   const codes = [], reasons = [];
+  // 丁目のハザードは詳細ページの有無に依存しない事実なので、いちばん先に見る
+  if (areaHazard?.level === "block") {
+    return {
+      verdict: "block", codes: ["KO4_area_hazard"], site_match: siteHit ?? null, attrs: scan?.attrs ?? null,
+      reasons: [`${unit.district}${unit.chome ?? ""}丁目は公式マップ照合で掲載条件外(${areaHazard.notes.join(" / ")})`],
+    };
+  }
   if (siteHit?.level === "exact") {
     codes.push(siteHit.hazard ? "KO4_hazard" : "KO_excluded");
     reasons.push(`除外済み現場と諸元一致(${siteHit.ref}${siteHit.unit ? " " + siteHit.unit : ""}・照合=${siteHit.by})。${siteHit.reason}`);
@@ -204,6 +236,11 @@ export function koScreen({ unit, siteHit, scan }) {
     reasons.push(`詳細ページから必須項目を確定できず(土地${a.land_m2 ?? "?"}/建物${a.floor_m2 ?? "?"}/価格${unit.price_man ?? "?"})`);
   }
   if (codes.length) return { verdict: "block", codes, reasons, site_match: siteHit ?? null, attrs: scan?.attrs ?? null };
+  if (areaHazard?.level === "suspect") {
+    return { verdict: "suspect", codes: ["AREA_EDGE"], site_match: siteHit ?? null, attrs: scan?.attrs ?? null,
+      reasons: [`${unit.district}${unit.chome ?? ""}丁目は丁目の縁がハザードに掛かる(${areaHazard.notes.join(" / ")})。` +
+        "代表点は台地上でも番地次第で該当しうるため、掲載の制限欄と現地・重説で確認するまで登録しない"] };
+  }
   if (siteHit?.level === "near") {
     return { verdict: "suspect", codes: ["SITE_NEAR"], site_match: siteHit, attrs: scan?.attrs ?? null,
       reasons: [`除外済み現場と同一丁目・近接諸元(${siteHit.ref}${siteHit.unit ? " " + siteHit.unit : ""}・照合=${siteHit.by})。同一現場の別戸なら同じ制限がかかるため、掲載元と公式マップで確認するまで登録しない。${siteHit.reason}`] };

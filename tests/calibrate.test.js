@@ -18,7 +18,8 @@ test("正規化の不変条件: 正の値・過去の取引は上方修正・悪
 test("回帰値: エリア別の成約ベース坪単価(現データ固定)", () => {
   const cal = calibrate();
   // 2026-08監査: 地区帰属が出典と不一致だった赤羽台1行を除外し13→12件
-  assert.equal(cal.dealCount, 12);
+  // 2026-08-13: 探索エリア拡張で6地区の土地成約(住宅地・2022+)109件を追加し12→121件
+  assert.equal(cal.dealCount, 121);
   const c = (a) => cal.byArea[a].chosen;
   assert.equal(c("shimo").ppt, 204);            // 個別3件の正規化中央値(年次別時点修正)
   assert.equal(c("akabanedai").ppt, 196);       // 個別4件の正規化中央値
@@ -27,6 +28,19 @@ test("回帰値: エリア別の成約ベース坪単価(現データ固定)", (
   assert.match(c("akabane-nishi").basis, /ベンチマーク.*混合平均補正/);
   assert.equal(c("nakajujo").ppt, 220);         // 個別1件のみ→地区ベンチマーク(27件)×補正
   assert.match(c("jujo-nakahara").confidence, /極小標本/);  // 個別2件・直近ベンチマークなし
+
+  // 2026-08-13 追加の6エリア。**既存5エリアの値が動いていないこと**が拡張の前提条件
+  // (上の shimo/akabanedai/akabane-nishi/nakajujo/jujo-nakahara はすべて拡張前と同値)
+  assert.equal(c("takinogawa").ppt, 210);       // 個別42件 → level mid
+  assert.equal(c("takinogawa").level, "mid");
+  assert.equal(c("nishigahara").ppt, 249);      // 個別30件
+  assert.equal(c("kaminakazato").ppt, 207);     // 個別22件。台地の1丁目と低地の2/3丁目が混ざった値
+  assert.equal(c("nakazato").ppt, 344);         // 個別9件。駒込駅至近が押し上げている可能性
+  assert.equal(c("kishimachi").ppt, 179);       // 個別4件 → level low
+  // 王子本町は個別2件・ベンチマークもn=2でrecent:false。**査定に採用させない**のが要点。
+  // ここが level:"reference" でなくなると、2件の偶然が坪単価を動かしてしまう(appraise.js:309)
+  assert.equal(c("oji-honcho").level, "reference");
+  assert.match(c("oji-honcho").confidence, /極小標本/);
   // 全エリアの成約ベース単価は現実的なレンジ内
   for (const [area, a] of Object.entries(cal.byArea)) {
     if (a.chosen) assert.ok(a.chosen.ppt >= 100 && a.chosen.ppt <= 400, `${area}: ${a.chosen.ppt}`);
