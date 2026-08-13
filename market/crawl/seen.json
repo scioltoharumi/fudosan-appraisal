@@ -883,5 +883,33 @@
   "media": "athome",
   "land_m2": 61.53,
   "floor_m2": 107.06
+ },
+ "nc_21492272": {
+  "first_seen": "2026-08-13",
+  "price_man": 8980,
+  "address": "東京都北区神谷２",
+  "walk_min": 12,
+  "kind": "chuko",
+  "media": "suumo",
+  "land_m2": 89.03,
+  "floor_m2": 102.03,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
+ },
+ "at_1110074518": {
+  "first_seen": "2026-08-13",
+  "price_man": 5700,
+  "address": "東京都北区志茂5",
+  "walk_min": 11,
+  "kind": "chuko",
+  "media": "athome",
+  "land_m2": 54.3,
+  "floor_m2": 85.25,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
  }
 }
