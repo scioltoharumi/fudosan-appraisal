@@ -4,7 +4,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   appraise, appraiseRange, evaluate, position,
-  elapsedYears, monteCarlo, mulberry32, walkAdjOf,
+  elapsedYears, monteCarlo, mulberry32, walkAdjOf, roadWideAdjOf, ROAD_WIDE_ADJ, ROAD_QUALITY,
 } from "../engine/appraise.js";
 import { loadAreaConfig, loadProperty, listPropertyIds } from "../engine/io.js";
 
@@ -217,4 +217,42 @@ test("徒歩補正: 帯別テーブルの節点と単調性(線形式への逆�
   assert.ok(walkAdjOf(13) < -0.012 * 3 * 3, "13分の補正が旧式(-3.6%)の3倍以上");
   // 不正入力は0(査定を壊さない)
   for (const v of [null, undefined, NaN, "abc"]) assert.equal(walkAdjOf(v), 0);
+});
+
+// ---- 前面道路の幅員(2026-08-13にAPI実測で新設) ----
+// 国交省APIの幅員を成約データに取り込んで測った結果を固定する。
+// 主張は2点: ①4mちょうどと4〜6mに差は無い ②6mを超えると明確に高い。
+// 4m未満の減点(-5%)を据え置いた理由(セットバック面積との二重計上)も回帰で守る。
+test("前面道路の幅員: 6m超にだけ加点し、4〜6mは無加点、疑義物件には加点しない", () => {
+  assert.equal(roadWideAdjOf(8, "good_4m"), ROAD_WIDE_ADJ);
+  assert.equal(roadWideAdjOf(6.1, "good_4m"), ROAD_WIDE_ADJ);
+  // 6mちょうどは「6m超」ではないので加点しない(帯の端を曖昧にしない)
+  assert.equal(roadWideAdjOf(6, "good_4m"), 0);
+  for (const w of [3.3, 4, 4.5, 5.8]) assert.equal(roadWideAdjOf(w, "good_4m"), 0, `${w}m`);
+  // 接道に疑義がある物件は幅員が広くても加点しない
+  assert.equal(roadWideAdjOf(8, "road_doubt"), 0);
+  // 幅員が不明なら加点しない(推測しない)
+  for (const w of [null, undefined, NaN, ""]) assert.equal(roadWideAdjOf(w, "good_4m"), 0);
+});
+
+test("前面道路: 4m未満の減点は-5%のまま(セットバック面積控除との二重計上を避けるため)", () => {
+  // 公簿面積あたりでは4mちょうど比-13.6%に見えるが、間口から実効面積を復元すると-7.2%
+  // (95%CI -14.4〜-1.3)。現行の-5%はこの区間内にあり、面積側の控除と合わせて妥当。
+  // ここを-13.6%相当に「強化」すると二重計上になるため、値が動いたら落とす
+  assert.equal(ROAD_QUALITY.setback_2ko, -0.05);
+  assert.equal(ROAD_QUALITY.good_4m, 0);
+  assert.equal(ROAD_QUALITY.road_doubt, -0.10);
+});
+
+test("角地加算: 幅員6m超の加点が入っても角地加算が落ちない(=== 0 判定の回帰)", () => {
+  const base = { ppt: 230, rise: 0.10, ask: 6560, land: 91.44, setback: 0, walk: 8,
+    dir: 0, shape: 0, lc: 0, mst: false, extra: 0, age: 10, floor: 90, bm: 0,
+    rebuild: 95, demo: 150, repair: 0, fee: 0.05, rent: 22, expr: 0.15, yld: 0.045 };
+  const wideCorner = appraiseRange({ ...base, roadq: ROAD_WIDE_ADJ, corner: true }, 1).mid;
+  const wideOnly = appraiseRange({ ...base, roadq: ROAD_WIDE_ADJ, corner: false }, 1).mid;
+  assert.ok(wideCorner.fair > wideOnly.fair, "広い道路の角地で角地加算が効いていない");
+  // 減点がある接道の角地は従来どおり加算しない
+  const badCorner = appraiseRange({ ...base, roadq: -0.05, corner: true }, 1).mid;
+  const badOnly = appraiseRange({ ...base, roadq: -0.05, corner: false }, 1).mid;
+  assert.equal(Math.round(badCorner.fair), Math.round(badOnly.fair));
 });

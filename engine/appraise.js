@@ -51,9 +51,34 @@ export const COEFFS = {
 // ---- 選択式補正の対応表(物件YAMLの列挙値 → 補正率) ----
 export const ROAD_QUALITY = {
   good_4m: 0,          // 幅員4m以上・良好
-  setback_2ko: -0.05,  // 4m未満(42条2項道路)
+  // 4m未満(42条2項道路)。2026-08-13にAPI実測で妥当性を検証済み:
+  // 公簿面積あたりの正規化単価は4mちょうど比 -13.6% だが、これは**セットバックで供出する面積**を
+  // 含んだ見かけの差。間口から実効面積を復元して測り直すと **-7.2%**(95%CI -14.4〜-1.3・n=142対175)で、
+  // 現行の-5%はこの区間に収まる。エンジンは面積側で setback_m2 を別途控除しているため、
+  // ここに-13.6%を当てると二重計上になる。よって係数は据え置く
+  setback_2ko: -0.05,
   road_doubt: -0.10,   // 接道に疑義(通路等・要調査)
 };
+
+// ---- 幅員が広い前面道路への加点(2026-08-13にAPI実測で新設) ----
+// 国交省 不動産情報ライブラリの前面道路幅員を house-deals.csv に取り込んで測ったところ、
+// 地区固定効果を除いた正規化単価は 4mちょうどを基準に:
+//   4m未満 -11.0%(CI -16.4〜-5.2) / 4超〜5m -6.0%(CI -11.2〜-0.1) / 5超〜6m +8.6%(判別不能) /
+//   6超〜8m +21.4%(CI 10.2〜39.3) / 8m超 +13.0%(CI 1.5〜30.4)
+// 分かったこと2つ:
+//   ①「4mちょうどは4.5〜6mより安い」という従来の仮説は**支持されない**(4〜6mは4mと差が無い)
+//   ②**6mを超えると明確に高い**。エンジンは good_4m=±0% で4mも8mも同じ扱いだった
+// 6超〜8mと8m超で単調に増えない(+21.4% vs +13.0%)ため帯の形は信用せず、
+// **6m超は一律+10%**という保守側の一点で入れる(各層のCI下限 10.2 / 1.5 / 公道のみ2.1 を下回る値)。
+// 事例プールの幅員中央値は4mなので、この加点は「4m標準に対する上乗せ」として整合する。
+export const ROAD_WIDE_M = 6;        // これを超える幅員を「広い」とみなす
+export const ROAD_WIDE_ADJ = 0.10;
+export function roadWideAdjOf(widthM, quality) {
+  // 接道に疑義がある物件は幅員が広くても加点しない(疑義の解消が先)
+  if (quality === "road_doubt") return 0;
+  const w = Number(widthM);
+  return Number.isFinite(w) && w > ROAD_WIDE_M ? ROAD_WIDE_ADJ : 0;
+}
 // ---- 徒歩補正(2026-08-13に線形→帯別へ置換) ----
 // 旧実装は -1.2%/分の線形だった。台帳479件の実測(2026-08-12)では、地区固定効果を除いた
 // 土地m2単価は徒歩6-10分を100として **1-5分98% / 11-15分88%** で、11-15分帯の実勢は-12%。
@@ -143,7 +168,9 @@ export function appraise(s, opts = {}) {
   const eff = Math.max(0, s.land - s.setback);                    // 実効宅地
   const tsubo = eff / COEFFS.TSUBO_M2;
   const walkAdj = walkAdjOf(s.walk);
-  const cornerAdj = s.corner && s.roadq === 0 ? COEFFS.CORNER_ADJ : 0;   // 接道に減点がある角地は加算しない(コメント準拠)
+  // 接道に減点がある角地は加算しない(コメント準拠)。2026-08-13: 幅員6m超の加点(+10%)が入ると
+  // roadq が正になるため、=== 0 のままでは「広い道路の角地」で角地加算が落ちていた。>= 0 に直す
+  const cornerAdj = s.corner && s.roadq >= 0 ? COEFFS.CORNER_ADJ : 0;
   const mstAdj = s.mst ? COEFFS.MULTI_STATION_ADJ : 0;
   let sizeAdj = 0;                                                // クリフなしの線形ランプ
   if (tsubo < COEFFS.SIZE_SMALL_TSUBO) {
@@ -365,6 +392,8 @@ export function toState(property, areaConfig, asOf, { calChosen = null } = {}) {
   const road = property.land?.road || {};
   let roadq = ROAD_QUALITY[road.quality];
   if (roadq === undefined) { roadq = ROAD_QUALITY.setback_2ko; note("接道の質", "4m未満(−5%)", "記載なしのため保守側既定"); }
+  const wide = roadWideAdjOf(road.width_m, road.quality);
+  if (wide) { roadq += wide; note("前面道路の幅員", `${road.width_m}m(+${(wide * 100).toFixed(0)}%)`, `幅員${ROAD_WIDE_M}m超の加点(成約実測。4mちょうどを基準に6超〜8m +21.4%・8m超 +13.0%のうち保守側を採用)`); }
   let dir = DIRECTION[road.direction];
   if (dir === undefined) { dir = DIRECTION.W; note("接道方位", "西相当(±0%)", "記載なしのため中立既定"); }
   let shape = SHAPE[property.land?.shape];
