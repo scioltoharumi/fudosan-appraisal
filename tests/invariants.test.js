@@ -4,7 +4,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   appraise, appraiseRange, evaluate, position,
-  elapsedYears, monteCarlo, mulberry32,
+  elapsedYears, monteCarlo, mulberry32, walkAdjOf,
 } from "../engine/appraise.js";
 import { loadAreaConfig, loadProperty, listPropertyIds } from "../engine/io.js";
 
@@ -24,8 +24,11 @@ const DEMO = {
 
 test("回帰値: 本物件(engineレベル)が受入基準と一致する", () => {
   const { mid, lo, hi } = appraiseRange(DEMO, ELAPSED);
-  assert.equal(Math.round(mid.fair), 5952, "適正中央値");
-  assert.equal(Math.round(hi.fair), 6562, "楽観上限");
+  // 2026-08-13(2): 徒歩補正を線形(-1.2%/分)から帯別テーブルへ置換。本物件は徒歩11分で、
+  // 旧式の-1.2%から新式の-4.0%へ下がったため適正中央値も下がった(5952→5777 / 6562→6370)。
+  // v1.2受入基準からの乖離はこの1点の理由に帰着する
+  assert.equal(Math.round(mid.fair), 5777, "適正中央値");
+  assert.equal(Math.round(hi.fair), 6370, "楽観上限");
   assert.equal(mid.route, "land");
   // 2026-08監査: 建物逓減を22年→30年に更新したため築27年でも残価は僅かに残る。
   // ただし土地ルート優位のため fair は従来どおり(受入基準値は不変)
@@ -37,8 +40,9 @@ test("回帰値: YAML→evaluate経由の基準値(時点修正の年次別統�
   // 統一したため(実効約12%)、evaluate経由の値は意図的に更新。engineレベルの回帰(rise明示)は不変
   const r = evaluate(loadProperty("akabanedai3-20268457"), loadAreaConfig(), { asOf: AS_OF });
   // 2026年の将来外挿を+6%に保守化(R3監査)後の値。v1.2原典(5952/6562)にほぼ回帰している
-  assert.equal(Math.round(r.mid.fair), 5938);
-  assert.equal(Math.round(r.hi.fair), 6547);
+  // 2026-08-13(2): 徒歩補正の帯別化により 5938→5764 / 6547→6356(徒歩11分の補正が-1.2%→-4.0%)
+  assert.equal(Math.round(r.mid.fair), 5764);
+  assert.equal(Math.round(r.hi.fair), 6356);
   // 2026-08-11: 売出6560→6260の値下げを掲載元で確認しprice_historyへ追記(査定値自体は不変)
   assert.equal(Math.round(r.state.ask), 6260);
   // 2026-08-13: 機械判定(買/保留/見送)は廃止。エンジンは位置の事実のみ返す
@@ -192,4 +196,25 @@ test("データ規律: 全物件に hazard_check があり、該当(hit)物件�
     assert.notEqual(h.suumo, "hit", `${id}: ハザード該当物件は台帳に載せない(excluded.jsonへ)`);
     assert.notEqual(h.athome, "hit", `${id}: ハザード該当物件は台帳に載せない(excluded.jsonへ)`);
   }
+});
+
+// ---- 徒歩補正の帯別テーブル(2026-08-13に線形から置換) ----
+// 旧実装 -1.2%/分 は台帳479件の実測(11〜15分帯の実勢-12%)に対し約1/3しか引いておらず、
+// 徒歩の長い物件が不自然に割安に見えていた。置換が静かに元へ戻らないよう形を固定する。
+test("徒歩補正: 帯別テーブルの節点と単調性(線形式への逆戻りを防ぐ)", () => {
+  // 10分以内は横ばい(駅近を減点しない)
+  for (const w of [1, 3, 5, 8, 10]) assert.equal(walkAdjOf(w), 0, `${w}分`);
+  // 節点: 13分=-12% / 18分以降=-25%(実測の帯 11-15分=-12% / 16分以上=-25% の代表点)
+  assert.ok(Math.abs(walkAdjOf(13) + 0.12) < 1e-9, "13分=-12%");
+  assert.ok(Math.abs(walkAdjOf(18) + 0.25) < 1e-9, "18分=-25%");
+  for (const w of [20, 25, 40]) assert.ok(Math.abs(walkAdjOf(w) + 0.25) < 1e-9, `${w}分は-25%で頭打ち`);
+  // 節点の間は折れ線(階段にしない=10分と11分で12%跳ばない)
+  assert.ok(walkAdjOf(11) > -0.06 && walkAdjOf(11) < -0.02, `11分は緩やかに効く: ${walkAdjOf(11)}`);
+  // 単調非増加
+  let prev = 1;
+  for (let w = 1; w <= 40; w++) { const v = walkAdjOf(w); assert.ok(v <= prev + 1e-12, `${w}分で反転`); prev = v; }
+  // 旧線形式との差: 13分で3倍以上引くようになっている(この改善が置換の目的)
+  assert.ok(walkAdjOf(13) < -0.012 * 3 * 3, "13分の補正が旧式(-3.6%)の3倍以上");
+  // 不正入力は0(査定を壊さない)
+  for (const v of [null, undefined, NaN, "abc"]) assert.equal(walkAdjOf(v), 0);
 });

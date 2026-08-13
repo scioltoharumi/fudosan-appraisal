@@ -11,7 +11,7 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { COEFFS } from "./appraise.js";
+import { COEFFS, walkAdjOf } from "./appraise.js";
 import { ROOT, loadYaml } from "./io.js";
 import { growthFactor } from "./timeadjust.js";
 
@@ -64,7 +64,7 @@ export function loadBenchmarks() {
 // 個別成約1件を「標準地条件・2025年1月基準」の坪単価に正規化する
 // 時点修正は年次別レート(timeadjust.js)。一律10%は2022〜23年に対し過大だった(2026-08監査)
 export function normalizeDeal(deal) {
-  const walkAdj = COEFFS.WALK_ADJ_PER_MIN * (deal.walk_min - COEFFS.WALK_BASE_MIN);
+  const walkAdj = walkAdjOf(deal.walk_min);
   const shapeAdj = SHAPE_NORM_ADJ[deal.shape] ?? 0;
   const attr = Math.max(0.6, 1 + walkAdj + shapeAdj);   // 分母クランプ(発散防止・retail側と対称)
   const time = 1 / growthFactor(deal.date, KOJI_BASE_DATE);   // 取引時点→2025-01の換算(÷time)

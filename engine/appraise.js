@@ -17,8 +17,7 @@ export const COEFFS = {
   KOJI_BASE_UTC: Date.UTC(2025, 0, 1),  // 公示地価2025の基準日。時点修正の起点
   YEAR_MS: 31557600000,                 // 365.25日(ミリ秒)。経過年の分母
   DEFAULT_RISE: 0.10,                   // 年率地価上昇率。赤羽の直近実勢+10〜14%の保守側
-  WALK_ADJ_PER_MIN: -0.012,             // 徒歩は10分基準で1分あたり±1.2%
-  WALK_BASE_MIN: 10,
+  WALK_BASE_MIN: 10,                    // 徒歩補正の基準(この分数までは横ばい)。補正値は walkAdjOf()
   CORNER_ADJ: 0.03,                     // 角地+3%。両路とも建築基準法上の道路の場合のみ
   MULTI_STATION_ADJ: 0.02,              // 複数駅・複数路線は再販時の訴求力で+2%
   SIZE_SMALL_TSUBO: 13,                 // 13坪未満: 狭小地。1坪不足あたり-0.5%(最大-5%)
@@ -55,6 +54,31 @@ export const ROAD_QUALITY = {
   setback_2ko: -0.05,  // 4m未満(42条2項道路)
   road_doubt: -0.10,   // 接道に疑義(通路等・要調査)
 };
+// ---- 徒歩補正(2026-08-13に線形→帯別へ置換) ----
+// 旧実装は -1.2%/分の線形だった。台帳479件の実測(2026-08-12)では、地区固定効果を除いた
+// 土地m2単価は徒歩6-10分を100として **1-5分98% / 11-15分88%** で、11-15分帯の実勢は-12%。
+// 線形式は13分で-3.6%しか引かず、実勢の約1/3しか見ていなかった(西が丘2の徒歩17分が
+// 不自然に割安に出る主因)。外部の国交省データ(11-15分▲13% / 16分以上▲26%)ともほぼ一致する。
+//
+// 帯をそのまま階段にすると10分0%→11分-12%で1分あたり12%跳び、感応度分析(徒歩±3分)も
+// 不連続になるため、**帯の代表点を通る折れ線**で補間する。
+// 節点: 10分=0 / 13分(11-15分帯の中央)=-12% / 18分(16分以上帯)=-25%、18分以降は頭打ち。
+// 10分以内を0で横ばいにしたのは実測の「1-5分は6-10分より2%安い」を採らないため
+// (幹線道路・商業地の混入が疑われ、-2%を根拠に駅近を減点する材料としては弱い)。
+export const WALK_KNOTS = [[10, 0], [13, -0.12], [18, -0.25]];
+export function walkAdjOf(walkMin) {
+  const w = Number(walkMin);
+  if (!Number.isFinite(w)) return 0;
+  if (w <= WALK_KNOTS[0][0]) return 0;
+  const last = WALK_KNOTS[WALK_KNOTS.length - 1];
+  if (w >= last[0]) return last[1];
+  for (let i = 1; i < WALK_KNOTS.length; i++) {
+    const [x0, y0] = WALK_KNOTS[i - 1], [x1, y1] = WALK_KNOTS[i];
+    if (w <= x1) return y0 + ((y1 - y0) * (w - x0)) / (x1 - x0);
+  }
+  return last[1];
+}
+
 export const DIRECTION = {
   S: 0.05,                          // 南
   E: 0.02, SE: 0.02, SW: 0.02,      // 東・南東・南西
@@ -118,7 +142,7 @@ export function appraise(s, opts = {}) {
   const ppt = basePpt * Math.pow(1 + s.rise, elapsed);            // 時点修正
   const eff = Math.max(0, s.land - s.setback);                    // 実効宅地
   const tsubo = eff / COEFFS.TSUBO_M2;
-  const walkAdj = COEFFS.WALK_ADJ_PER_MIN * (s.walk - COEFFS.WALK_BASE_MIN);
+  const walkAdj = walkAdjOf(s.walk);
   const cornerAdj = s.corner && s.roadq === 0 ? COEFFS.CORNER_ADJ : 0;   // 接道に減点がある角地は加算しない(コメント準拠)
   const mstAdj = s.mst ? COEFFS.MULTI_STATION_ADJ : 0;
   let sizeAdj = 0;                                                // クリフなしの線形ランプ
@@ -305,6 +329,14 @@ export function toState(property, areaConfig, asOf, { calChosen = null } = {}) {
   }
   let ppt;
   const configuredPpt = property.ppt_man_override !== undefined ? property.ppt_man_override : area?.ppt_man;
+  // 従来値の出所を正確に名乗る(2026-08-13)。従来は一律「公示ベース」と書いていたが、
+  // **公示地価の住宅地点が存在しないエリアがある**(中里。area-config の source が deals_median_*)。
+  // そこでは較正値も従来値も同じ成約データに由来し、ブレンドは独立した検証軸を持たない。
+  // 中里3の3物件が同じ単価に乗っているため、この事実は査定額と同じ重みで開示する必要がある。
+  const kojiAnchored = !area?.source || /^koji/.test(String(area.source));
+  const baseLabel = property.ppt_man_override !== undefined ? "YAML上書き"
+    : kojiAnchored ? "公示ベース"
+    : "公示地点が無く土地成約中央値ベース";
   // 成約較正値の採用(F5-2・2026-08第2次監査で本体接続)。信頼度「参考」は採用しない
   const calAdoptable = calChosen && calChosen.level !== "reference";
   let calWeight = 0;
@@ -313,7 +345,10 @@ export function toState(property, areaConfig, asOf, { calChosen = null } = {}) {
     calWeight = calChosen.level === "mid" ? 0.75 : 0.5;
     ppt = Math.round(calWeight * calChosen.ppt + (1 - calWeight) * configuredPpt);
     note("基準坪単価", ppt + "万/坪",
-      `成約較正値${calChosen.ppt}万(${calChosen.basis})と従来値${configuredPpt}万(${property.ppt_man_override !== undefined ? "YAML上書き" : "公示ベース"})を${(calWeight * 100).toFixed(0)}:${((1 - calWeight) * 100).toFixed(0)}でブレンド`);
+      `成約較正値${calChosen.ppt}万(${calChosen.basis})と従来値${configuredPpt}万(${baseLabel})を${(calWeight * 100).toFixed(0)}:${((1 - calWeight) * 100).toFixed(0)}でブレンド`
+      + (kojiAnchored || property.ppt_man_override !== undefined ? ""
+        : "。**このエリアには公示地価の住宅地点が無く、較正値も従来値も同じ土地成約に由来する**"
+          + "(ブレンドは独立した検証軸を持たない)。単価の確からしさは成約標本の質だけに依存する"));
   } else if (property.ppt_man_override !== undefined) {
     ppt = property.ppt_man_override;
     note("基準坪単価", ppt + "万/坪", "物件YAMLの明示上書き(F2-3)" + (calChosen ? "。成約較正値" + calChosen.ppt + "万は信頼度不足のため不採用" : ""));

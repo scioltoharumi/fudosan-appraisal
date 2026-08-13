@@ -9,7 +9,7 @@
 // 対象個別要因(形状・方位・接道・角地・法的制約・個別補正)の伝搬。
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { COEFFS } from "./appraise.js";
+import { COEFFS, walkAdjOf } from "./appraise.js";
 import { ROOT } from "./io.js";
 import { growthFactor } from "./timeadjust.js";
 
@@ -133,7 +133,7 @@ function normalizeLandUnit(d, asOf) {
   const landResid = Math.max(d.price_man - bldgNet, d.price_man * RETAIL.LAND_RESID_MIN_RATIO);
   const unit = landResid / (d.land_m2 / COEFFS.TSUBO_M2);
   const time = growthFactor(d.quarter, asOf);  // 土地残差なので土地の年次別レートで時点修正
-  const walkComp = COEFFS.WALK_ADJ_PER_MIN * (d.walk_min - COEFFS.WALK_BASE_MIN);
+  const walkComp = walkAdjOf(d.walk_min);
   const denom = clamp(1 + walkComp, RETAIL.WALK_DENOM_CLAMP[0], RETAIL.WALK_DENOM_CLAMP[1]);
   return unit * time / denom;
 }
@@ -179,7 +179,7 @@ export function retailEstimate(s, asOf, deals, { subjectDistrict = null } = {}) 
 
   const effTsubo = Math.max(0, s.land - s.setback) / COEFFS.TSUBO_M2;
   // 対象物件の個別要因(原価法と同じ係数体系)。複数駅補正は事例側の駅属性が不明なため適用しない
-  const walkProp = COEFFS.WALK_ADJ_PER_MIN * (s.walk - COEFFS.WALK_BASE_MIN);
+  const walkProp = walkAdjOf(s.walk);
   const cornerAdj = s.corner ? COEFFS.CORNER_ADJ : 0;
   // 形状補正は半減で適用: 事例プールの成約価格には旗竿地・不整形が既に混入しており(形状列なし)、
   // 対象側に満額の-25%を掛けると混入分と二重減価になるため(R4監査)

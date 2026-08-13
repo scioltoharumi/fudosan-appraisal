@@ -1,7 +1,7 @@
 // site/templates/anatomy.js — 「値段の解剖」共有部品
 // formula.html の実例図(総額の解剖)と生の残余単価統計を、全物件ページでも同じ書き方で
 // 使えるように formula.js から切り出したもの。図中の値はすべてビルド時のエンジン再計算値。
-import { COEFFS, fmtMan } from "../../engine/appraise.js";
+import { COEFFS, fmtMan, walkAdjOf } from "../../engine/appraise.js";
 import { RETAIL, ADJACENT_DISTRICTS } from "../../engine/retail.js";
 
 // ---- 生の残余単価(時点修正なし・徒歩10分標準へ正規化) ----
@@ -18,7 +18,7 @@ export function rawResidualStats(houseDeals, subjectDistrict) {
       - Math.min(COEFFS.DEFAULT_REPAIR_MAN, RETAIL.REPAIR_PER_YEAR * d.age_y));
     const resid = Math.max(d.price_man - bldg, d.price_man * RETAIL.LAND_RESID_MIN_RATIO);
     const denom = Math.min(RETAIL.WALK_DENOM_CLAMP[1], Math.max(RETAIL.WALK_DENOM_CLAMP[0],
-      1 + COEFFS.WALK_ADJ_PER_MIN * (d.walk_min - COEFFS.WALK_BASE_MIN)));
+      1 + walkAdjOf(d.walk_min)));
     rows.push({ q: d.quarter, u: resid / (d.land_m2 / COEFFS.TSUBO_M2) / denom });
   }
   const med = (a) => { const s = [...a].sort((x, y) => x - y); return s.length ? s[Math.floor(s.length / 2)] : 0; };

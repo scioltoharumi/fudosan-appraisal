@@ -1,7 +1,7 @@
 // site/templates/formula.js — 成約事例ベースの算出ロジック図解「値段の解剖」
 // 総額 = 土地実勢単価×土地坪数 + 建物残価 + 売主の期待、の3層を実物件(赤羽西4)の数字で図解する。
 // 図中の値はすべてビルド時にエンジンから再計算され、台帳と常に一致する。
-import { COEFFS, fmtMan } from "../../engine/appraise.js";
+import { COEFFS, fmtMan, walkAdjOf } from "../../engine/appraise.js";
 import { RETAIL, ADJACENT_DISTRICTS, districtOf } from "../../engine/retail.js";
 import { layout, esc } from "./layout.js";
 import { anatomySvg, rawResidualStats } from "./anatomy.js";
@@ -21,7 +21,7 @@ function ageRatioBuckets(houseDeals) {
   const bldg = (d) => Math.max(0, COEFFS.DEFAULT_REBUILD_PPT * (d.floor_m2 / T) * Math.max(0, 1 - d.age / COEFFS.BUILDING_LIFE_Y)
     - Math.min(COEFFS.DEFAULT_REPAIR_MAN, RETAIL.REPAIR_PER_YEAR * d.age));
   const wden = (w) => Math.min(RETAIL.WALK_DENOM_CLAMP[1], Math.max(RETAIL.WALK_DENOM_CLAMP[0],
-    1 + COEFFS.WALK_ADJ_PER_MIN * (w - COEFFS.WALK_BASE_MIN)));
+    1 + walkAdjOf(w)));
   const med = (a) => { const s = [...a].sort((x, y) => x - y); return s.length ? s[Math.floor(s.length / 2)] : null; };
   // rawResidualStatsと同じ実需帯フィルタ(土地40〜120m2)。築年は全帯を使う(未完成売買は築0に丸め)
   const rows = (houseDeals ?? []).map((d) => ({ ...d, age: Math.max(0, d.age_y) }))
@@ -360,8 +360,8 @@ function variableDictHtml() {
       "対象=zoning/bcr/far/rebuildable。再建築不可は両手法に大減価が伝搬。事例側は不明→分布(四分位)に吸収"],
     ["備考欄(リフォーム歴・告知事項・隣地関係)", "建物残価と個別補正の前提を変える", "<b>残価前提を変える情報はここに出る</b>。大規模修繕済みなら残価+数百万、心理的瑕疵・越境・隣地紛争は価格外の減点。成約事例側の備考はレインズでしか見えない",
       "データに列なし→全事例「年式相応の未修繕」と対称仮定。上の建物パネルの2本カーブの差がこの影響量"],
-    ["駅徒歩(時間距離)", "個別補正(±1.2%/分)", "実測の徒歩分数(80m/分)か、バス便かを確認。複数路線はプラス材料だが事例側の駅属性は通常不明",
-      "徒歩10分標準へ正規化(発散防止のため±の頭打ちあり)。事例=データのwalk_min、30分超は除外"],
+    ["駅徒歩(時間距離)", "個別補正(帯別: 10分以内0% / 13分−12% / 18分以降−25%)", "実測の徒歩分数(80m/分)か、バス便かを確認。複数路線はプラス材料だが事例側の駅属性は通常不明",
+      "徒歩10分標準へ正規化。事例=データのwalk_min、30分超は除外。2026-08-13に「1分あたり−1.2%」の線形から帯別テーブルへ置換(台帳479件の実測で11〜15分帯の実勢は−12%、線形式は−3.6%しか引いていなかった)"],
     ["権利形態(所有権/借地権)", "土地部分の係数(借地は×0.4〜0.6)", "借地権・底地は所有権と別の市場。地代・更新料・譲渡承諾の条件で大きく変わる",
       "所有権のみ査定対象。借地はlc係数で減額の上、参考扱い"],
   ];
