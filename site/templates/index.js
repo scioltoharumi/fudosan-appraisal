@@ -82,6 +82,23 @@ function calibrationPanel(results, cal) {
   </div>`;
 }
 
+// ---- ハザードの見出しタグ ----
+// 公式マップ(国土地理院タイル)で掲載条件を外れたものを最優先で出す。次に掲載欄の未検証。
+// 2026-08-13: 掲載の法令等制限欄には洪水浸水想定が載らないため、志茂1・志茂3が
+// 「suumo: none / athome: none」のまま台帳に残っていた(実測3〜5m / 5〜10m)。同じ穴を再発させない
+function hazardTag(property) {
+  const h = property.hazard_check;
+  if (!h) return "";
+  const o = h.official ?? null;
+  if (o?.verdict === "block") {
+    return `<span class="unit-tag" style="border-color:var(--stamp);color:#fff;background:var(--stamp);font-weight:700">ハザード該当(掲載条件外)</span>`;
+  }
+  const tags = [];
+  if (o?.verdict === "caution") tags.push(`<span class="unit-tag" style="border-color:#B07C10;color:#B07C10;background:#FDFAF2">公式マップ要確認</span>`);
+  if (h.athome === "unchecked" || h.suumo === "unchecked") tags.push(`<span class="unit-tag" style="border-color:var(--stamp);color:var(--stamp);background:#FDF4F3">掲載欄ハザード未検証</span>`);
+  return tags.join("");
+}
+
 export function renderIndex(results, { asOf, cal = null }) {
   // 乖離額の昇順 = 割安順。リテール成立物件は対市場実勢(売主の期待)、
   // 不成立物件は対適正中央値で並べる
@@ -105,7 +122,7 @@ export function renderIndex(results, { asOf, cal = null }) {
       data-price="${Math.round(r.state.ask)}" data-market="${r.retail ? Math.round(r.retail.mid) : -1}"
       data-div="${Math.round(divergence(r))}" data-assump="${r.assumptions.length}" data-fair="${Math.round(r.fairFinal.mid)}"
       data-name="${esc(property.location?.address ?? r.id)}">
-      <td><a href="property/${esc(r.id)}.html">${esc(property.location?.address ?? r.id)}</a>${property.unit_label ? `<span class="unit-tag">${esc(property.unit_label)}</span>` : ""}${property.hazard_check && (property.hazard_check.athome === "unchecked" || property.hazard_check.suumo === "unchecked") ? `<span class="unit-tag" style="border-color:var(--stamp);color:var(--stamp);background:#FDF4F3">ハザード未検証</span>` : ""}<div class="note" style="margin-top:0">${esc(property.layout ?? "—")} / 土地${esc(property.land?.registered_m2)}m²・延床${esc(property.building?.floor_m2)}m² / ${r.isNewBuild ? `完成${esc(fmtDate(property.building?.built)).slice(0, 7)}` : `築${r.state.age.toFixed(1)}年`} / 徒歩${esc(property.station?.walk_min)}分${safeUrl(property.source_url) ? ` / <a href="${esc(property.source_url)}" target="_blank" rel="noopener noreferrer">掲載元↗</a>` : ""}</div></td>
+      <td><a href="property/${esc(r.id)}.html">${esc(property.location?.address ?? r.id)}</a>${property.unit_label ? `<span class="unit-tag">${esc(property.unit_label)}</span>` : ""}${hazardTag(property)}<div class="note" style="margin-top:0">${esc(property.layout ?? "—")} / 土地${esc(property.land?.registered_m2)}m²・延床${esc(property.building?.floor_m2)}m² / ${r.isNewBuild ? `完成${esc(fmtDate(property.building?.built)).slice(0, 7)}` : `築${r.state.age.toFixed(1)}年`} / 徒歩${esc(property.station?.walk_min)}分${safeUrl(property.source_url) ? ` / <a href="${esc(property.source_url)}" target="_blank" rel="noopener noreferrer">掲載元↗</a>` : ""}</div></td>
       <td><select class="stsel" aria-label="${esc(property.location?.address ?? r.id)}のステータス">${opts}</select><span class="unsync" title="台帳(リポジトリ)の値と違います。書き出して反映してください">未同期</span></td>
       <td class="num">${fmtMan(r.state.ask)}<div class="note" style="margin-top:0">${esc(priceDate)}時点${reviseNote}</div></td>
       <td class="num">${r.retail && hasMarketPage ? `<a href="property/${esc(r.id)}-market.html">${fmtMan(r.retail.mid)}</a>` : r.retail ? fmtMan(r.retail.mid) : "—"}</td>

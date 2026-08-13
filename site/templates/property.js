@@ -406,15 +406,26 @@ function hazardHtml(property) {
   const h = property.hazard_check;
   if (!h) return "";
   const LABEL = { none: "記載なし", hit: "該当", unchecked: "未確認", na: "掲載なし" };
+  const o = h.official ?? null;
   const pending = h.athome === "unchecked" || h.suumo === "unchecked";
-  const color = pending ? "var(--stamp)" : "#2E6E8E";
+  // 公式マップで掲載条件を外れる(block)場合は最も強い警告色。次いで掲載欄の未検証
+  const bad = o?.verdict === "block";
+  const color = bad || pending ? "var(--stamp)" : o?.verdict === "caution" ? "#B07C10" : "#2E6E8E";
   return `
-    <div style="border:1px solid ${color};background:${pending ? "#FDF4F3" : "#F4F8FA"};padding:9px 12px;margin-top:12px;font-size:.8rem;line-height:1.8">
-      <b style="color:${color}">ハザード確認状況${pending ? " ── 未検証あり" : ""}</b>
+    <div style="border:1px solid ${color};background:${bad || pending ? "#FDF4F3" : o?.verdict === "caution" ? "#FDFAF2" : "#F4F8FA"};padding:9px 12px;margin-top:12px;font-size:.8rem;line-height:1.8">
+      <b style="color:${color}">ハザード確認状況${bad ? " ── 公式マップで掲載条件外" : pending ? " ── 掲載欄に未検証あり" : ""}</b>
       ／ SUUMO掲載: ${esc(LABEL[h.suumo] ?? h.suumo)}
       ／ athome掲載: ${esc(LABEL[h.athome] ?? h.athome)}${h.athome_ref ? `(${esc(h.athome_ref)})` : ""}
       ／ 確認日 ${esc(fmtDate(h.checked_at))}
       <div class="note" style="margin-top:3px">${esc(h.note ?? "")}</div>
+      ${o ? `<div style="margin-top:7px;padding-top:7px;border-top:1px dashed ${color}">
+        <b>公式マップ照合</b>(国土地理院タイル・${esc(fmtDate(o.checked_at))}) ／ ${esc(o.query)} の代表点 ${esc(o.point)} ／ 標高 ${esc(o.elevation_m)}m<br>
+        ${Array.isArray(o.hits) && o.hits.length
+          ? o.hits.map((x) => `<span style="color:${color};font-weight:700">${esc(x)}</span>`).join(" ／ ")
+          : "代表点では該当なし"}${o.flood_l2 ? `<br>周辺±200mの25点サンプルでの浸水想定の被覆: ${esc(o.flood_coverage)}` : ""}
+        ${o.reason ? `<div style="margin-top:3px;color:${color}"><b>${bad ? "掲載条件「台地側(荒川低地の浸水想定域外)」から外れている" : "要確認"}</b>: ${esc(o.reason)}</div>` : ""}
+        <div class="note" style="margin-top:3px">${esc(o.limit ?? "")}</div>
+      </div>` : ""}
       ${pending ? `<div class="note" style="margin-top:3px;color:var(--stamp)"><b>掲載の制限事項欄は該当物件でも空欄のことがある</b>(実例: 西が丘2の2棟現場はSUUMOが空欄で、athomeの4業者掲載のみが土砂災害特別警戒区域を明記)。<b>内見・申込より前に</b>、重ねるハザードマップと東京都の土砂災害警戒区域等マップで自分で照合し、仲介には法令上の制限の全項目を書面で出してもらうこと。重要事項説明は契約直前のため、そこまで進めてから判明すると引き返しにくい。</div>` : ""}
     </div>`;
 }
