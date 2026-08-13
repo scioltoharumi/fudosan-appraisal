@@ -111,19 +111,32 @@ const vals = async (key) => p.$$eval("tr.prow", (rs, k) => rs.map((r) => r.datas
 const isAsc = (a) => a.every((v, i) => i === 0 || a[i - 1] <= v);
 const numsOf = (a) => a.filter((v) => v !== "" && v != null).map(Number);
 
-await T("並び替えバーが7項目ある(登録名・築年数・延床・土地・徒歩分・売出価格・乖離)", async () => {
+await T("並び替えバーが7項目ある(登録日・築年数・延床・土地・徒歩分・売出価格・乖離)", async () => {
   const labels = await p.$$eval("#sortbar .chip", (cs) => cs.map((c) => c.dataset.s));
-  return ["name", "age", "floor", "land", "walk", "price", "div"].every((k) => labels.includes(k));
+  return ["captured", "age", "floor", "land", "walk", "price", "div"].every((k) => labels.includes(k));
 });
 
-await T("登録名: 1回目のクリックで昇順、2回目で降順になる", async () => {
-  await p.click('#sortbar .chip[data-s="name"]');
+await T("登録日: 1回目のクリックで古い順、2回目で新しい順になる", async () => {
+  await p.click('#sortbar .chip[data-s="captured"]');
+  const asc = numsOf(await vals("captured"));
+  const okAsc = asc.every((v, i) => i === 0 || asc[i - 1] <= v);
+  await p.click('#sortbar .chip[data-s="captured"]');
+  const desc = numsOf(await vals("captured"));
+  const okDesc = desc.every((v, i) => i === 0 || desc[i - 1] >= v);
+  // 日付が実データとして複数種あること(全部同じだと並び替えを検証できない)
+  return okAsc && okDesc && new Set(asc).size > 1 && asc[0] === desc[desc.length - 1];
+});
+
+await T("登録日は行にも表示される(並べ替えた結果を目で確認できる)", async () =>
+  (await p.locator("tr.prow", { hasText: "台帳登録" }).count()) === (await p.locator("tr.prow").count()));
+
+await T("物件名の並び替えは表の見出しに残っている", async () => {
+  await p.click('th.sortable[data-key="name"]');
   const asc = await vals("name");
   const okAsc = asc.every((v, i) => i === 0 || asc[i - 1].localeCompare(v, "ja") <= 0);
-  await p.click('#sortbar .chip[data-s="name"]');
+  await p.click('th.sortable[data-key="name"]');
   const desc = await vals("name");
-  const okDesc = desc.every((v, i) => i === 0 || desc[i - 1].localeCompare(v, "ja") >= 0);
-  return okAsc && okDesc && asc.length === desc.length && asc[0] === desc[desc.length - 1];
+  return okAsc && desc.every((v, i) => i === 0 || desc[i - 1].localeCompare(v, "ja") >= 0);
 });
 
 for (const [key, label] of [["age", "築年数"], ["floor", "延床"], ["land", "土地"], ["walk", "徒歩分"]]) {
