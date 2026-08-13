@@ -137,9 +137,9 @@ export function renderIndex(results, { asOf, cal = null }) {
   const body = `
   <div class="panel">
     <h2>物件一覧(乖離額の小さい順 = 割安順)</h2>
-    <div class="cond-banner"><b>台帳掲載の条件</b>: 価格 5,000〜9,000万円 / 台地側(荒川低地の浸水想定域外)/ 所有権(借地権は除外)/ 延床70m²超 / 3室以上(納戸・サービスルーム可)/ 新耐震基準 / 再建築可 ── 赤羽駅西側・十条エリアの中古/新築戸建をSUUMO日次クロール+チラシで収集(ハザードの個別確認は検討段階で実施)</div>
+    <div class="cond-banner"><b>台帳掲載の条件</b>: 価格 5,000〜9,000万円 / <a href="map.html">台地側(荒川低地の浸水想定域外)↗</a>/ 所有権(借地権は除外)/ 延床70m²超 / 3室以上(納戸・サービスルーム可)/ 新耐震基準 / 再建築可 ── 赤羽駅西側・十条エリアの中古/新築戸建をSUUMO日次クロール+チラシで収集(ハザードの個別確認は検討段階で実施)</div>
     <div class="cond-banner" style="border-color:var(--ink-soft);background:#FBFAF8"><b>この台帳は「買い/見送り」の判定を出しません</b>: 同じ数字でも通勤・家族構成・ローン余力・時間軸で結論は変わるため、判断は人が行います。エンジンが出すのは売出価格が各参照水準(市場実勢中央値・上位四分位・適正レンジ・土地換算値)のどこに立っているかという事実までです。検討状況は下表の<b>ステータス</b>で自分で設定してください(<a href="guide.html">参照水準の読み方</a>)。</div>
-    <div class="note" style="margin:0 0 10px">はじめての方へ: 「総額 = 土地単価×坪数 + 建物残価 + 売主の期待」という値段の構造は <a href="formula.html">値段の解剖 ── 算出ロジック図解</a> が1ページで図解しています。査定値の出所(公示地価・坪単価・建物残価・リテール比較法・参照水準の意味)は <a href="guide.html">査定の読み方 ── 前提知識ガイド</a>、成約データ全件は <a href="data.html">成約データ台帳(検証と探索)</a> で出所リンク・二重照合結果つきで確認できます。希望条件(間取り・設備等)を金額換算して妥協判断する方法は <a href="tradeoff.html">妥協の値段 ── A/B/C分類と工事費早見表</a> にまとめています。</div>
+    <div class="note" style="margin:0 0 10px">はじめての方へ: 「総額 = 土地単価×坪数 + 建物残価 + 売主の期待」という値段の構造は <a href="formula.html">値段の解剖 ── 算出ロジック図解</a> が1ページで図解しています。査定値の出所(公示地価・坪単価・建物残価・リテール比較法・参照水準の意味)は <a href="guide.html">査定の読み方 ── 前提知識ガイド</a>、成約データ全件は <a href="data.html">成約データ台帳(検証と探索)</a> で出所リンク・二重照合結果つきで確認できます。希望条件(間取り・設備等)を金額換算して妥協判断する方法は <a href="tradeoff.html">妥協の値段 ── A/B/C分類と工事費早見表</a>、各地区が浸水想定・土砂災害警戒区域のどこに立っているかは <a href="map.html">ハザードマップ対照</a> で地図と見比べられます。</div>
     <div class="filterbar">
       <span class="flabel">ステータス</span>${STATUS_CHOICES.map((v) => `<button class="chip" data-f="status" data-val="${esc(v)}">${esc(v)}</button>`).join("")}
       <button class="chip" data-f="memo" data-val="1" style="margin-left:10px">メモあり</button>

@@ -424,7 +424,7 @@ function hazardHtml(property) {
           ? o.hits.map((x) => `<span style="color:${color};font-weight:700">${esc(x)}</span>`).join(" ／ ")
           : "代表点では該当なし"}${o.flood_l2 ? `<br>周辺±200mの25点サンプルでの浸水想定の被覆: ${esc(o.flood_coverage)}` : ""}
         ${o.reason ? `<div style="margin-top:3px;color:${color}"><b>${bad ? "掲載条件「台地側(荒川低地の浸水想定域外)」から外れている" : "要確認"}</b>: ${esc(o.reason)}</div>` : ""}
-        <div class="note" style="margin-top:3px">${esc(o.limit ?? "")}</div>
+        <div class="note" style="margin-top:3px">${esc(o.limit ?? "")} <a href="../map.html">エリア全体のハザードマップ対照を見る↗</a></div>
       </div>` : ""}
       ${pending ? `<div class="note" style="margin-top:3px;color:var(--stamp)"><b>掲載の制限事項欄は該当物件でも空欄のことがある</b>(実例: 西が丘2の2棟現場はSUUMOが空欄で、athomeの4業者掲載のみが土砂災害特別警戒区域を明記)。<b>内見・申込より前に</b>、重ねるハザードマップと東京都の土砂災害警戒区域等マップで自分で照合し、仲介には法令上の制限の全項目を書面で出してもらうこと。重要事項説明は契約直前のため、そこまで進めてから判明すると引き返しにくい。</div>` : ""}
     </div>`;

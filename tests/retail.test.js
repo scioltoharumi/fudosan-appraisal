@@ -56,15 +56,26 @@ test("敵対的: 徒歩外れ値・新築混入・負の単価が事例比較を
 });
 
 test("敵対的: 減価要因(再建築不可)がリテール経路でも消滅しない", () => {
+  // 2026-08-13: 志茂3を固定の題材にしていたが、同物件がハザード該当で台帳から外れたため
+  // 特定物件に依存しない形へ変更した(台帳の増減でテストが壊れないほうが本来正しい)
   const cfg = loadAreaConfig();
   const deals = loadHouseDeals();
-  const prop = loadProperty("shimo3-20706806");
-  const normal = evaluate(prop, cfg, { asOf: AS_OF, houseDeals: deals });
-  const noRebuild = evaluate(
-    { ...prop, land: { ...prop.land, legal: { ...prop.land.legal, rebuildable: false } } },
-    cfg, { asOf: AS_OF, houseDeals: deals });
-  assert.ok(noRebuild.fairFinal.mid < normal.fairFinal.mid * 0.8,
-    `再建築不可で2割以上下がるべき: ${Math.round(normal.fairFinal.mid)} → ${Math.round(noRebuild.fairFinal.mid)}`);
+  let withRetail = 0;
+  for (const id of listPropertyIds()) {
+    const prop = loadProperty(id);
+    const normal = evaluate(prop, cfg, { asOf: AS_OF, houseDeals: deals });
+    const noRebuild = evaluate(
+      { ...prop, land: { ...prop.land, legal: { ...prop.land.legal, rebuildable: false } } },
+      cfg, { asOf: AS_OF, houseDeals: deals });
+    const ratio = noRebuild.fairFinal.mid / normal.fairFinal.mid;
+    assert.ok(ratio < 1, `${id}: 再建築不可で下がるべき ${Math.round(normal.fairFinal.mid)} → ${Math.round(noRebuild.fairFinal.mid)}`);
+    if (normal.retail) {
+      withRetail++;
+      // リテール比較が主導していても、土地側の-30%が事例平均に呑まれて消えないこと
+      assert.ok(ratio < 0.85, `${id}: リテール経路で減価が薄まりすぎ(比 ${ratio.toFixed(3)})`);
+    }
+  }
+  assert.ok(withRetail >= 5, "リテール成立物件が十分ある: " + withRetail);
 });
 
 test("地域要因: 事例は対象の近接地区に限定される(不足時のみ全地区+フラグ)", () => {

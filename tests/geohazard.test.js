@@ -65,9 +65,7 @@ test("台帳: 全物件に公式マップ照合の記録があり、blockが残�
     if (o.verdict === "block") blocked.push(`${id}(${o.reason})`);
   }
   // 掲載条件「台地側(荒川低地の浸水想定域外)」に反する物件が台帳に残っていないこと。
-  // 2026-08-13時点では志茂1・志茂3が該当し、扱いをユーザー判断待ちとしているため既知として許容する。
-  // 判断が済んだらこの許容リストを空にして、以後は追加された瞬間にテストが落ちるようにする
-  const KNOWN = ["shimo1-21186616", "shimo3-20706806"];
-  const unexpected = blocked.filter((b) => !KNOWN.some((k) => b.startsWith(k)));
-  assert.deepEqual(unexpected, [], "公式マップで掲載条件外の物件が新たに台帳に入っている: " + unexpected.join(" / "));
+  // 志茂1・志茂3は2026-08-13に除外済み(market/crawl/excluded.json)。許容リストは空のまま維持し、
+  // blockの物件が台帳へ入った瞬間にこのテストが落ちるようにしておく
+  assert.deepEqual(blocked, [], "公式マップで掲載条件外(block)の物件が台帳に入っている: " + blocked.join(" / "));
 });

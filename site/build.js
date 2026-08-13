@@ -1,6 +1,6 @@
 // site/build.js — 全物件YAMLを査定し、静的サイトを site/dist/ に生成する
 // 使い方: node site/build.js
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { evaluate, defaultAsOf } from "../engine/appraise.js";
 import { ROOT, loadAreaConfig, loadProperty, listPropertyIds } from "../engine/io.js";
@@ -13,6 +13,7 @@ import { renderMarketBasis } from "./templates/market-basis.js";
 import { renderDataExplorer } from "./templates/data-explorer.js";
 import { renderFormula } from "./templates/formula.js";
 import { renderTradeoff } from "./templates/tradeoff.js";
+import { renderHazardMap } from "./templates/map.js";
 import { loadVerification } from "../engine/retail.js";
 import { loadDeals } from "../engine/calibrate.js";
 
@@ -86,6 +87,14 @@ const houseRows = houseDeals.map((d) => {
 });
 writeFileSync(join(DIST, "data.html"), renderDataExplorer({ houseRows, landRows: loadDeals(), verification, asOf }), "utf8");
 console.log(`✓ data.html(戸建${houseRows.length}件・土地${loadDeals().length}件・検証 ${verification?.generated_at ?? "未実施"})`);
+// ハザードマップ対照ページ。ラスタは crawler/hazard-grid.mjs が事前に焼いたJSONを読むだけ
+// (ビルドはネットワークに出ない。再生成は手動: node crawler/hazard-grid.mjs)
+const hazardGrid = JSON.parse(readFileSync(join(ROOT, "market", "hazard-grid.json"), "utf8"));
+const excludedLedger = JSON.parse(readFileSync(join(ROOT, "market", "crawl", "excluded.json"), "utf8"));
+writeFileSync(join(DIST, "map.html"),
+  renderHazardMap({ grid: hazardGrid, ledger: results, excluded: excludedLedger, asOf }), "utf8");
+console.log(`✓ map.html(ハザード対照・${hazardGrid.nx}×${hazardGrid.ny}メッシュ)`);
+
 writeFileSync(join(DIST, "index.html"), renderIndex(results, { asOf, cal }), "utf8");
 console.log(`✓ index.html(${results.length}件・基準日 ${asOf})`);
 console.log(`出力先: ${DIST}`);
