@@ -2,8 +2,12 @@
 # 指値方針・交渉メモ・個人的所感・写真・紹介文は書かない(publicリポジトリ運用・decisions D4)
 id: nishigaoka2-adcast-a
 status: viewed             # considering / viewed / declined / closed
-unit_label: "A号棟"   # 一覧で同一丁目の他物件と識別するための棟名・区画名
-source: "アドキャスト赤羽支店チラシ(媒介)・A号棟。新築戸建(未完成・2026年9月完成予定/9月下旬引渡予定・建築確認 第JAIC2025X0546A1号)"
+unit_label: "十条15分・単独1棟(ESPACERとは別開発)"   # 一覧で同一丁目の他物件と識別するための棟名・区画名
+source: "アドキャスト赤羽支店チラシ(媒介)。チラシは『A号棟』と呼ぶが、掲載元(SUUMO nc_21261057)は**総戸数1戸**。
+  2026-08-13の照合で、同じ西が丘2の【ESPACER】全4棟(C・D号棟)とは**別開発**と確定した:
+  用途地域が1種中高(ESPACERは2種低層)/建築確認が第JAIC2025X0546A1号(ESPACERは第26UDI1C建01416号他)/
+  完成2026年9月(ESPACERは2026年12月)/最寄駅の並びも十条15分・東十条17分・赤羽18分で異なる。
+  当初 unit_label を『A号棟』としていたためESPACERのA号棟と誤読しうる状態だった(2026-08-13に訂正)"
 source_url: "https://suumo.jp/ikkodate/tokyo/sc_kita/nc_21261057/"   # 実在確認済み 2026-08-12。同一確認: 土地50.74実測・建物83.51(車庫8.96)・1LDK+2S(納戸)・完成2026-09・木造3F・北西4m の7項目一致
 captured_at: 2026-08-09
 price_history:

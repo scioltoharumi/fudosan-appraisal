@@ -105,13 +105,24 @@ export const LAYERS = {
   kaoku_kagan: { id: "01_flood_l2_kaokutoukai_kagan_data", name: "家屋倒壊等氾濫想定区域(河岸侵食)", kind: "flag" },
   hightide: { id: "03_hightide_l2_shinsuishin_data", name: "高潮浸水想定区域(想定最大規模)", kind: "depth" },
   tsunami: { id: "04_tsunami_newlegend_data", name: "津波浸水想定", kind: "depth" },
-  dosekiryu: { id: "05_dosekiryukeikaikuiki", name: "土砂災害警戒区域(土石流)", kind: "flag" },
-  dosekiryu_red: { id: "05_dosekiryutokubetsukeikaikuiki", name: "土砂災害特別警戒区域(土石流)", kind: "flag" },
-  kyukeisha: { id: "05_kyukeishakeikaikuiki", name: "土砂災害警戒区域(急傾斜地)", kind: "flag" },
-  kyukeisha_red: { id: "05_kyukeishatokubetsukeikaikuiki", name: "土砂災害特別警戒区域(急傾斜地)", kind: "flag" },
-  jisuberi: { id: "05_jisuberikeikaikuiki", name: "土砂災害警戒区域(地すべり)", kind: "flag" },
-  jisuberi_red: { id: "05_jisuberitokubetsukeikaikuiki", name: "土砂災害特別警戒区域(地すべり)", kind: "flag" },
+  // 土砂災害は「警戒区域(イエロー)」と「特別警戒区域(レッド)」が**同一レイヤに色違いで同居**する。
+  // 2026-08-13: 当初 05_*tokubetsukeikaikuiki という別レイヤがあると仮定していたが、
+  // このIDはデータのある地域(逗子・青梅)でも常に404で、実在しない。その結果レッドを
+  // すべてイエローとして扱っていた(北区一帯1,620点でレッド0件という誤った結果を出していた)。
+  // 正しくは下記3レイヤのピクセル色で判定する(doshaClass)。
+  dosekiryu: { id: "05_dosekiryukeikaikuiki", name: "土砂災害警戒区域等(土石流)", kind: "dosha" },
+  kyukeisha: { id: "05_kyukeishakeikaikuiki", name: "土砂災害警戒区域等(急傾斜地)", kind: "dosha" },
+  jisuberi: { id: "05_jisuberikeikaikuiki", name: "土砂災害警戒区域等(地すべり)", kind: "dosha" },
 };
+
+// 凡例色: 警戒区域=黄 RGB(250,230,0) / 特別警戒区域=朱 RGB(250,40,0)。
+// 境界はアンチエイリアスで中間色になるため、緑成分のしきい値で分ける(迷ったら重い側=レッド)。
+export const DOSHA_RED_G_MAX = 140;
+export function doshaClass(rgba) {
+  if (!rgba || rgba[3] === 0) return null;
+  return rgba[1] <= DOSHA_RED_G_MAX ? "red" : "yellow";
+}
+export const DOSHA_LABEL = { red: "特別警戒区域(レッド)", yellow: "警戒区域(イエロー)" };
 
 // ---- ネットワーク層(fetchは注入可能にしてテストから切り離す) ----
 export function createReader({ fetchImpl = fetch, zoom = Z } = {}) {
@@ -154,7 +165,9 @@ export async function officialHazard(address, opts = {}) {
   for (const [key, L] of Object.entries(LAYERS)) {
     const c = await read(L.id, g.lat, g.lon);
     if (!c) continue;
-    layers[key] = L.kind === "depth" ? (depthLabel(c)?.label ?? null) : "該当";
+    layers[key] = L.kind === "depth" ? (depthLabel(c)?.label ?? null)
+      : L.kind === "dosha" ? DOSHA_LABEL[doshaClass(c)]
+      : "該当";
   }
   let hit = 0, total = 0;
   for (let i = -2; i <= 2; i++) {
@@ -184,14 +197,17 @@ export function screenOfficial(h) {
     codes.push("KO4_LOWLAND");
     reasons.push(`標高${h.elevation_m}mの低地で浸水想定${depth}に該当。掲載条件「台地側(荒川低地の浸水想定域外)」から外れる`);
   }
-  for (const k of ["dosekiryu_red", "kyukeisha_red", "jisuberi_red"]) {
-    if (h.layers?.[k]) { codes.push("KO4_DOSHA_RED"); reasons.push(`${LAYERS[k].name}に該当(レッドゾーン)`); }
+  for (const k of ["dosekiryu", "kyukeisha", "jisuberi"]) {
+    if (h.layers?.[k] === DOSHA_LABEL.red) {
+      codes.push("KO4_DOSHA_RED");
+      reasons.push(`${LAYERS[k].name}の特別警戒区域(レッドゾーン)に該当。建築物の構造規制・移転勧告の対象で、住宅ローンと再販性に直接影響する`);
+    }
   }
   if (codes.length) return { verdict: "block", codes, reasons };
 
   const cautions = [];
   for (const k of ["dosekiryu", "kyukeisha", "jisuberi"]) {
-    if (h.layers?.[k]) cautions.push(`${LAYERS[k].name}に該当(イエローゾーン)`);
+    if (h.layers?.[k] === DOSHA_LABEL.yellow) cautions.push(`${LAYERS[k].name}の警戒区域(イエローゾーン)に該当`);
   }
   if (h.layers?.kaoku_hanran) cautions.push("家屋倒壊等氾濫想定区域(氾濫流)に該当");
   if (h.layers?.kaoku_kagan) cautions.push("家屋倒壊等氾濫想定区域(河岸侵食)に該当");
@@ -203,9 +219,37 @@ export function screenOfficial(h) {
 
 export const CAVEAT =
   "照合点は丁目の代表点(媒体が丁目までしか住所を出さないため)。荒川の氾濫のような面的ハザードは" +
-  "丁目全域に及ぶため確度が高いが、崖線沿いの帯状の土砂災害警戒区域は代表点では取りこぼす" +
-  "(西が丘2のレッドゾーン現場は代表点±400mの81点で0点。athomeの備考欄のみが明記していた)。" +
-  "掲載欄の確認と併用し、個別区画の確定は番地・現地・重要事項説明で行うこと。";
+  "丁目全域に及ぶため確度が高いが、崖線沿いの帯状の土砂災害区域は代表点では取りこぼす。" +
+  "掲載欄の確認と併用し、個別区画の確定は番地・現地・重要事項説明で行うこと。" +
+  "駅徒歩分が複数駅ぶん載っている物件は、それを距離制約として現場位置を絞り込める(1分=道路80m・" +
+  "迂回率1.15〜1.40)。丁目代表点より桁違いに精度が上がるので、判断が分かれる物件では使うこと。";
+
+// ---- 掲載の駅徒歩分から現場位置を絞り込む ----
+// 媒体は住所を丁目までしか出さないが、複数駅の徒歩分は距離の制約になる。
+// 不動産公正競争規約で徒歩1分=道路距離80m(端数切上げ)。道路距離/直線距離(迂回率)は市街地で
+// 概ね1.15〜1.40なので、この幅のどれかで全駅の分数が再現できる点だけを残す。
+// 実績: 西が丘2のESPACER(板橋本町15分/十条21分/赤羽23分)で南北60m×東西40mまで収束した。
+export function siteFromWalk(constraints, box, { step = 0.00018, detours = [1.15, 1.2, 1.25, 1.3, 1.35, 1.4] } = {}) {
+  const R = 6371000, rad = (d) => (d * Math.PI) / 180;
+  const dist = (a, b) => Math.hypot(rad(b[1] - a[1]) * Math.cos(rad((a[0] + b[0]) / 2)), rad(b[0] - a[0])) * R;
+  const fits = (p, det) => constraints.every((c) => Math.ceil((dist(p, [c.lat, c.lon]) * det) / 80) === c.walk_min);
+  const pts = [];
+  for (let la = box.lat0; la <= box.lat1; la += step) {
+    for (let lo = box.lon0; lo <= box.lon1; lo += step * 1.22) {
+      if (detours.some((d) => fits([la, lo], d))) pts.push({ lat: la, lon: lo });
+    }
+  }
+  if (!pts.length) return { points: [], center: null, span_m: null };
+  const la = pts.map((p) => p.lat), lo = pts.map((p) => p.lon);
+  const center = { lat: la.reduce((a, b) => a + b) / pts.length, lon: lo.reduce((a, b) => a + b) / pts.length };
+  return {
+    points: pts, center,
+    span_m: {
+      ns: Math.round(dist([Math.min(...la), center.lon], [Math.max(...la), center.lon])),
+      ew: Math.round(dist([center.lat, Math.min(...lo)], [center.lat, Math.max(...lo)])),
+    },
+  };
+}
 
 // ---- CLI: node crawler/geohazard.mjs "東京都北区志茂1丁目" [...] ----
 if (process.argv[1] && import.meta.url === (await import("node:url")).pathToFileURL(process.argv[1]).href) {

@@ -15,7 +15,7 @@
 import { writeFileSync, readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { ROOT, listPropertyIds, loadProperty } from "../engine/io.js";
-import { decodePng, pixelAt, tileXY, depthLabel, DEPTH_LEGEND, geocode } from "./geohazard.mjs";
+import { decodePng, pixelAt, tileXY, depthLabel, DEPTH_LEGEND, geocode, doshaClass } from "./geohazard.mjs";
 
 const OUT = join(ROOT, "market", "hazard-grid.json");
 
@@ -25,10 +25,9 @@ const M_PER_DEG_LAT = 111132;
 const cellArg = process.argv.indexOf("--cell");
 const CELL_M = cellArg > 0 ? Number(process.argv[cellArg + 1]) : 25;
 
-const DOSHA = {
-  y: ["05_kyukeishakeikaikuiki", "05_dosekiryukeikaikuiki", "05_jisuberikeikaikuiki"],
-  r: ["05_kyukeishatokubetsukeikaikuiki", "05_dosekiryutokubetsukeikaikuiki", "05_jisuberitokubetsukeikaikuiki"],
-};
+// 土砂災害は警戒区域(黄)と特別警戒区域(朱)が同一レイヤに色違いで同居する(2026-08-13修正)。
+// 別レイヤ 05_*tokubetsukeikaikuiki は実在せず常に404だった
+const DOSHA_LAYERS = ["05_kyukeishakeikaikuiki", "05_dosekiryukeikaikuiki", "05_jisuberikeikaikuiki"];
 
 // ---- タイル取得(同時実行数を絞る。404は「その層のデータ無し」として正常扱い) ----
 const cache = new Map();
@@ -84,7 +83,7 @@ const main = async () => {
       need.add(`${t.x},${t.y}`);
     }
   }
-  const hazardLayers = ["01_flood_l2_shinsuishin_data", ...DOSHA.y, ...DOSHA.r];
+  const hazardLayers = ["01_flood_l2_shinsuishin_data", ...DOSHA_LAYERS];
   const jobs = [];
   for (const L of hazardLayers) for (const k of need) { const [x, y] = k.split(","); jobs.push([L, +x, +y]); }
   console.error(`ハザードタイル ${jobs.length}件を取得中...`);
@@ -116,13 +115,11 @@ const main = async () => {
       fRow += di == null ? "." : String(di);
 
       let d = ".";
-      for (const L of DOSHA.y) {
+      for (const L of DOSHA_LAYERS) {
         const im = await tile(L, zH, t.x, t.y);
-        if (im && pixelAt(im, t.px, t.py)[3] > 0) { d = "y"; break; }
-      }
-      for (const L of DOSHA.r) {
-        const im = await tile(L, zH, t.x, t.y);
-        if (im && pixelAt(im, t.px, t.py)[3] > 0) { d = "r"; break; }
+        const cd = im ? doshaClass(pixelAt(im, t.px, t.py)) : null;
+        if (cd === "red") { d = "r"; break; }        // レッドが最優先
+        if (cd === "yellow") d = "y";
       }
       dRow += d;
 

@@ -36,8 +36,8 @@ hazard_check:
     elevation_m: 10.8
     flood_l2: none   # 洪水浸水想定区域(想定最大規模)の浸水深
     flood_coverage: "8/25点"   # 周辺±200mの25点サンプルでの被覆
-    hits: ["土砂災害警戒区域(急傾斜地): 該当"]
+    hits: ["土砂災害警戒区域等(急傾斜地): 警戒区域(イエロー)"]
     verdict: caution   # block=掲載条件外 / caution=要確認 / pass=代表点では該当なし
-    reason: "土砂災害警戒区域(急傾斜地)に該当(イエローゾーン)"
+    reason: "土砂災害警戒区域等(急傾斜地)の警戒区域(イエローゾーン)に該当"
     limit: "丁目代表点ベース。荒川の氾濫のような面的ハザードは確度が高いが、崖線沿いの帯状の土砂災害区域は取りこぼす(西が丘2のレッドゾーン現場は代表点±400mの81点で0点)。掲載欄の確認と併用し、個別区画は番地・現地・重説で確定する"
 checklist: {road_type_verified: false, retaining_wall: false, hazard: false, seismic: true}   # 2023築につき現行基準
