@@ -25,7 +25,12 @@ export const RETAIL = {
   NEWSUBJ_COMP_MAX_AGE: 2,  // 新築対象の事例プール上限築年
   LAND_RESID_MIN_RATIO: 0.3, // 土地残差の下限(総額の30%。建物控除のしすぎ防止)
   REPAIR_PER_YEAR: 30,   // 繰延修繕の築年比例上限(万円/年)。築浅事例に一律800万を仮定する過大控除の防止
+  SHAPE_POOL_MIN: 8,     // 整形地限定プールを採用する最低件数。これを割ると混合プール+半減へ退避する
 };
+
+// 出典の土地形状表記のうち「整形地」とみなすもの(calibrate.SHAPE_NORM_ADJ の 0% 群と同じ語彙)。
+// 空欄(出典に記載なし)は整形と断定できないため**含めない**。
+export const REGULAR_SHAPES = new Set(["長方形", "ほぼ長方形", "正方形", "ほぼ正方形", "台形", "ほぼ台形", "ほぼ整形"]);
 
 // 近接地区マップ(R3監査対応): 地区水準指数によるスケーリングは築年構成・標本ノイズで
 // 地価序列と逆転するため廃止し、対象と同一・近接地区の事例に限定する方式に変更。
@@ -82,6 +87,7 @@ export function loadHouseDeals() {
       floor_m2: +row.floor_m2,
       age_y: +row.age_y,
       walk_min: +row.walk_min,
+      shape: row.shape || null,          // 出典の「土地形状」。空欄=出典に記載なし(推測で埋めない)
       source_url: row.source_url,
     };
   }).filter((d) =>
@@ -156,7 +162,8 @@ export function buildDistrictIndex(deals, asOf) {
 }
 
 // s: appraise正規化済み入力。property側の減価・加点(shape/dir/roadq/corner/extra/lc)を伝搬する
-// 戻り値: {n, comps, unitMid, landPart, bldgSubj, lo, mid, hi, districtScoped, subjectFactor} または null
+// 戻り値: {n, comps, unitMid, landPart, bldgSubj, lo, mid, hi, districtScoped, subjectFactor,
+//          shapeControlled, shapeBasis} または null
 export function retailEstimate(s, asOf, deals, { subjectDistrict = null } = {}) {
   const landM2 = s.land;
   const isUsed = s.age >= RETAIL.SUBJECT_USED_AGE;
@@ -175,16 +182,30 @@ export function retailEstimate(s, asOf, deals, { subjectDistrict = null } = {}) 
   const allowed = subjectDistrict ? ADJACENT_DISTRICTS[subjectDistrict] : null;
   const scoped = allowed ? comps.filter((d) => allowed.includes(d.district)) : [];
   const districtScoped = scoped.length >= RETAIL.MIN_COMPS;
-  const usable = districtScoped ? scoped : comps;
+  const mixedPool = districtScoped ? scoped : comps;
+
+  // ---- 形状: 整形地限定プール(2026-08-13。R4監査の二重減価をデータで解いたもの) ----
+  // 従来は house-deals.csv に形状列が無く、事例プールに旗竿・不整形が混入していた。
+  // 対象側に満額の-25%を掛けると混入分と二重減価になるため、対象の形状補正を**半減**で当てていた。
+  // 出典(utinokati listings)に「土地形状」列があると分かったので転記し、
+  // **プールを整形地に限定できるなら対象の形状補正を満額適用する**方式へ切り替える。
+  // 整形地だけでは事例が足りない場合のみ従来の混合プール+半減へ退避し、その旨を開示する。
+  const regularPool = mixedPool.filter((d) => d.shape && REGULAR_SHAPES.has(d.shape));
+  const shapeControlled = regularPool.length >= RETAIL.SHAPE_POOL_MIN;
+  const usable = shapeControlled ? regularPool : mixedPool;
+  const shapeWeight = shapeControlled ? 1 : 0.5;
+  const shapeBasis = shapeControlled
+    ? `整形地限定プール${regularPool.length}件(形状補正を満額適用)`
+    : `混合プール${mixedPool.length}件(整形地${regularPool.length}件では不足のため形状補正は半減。形状不明${mixedPool.filter((d) => !d.shape).length}件を含む)`;
 
   const effTsubo = Math.max(0, s.land - s.setback) / COEFFS.TSUBO_M2;
   // 対象物件の個別要因(原価法と同じ係数体系)。複数駅補正は事例側の駅属性が不明なため適用しない
   const walkProp = walkAdjOf(s.walk);
   const cornerAdj = s.corner ? COEFFS.CORNER_ADJ : 0;
-  // 形状補正は半減で適用: 事例プールの成約価格には旗竿地・不整形が既に混入しており(形状列なし)、
-  // 対象側に満額の-25%を掛けると混入分と二重減価になるため(R4監査)
+  // 形状補正の強さはプールの統制状況で決まる(上記 shapeWeight)。
+  // 整形地限定プールなら満額(二重減価が起きない)、混合プールなら半減(従来の保守側ヒューリスティック)
   const subjectFactor = Math.max(0.1,
-    (1 + walkProp + s.shape * 0.5 + s.dir + s.roadq + cornerAdj + s.extra / 100)) * (1 + s.lc);
+    (1 + walkProp + s.shape * shapeWeight + s.dir + s.roadq + cornerAdj + s.extra / 100)) * (1 + s.lc);
 
   const adjusted = usable.map((d) => {
     const unitStd = normalizeLandUnit(d, asOf);                   // 土地残差・標準条件・基準日時点
@@ -208,6 +229,8 @@ export function retailEstimate(s, asOf, deals, { subjectDistrict = null } = {}) 
     bldgSubj,
     subjectFactor,
     districtScoped,
+    shapeControlled,      // true=整形地限定プール(形状補正は満額) / false=混合プール(半減)
+    shapeBasis,
     subjectDistrict,
     repairSubj,
     lo: quantile(units, 0.25) * effTsubo + bldgSubj,

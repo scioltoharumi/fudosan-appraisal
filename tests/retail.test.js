@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { evaluate } from "../engine/appraise.js";
-import { loadHouseDeals, loadVerification, retailEstimate, RETAIL } from "../engine/retail.js";
+import { loadHouseDeals, loadVerification, retailEstimate, RETAIL, REGULAR_SHAPES } from "../engine/retail.js";
 import { growthFactor } from "../engine/timeadjust.js";
 import { calibrate } from "../engine/calibrate.js";
 import { loadAreaConfig, loadProperty, listPropertyIds } from "../engine/io.js";
@@ -170,4 +170,71 @@ test("価格の位置(2026-08-13: 機械判定を廃止し事実提示のみ)", 
   assert.equal(r3.position.basis, "blend");
   assert.equal(r3.negoBand, null);
   assert.ok(r3.position.notes.some((n) => n.includes("未検証")), "単価未検証の開示が残る");
+});
+
+// ---- 土地形状によるプール統制(2026-08-13) ----
+// R4監査で指摘された二重減価の対処。従来は house-deals.csv に形状列が無く、事例プールに
+// 旗竿・不整形が混入していたため、対象の形状補正を半減で当てる保守側ヒューリスティックを使っていた。
+// 出典(utinokati listings)に「土地形状」列があると分かったので転記し、
+// **プールを整形地に限定できるときは満額適用**へ切り替えた。切替条件が静かに緩むのを防ぐ。
+test("形状列: house-deals.csv に転記され、語彙は既知のものだけ(推測で埋めていない)", () => {
+  const deals = loadHouseDeals();
+  const known = new Set([...REGULAR_SHAPES, "不整形", "やや不整形", "旗竿地", "袋地等", "袋地"]);
+  const withShape = deals.filter((d) => d.shape);
+  // 出典に記載のない行は空のまま(全件が埋まっていたら推測で補完した疑い)
+  assert.ok(withShape.length > 300, `形状ありが少なすぎる: ${withShape.length}`);
+  assert.ok(withShape.length < deals.length, "全件に形状が入っている(出典に無い行を埋めた疑い)");
+  for (const d of withShape) assert.ok(known.has(d.shape), `未知の形状表記: ${d.shape}`);
+});
+
+test("形状プール: 整形地が閾値以上なら満額・不足なら半減へ退避し、いずれも根拠を開示する", () => {
+  const deals = loadHouseDeals();
+  const asOf = new Date(Date.UTC(2026, 7, 13));
+  // 西が丘2(新築・整形地事例が厚い)は整形地限定プールに乗る
+  const thick = retailEstimate(
+    { land: 60.65, setback: 0, walk: 17, age: 0, floor: 106.26, shape: 0, dir: 0, roadq: 0,
+      corner: false, extra: 0, lc: 0, repair: 0, rebuild: 95 },
+    asOf, deals, { subjectDistrict: "西が丘" });
+  assert.ok(thick, "リテール比較が成立する");
+  assert.equal(thick.shapeControlled, true, thick.shapeBasis);
+  assert.ok(thick.n >= RETAIL.SHAPE_POOL_MIN);
+  assert.match(thick.shapeBasis, /整形地限定プール/);
+  // 事例側が全件整形地であること(統制の実体)
+  for (const c of thick.comps) assert.ok(REGULAR_SHAPES.has(c.shape), `整形地以外が混入: ${c.shape}`);
+
+  // 赤羽台3(整形地事例が薄い)は混合プールへ退避し、半減であることと不明件数を開示する
+  const thin = retailEstimate(
+    { land: 91.44, setback: 14.04, walk: 11, age: 27, floor: 68.6, shape: 0, dir: 0.02, roadq: -0.05,
+      corner: false, extra: 0, lc: 0, repair: 800, rebuild: 70 },
+    asOf, deals, { subjectDistrict: "赤羽台" });
+  assert.ok(thin, "リテール比較が成立する");
+  assert.equal(thin.shapeControlled, false, thin.shapeBasis);
+  assert.match(thin.shapeBasis, /混合プール.*形状補正は半減.*形状不明/);
+});
+
+test("形状プール: 統制の有無で対象の形状補正の効き方が2倍変わる(旗竿で検算)", () => {
+  const deals = loadHouseDeals();
+  const asOf = new Date(Date.UTC(2026, 7, 13));
+  const base = { land: 60.65, setback: 0, walk: 17, age: 0, floor: 106.26, dir: 0, roadq: 0,
+    corner: false, extra: 0, lc: 0, repair: 0, rebuild: 95 };
+  const reg = retailEstimate({ ...base, shape: 0 }, asOf, deals, { subjectDistrict: "西が丘" });
+  const flag = retailEstimate({ ...base, shape: -0.25 }, asOf, deals, { subjectDistrict: "西が丘" });
+  assert.equal(reg.shapeControlled, true);
+  // 満額適用なので subjectFactor の差は形状補正そのもの(-0.25)に一致する
+  assert.ok(Math.abs((flag.subjectFactor - reg.subjectFactor) + 0.25) < 1e-9,
+    `満額でない: ${reg.subjectFactor} → ${flag.subjectFactor}`);
+  // 土地部分(形状が効く場所)で検算する。mid は建物残価の入力が要るため、ここでは landPart を見る
+  assert.ok(flag.landPart < reg.landPart, `旗竿のほうが土地部分が低く出る: ${reg.landPart} → ${flag.landPart}`);
+  assert.ok(Math.abs(flag.landPart / reg.landPart - flag.subjectFactor / reg.subjectFactor) < 0.02,
+    "土地部分の比が subjectFactor の比に一致する(形状が単価に素直に効いている)");
+  // 半減側(統制できないプール)では同じ旗竿でも効きが約半分に留まることを対照で示す
+  const thinReg = retailEstimate({ land: 91.44, setback: 14.04, walk: 11, age: 27, floor: 68.6, shape: 0,
+    dir: 0.02, roadq: -0.05, corner: false, extra: 0, lc: 0, repair: 800, rebuild: 70 },
+    asOf, deals, { subjectDistrict: "赤羽台" });
+  const thinFlag = retailEstimate({ land: 91.44, setback: 14.04, walk: 11, age: 27, floor: 68.6, shape: -0.25,
+    dir: 0.02, roadq: -0.05, corner: false, extra: 0, lc: 0, repair: 800, rebuild: 70 },
+    asOf, deals, { subjectDistrict: "赤羽台" });
+  assert.equal(thinReg.shapeControlled, false);
+  assert.ok(Math.abs((thinFlag.subjectFactor - thinReg.subjectFactor) + 0.125) < 1e-9,
+    `半減になっていない: ${thinReg.subjectFactor} → ${thinFlag.subjectFactor}`);
 });
