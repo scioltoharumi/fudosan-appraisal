@@ -6,8 +6,10 @@ source: "SUUMO nc_21230921(2026-08-13日次クロールで発見)。探索エリ
   西ケ原が対象になったことにより初めて掲載範囲に入った物件"
 source_url: "https://suumo.jp/chukoikkodate/tokyo/sc_kita/nc_21230921/"   # 実在確認済み 2026-08-13
 captured_at: 2026-08-13
+listed_since: 2026-07-07   # athome at_1150344713 の情報公開日。SUUMOの情報提供日(2026-08-12)より5週早い
 price_history:
-  - {date: 2026-08-12, price_man: 6980}   # 掲載の情報提供日
+  - {date: 2026-07-07, price_man: 6980}   # 起点はathomeの情報公開日(要件F3: 媒体の情報提供日 > クロール日)。
+  # 2026-08-12のSUUMO情報提供日時点でも同額=**約5週間値下げなし**
 location: {area: nishigahara, address: "北区西ケ原4"}
 layout: "2LDK+2S"   # 掲載記載は「2LDK+2S(納戸)」
 # 掲載の交通は 都営三田線「西巣鴨」8分 / 都電荒川線「西ヶ原四丁目」3分 / 東京メトロ南北線「西ケ原」12分。
@@ -16,25 +18,38 @@ station: {walk_min: 8, multi_station: true}
 land:
   registered_m2: 55.96
   setback_m2: 4.6          # その他制限事項「セットバック：要4.6m2」
-  road: {width_m: 3.3, quality: setback_2ko, direction: W, corner: false,
-    note: "掲載の私道負担・道路欄は「無、西3.3m幅」。幅員4m未満のためセットバックを要する(上記setback_m2)。42条区分は要調査"}
+  road: {width_m: 3.3, quality: setback_2ko, direction: W, corner: false, public: true,
+    note: "SUUMOの私道負担・道路欄は「無、西3.3m幅」。athome(at_1150344713)の接道状況は「西 3.3m **公道**」で、
+      本物件は公道接道(中里3の3件はいずれも私道接道)。幅員4m未満のためセットバックを要する(上記setback_m2)。42条区分は要調査"}
   shape: regular          # 媒体に土地形状の記載なし(assumed)。地下室があるため間口・高低差は現地確認が要る
   legal: {zoning: "1種中高", bcr: 60, far: 160, ownership: shoyuken, rebuildable: true,
-    note: "その他制限事項: セットバック要4.6m2・高度地区・準防火地域・売主指定司法書士"}
+    note: "その他制限事項: セットバック要4.6m2・**第2種**高度地区(athome備考で特定)・準防火地域・売主指定司法書士。
+      **容積率の制限: 前面道路制限あり**(athome備考)。前面道路3.3mのため法52条2項で容積率は3.3×0.4=132%に制限され、
+      指定160%は使い切れない。セットバック後の実効宅地51.36m2×132%=67.8m2が容積対象床の上限で、
+      現況の地上階74.5m2は既存不適格の可能性がある(=**建替えると現況より小さくなる**)。要確認"}
 building:
   built: 2000-02
   floor_m2: 106.68        # 掲載記載(登記)。**うち地下室32.18m2**を含む。
+  floor_above_ground_m2: 74.5   # 地上階のみ。リテール比較は延床106.68でプールを組んでいるため、
+  # 「地下込みの延床」で他物件と比較していることになる(地上のみ74.5で組み直すとプールは15件→11件に入れ替わる)。
+  # 査定額への影響は築26年で建物残価が枯れているため小さい(適正中央値 -20万)が、比較の前提として開示する
   # 地下室は容積率不算入だが採光・換気の制約があり、居室相当の面積は約74.5m2。
   # 査定は掲載の延床で行っているため、地下部分の市場評価は過大に出ている可能性がある(要確認)
   type: wood_3f_narrow    # 掲載の構造は「木・RC造3階地下1階建」。敷地55.96m2の3階建として狭小区分を適用
   repair: {status: unknown_likely_none, assumed: true, cost_man: 800}
-costs: {fee_rate: 0.05, demolition_man: 300, demolition_assumed: true}   # 地下1階RCを含むため解体費は木造2階より高く見込む
-income: {rent_man: 28, rent_assumed: true, expense_rate: 0.15, cap_rate: 0.045}
+costs: {fee_rate: 0.05, demolition_man: 400, demolition_assumed: true}
+# 解体費の内訳(想定): 木造上物74.5m2×約2万=149万 + 地下RC躯体撤去32.18m2×5〜6万=160〜190万 = 310〜340万。
+# 前面道路3.3mで大型重機が入らない割増を見て400万とした(当初300万は下振れ)
+income: {rent_man: 24, rent_assumed: true, expense_rate: 0.15, cap_rate: 0.045}
+# 賃料想定: 台帳の他物件は延床あたり月2,410〜3,210円/m2。延床106.68に当てると28万だが、
+# うち32.18m2は採光要件を満たさない地下サービスルームで同単価は取れない。地下を半額とみて24万とした
 checklist: {road_type_verified: false, retaining_wall: false, hazard: false, seismic: true}   # 築2000-02=新耐震。42条区分・地下室まわりの擁壁は未確認
 hazard_check:
   checked_at: 2026-08-13
   suumo: none        # 「その他制限事項」はセットバック・高度地区・準防火のみ。土砂・浸水の記載なし
-  athome: unchecked  # 同一物件のathome掲載が見つからず未確認(SUUMOは該当物件でも空欄のことがあるため単独では不十分)
+  athome: none       # at_1150344713 で同一物件を特定(価格・土地・建物・築年月が完全一致)。
+  # 備考の法令等制限は「準防火地域、第2種高度地区／容積率の制限：前面道路制限有／売主指定司法書士」。
+  # 土砂災害・浸水・がけ条例・宅地造成規制の記載はいずれもなし
   note: "suumo/athomeは掲載の法令等制限欄ベースの確認。**この欄に洪水浸水想定は原則載らない**ため、浸水は下の official で公式マップと照合する"
   official:            # 国土地理院ハザードマップタイルとの機械照合(crawler/geohazard.mjs)
     checked_at: 2026-08-13
@@ -46,3 +61,6 @@ hazard_check:
     hits: []
     verdict: pass
     area_scan: "clear(crawler/area-scan.mjs・代表点±200mの25点グリッドでも浸水・土砂の該当なし)"
+    # 掲載の複数駅の徒歩分(西巣鴨8分/西ヶ原四丁目3分/西ケ原12分)から siteFromWalk で現場位置を絞った結果:
+    # 中心 35.74456,139.73391・南北560m×東西139m・標高22.2〜25.7m。洪水は0.5m未満のみ・土砂なしで pass
+    narrowed: "35.74456,139.73391 (560×139m・標高22.2〜25.7m) → pass"

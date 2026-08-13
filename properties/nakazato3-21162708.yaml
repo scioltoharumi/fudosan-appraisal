@@ -6,8 +6,10 @@ source: "SUUMO nc_21162708(2026-08-13日次クロールで発見)。探索エリ
   中里が対象になったことにより初めて掲載範囲に入った物件"
 source_url: "https://suumo.jp/chukoikkodate/tokyo/sc_kita/nc_21162708/"   # 実在確認済み 2026-08-13
 captured_at: 2026-08-13
+listed_since: 2026-06-25   # athome at_1105837314 の情報公開日。SUUMOの情報提供日(2026-08-13)より7週早い
 price_history:
-  - {date: 2026-08-13, price_man: 8380}   # 掲載の情報提供日
+  - {date: 2026-06-25, price_man: 8380}   # 起点はathomeの情報公開日(要件F3)。
+  # 2026-08-13時点でも同額=**約7週間値下げなし**
 location: {area: nakazato, address: "北区中里3"}
 layout: "4LDK"
 # 掲載の交通は JR山手線「駒込」8分 / JR山手線「田端」13分 / **JR京浜東北線「上中里」13分**
@@ -15,12 +17,17 @@ station: {walk_min: 8, multi_station: true}
 land:
   registered_m2: 60.67
   setback_m2: 0            # セットバックの記載なし
-  road: {width_m: 4.0, quality: good_4m, direction: W, corner: false,
-    note: "掲載の私道負担・道路欄は「無、西4m幅(接道幅2.5m)」。**接道幅2.5mは路地状敷地(旗竿地)の可能性を示す**が、
-      掲載に土地形状の記載がないため shape は未記入のまま(エンジン既定=整形地±0%)。
-      旗竿(-25%)なら査定額が大きく下がるため、区画図・現地で最優先に確認すること"}
-  shape: regular          # **仮置き**。掲載に土地形状の記載がないため既定の整形地を置いているだけで、
-                          # 上記のとおり接道幅2.5mは路地状敷地を示唆する。確認が取れるまでこの査定値は上振れの可能性がある
+  road: {width_m: 4.0, quality: good_4m, direction: W, corner: false, public: false,
+    note: "SUUMOの私道負担・道路欄は「無、西4m幅(接道幅2.5m)」、athome(at_1105837314)の接道状況は「西 4.0m **私道** 接面2.5m」。
+      私道だが私道負担の記載はない=**持分なしの可能性**(同じ中里3のnc_21442197は持分無・通行料ありと明記されている)。要確認"}
+  shape: slightly_irregular   # 2026-08-13訂正(当初 regular)。
+  # 幾何学的な根拠: 敷地60.67m2に対し接面2.5m。整形なら奥行24.3mの帯状地になるが、
+  # 延床81.89m2を3層で建てるには建築面積27.3m2以上が要り、幅2.5mの帯では成立しない。
+  # =**路地の奥で敷地が広がる路地状敷地(旗竿)**と読むのが自然。athomeが「駐車場 有」とするのも
+  # 2.5m幅の路地部分を駐車に使う旗竿地の典型。
+  # ただし区画図で確定していないため、断定せず中間の slightly_irregular(-5%)を暫定値とする。
+  # 感応度(実測): regular 適正中央値8,277万 / slightly_irregular 8,034万 / flagpole(-25%) 7,062万。
+  # **旗竿確定なら現行から最大1,215万の下振れ**。区画図・現地で最優先に確認すること
   legal: {zoning: "1種中高", bcr: 60, far: 150, ownership: shoyuken, rebuildable: true,
     note: "その他制限事項: 防火地域・準防火地域"}
 building:
@@ -29,12 +36,14 @@ building:
   type: wood_3f_narrow    # 掲載の構造は「木造3階」
   repair: {status: unknown_likely_none, assumed: true, cost_man: 200}   # 築9年のため大規模修繕は想定薄
 costs: {fee_rate: 0.05, demolition_man: 180, demolition_assumed: true}
+# 解体費: 旗竿が確定した場合は重機が入らず手壊し・小運搬になるため1.3〜1.5倍(230〜270万)への見直しが要る
 income: {rent_man: 24, rent_assumed: true, expense_rate: 0.15, cap_rate: 0.045}
 checklist: {road_type_verified: false, retaining_wall: false, hazard: false, seismic: true}   # 築2017-03=新耐震。42条区分・路地状敷地の別は未確認
 hazard_check:
   checked_at: 2026-08-13
   suumo: none        # 「その他制限事項」は防火・準防火のみ。土砂・浸水の記載なし
-  athome: unchecked  # 同一物件のathome掲載が見つからず未確認
+  athome: none       # at_1105837314 で同一物件を特定(価格・土地・建物・築年月が完全一致)。
+  # 備考は「主要採光面：西向き 防火地域、準防火地域」。土砂・浸水・がけ条例・宅地造成規制の記載なし
   note: "suumo/athomeは掲載の法令等制限欄ベースの確認。**この欄に洪水浸水想定は原則載らない**ため、浸水は下の official で公式マップと照合する"
   official:
     checked_at: 2026-08-13
@@ -46,3 +55,7 @@ hazard_check:
     hits: []
     verdict: pass
     area_scan: "clear(crawler/area-scan.mjs・代表点±200mの25点グリッドでも土砂の該当なし)"
+    # 代表点の標高23.2mは物件の事実として使えない(中里3丁目は実測5.7〜23.9m・高低差18m=崖線)。
+    # 掲載の複数駅の徒歩分から siteFromWalk で絞ると標高13.2〜16.0mの斜面帯。洪水は0.5m未満のみ・土砂なし。
+    # 擁壁・がけ条例(東京都建築安全条例第6条)の現地確認が要る
+    narrowed: "35.74007,139.74976 (100×456m・標高13.2〜16.0m) → pass"

@@ -6,8 +6,9 @@ source: "SUUMO nc_21439305(2026-08-13日次クロールで発見)。探索エリ
   中里が対象になったことにより初めて掲載範囲に入った物件"
 source_url: "https://suumo.jp/chukoikkodate/tokyo/sc_kita/nc_21439305/"   # 実在確認済み 2026-08-13
 captured_at: 2026-08-13
+listed_since: 2026-08-05   # athome at_1131949105 の情報公開日
 price_history:
-  - {date: 2026-08-12, price_man: 7580}   # 掲載の情報提供日
+  - {date: 2026-08-05, price_man: 7580}   # 起点はathomeの情報公開日(要件F3)
 location: {area: nakazato, address: "北区中里3"}
 layout: "2LDK+S"   # 掲載記載は「2LDK+S(納戸)」
 # 掲載の交通は JR山手線「駒込」10分 / JR山手線「田端」11分 / **JR京浜東北線「上中里」12分**。
@@ -16,8 +17,13 @@ station: {walk_min: 10, multi_station: true}
 land:
   registered_m2: 66.94
   setback_m2: 5.76         # その他制限事項「セットバック：要5.76m2」= 私道負担欄の5.76m2と同値
-  road: {width_m: 4.0, quality: good_4m, direction: NW, corner: false,
-    note: "掲載の私道負担・道路欄は「5.76m2、北西4m幅」。私道負担面積とセットバック要面積が同値のため同一のものと解した。42条区分は要調査"}
+  road: {width_m: 4.0, quality: setback_2ko, direction: NW, corner: false, public: false,
+    note: "SUUMOの私道負担・道路欄は「5.76m2、北西4m幅」、その他制限事項は「セットバック：要5.76m2」。
+      athome(at_1131949105)の接道状況は「北西 4.0m **私道**」・私道負担面積「有 5.76m2」で、私道負担とセットバック要面積は同一物。
+      **セットバックを要する=現況4m未満の42条2項道路**であり、掲載の「4.0m」はセットバック後の想定値と読める。
+      2026-08-13訂正: 当初 good_4m(±0%)としていたが、同日登録の西ケ原4(3.3m幅+SB要)には setback_2ko を当てており
+      同じ信号への扱いが割れていた。エンジンの未記載時の既定も setback_2ko(-5%)のため、そちらに揃える。
+      この訂正で適正中央値は 7,183万→6,825万(-358万)。42条区分の確定は要調査"}
   shape: regular          # 媒体に土地形状の記載なし(assumed)
   legal: {zoning: "1種中高", bcr: 60, far: 150, ownership: shoyuken, rebuildable: true,
     note: "その他制限事項はセットバック要5.76m2のみ。駐車場はカーポート"}
@@ -32,7 +38,7 @@ checklist: {road_type_verified: false, retaining_wall: false, hazard: false, sei
 hazard_check:
   checked_at: 2026-08-13
   suumo: none        # 「その他制限事項」はセットバックのみ。土砂・浸水の記載なし
-  athome: unchecked  # 同一物件のathome掲載が見つからず未確認(SUUMOは該当物件でも空欄のことがあるため単独では不十分)
+  athome: none       # at_1131949105 で同一物件を特定(価格・土地・建物・築年月が完全一致)。備考は販促文のみで法令等制限の記載なし
   note: "suumo/athomeは掲載の法令等制限欄ベースの確認。**この欄に洪水浸水想定は原則載らない**ため、浸水は下の official で公式マップと照合する"
   official:
     checked_at: 2026-08-13
@@ -44,3 +50,8 @@ hazard_check:
     hits: []
     verdict: pass
     area_scan: "clear(crawler/area-scan.mjs・代表点±200mの25点グリッドでも土砂の該当なし。浸水は0.5m未満が7点のみで台地上の通常範囲)"
+    # **代表点の標高23.2mは物件の事実として使えない**: 中里3丁目は area-scan の実測で標高5.7〜23.9m・
+    # 近傍の高低差18m=崖線に掛かる。掲載の複数駅の徒歩分から siteFromWalk で絞ると標高15.2〜23.5mの斜面帯に落ち、
+    # 候補点の1つで洪水0.5〜3.0mが出る。土砂災害区域の指定はないが、**擁壁・がけ条例(東京都建築安全条例第6条)の
+    # 現地確認が要る**(checklist.retaining_wall=false のまま)
+    narrowed: "35.74097,139.75107 (80×337m・標高15.2〜23.5m) → caution(候補1点で洪水0.5〜3.0m)"
