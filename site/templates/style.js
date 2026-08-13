@@ -36,16 +36,28 @@ table.list{width:100%;border-collapse:collapse;font-size:.85rem}
 table.list th{border-bottom:1px solid var(--ink);padding:8px 6px;text-align:left;font-size:.75rem;letter-spacing:.08em;color:var(--ink-soft);white-space:nowrap}
 table.list td{border-bottom:1px dashed var(--grid);padding:9px 6px;vertical-align:middle}
 table.list td.num{font-family:var(--mono);text-align:right;white-space:nowrap}
-.badge{
-  display:inline-flex;align-items:center;justify-content:center;
-  width:44px;height:44px;border:2px solid var(--stamp);border-radius:50%;color:var(--stamp);
-  font-family:"Hiragino Mincho ProN","Yu Mincho",serif;font-size:.9rem;font-weight:700;
-  transform:rotate(-8deg);letter-spacing:.02em;flex-shrink:0;
-}
-.badge.ok{border-color:var(--ok);color:var(--ok)}
-.badge.warn{border-color:var(--warn);color:var(--warn)}
 .status{font-size:.72rem;border:1px solid var(--ink-soft);padding:1px 7px;color:var(--ink-soft);white-space:nowrap}
 .status.viewed{background:#2E6E8E;border-color:#2E6E8E;color:#fff;font-weight:700}
+
+/* 一覧: 人が設定するステータスとメモ(この端末のブラウザに保存) */
+.stsel{font-family:inherit;font-size:.75rem;padding:3px 6px;border:1px solid var(--ink-soft);background:#FDFDFC;color:var(--ink);cursor:pointer}
+.stsel:focus{outline:2px solid var(--band);outline-offset:1px}
+tr.prow[data-status="内見済"] .stsel{background:#2E6E8E;border-color:#2E6E8E;color:#fff;font-weight:700}
+tr.prow[data-status="見送り"]{opacity:.5}
+tr.prow[data-status="見送り"]:hover{opacity:1}
+tr.prow[data-status="新規"] .stsel{border-color:var(--band);color:var(--band);font-weight:700}
+.unsync{display:none;margin-left:5px;font-size:.65rem;color:var(--stamp);border:1px solid var(--stamp);padding:0 4px;white-space:nowrap}
+tr.prow.dirty .unsync{display:inline}
+.memobtn{font-family:inherit;font-size:.72rem;padding:2px 8px;border:1px solid var(--ink-soft);background:#FDFDFC;color:var(--ink-soft);cursor:pointer;white-space:nowrap}
+.memobtn.has{border-color:var(--band);color:var(--band);background:#F4F8FA;font-weight:700}
+tr.mrow>td{background:#F8FAFB;border-bottom:1px dashed var(--grid);padding:6px 10px 10px}
+.memota{width:100%;box-sizing:border-box;min-height:64px;font-family:inherit;font-size:.78rem;line-height:1.7;
+  padding:7px 9px;border:1px solid var(--ink-soft);background:#FDFDFC;color:var(--ink);resize:vertical}
+.syncbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 8px}
+.syncbtn{font-family:inherit;font-size:.72rem;padding:3px 10px;border:1px solid var(--ink-soft);background:#FDFDFC;color:var(--ink-soft);cursor:pointer;text-decoration:none}
+.syncbtn:hover{border-color:var(--ink);color:var(--ink)}
+.syncpanel{border:1px solid var(--band);background:#F4F8FA;padding:9px 11px;margin:0 0 10px;font-size:.75rem}
+.syncpanel textarea{width:100%;box-sizing:border-box;min-height:90px;font-family:var(--mono);font-size:.7rem;margin-top:6px}
 .unit-tag{display:inline-block;margin-left:6px;font-size:.68rem;padding:1px 6px;border:1px solid var(--band);color:var(--band);background:#F4F8FA;white-space:nowrap;vertical-align:middle}
 table.list th.sortable{cursor:pointer;user-select:none}
 table.list th.sortable:hover{color:var(--ink)}
@@ -60,19 +72,10 @@ table.list th.sortable .arw{opacity:.45;font-size:.65rem}
 .src-link:hover{background:var(--band);color:#fff}
 .note{font-size:.7rem;color:var(--ink-soft);margin-top:6px}
 
-/* 詳細: 判定 */
-.verdict-wrap{display:flex;gap:20px;align-items:center;margin-bottom:20px;flex-wrap:wrap}
-.stamp{
-  width:96px;height:96px;border:3px solid var(--stamp);border-radius:50%;color:var(--stamp);
-  display:flex;align-items:center;justify-content:center;
-  font-family:"Hiragino Mincho ProN","Yu Mincho",serif;font-size:1.6rem;font-weight:700;
-  transform:rotate(-8deg);flex-shrink:0;letter-spacing:.05em;box-shadow:inset 0 0 0 2px rgba(201,58,43,.15);
-}
-.stamp.ok{border-color:var(--ok);color:var(--ok)}
-.stamp.warn{border-color:var(--warn);color:var(--warn)}
-.verdict-text{flex:1;min-width:220px}
-.verdict-text .head{font-weight:700;font-size:1.05rem;margin-bottom:4px}
-.verdict-text .body{font-size:.82rem;color:var(--ink-soft)}
+/* 詳細: 価格の位置(2026-08-13に判定スタンプを廃止。ラベルを出さず事実のみ並べる) */
+.position-wrap{border-left:3px solid var(--band);padding:10px 0 10px 14px;margin-bottom:20px}
+.position-head{font-weight:700;font-size:1.02rem;margin-bottom:5px;font-family:var(--mono)}
+.position-body{font-size:.82rem;color:var(--ink-soft);line-height:1.9}
 
 /* スケール・明細 */
 .scale-wrap{margin:8px 0 4px}

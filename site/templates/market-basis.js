@@ -145,7 +145,6 @@ export function renderMarketBasis(r, property, marketCal, areaCal) {
       <table class="kv">
         <tr><td>成約事例で説明できる範囲(楽観上限・重み付き調整後)</td><td>${fmtMan(r.fairFinal.hi)}</td></tr>
         <tr class="loss"><td>売出価格のうち事例で説明できない部分</td><td>${s.ask > r.fairFinal.hi ? "+" + fmtMan(s.ask - r.fairFinal.hi) : "なし(レンジ内)"}</td></tr>
-        <tr><td>成約ベースでの判定</td><td>【${r.verdict.mark}】${esc(r.verdict.head)}</td></tr>
       </table>
       <p class="why" style="margin-top:8px">${s.ask > r.fairFinal.hi
         ? "周辺の実取引を楽観側(坪単価+10%)に振っても売出価格には届かない。差額は「土地の実勢」ではなく、売主の期待・リテール商品としての上乗せ・仲介の値付け戦略のいずれかであり、交渉ではこの内訳の説明を売主側に求めるのが筋になる。"

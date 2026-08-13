@@ -69,7 +69,7 @@ function anatomyHtml(r, property, houseDeals) {
         ${svg}
         <pre style="font-family:var(--mono);font-size:.78rem;line-height:1.9;background:#F7F9FA;border:1px solid var(--grid);padding:12px 14px;overflow-x:auto;margin-top:10px">${formulaPre}</pre>
         ${residCheck}
-        <div class="note" style="margin-top:8px"><span style="color:#2E6E8E">■土地</span>は解体しても残る価値(下値フロアの源泉)、<span style="color:#B07C10">■建物</span>は住みながら消費する価値、<span style="color:var(--stamp)">▨売主の期待</span>は資産価値ゼロの上乗せで値下げ・交渉で削られていく部分${rt ? "。<b>判定スタンプは市場水準(成約実勢)基準</b>で、適正レンジとの差は「市場全体の過熱感=相場調整時の下落余地」を測る参考指標" : "。本物件はリテール比較が不成立のため市場水準は原価法により、判定もこれに従う"}。この書き方の一般形・各項の意味は<a href="../formula.html">値段の解剖(算出ロジック図解)</a>、希望条件の金額換算は<a href="../tradeoff.html">妥協の値段</a>を参照。</div>
+        <div class="note" style="margin-top:8px"><span style="color:#2E6E8E">■土地</span>は解体しても残る価値(下値フロアの源泉)、<span style="color:#B07C10">■建物</span>は住みながら消費する価値、<span style="color:var(--stamp)">▨売主の期待</span>は資産価値ゼロの上乗せで値下げ・交渉で削られていく部分${rt ? "。<b>市場水準は成約実勢(リテール比較)</b>で、適正レンジとの差は「市場全体の過熱感=相場調整時の下落余地」を測る参考" : "。本物件はリテール比較が不成立のため、市場水準は原価法による推計"}。この書き方の一般形・各項の意味は<a href="../formula.html">値段の解剖(算出ロジック図解)</a>、希望条件の金額換算は<a href="../tradeoff.html">妥協の値段</a>を参照。</div>
       </div>
     </section>`;
 }
@@ -243,14 +243,14 @@ function kvTable(r) {
     ["個別補正計", pct(mid.adj) + "(補正後 " + Math.round(mid.pptAdj * (1 + mid.adj)).toLocaleString("en-US") + "万/坪)"],
     ["査定土地値(法的制約込)", fmtMan(lo.land2) + " 〜 " + fmtMan(hi.land2)],
     ["土地換算値(土地値−解体費" + fmtMan(s.demo) + (r.fairFinal.floorGuard < 1 ? "。単価未検証につき×0.9で適用" : "") + ")", fmtMan(r.fairFinal.floorEff.lo) + " 〜 " + fmtMan(r.fairFinal.floorEff.hi)],
-    ["即時処分値(卸値90%・売却諸費用4%控除後。取得諸費用込みの買判定閾値)", fmtMan(r.fairFinal.floorEff.netMid)],
+    ["即時処分値(卸値90%・売却諸費用4%控除後。取得総額との比較で資産防衛の下限を見る)", fmtMan(r.fairFinal.floorEff.netMid)],
     ["建物残価(木造" + COEFFS.BUILDING_LIFE_Y + "年逓減)", mid.alive ? fmtMan(mid.resid) + "(市場性 " + pct(s.bm) + " は残価のみに適用)" : "0円(築" + s.age.toFixed(1) + "年・市場評価消滅)"],
     ["リテール比較(戸建成約 " + (r.retail ? r.retail.n + "件" : "—") + ")", r.retail ? fmtMan(r.retail.lo) + " 〜 " + fmtMan(r.retail.mid) + " 〜 " + fmtMan(r.retail.hi) : (r.fairFinal.retailApplicable === false ? "商業系につき適用外(土地評価)" : "類似成約不足のため適用外")],
     ["売却ルート判定", r.fairFinal.route === "retail" ? "リテール(実需に家として売る)が優位。加重 リテール" + (r.fairFinal.weights.retail * 100).toFixed(0) + "%:原価" + (r.fairFinal.weights.cost * 100).toFixed(0) + "%" : r.fairFinal.route === "land" ? "土地として売る方が高い(解体前提)" : "住まいとして売る方が高い"],
     ["適正価格レンジ(重み付き調整・土地値下限)", fmtMan(r.fairFinal.lo) + " 〜 " + fmtMan(r.fairFinal.hi), "em"],
     ...(r.premiumMarket !== null && r.premiumMarket !== undefined
-      ? [["売出価格 − 市場実勢中央値(=売主の期待。" + (r.verdictBasis === "market" ? "判定はこちら基準" : "参考") + ")", (r.premiumMarket >= 0 ? "+" : "") + fmtMan(r.premiumMarket)]] : []),
-    ["売出価格 − 適正中央値(過熱感込み" + (r.verdictBasis === "market" ? "・参考" : "。判定はこちら基準") + ")", (premium >= 0 ? "+" : "") + fmtMan(premium)],
+      ? [["売出価格 − 市場実勢中央値(=売主の期待)", (r.premiumMarket >= 0 ? "+" : "") + fmtMan(r.premiumMarket)]] : []),
+    ["売出価格 − 適正中央値(過熱感込み)", (premium >= 0 ? "+" : "") + fmtMan(premium)],
     ["実質坪単価(売出÷実効坪)", Math.round(s.ask / mid.tsubo).toLocaleString("en-US") + " 万円/坪"],
   ];
   if (incomeVal) rows.push(["収益価格(月" + s.rent + "万×12×(1−経費" + (s.expr * 100) + "%)÷" + (s.yld * 100).toFixed(1) + "%)", fmtMan(incomeVal)]);
@@ -427,7 +427,7 @@ function caveatsHtml(property) {
   if (!Array.isArray(cs) || cs.length === 0) return "";
   const items = cs.map((c) => `
     <li style="margin-bottom:10px">
-      <b>${esc(c.title)}</b>${c.verdict_effect ? `<span class="status" style="margin-left:6px">${esc(c.verdict_effect)}</span>` : ""}
+      <b>${esc(c.title)}</b>${c.effect ? `<span class="status" style="margin-left:6px">${esc(c.effect)}</span>` : ""}
       <div style="font-size:.82rem;line-height:1.8;margin-top:3px">${esc(c.detail)}</div>
       ${c.check ? `<div class="note" style="margin-top:2px">確認方法: ${esc(c.check)}</div>` : ""}
     </li>`).join("");
@@ -443,7 +443,7 @@ function caveatsHtml(property) {
 
 // ---- ページ全体 ----
 export function renderProperty(r, property, marketCal = null, houseDeals = null) {
-  const { state: s, mid, lo, hi, verdict: v, incomeVal } = r;
+  const { state: s, mid, lo, hi, position: pos, incomeVal } = r;
   const status = STATUS_LABEL[property.status] || property.status;
   const body = `
   <div style="margin-bottom:12px;font-size:.8rem"><a href="../index.html">← 物件一覧へ</a></div>
@@ -454,15 +454,13 @@ export function renderProperty(r, property, marketCal = null, houseDeals = null)
 
     ${specTable(r, property)}
 
-    <div class="verdict-wrap" style="margin-top:16px">
-      <div class="stamp ${v.cls}">${v.mark}</div>
-      <div class="verdict-text">
-        <div class="head">${v.head}</div>
-        <div class="body">${v.body}</div>
-        ${r.borderline ? `<div class="caveat" style="margin-top:6px">※ 境界判定: 売出と判定境界(${r.verdictBasis === "market" ? "市場実勢の上位四分位+交渉幅5%" : "査定上限"} ${fmtMan(Math.round(r.judgeHi))})の乖離が5%未満。時点修正等のノイズでスタンプが反転しうるため、スタンプでなくレンジで読むこと。</div>` : ""}
-        ${r.isNewBuild ? `<div class="caveat" style="margin-top:6px">※ 新築物件: 本査定は「中古市場での再販価値」ベース。新築分譲価格には事業者利益・未入居プレミアムが含まれるのが通常で、乖離の一部はその剥落分と解釈すべき(査定がそのまま「ぼったくり」を意味しない)。</div>` : ""}
-        ${r.fairFinal.floorBound ? `<div class="caveat" style="margin-top:6px">※ 本査定は土地換算値が下限として発火している(事例比較より土地値が高い)。土地単価が${r.fairFinal.pptSource === "calibrated" ? "成約較正済み" : "未検証(較正未成立)のため下限には×0.9のペナルティを適用済み"}。</div>` : ""}
-      </div>
+    <div class="position-wrap" style="margin-top:16px">
+      <div class="position-head">${pos.head}</div>
+      <div class="position-body">${pos.body}</div>
+      ${pos.notes.map((n) => `<div class="caveat" style="margin-top:6px">※ ${esc(n)}</div>`).join("")}
+      ${r.isNewBuild ? `<div class="caveat" style="margin-top:6px">※ 新築物件: 本査定は「中古市場での再販価値」ベース。新築分譲価格には事業者利益・未入居プレミアムが含まれるのが通常で、乖離の一部はその剥落分と解釈すべき(査定がそのまま「ぼったくり」を意味しない)。</div>` : ""}
+      ${r.fairFinal.floorBound ? `<div class="caveat" style="margin-top:6px">※ 本査定は土地換算値が下限として発火している(事例比較より土地値が高い)。土地単価が${r.fairFinal.pptSource === "calibrated" ? "成約較正済み" : "未検証(較正未成立)のため下限には×0.9のペナルティを適用済み"}。</div>` : ""}
+      <div class="note" style="margin-top:8px">本台帳は<b>買う/見送るの判定を出さない</b>。上は売出価格が各参照水準のどこに立っているかという事実で、そこから先の判断(この価格を払う価値があるか)は住む本人が決めるもの。検討状況は<a href="../index.html">一覧ページ</a>で自分で設定できる。</div>
     </div>
 
     ${hazardHtml(property)}
@@ -511,7 +509,7 @@ export function renderProperty(r, property, marketCal = null, houseDeals = null)
   return layout({
     title: "中古戸建 査定台帳",
     subtitle: esc(property.location?.address ?? r.id) + " ── 売出価格を土地値・解体費・建物残価・繰延修繕に分解する",
-    docNo: `判定【${v.mark}】<br>査定基準日 ${r.asOf}<br>engine ${esc(r.engineVersion)}`,
+    docNo: `査定基準日 ${r.asOf}<br>engine ${esc(r.engineVersion)}`,
     body,
   });
 }

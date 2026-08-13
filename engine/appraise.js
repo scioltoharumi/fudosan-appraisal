@@ -1,6 +1,6 @@
 // engine/appraise.js — 査定コア(akabane_simulator.html v1.2 ロジックの完全移植)
 // pure function・依存ゼロ。係数はすべて本ファイル冒頭の定数ブロックに集約する(マジックナンバー散在禁止)。
-// 回帰照合: 2026-07-19基準日・本物件(赤羽台3)で 判定「保留」/ 適正中央値5,952万 / 楽観上限6,562万。
+// 回帰照合: 2026-07-19基準日・本物件(赤羽台3)で 適正中央値5,952万 / 楽観上限6,562万。
 //
 // 移植時の設計変更(steering decisions.md D3):
 //   - 評価基準日(asOf)と乱数seedを引数注入可能にした。既定は実行日のUTC0時＝同日内は再現可能。
@@ -9,7 +9,7 @@
 import { retailEstimate, districtOf } from "./retail.js";
 import { growthFactor } from "./timeadjust.js";
 
-export const ENGINE_VERSION = "2.5.0 (判定基準を市場実勢へ変更: リテール成立物件の保留/見送は成約分布で判定し、適正ブレンドとの乖離は過熱感の参考指標に降格)";
+export const ENGINE_VERSION = "3.0.0 (機械判定を全廃: 買/保留/見送/不能/調査のスタンプを撤去し、参照水準と売出価格の位置関係を事実として提示するのみに変更。買うか見送るかの判断は人が行い、台帳のステータスは一覧ページで人が設定する)";
 
 // ---- 係数ブロック(根拠コメント付き) ----
 export const COEFFS = {
@@ -32,8 +32,9 @@ export const COEFFS = {
                                         // 維持不明の物件は繰延修繕控除(DEFAULT_REPAIR_MAN)が「維持されていた前提」との差分を埋める
   NO_REBUILD_ADJ: -0.30,                // 再建築不可等の重大制約(ローン不可・買い手が現金投資家に限定)
   PPT_UNCERTAINTY: 0.10,                // 基準坪単価の±10%でlo/hiレンジを構成
-  MARKET_NEGO_BAND: 0.05,               // 市場実勢基準の保留/見送境界 = 成約上位四分位×(1+この幅)。
-                                        // 売出価格は成約と違い交渉余地を含むため、通常交渉で吸収しうる幅(約5%)を許容
+  MARKET_NEGO_BAND: 0.05,               // 参照水準「通常交渉で届く上限」= 成約上位四分位×(1+この幅)。
+                                        // 売出価格は成約と違い交渉余地を含むため、通常交渉で吸収しうる幅(約5%)を見込む。
+                                        // 2026-08-13以前は保留/見送の判定境界だったが、機械判定の廃止で参照値に変更
   DEFAULT_REBUILD_PPT: 95,              // 再調達単価(万円/坪)。2026年の木造実勢建築費90〜110万の保守側(監査で70→95)
   DEFAULT_DEMOLITION_MAN: 150,          // 解体費既定(万円)。木造2階4〜5万/延床坪、3階・準防火・道路狭小5〜8万
   DEFAULT_REPAIR_MAN: 800,              // 大規模修繕「未実施の可能性大」の想定(万円)
@@ -156,60 +157,51 @@ export function appraiseRange(s, elapsed) {
   };
 }
 
-// ---- 判定(v1.2の文言・閾値を移植) ----
-export function verdict(s, mid, lo, hi) {
-  const premium = s.ask - mid.fair;
-  if (mid.fair < 0) {
-    return {
-      mark: "不能", cls: "",
-      head: "査定不能:解体費が土地価値を上回る(事実上の負動産)",
-      body: "入力条件では土地価値より処分コストが大きく、価格が付きません。入力値(面積・解体費・制約)を再確認してください。",
-    };
-  }
-  // 買 = 取得総額(価格+諸費用)が即時処分値以下で初めて成立(R3監査: 諸費用の無視で約5%甘かった)
-  if (s.ask * (1 + s.fee) <= mid.floorNet) {
-    return {
-      mark: "買", cls: "ok",
-      head: "取得総額が即時処分価値(卸値換算・売却諸費用控除後)以下。資産防衛の観点では合格圏",
-      body: "最悪ケースで業者に土地として即売りしても取得総額(価格×" + (1 + s.fee).toFixed(2) + ")を回収できる水準(中央値 " + fmtMan(mid.floorNet) + " = 土地値×卸値90%×売却諸費用控除−解体費)を下回る構造。悲観シナリオの同値は " + fmtMan(lo.floorNet) + " で、これも意識した指値が理想。" + (mid.alive ? "建物残価はタダで付いてくる。" : "") + "残る論点は接道種別・擁壁・瑕疵の確認のみ。",
-    };
-  }
-  if (s.ask <= hi.fair) {
-    return {
-      mark: "保留", cls: "warn",
-      head: "査定レンジ内。交渉次第",
-      body: "下値フロア(中央値 " + fmtMan(mid.floorVal) + "・悲観 " + fmtMan(lo.floorVal) + ")との差 " + fmtMan(s.ask - mid.floorVal) + " を" + (mid.route === "home" ? "建物の残り価値" : mid.route === "retail" ? "周辺の戸建成約水準(リテール市場)" : "土地の上振れ期待") + "に払う構図。査定中央値との乖離は " + (premium >= 0 ? "+" : "") + fmtMan(premium) + "。指値の錨は「査定中央値 " + fmtMan(mid.fair) + "」。",
-    };
-  }
-  return {
-    mark: "見送", cls: "",
-    head: "査定上限を超過。プレミアムに払っている",
-    body: "楽観側のシナリオ(原価法は坪単価+10%、リテール比較は上位四分位)を採用しても " + fmtMan(s.ask - hi.fair) + " の説明不能な上乗せ。売主に価格根拠を説明させるか、査定上限 " + fmtMan(hi.fair) + " 近辺への指値が前提。",
-  };
-}
+// ---- 価格の位置(2026-08-13: 機械判定を全廃) ----
+// 買/保留/見送/不能/調査のスタンプは廃止した。買うか見送るかは人が決めるべき判断であり、
+// エンジンの役割は「参照水準(即時処分値・土地換算値・適正レンジ・成約分布)に対して
+// 売出価格がどこに立っているか」を数字で示すところまでとする。
+// 台帳上のステータス(新規/検討中/内見済/見送り)は一覧ページで人が設定する。
+// 返り値に mark / cls は持たせない(ラベルを持たせた時点で判定に戻るため)。
+const routeWord = (route) =>
+  route === "home" ? "建物の残り価値" : route === "retail" ? "周辺の戸建成約水準(リテール市場)" : "土地の上振れ期待";
 
-// ---- 判定(市場実勢基準・2026-08-11方針変更) ----
-// リテール比較が近接地区で成立する物件は、保留/見送の判定を「市場実勢(成約分布)」に従わせる。
-// 適正ブレンド(原価法との重み付き)は過熱感=下落余地を測る参考指標に降格。
-// 理由: 市場全体が原価法比で上振れしている局面では、ブレンド基準だとほぼ全物件が機械的に
-// 見送となり物件間の判別力を失うため。買・不能の資産防衛判定(土地フロア基準)は従来どおり。
-export function verdictMarket(s, rt, fairMid) {
-  const hiBand = rt.hi * (1 + COEFFS.MARKET_NEGO_BAND);
-  const expect = s.ask - rt.mid;                       // 売主の期待(市場実勢中央値との差)
-  const overheat = rt.mid - fairMid;                   // 市場の上振れ(過熱感・参考)
+export function position(s, ref) {
   const sg = (x) => (x >= 0 ? "+" : "−") + fmtMan(Math.abs(x));
-  const ref = "参考(過熱感): 市場実勢の中央値自体が理論適正(原価法との重み付き " + fmtMan(fairMid) + ")より " + sg(overheat) + " 上振れしており、相場が冷えればこの分は物件によらず下落余地になる。";
-  if (s.ask <= hiBand) {
+  const notes = [];
+  if (ref.fairMid < 0) {
+    notes.push("入力条件では解体費が土地価値を上回っている(土地換算値がマイナス)。面積・解体費・制約の入力値を再確認すること。");
+  }
+  // 資産防衛側の事実: 取得総額が即時処分値以下かどうか(旧「買」判定の根拠だった数値関係)
+  const acq = s.ask * (1 + s.fee);
+  if (acq <= ref.floorNet) {
+    notes.push("取得総額 " + fmtMan(acq) + "(価格×" + (1 + s.fee).toFixed(2) + ")は即時処分値 " + fmtMan(ref.floorNet) +
+      "(土地値×卸値90%×売却諸費用控除−解体費)以下。業者に土地として即売りしても取得総額を回収できる位置にある。");
+  }
+  if (ref.retail) {
+    const rt = ref.retail;
+    const expect = s.ask - rt.mid;                 // 売主の期待(市場実勢中央値との差)
+    const overheat = rt.mid - ref.fairMid;         // 市場の上振れ(過熱感)
     return {
-      mark: "保留", cls: "warn",
-      head: "市場実勢の圏内。交渉次第",
-      body: "周辺成約の中央値 " + fmtMan(rt.mid) + "(上位四分位 " + fmtMan(rt.hi) + "・" + rt.n + "件)に対し、売出は " + sg(expect) + " = 売主の期待。通常の交渉幅で市場水準に収まりうる。指値の錨は市場実勢中央値 " + fmtMan(rt.mid) + "。" + ref,
+      basis: "market",
+      head: "売出 " + fmtMan(s.ask) + " は、周辺成約の中央値 " + fmtMan(rt.mid) + " に対し " + sg(expect),
+      body: "周辺の類似成約 " + rt.n + "件の分布は 中央値 " + fmtMan(rt.mid) + " / 上位四分位 " + fmtMan(rt.hi) +
+        "。上位四分位に通常の交渉幅(" + Math.round(COEFFS.MARKET_NEGO_BAND * 100) + "%)を載せた水準 " + fmtMan(ref.negoBand) +
+        " との差は " + sg(s.ask - ref.negoBand) + "。中央値との差 " + sg(expect) + " が売主の期待にあたる部分で、" +
+        "下値フロア(土地換算値 " + fmtMan(ref.floorVal) + ")との差 " + fmtMan(s.ask - ref.floorVal) + " は" + routeWord(ref.route) + "に払う構図。" +
+        "参考(過熱感): 市場実勢の中央値自体が理論適正(原価法との重み付き " + fmtMan(ref.fairMid) + ")より " + sg(overheat) +
+        " 上振れしており、相場が冷えればこの分は物件によらず下落余地になる。",
+      notes,
     };
   }
   return {
-    mark: "見送", cls: "",
-    head: "市場実勢の上限も超過。相場でなく売主の希望に払う水準",
-    body: "周辺成約の上位四分位 " + fmtMan(rt.hi) + " に通常の交渉幅(" + Math.round(COEFFS.MARKET_NEGO_BAND * 100) + "%)を載せた " + fmtMan(hiBand) + " をなお " + fmtMan(s.ask - hiBand) + " 超過。市場実勢中央値との差 " + sg(expect) + "(売主の期待)は指値では埋まらず、値下げ改定を待つ案件。" + ref,
+    basis: "blend",
+    head: "売出 " + fmtMan(s.ask) + " は、適正中央値 " + fmtMan(ref.fairMid) + " に対し " + sg(s.ask - ref.fairMid),
+    body: "適正レンジは " + fmtMan(ref.fairLo) + " 〜 " + fmtMan(ref.fairMid) + " 〜 " + fmtMan(ref.fairHi) +
+      "(楽観側は原価法の坪単価+10%)。売出との差は楽観上限に対して " + sg(s.ask - ref.fairHi) +
+      "。下値フロア(土地換算値 " + fmtMan(ref.floorVal) + "・悲観 " + fmtMan(ref.floorLo) + ")との差 " +
+      fmtMan(s.ask - ref.floorVal) + " は" + routeWord(ref.route) + "に払う構図。",
+    notes,
   };
 }
 
@@ -450,27 +442,22 @@ export function evaluate(property, areaConfig, { asOf = defaultAsOf(), seed = CO
   const fairFinal = { lo: fairLo, mid: fairMid, hi: fairHi, route: finalRoute, costMid: mid.fair,
     weights: { retail: wR, cost: 1 - wR }, floorBound, floorGuard, floorEff, pptSource, retailApplicable };
 
-  let v = verdict(s,
-    { ...mid, fair: fairMid, route: finalRoute, floorVal: floorEff.mid, floorNet: floorEff.netMid },
-    { ...lo, fair: fairLo, floorVal: floorEff.lo, floorNet: floorEff.netLo },
-    { ...hi, fair: fairHi, floorVal: floorEff.hi });
-  // 市場実勢基準への切替(2026-08-11): 近接地区でリテール比較が成立していれば、
-  // 保留/見送は成約分布(上位四分位+交渉幅)で判定する。買・不能は土地フロア基準を維持
+  // 参照水準「通常交渉で届く上限」は、近接地区でリテール比較が成立する物件でのみ意味を持つ
   const marketBasis = !!(retail && retail.districtScoped);
-  if (marketBasis && v.mark !== "買" && v.mark !== "不能") {
-    v = verdictMarket(s, retail, fairMid);
+  const negoBand = marketBasis ? retail.hi * (1 + COEFFS.MARKET_NEGO_BAND) : null;
+  const pos = position(s, {
+    fairLo, fairMid, fairHi,
+    floorVal: floorEff.mid, floorLo: floorEff.lo, floorNet: floorEff.netMid,
+    route: finalRoute, retail: marketBasis ? retail : null, negoBand,
+  });
+  // 商業系(リテール比較適用外)かつ土地単価が未検証overrideの物件は、検証手段が全て外れており
+  // 適正レンジが単価1点に吊られる。数字の信頼度が他物件と違うことを事実として開示する
+  // (旧v2系はここで「調査」判定に降格していた。R4監査: jujonakahara2問題)
+  if (!retailApplicable && pptSource === "override") {
+    pos.notes.push("この物件の適正レンジは手入力の土地単価(" + Math.round(s.ppt) +
+      "万/坪・未検証)にほぼ全面依存しており、リテール比較も適用外(商業系)。他物件と同じ精度では読めないため、" +
+      "土地成約3件以上の収集または業者査定でこの単価を検証すること。");
   }
-  // 商業系(リテール比較適用外)かつ土地単価が未検証overrideの物件は、検証手段が全て外れた
-  // 状態で判定が単価1点に吊られるため「調査」判定に降格する(R4監査: jujonakahara2問題)
-  if (!retailApplicable && pptSource === "override" && v.mark !== "不能") {
-    v = { mark: "調査", cls: "warn",
-      head: "商業系×未検証単価につき判定保留(要調査)",
-      body: "本物件の適正価格は手入力の土地単価(" + Math.round(s.ppt) + "万/坪・未検証)にほぼ全面依存しており、リテール比較も適用外(商業系)のため機械判定を出さない。参考レンジは " + fmtMan(fairLo) + " 〜 " + fmtMan(fairHi) + "。土地成約3件以上の収集または業者査定でこの単価を検証してから判断すること。" };
-  }
-  // 境界判定の開示: 判定境界(市場実勢基準=上位四分位×(1+交渉幅)、それ以外=楽観上限)と
-  // 売出の乖離が±5%未満ならスタンプは反転しうる(R4監査。2026-08-11に境界を判定基準へ追随)
-  const judgeHi = marketBasis ? retail.hi * (1 + COEFFS.MARKET_NEGO_BAND) : fairHi;
-  const borderline = Math.abs(s.ask - judgeHi) / judgeHi < 0.05;
   const premium = s.ask - fairMid;                     // 対適正ブレンド(過熱感込み・参考)
   const premiumMarket = retail ? s.ask - retail.mid : null;  // 対市場実勢(判定基準側)
   const overheat = retail ? retail.mid - fairMid : null;     // 市場の上振れ(過熱感)
@@ -491,9 +478,8 @@ export function evaluate(property, areaConfig, { asOf = defaultAsOf(), seed = CO
     area,
     assumptions,
     mid, lo, hi,
-    retail, fairFinal, isNewBuild, borderline,
-    verdict: v,
-    verdictBasis: marketBasis ? "market" : "blend", judgeHi,
+    retail, fairFinal, isNewBuild,
+    position: pos, negoBand,
     premium, premiumMarket, overheat, totalCost, instLoss, incomeVal,
     mc, tornado: tor,
   };

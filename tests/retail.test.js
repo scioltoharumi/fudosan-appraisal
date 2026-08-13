@@ -134,27 +134,29 @@ test("較正接続: 信頼度が十分なエリアは較正値が採用され、
   assert.equal(Math.round(r3.state.ppt), 245);
 });
 
-test("判定基準(2026-08-11方針変更): リテール成立物件は市場実勢基準で保留/見送を判定", () => {
+test("価格の位置(2026-08-13: 機械判定を廃止し事実提示のみ)", () => {
   const cfg = loadAreaConfig();
   const deals = loadHouseDeals();
   const cal = calibrate();
   // jujonakahara3: 売出6,580 vs 市場実勢中央値≈6,279(売主の期待+301)・上位四分位≈6,566。
-  // 旧ブレンド基準では見送(適正中央値≈5,431と+21%乖離)だったが、乖離の大半は市場全体の
-  // 過熱分(上振れ≈+848)であり売主個別の強気ではない。ブレンド基準では過熱局面で全物件が
-  // 機械的に見送となり判別力を失うため、保留/見送は成約分布(上位四分位×(1+交渉幅5%))で
-  // 判定し、適正ブレンドとの乖離は過熱感の参考指標に降格した(regression値変更の理由)
+  // かつては「保留/見送」を成約分布で判定していたが、買うか見送るかは人の判断であるため
+  // スタンプを全廃した。エンジンは参照水準(中央値・上位四分位・交渉幅を載せた水準・
+  // 土地換算値)と売出の位置関係を数字で返すのみ
   const r = evaluate(loadProperty("jujonakahara3-adcast"), cfg, { asOf: AS_OF, houseDeals: deals, cal });
-  assert.equal(r.verdictBasis, "market");
-  assert.equal(r.verdict.mark, "保留");
+  assert.equal(r.position.basis, "market");
+  assert.ok(!("mark" in r.position), "ラベルを持たない");
   assert.ok(Number.isFinite(r.premiumMarket) && Number.isFinite(r.overheat));
   assert.ok(r.overheat > 0, "市場の上振れ(過熱感)が正のはずの局面");
-  assert.ok(r.judgeHi > r.retail.hi, "判定境界は上位四分位+交渉幅");
-  // 市場実勢から大きく外れる物件(売出が上位四分位+38%)は市場基準でも見送のまま
+  assert.ok(r.negoBand > r.retail.hi, "参照水準=上位四分位+交渉幅");
+  assert.ok(r.position.body.includes("売主の期待"), "売主の期待を数字で開示する");
+  // 市場実勢から大きく外れる物件(売出が上位四分位+38%)でも、返すのは差額の事実だけ
   const r2 = evaluate(loadProperty("nishigaoka1-21215249"), cfg, { asOf: AS_OF, houseDeals: deals, cal });
-  assert.equal(r2.verdictBasis, "market");
-  assert.equal(r2.verdict.mark, "見送");
-  // リテール不成立(商業系)の物件は従来どおりブレンド基準(調査降格ロジックも維持)
+  assert.equal(r2.position.basis, "market");
+  assert.ok(r2.state.ask > r2.negoBand, "この物件は交渉幅を載せた水準を超えている");
+  assert.ok(!/見送|保留/.test(r2.position.head + r2.position.body), "判定語を出さない");
+  // リテール不成立(商業系×未検証単価)は、旧「調査」降格の中身を注記として残す
   const r3 = evaluate(loadProperty("jujonakahara2-21028966"), cfg, { asOf: AS_OF, houseDeals: deals, cal });
-  assert.equal(r3.verdictBasis, "blend");
-  assert.equal(r3.verdict.mark, "調査");
+  assert.equal(r3.position.basis, "blend");
+  assert.equal(r3.negoBand, null);
+  assert.ok(r3.position.notes.some((n) => n.includes("未検証")), "単価未検証の開示が残る");
 });

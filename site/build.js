@@ -52,7 +52,7 @@ for (const id of ids) {
   }
   results.push({ r, rRef, property, hasMarketPage: !!(chosen || r.retail) });
   writeFileSync(join(DIST, "property", `${id}.html`), renderProperty(r, property, marketCal, houseDeals), "utf8");
-  console.log(`✓ property/${id}.html 【${r.verdict.mark}】 売出${Math.round(r.state.ask)}万 / 適正中央値${Math.round(r.fairFinal.mid)}万(${r.fairFinal.route})${r.retail ? ` / リテール${r.retail.n}件` : ""}`);
+  console.log(`✓ property/${id}.html 売出${Math.round(r.state.ask)}万 / 市場実勢${r.retail ? Math.round(r.retail.mid) + "万" : "—"} / 適正中央値${Math.round(r.fairFinal.mid)}万(${r.fairFinal.route})${r.retail ? ` / リテール${r.retail.n}件` : ""}`);
 }
 
 const asOf = results[0].r.asOf;

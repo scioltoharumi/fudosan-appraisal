@@ -3,7 +3,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  appraise, appraiseRange, evaluate, verdict,
+  appraise, appraiseRange, evaluate, position,
   elapsedYears, monteCarlo, mulberry32,
 } from "../engine/appraise.js";
 import { loadAreaConfig, loadProperty, listPropertyIds } from "../engine/io.js";
@@ -26,7 +26,6 @@ test("回帰値: 本物件(engineレベル)が受入基準と一致する", () =
   const { mid, lo, hi } = appraiseRange(DEMO, ELAPSED);
   assert.equal(Math.round(mid.fair), 5952, "適正中央値");
   assert.equal(Math.round(hi.fair), 6562, "楽観上限");
-  assert.equal(verdict(DEMO, mid, lo, hi).mark, "保留");
   assert.equal(mid.route, "land");
   // 2026-08監査: 建物逓減を22年→30年に更新したため築27年でも残価は僅かに残る。
   // ただし土地ルート優位のため fair は従来どおり(受入基準値は不変)
@@ -40,9 +39,12 @@ test("回帰値: YAML→evaluate経由の基準値(時点修正の年次別統�
   // 2026年の将来外挿を+6%に保守化(R3監査)後の値。v1.2原典(5952/6562)にほぼ回帰している
   assert.equal(Math.round(r.mid.fair), 5938);
   assert.equal(Math.round(r.hi.fair), 6547);
-  // 2026-08-11: 売出6560→6260の値下げを掲載元で確認しprice_historyへ追記。
-  // ask 6260 vs hi 6547 となり境界(差0.2%)の見送→レンジ内の保留へ反転(査定値自体は不変)
-  assert.equal(r.verdict.mark, "保留");
+  // 2026-08-11: 売出6560→6260の値下げを掲載元で確認しprice_historyへ追記(査定値自体は不変)
+  assert.equal(Math.round(r.state.ask), 6260);
+  // 2026-08-13: 機械判定(買/保留/見送)は廃止。エンジンは位置の事実のみ返す
+  assert.equal(r.verdict, undefined, "判定スタンプは返さない");
+  assert.ok(r.position && typeof r.position.head === "string" && !("mark" in r.position),
+    "positionはラベルを持たない: " + JSON.stringify(Object.keys(r.position ?? {})));
   // 修繕・解体・賃料のassumed項目が記録されていること(F1-3/監査性)
   assert.ok(r.assumptions.length >= 3, "assumed項目: " + JSON.stringify(r.assumptions));
 });
@@ -112,21 +114,47 @@ test("MC: seed固定で再現可能・パーセンタイル順序が正しい", 
   assert.equal(a.hist.counts.reduce((x, y) => x + y, 0), a.trials, "全試行がビンに入る");
 });
 
-test("判定境界: ask<=floorで「買」、fair<0で「不能」、上限超過で「見送」", () => {
+test("価格の位置: ラベルを一切返さず、参照水準に対する事実だけを返す(2026-08-13の判定廃止)", () => {
   const { mid, lo, hi } = appraiseRange(DEMO, ELAPSED);
-  // R2で「買」閾値を即時処分値に、R3で取得諸費用込み(ask×(1+fee)<=floorNet)に保守化
+  const ref = (o) => ({ fairLo: lo.fair, fairMid: mid.fair, fairHi: hi.fair,
+    floorVal: mid.floorVal, floorLo: lo.floorVal, floorNet: mid.floorNet,
+    route: mid.route, retail: null, negoBand: null, ...o });
+  // 判定に使われていた語がどの経路でも出力に現れないこと(スタンプ復活の回帰ガード)
+  const WORDS = ["買", "保留", "見送", "不能", "調査"];
+  const forbidden = (p) => WORDS.filter((w) =>
+    new RegExp("【" + w + "】").test(p.head + p.body + p.notes.join("")) || "mark" in p || "cls" in p);
+  // 取得総額が即時処分値以下 = 旧「買」の条件。事実の注記として現れ、ラベルは付かない
   const buy = { ...DEMO, ask: Math.floor(mid.floorNet / 1.05) };
-  assert.equal(verdict(buy, mid, lo, hi).mark, "買");
+  const pBuy = position(buy, ref());
+  assert.deepEqual(forbidden(pBuy), []);
+  assert.ok(pBuy.notes.some((n) => n.includes("即時処分値")), "即時処分値との関係が注記される");
   const notBuy = { ...DEMO, ask: Math.ceil(mid.floorNet / 1.05) + 1 };
-  assert.notEqual(verdict(notBuy, mid, lo, hi).mark, "買", "floorNet超は買にならない");
+  assert.ok(!position(notBuy, ref()).notes.some((n) => n.includes("即時処分値")));
   assert.ok(mid.floorNet < mid.floorVal, "即時処分値は土地換算値より保守的");
-  const pass = { ...DEMO, ask: Math.ceil(hi.fair) + 1 };
-  assert.equal(verdict(pass, mid, lo, hi).mark, "見送");
-  // 解体費が土地値を上回る極端条件 → 査定不能
+  // 上限超過でも「見送」等のラベルは出ず、差額が数字で示されるだけ
+  const over = position({ ...DEMO, ask: Math.ceil(hi.fair) + 1 }, ref());
+  assert.deepEqual(forbidden(over), []);
+  assert.ok(over.head.includes("適正中央値"), over.head);
+  // 解体費が土地値を上回る極端条件 → ラベルでなくデータ警告の注記
   const dead = { ...DEMO, land: 20, setback: 10, demo: 3000, age: 45 };  // 築45年=残価ゼロで土地ルートのみ
   const r2 = appraiseRange(dead, ELAPSED);
   assert.ok(r2.mid.fair < 0);
-  assert.equal(verdict(dead, r2.mid, r2.lo, r2.hi).mark, "不能");
+  const pDead = position(dead, ref({ fairMid: r2.mid.fair, fairLo: r2.lo.fair, fairHi: r2.hi.fair,
+    floorVal: r2.mid.floorVal, floorLo: r2.lo.floorVal, floorNet: r2.mid.floorNet, route: r2.mid.route }));
+  assert.deepEqual(forbidden(pDead), []);
+  assert.ok(pDead.notes.some((n) => n.includes("解体費が土地価値を上回")));
+});
+
+test("判定廃止の回帰ガード: 台帳の全物件でスタンプ由来のフィールドが復活していない", () => {
+  const area = loadAreaConfig();
+  for (const id of listPropertyIds()) {
+    const r = evaluate(loadProperty(id), area, { asOf: AS_OF });
+    assert.equal(r.verdict, undefined, id + ": verdictが復活している");
+    assert.equal(r.verdictBasis, undefined, id + ": verdictBasisが復活している");
+    assert.equal(r.borderline, undefined, id + ": borderlineが復活している");
+    assert.ok(!("mark" in r.position) && !("cls" in r.position), id + ": positionにラベルが付いている");
+    assert.ok(["market", "blend"].includes(r.position.basis), id + ": basis=" + r.position.basis);
+  }
 });
 
 test("price_history: 日付ソートが時刻値ベースであること(String(Date)の曜日名辞書順バグの回帰)", () => {
