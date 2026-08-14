@@ -632,7 +632,11 @@
   "kind": "chuko",
   "media": "suumo",
   "land_m2": 69.29,
-  "floor_m2": 111.1
+  "floor_m2": 111.1,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO6_road_toll"
+  ]
  },
  "nc_21306453": {
   "first_seen": "2026-08-13",

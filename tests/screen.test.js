@@ -6,7 +6,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { ROOT } from "../engine/io.js";
+import { ROOT, listPropertyIds, loadProperty } from "../engine/io.js";
 import { buildExcludedIndex, matchExcludedSite, scanKO, koScreen, parseDetailAttrs, buildAreaHazardIndex, areaHazardBlock } from "../crawler/screen.mjs";
 
 const EXCLUDED = JSON.parse(readFileSync(join(ROOT, "market", "crawl", "excluded.json"), "utf8"));
@@ -239,4 +239,69 @@ test("KO2: 借地の言い回しを網羅する(賃借権・借地期間・転�
   const ok = scanKO(mk("所有権"), "suumo");
   assert.ok(!ok.flags.some((f) => f.code === "KO2_ownership"));
   assert.equal(ok.attrs.ownership, "所有権");
+});
+
+// ---- KO6: 私道の通行料(2026-08-14ユーザー決定) ----
+// 中里3 nc_21442197 は「私道通行料金1,500円／月(私道持分無)」。通行料は掲載の私道負担欄には出ず、
+// athomeのアピールポイント(自由文)にしか書かれていなかったため、KO判定を素通りして自動登録された。
+const APPEAL = (line) => `<dt>接道状況</dt><dd>南東 4.0m 私道 位置指定有</dd>
+  <dt>土地権利</dt><dd>所有権</dd><dt>土地面積</dt><dd>69.29m²</dd><dt>建物面積</dt><dd>111.1m²</dd>
+  <div class="section-title">アピールポイント</div><p>≪アクセス≫<br>◇最寄駅「駒込」駅徒歩８分、
+  「駒込駅」にも徒歩１２分のアクセス良好な立地です♪<br>◇ＬＤＫ１５帖！広々とした空間になっています♪<br>
+  ◇バルコニー２か所で明るい室内です<br>◇各居室クローゼットが付いています！<br>
+  ◇徒歩圏内にスーパー・コンビニがあるため住環境良好です！<br>◇複数路線複数駅利用可能な立地です！<br>
+  ${line}<br>◇当社提携の住宅ローンや資金計画ご相談ください！</p>`;
+
+test("KO6: 自由文(アピールポイント)に書かれた私道通行料でブロックする", () => {
+  // 実ページ(at_1167816131)の並び。通行料の行は本文の先頭から約250字目にあり、
+  // 欄の既定窓(100字)では届かない。この距離を詰めると回帰する
+  const s = scanKO(APPEAL("◇私道通行料金１５００円／月（私道持分無）"), "athome");
+  assert.ok(s.flags.some((f) => f.code === "KO6_road_toll"), `検出: ${JSON.stringify(s.flags.map((f) => f.code))}`);
+  assert.match(s.flags.find((f) => f.code === "KO6_road_toll").evidence, /通行料金1500円/, "証跡に該当箇所が入ること");
+  const ko = koScreen({ unit: { price_man: 8880, district: "中里", chome: "3" }, siteHit: null, scan: s });
+  assert.equal(ko.verdict, "block");
+  assert.ok(ko.codes.includes("KO6_road_toll"));
+  // SUUMO側は同じ物件でも「無、南東4m幅」としか書かない=媒体1つでは落とせないことの確認
+  const suumoOnly = scanKO(`私道負担・道路 ヒント 無、南東4m幅 土地の権利形態 ヒント 所有権
+    土地面積 ヒント 69.29m 2 建物面積 ヒント 111.1m 2`, "suumo");
+  assert.equal(suumoOnly.flags.length, 0, "SUUMOの欄だけでは検出できない(athome確認が要る)という限界の記録");
+});
+
+test("KO6: 語彙の揺れを拾い、否定表記(通行料なし)では旗を立てない", () => {
+  for (const line of ["◇私道通行料 月額2,000円", "◇通行料金 年12,000円", "◇私道使用料あり", "◇通行負担金 5,000円/年"]) {
+    assert.ok(scanKO(APPEAL(line), "athome").flags.some((f) => f.code === "KO6_road_toll"), `${line} が拾われない`);
+  }
+  for (const line of ["◇私道通行料：無", "◇通行料なし", "◇私道通行料 不要", "◇通行料 0円"]) {
+    const s = scanKO(APPEAL(line), "athome");
+    assert.ok(!s.flags.some((f) => f.code === "KO6_road_toll"), `${line} で誤検出`);
+  }
+});
+
+test("KO6: 私道持分なしの明記は KO ではなく suspect(人の判断へ回す)", () => {
+  const s = scanKO(APPEAL("◇私道持分無し・通行料の負担はありません"), "athome");
+  assert.equal(s.flags.length, 0, "通行料が無ければKOにしない");
+  assert.ok(s.notes.some((n) => n.code === "ROAD_NO_SHARE"));
+  const ko = koScreen({ unit: { price_man: 8000, district: "中里", chome: "3" }, siteHit: null, scan: s });
+  assert.equal(ko.verdict, "suspect", "自動登録はさせない");
+  assert.ok(ko.codes.includes("ROAD_NO_SHARE"));
+  // 「持分有」を巻き込まない(私道でも持分があれば通常どおり通す)
+  const share = scanKO(APPEAL("◇私道持分有り"), "athome");
+  assert.equal(share.notes.length, 0);
+  assert.equal(koScreen({ unit: { price_man: 8000, district: "中里", chome: "3" }, siteHit: null, scan: share }).verdict, "pass");
+});
+
+test("除外済みの掲載が台帳へ戻っていない(excluded.json と properties/ の相互排他)", () => {
+  // 2026-08-14: nc_21442197(私道通行料)を除外。ハザード除外(志茂・西が丘2)と同じ経路で、
+  // 「除外したはずの物件が別ルートで再登録される」型の事故を機械で止める
+  const ids = Object.keys(EXCLUDED).filter((k) => !k.startsWith("_"));
+  assert.ok(ids.includes("nc_21442197"), "中里3の私道通行料物件が除外台帳に記録されていること");
+  const urls = listPropertyIds().map((id) => String(loadProperty(id).source_url ?? ""));
+  for (const key of ids) {
+    const num = key.replace(/^(nc_|at_)/, "");
+    for (const u of urls) assert.ok(!u.includes(num), `除外済み ${key} が台帳の source_url に残っている: ${u}`);
+  }
+  // 除外した現場は諸元照合でも止まる(業者を替えた別番号の再掲を防ぐ本来の経路)
+  const hit = matchExcludedSite({ district: "中里", chome: "3", land_m2: 69.29, floor_m2: 111.1 }, buildExcludedIndex(EXCLUDED));
+  assert.equal(hit?.level, "exact");
+  assert.match(hit.reason, /通行料/);
 });

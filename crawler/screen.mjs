@@ -3,7 +3,8 @@
 // 添えて渡す。2026-08-13の事故(除外済みレッドゾーン現場の別業者掲載を新着として扱い、
 // YAML作成・査定まで進めてから撤回)を構造的に防ぐ。
 // KO基準の正本: docs/requirements-daily-crawl.md §2.2
-//   KO1 再建築不可 / KO2 所有権以外 / KO3 告知事項 / KO4 重大ハザード / KO5 必須項目不確定
+//   KO1 再建築不可 / KO2 所有権以外 / KO3 告知事項 / KO4 重大ハザード / KO5 必須項目不確定 /
+//   KO6 私道の通行料等の金銭負担
 
 // 全角英数字→半角(athomeは「５８.５３」等の全角表記がある)
 export const zen = (s) => String(s ?? "").replace(/[０-９Ａ-Ｚａ-ｚ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
@@ -73,6 +74,34 @@ const NO_REBUILD_RE = /再建築不可|再建築[はが]不可|接道義務を?�
 // 入っていなかったため ownership=null のまま pass していた。借地の言い回しを網羅する
 const LEASEHOLD_RE = /定期借地|旧法借地|普通借地|借地権付|地上権|賃借権|転借地|借地期間/;
 const DISCLOSURE_RE = /告知事項\s*(?:あり|有)|心理的瑕疵|事故物件/;
+// KO6(2026-08-14ユーザー決定): 私道の通行料を取られる物件は登録しない。
+// 「私道負担がある」「私道に接している」だけとは別物で、通行の対価を毎月払う関係=道路が第三者の
+// 支配下にあることの表明。掘削承諾・建替時の承諾料・金融機関の私道承諾書徴求が同時に乗り、
+// いずれも売主にも媒介にも解消権限がない。実例: 中里3 nc_21442197(私道通行料1,500円/月・私道持分無)。
+// 表記の場所は媒体で違う——athomeは「アピールポイント」の自由文、SUUMOは「備考」。欄名では拾えないため
+// 対象物件の自由文まで窓を広げて語で拾う(WIDE_WINDOW)
+const ROAD_TOLL_RE = /(?:私道|通路|道路)?通行料金?|私道使用料|通行(?:負担金|地役権の対価)/;
+// 「通行料：無」「通行料の負担はありません」を KO にしない。語の直後16字だけを見る
+// (離れた位置の「なし」は別の欄の値)。ただし金額が書かれていれば否定語より金額を優先する——
+// 「通行料金1,500円／月(私道持分無)」は末尾の「無」が持分に掛かっており、通行料は現に発生している
+const TOLL_TAIL = 16;
+const TOLL_NEGATED_RE = /無し?|なし|不要|ありません|ございません|ゼロ|0円/;
+const TOLL_AMOUNT_RE = /([0-9][\d,]*(?:\.\d+)?)\s*円/;   // 「0円」は金額として数えない(下で値を見る)
+// 私道持分なしは単独ではKOにしない(通行料が無ければ月々の負担は生じない)が、掘削・建替の承諾は
+// 他人の判断に委ねられるため人の判断へ回す。「持分有」を巻き込まないよう「無|なし」に限定する
+const NO_ROAD_SHARE_RE = /私道(?:の)?持分\s*(?:は)?\s*(?:無し?|なし)/;
+
+// 通行料の該当箇所を返す(否定表記は読み飛ばす)。null=該当なし
+export function roadTollHit(t) {
+  for (const m of String(t).matchAll(new RegExp(ROAD_TOLL_RE.source, "g"))) {
+    const tail = String(t).slice(m.index + m[0].length, m.index + m[0].length + TOLL_TAIL);
+    const amt = tail.match(TOLL_AMOUNT_RE);
+    const charged = amt != null && Number(amt[1].replace(/,/g, "")) > 0;
+    if (!charged && TOLL_NEGATED_RE.test(tail)) continue;
+    return String(t).slice(Math.max(0, m.index - 40), m.index + 60).trim();
+  }
+  return null;
+}
 
 // 詳細ページから査定入力に使う実値を取る。一覧の値は当てにしない
 // (2026-08-13: athome一覧の徒歩4分に対し詳細は最短16分。一覧カードの切り出しが
@@ -151,9 +180,13 @@ export function parseDetailAttrs(html, media) {
 const COMMON_FIELDS = ["その他制限事項", "法令等制限", "法令等の制限", "法令上の制限", "制限事項",
   "告知事項", "土地権利", "土地の権利形態", "権利形態", "現況", "接道状況"];
 const SUBJECT_FIELDS = {
-  athome: COMMON_FIELDS,                 // 対象の備考は athomeBiko から別途取る
+  athome: [...COMMON_FIELDS, "アピールポイント"],   // 対象の備考は athomeBiko から別途取る
   suumo: [...COMMON_FIELDS, "備考"],
 };
+// 自由文の欄は値が長い。既定の窓(100字)だと末尾に書かれた通行料・私道条件を取りこぼすため広く取る。
+// 実測(at_1167816131)ではアピールポイント本文が約330字で、通行料の行は先頭から約250字目にある。
+// 窓が本文を超えて会社情報・こだわり条件へ食い込むぶんは、KO語彙が出てこないので無害
+const WIDE_WINDOW = { "アピールポイント": 600, "備考": 400 };
 export function subjectText(html, media) {
   const raw = String(html);
   const parts = [];
@@ -165,8 +198,10 @@ export function subjectText(html, media) {
   // 埋め込みJSON(=他物件の広告文)が続き、窓がそこへ食い込んで誤検出する
   const t = zen(strip(raw.replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ")));
   for (const label of SUBJECT_FIELDS[media] ?? SUBJECT_FIELDS.suumo) {
+    // 最初の出現=対象物件の欄(アピールポイントはページ下部の類似物件枠にも同じ見出しが出るため、
+    // indexOf で先頭を採るこの性質に依存している)
     const i = t.indexOf(label);
-    if (i >= 0) parts.push(t.slice(i, i + 100));   // 欄の値ぶんだけ(隣の欄まで少し含む程度)
+    if (i >= 0) parts.push(t.slice(i, i + (WIDE_WINDOW[label] ?? 100)));   // 欄の値ぶんだけ(隣の欄まで少し含む程度)
   }
   return zen(parts.join(" \n "));
 }
@@ -175,10 +210,16 @@ export function subjectText(html, media) {
 export function scanKO(html, media) {
   const t = subjectText(html, media);
   const flags = [];
+  const notes = [];   // KOではないが自動登録はさせない信号(人の判断へ回す)
   const eviOf = (re) => { const m = t.match(re); if (!m) return null; const i = t.indexOf(m[0]); return t.slice(Math.max(0, i - 40), i + 60).trim(); };
   if (HAZARD_RE.test(t)) flags.push({ code: "KO4_hazard", label: "重大ハザードの明記", evidence: eviOf(HAZARD_RE) });
   if (NO_REBUILD_RE.test(t)) flags.push({ code: "KO1_no_rebuild", label: "再建築不可・接道義務不適合", evidence: eviOf(NO_REBUILD_RE) });
   if (DISCLOSURE_RE.test(t)) flags.push({ code: "KO3_disclosure", label: "告知事項", evidence: eviOf(DISCLOSURE_RE) });
+  const toll = roadTollHit(t);
+  if (toll) flags.push({ code: "KO6_road_toll", label: "私道の通行料等の金銭負担", evidence: toll });
+  else if (NO_ROAD_SHARE_RE.test(t)) {
+    notes.push({ code: "ROAD_NO_SHARE", label: "私道持分なしの明記", evidence: eviOf(NO_ROAD_SHARE_RE) });
+  }
   const attrs = parseDetailAttrs(html, media);
   // 権利は媒体でラベルが違う(SUUMO=土地の権利形態 / athome=土地権利)。取りこぼすと
   // 借地物件を登録してしまうため、ここは媒体を問わず両方のラベルで見る
@@ -187,7 +228,7 @@ export function scanKO(html, media) {
   if ((own && own !== "所有権") || LEASEHOLD_RE.test(t)) {
     flags.push({ code: "KO2_ownership", label: "所有権以外(借地権等)", evidence: own ?? eviOf(LEASEHOLD_RE) });
   }
-  return { flags, attrs, hazard_media: media };
+  return { flags, notes, attrs, hazard_media: media };
 }
 
 // ---- 丁目単位のハザード遮断(market/area-scan.json 由来) ----
@@ -247,6 +288,12 @@ export function koScreen({ unit, siteHit, scan, areaHazard = null }) {
   if (siteHit?.level === "near") {
     return { verdict: "suspect", codes: ["SITE_NEAR"], site_match: siteHit, attrs: scan?.attrs ?? null,
       reasons: [`除外済み現場と同一丁目・近接諸元(${siteHit.ref}${siteHit.unit ? " " + siteHit.unit : ""}・照合=${siteHit.by})。同一現場の別戸なら同じ制限がかかるため、掲載元と公式マップで確認するまで登録しない。${siteHit.reason}`] };
+  }
+  // KOではない私道の論点(持分なし等)。通行料が無くても掘削・建替の承諾は他人の判断に委ねられるため、
+  // 自動登録はせず人へ回す(2026-08-14: 通行料をKO6にしたのと同じ経緯で追加)
+  if (scan?.notes?.length) {
+    return { verdict: "suspect", codes: scan.notes.map((n) => n.code), site_match: siteHit ?? null, attrs: scan.attrs,
+      reasons: scan.notes.map((n) => `${n.label}: ${n.evidence ?? "掲載に明記"}。掘削承諾・建替時の承諾料・金融機関の私道承諾書が論点になるため、掲載元と現地・重説で確認するまで登録しない`) };
   }
   if (!scan) return { verdict: "unknown", codes: ["NO_DETAIL"], reasons: ["詳細ページ未取得(取得予算切れ等)のためKO判定不能"], site_match: null, attrs: null };
   // SUUMO単独の「記載なし」はハザード無しの証明にならない(2026-08-12の実例)。判定は通すが限界を明示する
