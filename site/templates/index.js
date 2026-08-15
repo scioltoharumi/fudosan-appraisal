@@ -173,6 +173,7 @@ export function renderIndex(results, { asOf, cal = null }) {
       <span class="flabel">検討状況</span>${STATUS_CHOICES.map((v) => `<button class="chip" data-f="status" data-val="${esc(v)}">${esc(v)}</button>`).join("")}
       <span class="flabel" style="margin-left:10px">内見</span>${VIEW_CHOICES.map((v) => `<button class="chip" data-f="viewing" data-val="${esc(v)}">${esc(v)}</button>`).join("")}
       <button class="chip" data-f="memo" data-val="1" style="margin-left:10px">メモあり</button>
+      <button class="chip on" id="hidedecl" style="margin-left:10px" title="既定で見送りを隠しています。押すと見送りも表示します(「見送り」で絞り込んだときは自動的に表示されます)">見送りを隠す</button>
       <button class="chip" id="freset" style="margin-left:10px">リセット</button>
       <span class="note" id="fcount" style="margin:0 0 0 6px"></span>
     </div>
@@ -311,16 +312,30 @@ export function renderIndex(results, { asOf, cal = null }) {
 
       // ---- フィルタ(ステータス/メモ有無) ----
       var active = { status: new Set(), memo: new Set(), viewing: new Set() };
+      var hideDecl = true;          // 既定=見送りを隠す
+      var hideBtn = document.getElementById("hidedecl");
+      hideBtn.addEventListener("click", function(){
+        hideDecl = !hideDecl;
+        hideBtn.classList.toggle("on", hideDecl);
+        apply();
+      });
       function apply(){
         var shown = 0;
         prows.forEach(function(tr){
-          var ok = (!active.status.size || active.status.has(tr.dataset.status)) &&
+          // 既定で見送りを隠す(2026-08-15ユーザー指示)。ただし「見送り」で明示的に絞り込んだときは
+          // 隠すと1件も出ない行き止まりになるため、その場合だけ抑止を外す
+          var hiding = hideDecl && !active.status.has("見送り");
+          var ok = !(hiding && tr.dataset.status === "見送り") &&
+                   (!active.status.size || active.status.has(tr.dataset.status)) &&
                    (!active.viewing.size || active.viewing.has(tr.dataset.viewing)) &&
                    (!active.memo.size || tr.dataset.memo === "1");
           tr.style.display = ok ? "" : "none";
           if (ok) shown++;
         });
-        document.getElementById("fcount").textContent = shown === prows.length ? "" : shown + "/" + prows.length + "件を表示中";
+        var hidden = prows.length - shown;
+        document.getElementById("fcount").textContent = hidden === 0 ? "" :
+          shown + "/" + prows.length + "件を表示中" +
+          (hideDecl && !active.status.has("見送り") ? "(見送りは非表示)" : "");
       }
       document.querySelectorAll(".chip[data-f]").forEach(function(ch){
         ch.addEventListener("click", function(){
@@ -332,6 +347,7 @@ export function renderIndex(results, { asOf, cal = null }) {
       });
       document.getElementById("freset").addEventListener("click", function(){
         active.status.clear(); active.memo.clear(); active.viewing.clear();
+        hideDecl = true; hideBtn.classList.add("on");   // リセットは「既定へ戻す」= 見送りは隠す
         // 絞り込みのチップだけを解除する。並び替えバーも .chip を使っているため、
         // セレクタを [data-f] に限定しないとリセットで現在の並び順の表示まで消える
         document.querySelectorAll(".chip[data-f].on").forEach(function(c){ c.classList.remove("on"); });

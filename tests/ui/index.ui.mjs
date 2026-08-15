@@ -96,12 +96,13 @@ await T("内見チップ(未/内見希望/内見済)で絞り込める", async (
 const row = p.locator("tr.prow").first();
 const id = await row.getAttribute("data-id");
 await T("ステータス変更が保存され未同期になる", async () => {
-  await row.locator(".stsel").selectOption("見送り");
+  // 見送りは既定で非表示になるため、以降の行操作に影響しない「保留」で保存経路を見る
+  await row.locator(".stsel").selectOption("保留(値下げ待ち)");
   await p.waitForTimeout(120);
   const st = await p.evaluate(() => JSON.parse(localStorage.getItem("fudosan-ledger-v1")));
   const dirty = await row.evaluate((el) => el.classList.contains("dirty"));
   const ds = await row.getAttribute("data-status");
-  return st.items[id].status === "見送り" && dirty && ds === "見送り";
+  return st.items[id].status === "保留(値下げ待ち)" && dirty && ds === "保留(値下げ待ち)";
 });
 // 4. メモ入力 → 保存 + ボタン表示変化
 await T("メモが常時表示の欄で保存される", async () => {
@@ -118,7 +119,7 @@ await T("リロード後も復元される", async () => {
   const r = p.locator(`tr.prow[data-id="${id}"]`);
   const v = await r.locator(".stsel").inputValue();
   const memo = await r.locator(".memota").inputValue();
-  return v === "見送り" && memo === "擁壁の確認待ち";
+  return v === "保留(値下げ待ち)" && memo === "擁壁の確認待ち";
 });
 // 6. フィルタ(ステータス)
 await T("ステータスチップで絞り込める", async () => {
@@ -131,6 +132,38 @@ await T("ステータスチップで絞り込める", async () => {
   const sts = await p.locator("tr.prow:visible").evaluateAll((es) => es.map((e) => e.dataset.status));
   return vis > 0 && vis < total && sts.every((x) => x === "見送り");
 });
+// 6b. 既定で見送りを隠す(2026-08-15ユーザー指示)
+await T("既定で見送りが除外されている", async () => {
+  await p.locator("#freset").click();
+  await p.waitForTimeout(80);
+  const total = await p.locator("tr.prow").count();
+  const declTotal = await p.locator('tr.prow[data-status="見送り"]').count();
+  const declShown = await p.locator('tr.prow[data-status="見送り"]:visible').count();
+  const on = await p.locator("#hidedecl").evaluate((e) => e.classList.contains("on"));
+  const note = await p.textContent("#fcount");
+  return declTotal > 0 && declShown === 0 && on &&
+    (await p.locator("tr.prow:visible").count()) === total - declTotal && /見送りは非表示/.test(note);
+});
+// 6c. 「見送り」で絞り込むときは隠さない(行き止まりにしない)
+await T("見送りで絞り込むと見送りが見える(既定の非表示を上書き)", async () => {
+  await p.locator('.chip[data-f="status"][data-val="見送り"]').click();
+  await p.waitForTimeout(80);
+  const vis = await p.locator("tr.prow:visible").count();
+  const sts = await p.locator("tr.prow:visible").evaluateAll((es) => es.map((e) => e.dataset.status));
+  return vis > 0 && sts.every((x) => x === "見送り");
+});
+// 6d. トグルで見送りも表示でき、リセットで既定へ戻る
+await T("見送りを隠すトグルとリセットが効く", async () => {
+  await p.locator("#freset").click();
+  await p.locator("#hidedecl").click();               // 隠すのを解除
+  await p.waitForTimeout(80);
+  const allShown = (await p.locator("tr.prow:visible").count()) === (await p.locator("tr.prow").count());
+  await p.locator("#freset").click();                 // リセット=既定へ戻す
+  await p.waitForTimeout(80);
+  const backOn = await p.locator("#hidedecl").evaluate((e) => e.classList.contains("on"));
+  const hiddenAgain = (await p.locator('tr.prow[data-status="見送り"]:visible').count()) === 0;
+  return allShown && backOn && hiddenAgain;
+});
 // 7. メモありフィルタ
 await T("メモありチップで絞り込める", async () => {
   await p.locator("#freset").click();
@@ -142,9 +175,10 @@ await T("メモありチップで絞り込める", async () => {
 await T("仮定列が無く、メモ欄が全行で常時表示されている", async () => {
   await p.locator("#freset").click();
   const head = await p.textContent("#ptable tr:first-child");
-  const rows = await p.locator("tr.prow").count();
-  const shown = await p.locator("tr.prow .memota:visible").count();
-  return !/仮定/.test(head) && (await p.locator("tr.mrow").count()) === 0 && shown === rows;
+  // 既定で見送りが隠れるので、比較対象は「表示中の行」
+  const rows = await p.locator("tr.prow:visible").count();
+  const shown = await p.locator("tr.prow:visible .memota:visible").count();
+  return !/仮定/.test(head) && (await p.locator("tr.mrow").count()) === 0 && rows > 0 && shown === rows;
 });
 // 9. 書き出しJSONの形
 await T("書き出しJSONが読み込みで往復する", async () => {
@@ -156,7 +190,7 @@ await T("書き出しJSONが読み込みで往復する", async () => {
   await p.locator("#impapply").click();
   await p.waitForTimeout(150);
   const r = p.locator(`tr.prow[data-id="${id}"]`);
-  return (await r.locator(".stsel").inputValue()) === "見送り";
+  return (await r.locator(".stsel").inputValue()) === "保留(値下げ待ち)";
 });
 // 10. 記録の消去
 await T("この端末の記録を消せる", async () => {
