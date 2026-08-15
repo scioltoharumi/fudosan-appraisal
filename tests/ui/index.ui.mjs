@@ -26,33 +26,36 @@ await T("判定列・スタンプが無く、内見と検討状況が別列に�
     h.includes("内見") && h.includes("検討状況");
 });
 // 2. 内見(事実)の初期値がYAML由来。検討状況の選択肢に「内見済」は無い
-await T("内見の初期値はYAML由来で、検討状況の選択肢から内見済が外れている", async () => {
-  const viewed = await p.locator('tr.prow[data-viewed="1"]').count();
-  const opts = await p.locator("tr.prow .stsel option").allTextContents();
-  return viewed > 0 && !opts.includes("内見済") && opts.includes("検討中") && opts.includes("見送り");
+await T("内見は3値・検討状況は保留を含み、両者の語彙が混ざっていない", async () => {
+  const done = await p.locator('tr.prow[data-viewing="内見済"]').count();
+  const st = [...new Set(await p.locator("tr.prow .stsel option").allTextContents())];
+  const vw = [...new Set(await p.locator("tr.prow .vwsel option").allTextContents())];
+  return done > 0 &&
+    !st.includes("内見済") && st.includes("検討中") && st.includes("保留(値下げ待ち)") && st.includes("見送り") &&
+    vw.length === 3 && vw.includes("未") && vw.includes("内見希望") && vw.includes("内見済");
 });
 // 2b. 内見と検討状況が同時に成り立つ(1つのプルダウンに同居させていた頃はできなかった)
 await T("内見済のまま検討中を保てる(事実と判断が独立)", async () => {
-  const r = p.locator('tr.prow[data-viewed="1"]').first();
-  const rid = await r.getAttribute("data-id");
-  await r.locator(".stsel").selectOption("検討中");
+  const rid = await p.locator('tr.prow[data-viewing="内見済"]').first().getAttribute("data-id");
+  const r = p.locator(`tr.prow[data-id="${rid}"]`);
+  await r.locator(".stsel").selectOption("保留(値下げ待ち)");
   await p.waitForTimeout(120);
   const st = await p.evaluate(() => JSON.parse(localStorage.getItem("fudosan-ledger-v1")));
-  return (await r.getAttribute("data-viewed")) === "1" &&
-    (await r.locator(".stsel").inputValue()) === "検討中" && st.items[rid].status === "検討中";
+  return (await r.getAttribute("data-viewing")) === "内見済" &&
+    (await r.locator(".stsel").inputValue()) === "保留(値下げ待ち)" && st.items[rid].status === "保留(値下げ待ち)";
 });
 // 2c. 内見チェックの往復(保存・復元・未同期印)
-await T("内見チェックが保存され未同期になる", async () => {
-  // data-viewed はチェックで書き換わるため、属性セレクタのまま保持すると別の行を指してしまう。
+await T("内見希望が保存され未同期になる(未→内見希望→未)", async () => {
+  // data-viewing は選択で書き換わるため、属性セレクタのまま保持すると別の行を指してしまう。
   // 先にIDを取り、以後はIDで固定する
-  const rid = await p.locator('tr.prow[data-viewed="0"]').first().getAttribute("data-id");
+  const rid = await p.locator('tr.prow[data-viewing="未"]').first().getAttribute("data-id");
   const r = p.locator(`tr.prow[data-id="${rid}"]`);
-  await r.locator(".vchk").check();
+  await r.locator(".vwsel").selectOption("内見希望");
   await p.waitForTimeout(120);
   const st = await p.evaluate(() => JSON.parse(localStorage.getItem("fudosan-ledger-v1")));
   const dirty = await r.evaluate((el) => el.classList.contains("dirty"));
-  const okNow = st.items[rid].viewed === true && dirty && (await r.getAttribute("data-viewed")) === "1";
-  await r.locator(".vchk").uncheck();          // 後続テストに影響させない
+  const okNow = st.items[rid].viewing === "内見希望" && dirty && (await r.getAttribute("data-viewing")) === "内見希望";
+  await r.locator(".vwsel").selectOption("未");          // 後続テストに影響させない
   await p.waitForTimeout(120);
   return okNow;
 });
@@ -64,13 +67,24 @@ await T("旧データの内見済は viewed+検討中 に移行される", async
   await p.reload();
   const r = p.locator(`tr.prow[data-id="${rid}"]`);
   const st = await p.evaluate(() => JSON.parse(localStorage.getItem("fudosan-ledger-v1")));
-  return (await r.getAttribute("data-viewed")) === "1" &&
+  return (await r.getAttribute("data-viewing")) === "内見済" &&
     (await r.locator(".stsel").inputValue()) === "検討中" && st.items[rid].status === "検討中";
 });
+// 2d-2. v2(viewed の真偽値)も3値へ移行する
+await T("旧データの viewed:true は内見済へ移行される", async () => {
+  const rid = await p.locator("tr.prow").first().getAttribute("data-id");
+  await p.evaluate((x) => localStorage.setItem("fudosan-ledger-v1",
+    JSON.stringify({ v: 2, items: { [x]: { viewed: true } } })), rid);
+  await p.reload();
+  const r = p.locator(`tr.prow[data-id="${rid}"]`);
+  const st = await p.evaluate(() => JSON.parse(localStorage.getItem("fudosan-ledger-v1")));
+  return (await r.getAttribute("data-viewing")) === "内見済" &&
+    st.items[rid].viewing === "内見済" && st.items[rid].viewed === undefined;
+});
 // 2e. 内見フィルタ
-await T("内見チップ(済/未)で絞り込める", async () => {
+await T("内見チップ(未/内見希望/内見済)で絞り込める", async () => {
   await p.locator("#freset").click();
-  await p.locator('.chip[data-f="viewed"][data-val="1"]').click();
+  await p.locator('.chip[data-f="viewing"][data-val="内見済"]').click();
   await p.waitForTimeout(80);
   const vis = await p.locator("tr.prow:visible").count();
   const total = await p.locator("tr.prow").count();
@@ -90,20 +104,20 @@ await T("ステータス変更が保存され未同期になる", async () => {
   return st.items[id].status === "見送り" && dirty && ds === "見送り";
 });
 // 4. メモ入力 → 保存 + ボタン表示変化
-await T("メモが保存されボタンに反映される", async () => {
-  await row.locator(".memobtn").click();
-  await p.locator(`tr.mrow[data-id="${id}"] .memota`).fill("擁壁の確認待ち");
+await T("メモが常時表示の欄で保存される", async () => {
+  await row.locator(".memota").fill("擁壁の確認待ち");
   await p.waitForTimeout(600);
   const st = await p.evaluate(() => JSON.parse(localStorage.getItem("fudosan-ledger-v1")));
-  const btn = await row.locator(".memobtn").textContent();
-  return st.items[id].memo === "擁壁の確認待ち" && btn.includes("✓");
+  // 開閉ボタンを廃したので「常に見えていること」自体が要件
+  const vis = await row.locator(".memota").isVisible();
+  return st.items[id].memo === "擁壁の確認待ち" && vis;
 });
 // 5. リロードで復元
 await T("リロード後も復元される", async () => {
   await p.reload();
   const r = p.locator(`tr.prow[data-id="${id}"]`);
   const v = await r.locator(".stsel").inputValue();
-  const memo = await p.locator(`tr.mrow[data-id="${id}"] .memota`).inputValue();
+  const memo = await r.locator(".memota").inputValue();
   return v === "見送り" && memo === "擁壁の確認待ち";
 });
 // 6. フィルタ(ステータス)
@@ -124,20 +138,13 @@ await T("メモありチップで絞り込める", async () => {
   await p.waitForTimeout(80);
   return (await p.locator("tr.prow:visible").count()) === 1;
 });
-// 8. ソートでメモ行が物件行に追従する
-await T("ソート後もメモ行が物件行の直後に付いてくる", async () => {
+// 8. 仮定列を撤去し、メモは全行で常に見えている(2026-08-15)
+await T("仮定列が無く、メモ欄が全行で常時表示されている", async () => {
   await p.locator("#freset").click();
-  await p.locator('th[data-key="price"]').click();
-  await p.waitForTimeout(80);
-  return await p.evaluate(() => {
-    const rows = [...document.querySelectorAll("#ptable tr.prow, #ptable tr.mrow")];
-    for (let i = 0; i < rows.length; i += 2) {
-      if (!rows[i].classList.contains("prow")) return false;
-      if (!rows[i + 1] || !rows[i + 1].classList.contains("mrow")) return false;
-      if (rows[i].dataset.id !== rows[i + 1].dataset.id) return false;
-    }
-    return true;
-  });
+  const head = await p.textContent("#ptable tr:first-child");
+  const rows = await p.locator("tr.prow").count();
+  const shown = await p.locator("tr.prow .memota:visible").count();
+  return !/仮定/.test(head) && (await p.locator("tr.mrow").count()) === 0 && shown === rows;
 });
 // 9. 書き出しJSONの形
 await T("書き出しJSONが読み込みで往復する", async () => {
@@ -205,16 +212,15 @@ for (const [key, label] of [["age", "築年数"], ["floor", "延床"], ["land", 
   });
 }
 
-await T("並び替えてもメモ行が対応する物件行の直後に付いてくる", async () => {
+await T("並び替えてもメモの中身が行についてくる(取り違えない)", async () => {
+  const before = await p.$$eval("#ptable tr.prow",
+    (rs) => rs.map((r) => [r.dataset.id, r.querySelector(".memota").value]));
   await p.click('#sortbar .chip[data-s="walk"]');
-  return p.$$eval("#ptable tr", (rs) => {
-    const list = rs.filter((r) => r.classList.contains("prow") || r.classList.contains("mrow"));
-    for (let i = 0; i < list.length; i += 2) {
-      if (!list[i].classList.contains("prow") || !list[i + 1] || !list[i + 1].classList.contains("mrow")) return false;
-      if (list[i].dataset.id !== list[i + 1].dataset.id) return false;
-    }
-    return true;
-  });
+  await p.waitForTimeout(80);
+  const after = await p.$$eval("#ptable tr.prow",
+    (rs) => rs.map((r) => [r.dataset.id, r.querySelector(".memota").value]));
+  const bm = new Map(before);
+  return after.length === before.length && after.every(([id, v]) => bm.get(id) === v);
 });
 
 await T("現在の並び順が表示される(選択中のチップに矢印、ヘッダにも同期)", async () => {

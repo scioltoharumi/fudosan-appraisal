@@ -11,7 +11,8 @@ export const esc = (s) => String(s ?? "")
 export const STATUS_LABEL = {
   new: "新規",
   considering: "検討中",
-  viewed: "内見済",
+  on_hold: "保留(値下げ待ち)",   // 物件は良いが価格が折り合わず、値下げを待つ段階(2026-08-15追加)
+  viewed: "内見済",              // 旧値。2026-08-15以降は viewing へ分離(読み込み時に検討中へ読み替え)
   declined: "見送り",
   closed: "成約済",
 };
@@ -22,7 +23,12 @@ export const STATUS_LABEL = {
 // 1つのプルダウンに同居させると「内見したうえで検討中」が表現できず情報が消えるため、
 // 内見は別列のチェックボックス(property.viewed)にした。
 // 旧データ(status:"内見済" / YAMLの status: viewed)は viewed=true + 検討中 へ移行する。
-export const STATUS_CHOICES = ["新規", "検討中", "見送り"];
+export const STATUS_CHOICES = ["新規", "検討中", "保留(値下げ待ち)", "見送り"];
+
+// 内見の段階(2026-08-15にユーザー指示で3値化)。「未」と「内見済」の間に、
+// 行くと決めたがまだ行っていない段階(内見希望)がある。真偽値では表現できない
+export const VIEW_LABEL = { none: "未", wanted: "内見希望", done: "内見済" };
+export const VIEW_CHOICES = ["未", "内見希望", "内見済"];
 
 // YAMLの日付(Date or 文字列)を YYYY-MM-DD に整形
 export const fmtDate = (d) => {

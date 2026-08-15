@@ -42,21 +42,22 @@ table.list td.num{font-family:var(--mono);text-align:right;white-space:nowrap}
 /* 一覧: 人が設定するステータスとメモ(この端末のブラウザに保存) */
 .stsel{font-family:inherit;font-size:.75rem;padding:3px 6px;border:1px solid var(--ink-soft);background:#FDFDFC;color:var(--ink);cursor:pointer}
 .stsel:focus{outline:2px solid var(--band);outline-offset:1px}
-/* 内見(事実)は検討状況(判断)と別列。済は塗りつぶしで一目で分かるようにする */
-.vwrap{display:inline-flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap}
-.vchk{margin:0;cursor:pointer}
-.vlab{font-size:.72rem;color:var(--ink-soft)}
-tr.prow[data-viewed="1"] .vlab{color:#2E6E8E;font-weight:700}
+/* 内見(事実)は検討状況(判断)と別列。段階が進むほど濃くして一目で分かるようにする */
+.vwsel{font-family:inherit;font-size:.75rem;padding:3px 6px;border:1px solid var(--ink-soft);background:#FDFDFC;color:var(--ink);cursor:pointer}
+.vwsel:focus{outline:2px solid var(--band);outline-offset:1px}
+tr.prow[data-viewing="内見希望"] .vwsel{border-color:#2E6E8E;color:#2E6E8E;font-weight:700}
+tr.prow[data-viewing="内見済"] .vwsel{background:#2E6E8E;border-color:#2E6E8E;color:#fff;font-weight:700}
+/* メモは開閉せず常に右端の列に出す(2026-08-15)。行の高さを揃えるため小さめの固定高 */
+th.memocol{min-width:190px}
+td.memocell{vertical-align:top}
+.memota{width:100%;box-sizing:border-box;min-width:170px;height:56px;font-family:inherit;font-size:.72rem;line-height:1.45;
+  padding:4px 6px;border:1px solid var(--ink-soft);background:#FDFDFC;color:var(--ink);resize:vertical}
+.memota:focus{outline:2px solid var(--band);outline-offset:1px}
 tr.prow[data-status="見送り"]{opacity:.5}
 tr.prow[data-status="見送り"]:hover{opacity:1}
 tr.prow[data-status="新規"] .stsel{border-color:var(--band);color:var(--band);font-weight:700}
 .unsync{display:none;margin-left:5px;font-size:.65rem;color:var(--stamp);border:1px solid var(--stamp);padding:0 4px;white-space:nowrap}
 tr.prow.dirty .unsync{display:inline}
-.memobtn{font-family:inherit;font-size:.72rem;padding:2px 8px;border:1px solid var(--ink-soft);background:#FDFDFC;color:var(--ink-soft);cursor:pointer;white-space:nowrap}
-.memobtn.has{border-color:var(--band);color:var(--band);background:#F4F8FA;font-weight:700}
-tr.mrow>td{background:#F8FAFB;border-bottom:1px dashed var(--grid);padding:6px 10px 10px}
-.memota{width:100%;box-sizing:border-box;min-height:64px;font-family:inherit;font-size:.78rem;line-height:1.7;
-  padding:7px 9px;border:1px solid var(--ink-soft);background:#FDFDFC;color:var(--ink);resize:vertical}
 .syncbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 8px}
 .syncbtn{font-family:inherit;font-size:.72rem;padding:3px 10px;border:1px solid var(--ink-soft);background:#FDFDFC;color:var(--ink-soft);cursor:pointer;text-decoration:none}
 .syncbtn:hover{border-color:var(--ink);color:var(--ink)}
