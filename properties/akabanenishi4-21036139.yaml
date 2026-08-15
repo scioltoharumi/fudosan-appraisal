@@ -1,7 +1,7 @@
 # 物件データ(1物件1ファイル)。記載ルール: 事実データと査定パラメータのみ。
 # 指値方針・交渉メモ・個人的所感・写真・紹介文は書かない(publicリポジトリ運用・decisions D4)
 id: akabanenishi4-21036139
-status: considering        # 検討状況(新規/検討中/見送り)
+status: on_hold
 viewing: done              # 内見の段階(none/wanted/done)。2026-08-15に3値化
 source: "SUUMO 21036139 (三井のリハウス赤羽センター/三井不動産リアルティ) / アドキャスト赤羽支店チラシ(媒介)2026-08-09"
 source_url: "https://suumo.jp/chukoikkodate/tokyo/sc_kita/nc_21036139/"   # 実在確認済み 2026-07-20

@@ -1,7 +1,7 @@
 # 物件データ(1物件1ファイル)。記載ルール: 事実データと査定パラメータのみ。
 # 指値方針・交渉メモ・個人的所感・写真・紹介文は書かない(publicリポジトリ運用・decisions D4)
 id: jujonakahara2-21028966
-status: considering        # considering / viewed / declined / closed
+status: on_hold
 source: "SUUMO 21028966 (福屋不動産販売赤羽店)"
 source_url: "https://suumo.jp/chukoikkodate/tokyo/sc_kita/nc_21028966/"   # 実在確認済み 2026-07-24
 captured_at: 2026-07-24
