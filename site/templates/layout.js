@@ -17,7 +17,12 @@ export const STATUS_LABEL = {
 };
 
 // 一覧ページのプルダウンで選べる値。表示順 = ソート順(検討の進み方の順)
-export const STATUS_CHOICES = ["新規", "検討中", "内見済", "見送り"];
+// 検討状況の選択肢(2026-08-15にユーザー指示で「内見済」を分離)。
+// 内見は**事実**(見に行ったか)、検討状況は**判断**(進めるか)で、同時に成り立つ。
+// 1つのプルダウンに同居させると「内見したうえで検討中」が表現できず情報が消えるため、
+// 内見は別列のチェックボックス(property.viewed)にした。
+// 旧データ(status:"内見済" / YAMLの status: viewed)は viewed=true + 検討中 へ移行する。
+export const STATUS_CHOICES = ["新規", "検討中", "見送り"];
 
 // YAMLの日付(Date or 文字列)を YYYY-MM-DD に整形
 export const fmtDate = (d) => {

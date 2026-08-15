@@ -19,14 +19,65 @@ const ok = [];
 const fail = [];
 const T = async (name, fn) => { try { const r = await fn(); (r ? ok : fail).push(name + (r ? "" : " → 失敗")); } catch (e) { fail.push(name + " → 例外 " + e.message); } };
 
-// 1. 判定列が消えている
-await T("判定列・スタンプが無い", async () => {
+// 1. 判定列が消えている / 内見と検討状況が別列になっている(2026-08-15)
+await T("判定列・スタンプが無く、内見と検討状況が別列になっている", async () => {
   const h = await p.textContent("#ptable tr:first-child");
-  return !/判定/.test(h) && (await p.locator(".badge").count()) === 0 && h.includes("ステータス");
+  return !/判定/.test(h) && (await p.locator(".badge").count()) === 0 &&
+    h.includes("内見") && h.includes("検討状況");
 });
-// 2. 初期ステータスがYAML由来
-await T("初期ステータスはYAML由来(内見済が存在)", async () =>
-  (await p.locator('tr.prow[data-status="内見済"]').count()) > 0);
+// 2. 内見(事実)の初期値がYAML由来。検討状況の選択肢に「内見済」は無い
+await T("内見の初期値はYAML由来で、検討状況の選択肢から内見済が外れている", async () => {
+  const viewed = await p.locator('tr.prow[data-viewed="1"]').count();
+  const opts = await p.locator("tr.prow .stsel option").allTextContents();
+  return viewed > 0 && !opts.includes("内見済") && opts.includes("検討中") && opts.includes("見送り");
+});
+// 2b. 内見と検討状況が同時に成り立つ(1つのプルダウンに同居させていた頃はできなかった)
+await T("内見済のまま検討中を保てる(事実と判断が独立)", async () => {
+  const r = p.locator('tr.prow[data-viewed="1"]').first();
+  const rid = await r.getAttribute("data-id");
+  await r.locator(".stsel").selectOption("検討中");
+  await p.waitForTimeout(120);
+  const st = await p.evaluate(() => JSON.parse(localStorage.getItem("fudosan-ledger-v1")));
+  return (await r.getAttribute("data-viewed")) === "1" &&
+    (await r.locator(".stsel").inputValue()) === "検討中" && st.items[rid].status === "検討中";
+});
+// 2c. 内見チェックの往復(保存・復元・未同期印)
+await T("内見チェックが保存され未同期になる", async () => {
+  // data-viewed はチェックで書き換わるため、属性セレクタのまま保持すると別の行を指してしまう。
+  // 先にIDを取り、以後はIDで固定する
+  const rid = await p.locator('tr.prow[data-viewed="0"]').first().getAttribute("data-id");
+  const r = p.locator(`tr.prow[data-id="${rid}"]`);
+  await r.locator(".vchk").check();
+  await p.waitForTimeout(120);
+  const st = await p.evaluate(() => JSON.parse(localStorage.getItem("fudosan-ledger-v1")));
+  const dirty = await r.evaluate((el) => el.classList.contains("dirty"));
+  const okNow = st.items[rid].viewed === true && dirty && (await r.getAttribute("data-viewed")) === "1";
+  await r.locator(".vchk").uncheck();          // 後続テストに影響させない
+  await p.waitForTimeout(120);
+  return okNow;
+});
+// 2d. 旧スキーマ(status:"内見済")の記録を読み替える
+await T("旧データの内見済は viewed+検討中 に移行される", async () => {
+  const rid = await p.locator("tr.prow").first().getAttribute("data-id");
+  await p.evaluate((x) => localStorage.setItem("fudosan-ledger-v1",
+    JSON.stringify({ v: 1, items: { [x]: { status: "内見済" } } })), rid);
+  await p.reload();
+  const r = p.locator(`tr.prow[data-id="${rid}"]`);
+  const st = await p.evaluate(() => JSON.parse(localStorage.getItem("fudosan-ledger-v1")));
+  return (await r.getAttribute("data-viewed")) === "1" &&
+    (await r.locator(".stsel").inputValue()) === "検討中" && st.items[rid].status === "検討中";
+});
+// 2e. 内見フィルタ
+await T("内見チップ(済/未)で絞り込める", async () => {
+  await p.locator("#freset").click();
+  await p.locator('.chip[data-f="viewed"][data-val="1"]').click();
+  await p.waitForTimeout(80);
+  const vis = await p.locator("tr.prow:visible").count();
+  const total = await p.locator("tr.prow").count();
+  const okNow = vis > 0 && vis < total;
+  await p.locator("#freset").click();
+  return okNow;
+});
 // 3. ステータス変更 → dirty + localStorage
 const row = p.locator("tr.prow").first();
 const id = await row.getAttribute("data-id");
@@ -57,11 +108,14 @@ await T("リロード後も復元される", async () => {
 });
 // 6. フィルタ(ステータス)
 await T("ステータスチップで絞り込める", async () => {
+  await p.locator("#freset").click();
   await p.locator('.chip[data-f="status"][data-val="見送り"]').click();
   await p.waitForTimeout(80);
   const vis = await p.locator("tr.prow:visible").count();
   const total = await p.locator("tr.prow").count();
-  return vis === 1 && total > 1;
+  // 台帳側の見送り件数は増減するため件数を決め打ちしない。「見送りだけが残る」ことを見る
+  const sts = await p.locator("tr.prow:visible").evaluateAll((es) => es.map((e) => e.dataset.status));
+  return vis > 0 && vis < total && sts.every((x) => x === "見送り");
 });
 // 7. メモありフィルタ
 await T("メモありチップで絞り込める", async () => {

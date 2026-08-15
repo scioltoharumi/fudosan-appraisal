@@ -915,5 +915,19 @@
   "ko_codes": [
    "KO4_area_hazard"
   ]
+ },
+ "nc_21492442": {
+  "first_seen": "2026-08-15",
+  "price_man": 7580,
+  "address": "東京都北区志茂３",
+  "walk_min": 5,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 65.59,
+  "floor_m2": 90.19,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
  }
 }

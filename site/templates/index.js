@@ -124,8 +124,11 @@ export function renderIndex(results, { asOf, cal = null }) {
   const sorted = [...results].sort((a, b) => divergence(a.r) - divergence(b.r));
   const SORDER = Object.fromEntries(STATUS_CHOICES.map((v, i) => [v, i]));
   const rows = sorted.map(({ r, property, hasMarketPage }) => {
-    // YAMLの status がサイト初期値。一覧上で人が変えた値はブラウザに保存され、これを上書きする
-    const seed = STATUS_LABEL[property.status] || STATUS_CHOICES[0];
+    // YAMLの status/viewed がサイト初期値。一覧上で人が変えた値はブラウザに保存され、これを上書きする。
+    // 旧 status: viewed は「内見した(事実)」であって検討状況ではないため、viewed=true + 検討中 に読み替える
+    const seedViewed = property.viewed === true || property.status === "viewed";
+    const rawStatus = property.status === "viewed" ? "considering" : property.status;
+    const seed = STATUS_LABEL[rawStatus] || STATUS_CHOICES[0];
     const ph = [...(property.price_history || [])].sort((a, b) => new Date(a.date) - new Date(b.date));
     const priceDate = ph.length ? fmtDate(ph[ph.length - 1].date) : "—";
     // 値下げ(値上げ)の明記: 初値→現在価格の累計差と率を2行目に表示。▼=値下げ(買い手に有利)/▲=値上げ
@@ -137,6 +140,7 @@ export function renderIndex(results, { asOf, cal = null }) {
     }
     const opts = STATUS_CHOICES.map((v) => `<option value="${esc(v)}"${v === seed ? " selected" : ""}>${esc(v)}</option>`).join("");
     return `<tr class="prow" data-id="${esc(r.id)}" data-seed="${esc(seed)}" data-status="${esc(seed)}" data-sord="${SORDER[seed] ?? 9}"
+      data-vseed="${seedViewed ? 1 : 0}" data-viewed="${seedViewed ? 1 : 0}"
       data-price="${Math.round(r.state.ask)}" data-market="${r.retail ? Math.round(r.retail.mid) : -1}"
       data-div="${Math.round(divergence(r))}" data-assump="${r.assumptions.length}" data-fair="${Math.round(r.fairFinal.mid)}"
       data-name="${esc(nameOf(property, r))}"
@@ -146,7 +150,8 @@ export function renderIndex(results, { asOf, cal = null }) {
       data-walk="${property.station?.walk_min ?? ""}"
       data-captured="${capturedKey(property)}">
       <td><a href="property/${esc(r.id)}.html">${esc(property.location?.address ?? r.id)}</a>${property.unit_label ? `<span class="unit-tag">${esc(property.unit_label)}</span>` : ""}${hazardTag(property)}<div class="note" style="margin-top:0">${esc(property.layout ?? "—")} / 土地${esc(property.land?.registered_m2)}m²・延床${esc(property.building?.floor_m2)}m² / ${r.isNewBuild ? `完成${esc(fmtDate(property.building?.built)).slice(0, 7)}` : `築${r.state.age.toFixed(1)}年`} / 徒歩${esc(property.station?.walk_min)}分 / 台帳登録${esc(fmtDate(property.captured_at))}${safeUrl(property.source_url) ? ` / <a href="${esc(property.source_url)}" target="_blank" rel="noopener noreferrer">掲載元↗</a>` : ""}</div></td>
-      <td><select class="stsel" aria-label="${esc(property.location?.address ?? r.id)}のステータス">${opts}</select><span class="unsync" title="台帳(リポジトリ)の値と違います。書き出して反映してください">未同期</span></td>
+      <td><label class="vwrap"><input type="checkbox" class="vchk"${seedViewed ? " checked" : ""} aria-label="${esc(property.location?.address ?? r.id)}を内見済にする"><span class="vlab">済</span></label></td>
+      <td><select class="stsel" aria-label="${esc(property.location?.address ?? r.id)}の検討状況">${opts}</select><span class="unsync" title="台帳(リポジトリ)の値と違います。書き出して反映してください">未同期</span></td>
       <td class="num">${fmtMan(r.state.ask)}<div class="note" style="margin-top:0">${esc(priceDate)}時点${reviseNote}</div></td>
       <td class="num">${r.retail && hasMarketPage ? `<a href="property/${esc(r.id)}-market.html">${fmtMan(r.retail.mid)}</a>` : r.retail ? fmtMan(r.retail.mid) : "—"}</td>
       <td class="num"${divergence(r) > 0 ? ' style="color:var(--stamp)"' : ""}>${divergence(r) >= 0 ? "+" : ""}${fmtMan(divergence(r))}</td>
@@ -154,17 +159,20 @@ export function renderIndex(results, { asOf, cal = null }) {
       <td class="num">${fmtMan(r.fairFinal.mid)}</td>
       <td><button class="memobtn" type="button">メモ</button></td>
     </tr>
-    <tr class="mrow" data-id="${esc(r.id)}" hidden><td colspan="8"><textarea class="memota" placeholder="この物件のメモ(内見の所感・確認事項・交渉の材料など)。この端末のブラウザにのみ保存され、公開リポジトリには入りません"></textarea></td></tr>`;
+    <tr class="mrow" data-id="${esc(r.id)}" hidden><td colspan="9"><textarea class="memota" placeholder="この物件のメモ(内見の所感・確認事項・交渉の材料など)。この端末のブラウザにのみ保存され、公開リポジトリには入りません"></textarea></td></tr>`;
   }).join("");
 
   const body = `
   <div class="panel">
     <h2>物件一覧(乖離額の小さい順 = 割安順)</h2>
     <div class="cond-banner"><b>台帳掲載の条件</b>: 価格 5,000〜9,000万円 / <a href="map.html">台地側(荒川低地の浸水想定域外)↗</a>/ 所有権(借地権は除外)/ 延床70m²超 / 3室以上(納戸・サービスルーム可)/ 新耐震基準 / 再建築可 ── 赤羽駅西側・十条エリアの中古/新築戸建をSUUMO日次クロール+チラシで収集(ハザードの個別確認は検討段階で実施)</div>
-    <div class="cond-banner" style="border-color:var(--ink-soft);background:#FBFAF8"><b>この台帳は「買い/見送り」の判定を出しません</b>: 同じ数字でも通勤・家族構成・ローン余力・時間軸で結論は変わるため、判断は人が行います。エンジンが出すのは売出価格が各参照水準(市場実勢中央値・上位四分位・適正レンジ・土地換算値)のどこに立っているかという事実までです。検討状況は下表の<b>ステータス</b>で自分で設定してください(<a href="guide.html">参照水準の読み方</a>)。</div>
+    <div class="cond-banner" style="border-color:var(--ink-soft);background:#FBFAF8"><b>この台帳は「買い/見送り」の判定を出しません</b>: 同じ数字でも通勤・家族構成・ローン余力・時間軸で結論は変わるため、判断は人が行います。エンジンが出すのは売出価格が各参照水準(市場実勢中央値・上位四分位・適正レンジ・土地換算値)のどこに立っているかという事実までです。内見したかどうか(事実)は<b>内見</b>欄、進めるかどうか(判断)は<b>検討状況</b>欄で、それぞれ独立に設定してください(<a href="guide.html">参照水準の読み方</a>)。</div>
     <div class="note" style="margin:0 0 10px">はじめての方へ: 「総額 = 土地単価×坪数 + 建物残価 + 売主の期待」という値段の構造は <a href="formula.html">値段の解剖 ── 算出ロジック図解</a> が1ページで図解しています。査定値の出所(公示地価・坪単価・建物残価・リテール比較法・参照水準の意味)は <a href="guide.html">査定の読み方 ── 前提知識ガイド</a>、成約データ全件は <a href="data.html">成約データ台帳(検証と探索)</a> で出所リンク・二重照合結果つきで確認できます。希望条件(間取り・設備等)を金額換算して妥協判断する方法は <a href="tradeoff.html">妥協の値段 ── A/B/C分類と工事費早見表</a>、各地区が浸水想定・土砂災害警戒区域のどこに立っているかは <a href="map.html">ハザードマップ対照</a> で地図と見比べられます。</div>
     <div class="filterbar">
-      <span class="flabel">ステータス</span>${STATUS_CHOICES.map((v) => `<button class="chip" data-f="status" data-val="${esc(v)}">${esc(v)}</button>`).join("")}
+      <span class="flabel">検討状況</span>${STATUS_CHOICES.map((v) => `<button class="chip" data-f="status" data-val="${esc(v)}">${esc(v)}</button>`).join("")}
+      <span class="flabel" style="margin-left:10px">内見</span>
+      <button class="chip" data-f="viewed" data-val="1">済</button>
+      <button class="chip" data-f="viewed" data-val="0">未</button>
       <button class="chip" data-f="memo" data-val="1" style="margin-left:10px">メモあり</button>
       <button class="chip" id="freset" style="margin-left:10px">リセット</button>
       <span class="note" id="fcount" style="margin:0 0 0 6px"></span>
@@ -189,8 +197,8 @@ export function renderIndex(results, { asOf, cal = null }) {
       <span class="note" id="syncinfo" style="margin:0 0 0 6px"></span>
     </div>
     <div class="syncpanel" id="imppanel" hidden>
-      別の端末で「書き出し」したJSONを貼り付けて<b>読み込む</b>と、ステータスとメモがこの端末に入ります(同じIDは貼り付けた側で上書き)。
-      <textarea id="impta" placeholder='{"v":1,"items":{...}}'></textarea>
+      別の端末で「書き出し」したJSONを貼り付けて<b>読み込む</b>と、検討状況・内見・メモがこの端末に入ります(同じIDは貼り付けた側で上書き)。
+      <textarea id="impta" placeholder='{"v":2,"items":{...}}'></textarea>
       <div style="margin-top:6px"><button class="syncbtn" type="button" id="impapply">この内容を取り込む</button>
       <span class="note" id="impmsg" style="margin-left:8px"></span></div>
     </div>
@@ -198,7 +206,8 @@ export function renderIndex(results, { asOf, cal = null }) {
     <table class="list" id="ptable">
       <tr>
         <th class="sortable" data-key="name">物件 <span class="arw">↕</span></th>
-        <th class="sortable" data-key="sord" data-num="1">ステータス <span class="arw">↕</span></th>
+        <th class="sortable" data-key="viewed" data-num="1">内見 <span class="arw">↕</span></th>
+        <th class="sortable" data-key="sord" data-num="1">検討状況 <span class="arw">↕</span></th>
         <th class="sortable" data-key="price" data-num="1">売出価格 <span class="arw">↕</span></th>
         <th class="sortable" data-key="market" data-num="1">市場実勢中央値 <span class="arw">↕</span></th>
         <th class="sortable" data-key="div" data-num="1">乖離(対市場) <span class="arw">↕</span></th>
@@ -220,12 +229,25 @@ export function renderIndex(results, { asOf, cal = null }) {
       Array.prototype.forEach.call(table.querySelectorAll("tr.mrow"), function(tr){ mrowOf[tr.dataset.id] = tr; });
 
       // ---- 保存(この端末のブラウザのみ。公開リポジトリには入らない) ----
+      // 旧スキーマ(status に「内見済」が同居していた頃)の記録を読み替える。
+      // 内見は事実・検討状況は判断なので、内見済は viewed=true + 検討中 に分解する
+      function migrate(o){
+        var changed = false;
+        Object.keys(o.items || {}).forEach(function(id){
+          var e = o.items[id];
+          if (e && e.status === "内見済") { e.viewed = true; e.status = "検討中"; changed = true; }
+        });
+        // 読み替えた結果はその場で書き戻す。書き戻さないと画面と保存内容が食い違い、
+        // 書き出しJSONに旧表記が残り続ける
+        if (changed) { o.v = 2; try { localStorage.setItem(KEY, JSON.stringify(o)); } catch(e){} }
+        return o;
+      }
       function load(){
-        try { var o = JSON.parse(localStorage.getItem(KEY)); if (o && o.items) return o; } catch(e){}
-        return { v:1, items:{} };
+        try { var o = JSON.parse(localStorage.getItem(KEY)); if (o && o.items) return migrate(o); } catch(e){}
+        return { v:2, items:{} };
       }
       function save(st){
-        st.v = 1; st.updated = new Date().toISOString();
+        st.v = 2; st.updated = new Date().toISOString();
         try { localStorage.setItem(KEY, JSON.stringify(st)); } catch(e){ info("保存できません(ブラウザの設定で localStorage が無効です)"); }
         render();
       }
@@ -237,7 +259,7 @@ export function renderIndex(results, { asOf, cal = null }) {
         prows.forEach(function(tr){ if (tr.classList.contains("dirty")) n++; });
         document.getElementById("syncinfo").textContent =
           msg || ((state.updated ? "最終更新 " + state.updated.slice(0,16).replace("T"," ") + " / " : "") +
-                  (n ? "台帳と違うステータス " + n + "件(書き出して反映)" : "台帳と一致"));
+                  (n ? "台帳と違う項目 " + n + "件(書き出して反映)" : "台帳と一致"));
       }
 
       // ---- 画面へ反映 ----
@@ -249,7 +271,13 @@ export function renderIndex(results, { asOf, cal = null }) {
           if (sel.value !== st) sel.value = st;
           tr.dataset.status = st;
           tr.dataset.sord = (ORDER[st] === undefined ? 9 : ORDER[st]);
-          tr.classList.toggle("dirty", st !== tr.dataset.seed);
+          // 内見(事実)は検討状況(判断)と独立。未設定ならYAML由来の初期値を使う
+          var vw = (e.viewed === undefined ? tr.dataset.vseed === "1" : !!e.viewed);
+          var chk = tr.querySelector(".vchk");
+          if (chk.checked !== vw) chk.checked = vw;
+          tr.dataset.viewed = vw ? "1" : "0";
+          // 台帳(YAML)と違う印は、検討状況・内見のどちらがずれても出す
+          tr.classList.toggle("dirty", st !== tr.dataset.seed || (vw ? "1" : "0") !== tr.dataset.vseed);
           var memo = e.memo || "";
           var ta = mrowOf[id].querySelector(".memota");
           if (ta.value !== memo) ta.value = memo;
@@ -267,6 +295,9 @@ export function renderIndex(results, { asOf, cal = null }) {
         var id = tr.dataset.id;
         tr.querySelector(".stsel").addEventListener("change", function(ev){
           entry(id).status = ev.target.value; entry(id).at = new Date().toISOString(); save(state);
+        });
+        tr.querySelector(".vchk").addEventListener("change", function(ev){
+          entry(id).viewed = !!ev.target.checked; entry(id).at = new Date().toISOString(); save(state);
         });
         tr.querySelector(".memobtn").addEventListener("click", function(){
           var m = mrowOf[id];
@@ -287,11 +318,12 @@ export function renderIndex(results, { asOf, cal = null }) {
       });
 
       // ---- フィルタ(ステータス/メモ有無) ----
-      var active = { status: new Set(), memo: new Set() };
+      var active = { status: new Set(), memo: new Set(), viewed: new Set() };
       function apply(){
         var shown = 0;
         prows.forEach(function(tr){
           var ok = (!active.status.size || active.status.has(tr.dataset.status)) &&
+                   (!active.viewed.size || active.viewed.has(tr.dataset.viewed)) &&
                    (!active.memo.size || tr.dataset.memo === "1");
           tr.style.display = ok ? "" : "none";
           var m = mrowOf[tr.dataset.id];
@@ -309,7 +341,7 @@ export function renderIndex(results, { asOf, cal = null }) {
         });
       });
       document.getElementById("freset").addEventListener("click", function(){
-        active.status.clear(); active.memo.clear();
+        active.status.clear(); active.memo.clear(); active.viewed.clear();
         // 絞り込みのチップだけを解除する。並び替えバーも .chip を使っているため、
         // セレクタを [data-f] に限定しないとリセットで現在の並び順の表示まで消える
         document.querySelectorAll(".chip[data-f].on").forEach(function(c){ c.classList.remove("on"); });
@@ -386,7 +418,10 @@ export function renderIndex(results, { asOf, cal = null }) {
             var e = o.items[id];
             if (!e || typeof e !== "object") return;
             var cur = entry(id);
-            if (typeof e.status === "string" && ORDER[e.status] !== undefined) { cur.status = e.status; n++; }
+            // 旧スキーマの書き出し(status:"内見済")も取り込めるよう、ここでも分解する
+            if (e.status === "内見済") { cur.viewed = true; cur.status = "検討中"; n++; }
+            else if (typeof e.status === "string" && ORDER[e.status] !== undefined) { cur.status = e.status; n++; }
+            if (typeof e.viewed === "boolean") { cur.viewed = e.viewed; n++; }
             if (typeof e.memo === "string") { cur.memo = e.memo; n++; }
             if (typeof e.at === "string") cur.at = e.at;
           });
@@ -397,7 +432,7 @@ export function renderIndex(results, { asOf, cal = null }) {
       document.getElementById("clrbtn").addEventListener("click", function(){
         if (!confirm("この端末に保存したステータスとメモを全部消します。書き出していない内容は戻せません。よろしいですか?")) return;
         try { localStorage.removeItem(KEY); } catch(e){}
-        state = { v:1, items:{} };
+        state = { v:2, items:{} };
         render();
       });
 

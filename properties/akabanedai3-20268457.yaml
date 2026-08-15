@@ -1,7 +1,7 @@
 # 物件データ(1物件1ファイル)。記載ルール: 事実データと査定パラメータのみ。
 # 指値方針・交渉メモ・個人的所感・写真・紹介文は書かない(publicリポジトリ運用・decisions D4)
 id: akabanedai3-20268457
-status: considering        # considering / viewed / declined / closed
+status: declined                # 2026-08-15 一覧の書き出しJSONより反映
 source: "SUUMO nc_20268457 (REDS)"
 source_url: "https://suumo.jp/chukoikkodate/tokyo/sc_kita/nc_20268457/"   # 実在確認済み 2026-07-20
 captured_at: 2026-07-19

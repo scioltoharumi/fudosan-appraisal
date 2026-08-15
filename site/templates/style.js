@@ -42,7 +42,11 @@ table.list td.num{font-family:var(--mono);text-align:right;white-space:nowrap}
 /* 一覧: 人が設定するステータスとメモ(この端末のブラウザに保存) */
 .stsel{font-family:inherit;font-size:.75rem;padding:3px 6px;border:1px solid var(--ink-soft);background:#FDFDFC;color:var(--ink);cursor:pointer}
 .stsel:focus{outline:2px solid var(--band);outline-offset:1px}
-tr.prow[data-status="内見済"] .stsel{background:#2E6E8E;border-color:#2E6E8E;color:#fff;font-weight:700}
+/* 内見(事実)は検討状況(判断)と別列。済は塗りつぶしで一目で分かるようにする */
+.vwrap{display:inline-flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap}
+.vchk{margin:0;cursor:pointer}
+.vlab{font-size:.72rem;color:var(--ink-soft)}
+tr.prow[data-viewed="1"] .vlab{color:#2E6E8E;font-weight:700}
 tr.prow[data-status="見送り"]{opacity:.5}
 tr.prow[data-status="見送り"]:hover{opacity:1}
 tr.prow[data-status="新規"] .stsel{border-color:var(--band);color:var(--band);font-weight:700}

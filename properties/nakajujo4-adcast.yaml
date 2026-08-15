@@ -2,7 +2,8 @@
 # 指値方針・交渉メモ・個人的所感・写真・紹介文は書かない(publicリポジトリ運用・decisions D4)
 id: nakajujo4-adcast
 source_url: "https://suumo.jp/chukoikkodate/tokyo/sc_kita/nc_77124432/"   # 実在確認済み 2026-08-12。同一確認: 中十条4・土地60.78公簿・建物91.79・3LDK・築2011-03・価格6880の6項目一致
-status: viewed             # considering / viewed / declined / closed
+status: considering        # 検討状況(新規/検討中/見送り)
+viewed: true               # 内見済(事実)。2026-08-15に status:viewed から分離
 source: "アドキャスト赤羽支店チラシ(媒介)"
 # 2026-08-12注記: ニフティ不動産の中十条4丁目・7,990万(東京生活・専任媒介・賃貸中・駐車場有)は
 # 同丁目の別物件(当初本物件と誤同定→価格・現況・駐車場の不一致で撤回)。SUUMO北区一覧には非掲載
