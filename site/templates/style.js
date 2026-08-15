@@ -36,6 +36,11 @@ table.list{width:100%;border-collapse:collapse;font-size:.85rem}
 table.list th{border-bottom:1px solid var(--ink);padding:8px 6px;text-align:left;font-size:.75rem;letter-spacing:.08em;color:var(--ink-soft);white-space:nowrap}
 table.list td{border-bottom:1px dashed var(--grid);padding:9px 6px;vertical-align:middle}
 table.list td.num{font-family:var(--mono);text-align:right;white-space:nowrap}
+/* 数値セルの注記まで nowrap にすると「2026-08-10時点・改定1回/初値…▼400万円」が1行に固定され、
+   売出価格の列だけで194pxを占めて右端のメモ欄が見切れる(2026-08-15計測)。注記は折り返す */
+table.list td.num .note{white-space:normal}
+/* 長い見出しは2行に折り返してよい(nowrapのままだと見出しが列幅の下限になる) */
+table.list th.wrapth{white-space:normal;line-height:1.35}
 .status{font-size:.72rem;border:1px solid var(--ink-soft);padding:1px 7px;color:var(--ink-soft);white-space:nowrap}
 .status.viewed{background:#2E6E8E;border-color:#2E6E8E;color:#fff;font-weight:700}
 
@@ -53,6 +58,11 @@ td.memocell{vertical-align:top}
 .memota{width:100%;box-sizing:border-box;min-width:170px;height:56px;font-family:inherit;font-size:.72rem;line-height:1.45;
   padding:4px 6px;border:1px solid var(--ink-soft);background:#FDFDFC;color:var(--ink);resize:vertical}
 .memota:focus{outline:2px solid var(--band);outline-offset:1px}
+/* 狭い画面ではメモ列を詰める。横スクロールに逃がすとメモが見切れて用をなさない */
+@media (max-width:1100px){
+  th.memocol{min-width:150px}
+  .memota{min-width:140px}
+}
 tr.prow[data-status="見送り"]{opacity:.5}
 tr.prow[data-status="見送り"]:hover{opacity:1}
 tr.prow[data-status="新規"] .stsel{border-color:var(--band);color:var(--band);font-weight:700}

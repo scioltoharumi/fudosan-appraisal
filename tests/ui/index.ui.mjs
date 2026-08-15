@@ -234,6 +234,27 @@ await T("現在の並び順が表示される(選択中のチップに矢印、�
 });
 
 // 17. 物件ページに判定スタンプが無い
+// メモ欄の見切れ(2026-08-15にユーザー報告)。原因は td.num の nowrap が価格欄の注記を
+// 1行に固定し、売出価格の列だけで194pxを占めたこと。列幅は中身で決まるため機械で測って固定する
+await T("主要な画面幅でメモ欄が見切れない", async () => {
+  const bad = [];
+  for (const w of [1440, 1280, 1024]) {
+    const pg = await ctx.newPage();
+    await pg.setViewportSize({ width: w, height: 900 });
+    await pg.goto(url);
+    const r = await pg.evaluate(() => {
+      const t = document.getElementById("ptable"), wrap = t.parentElement;
+      const memo = t.querySelector("tr.prow .memota").getBoundingClientRect();
+      const box = wrap.getBoundingClientRect();
+      return { cut: memo.right > box.right + 1, over: wrap.scrollWidth - wrap.clientWidth };
+    });
+    if (r.cut) bad.push(`${w}px で見切れ(はみ出し${r.over}px)`);
+    await pg.close();
+  }
+  if (bad.length) console.log("   " + bad.join(" / "));
+  return bad.length === 0;
+});
+
 await T("物件ページに判定スタンプが無い", async () => {
   await p.goto(pathToFileURL("/home/user/fudosan-appraisal/site/dist/property/" + id + ".html").href);
   const t = await p.textContent("body");

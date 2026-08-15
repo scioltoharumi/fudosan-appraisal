@@ -208,9 +208,9 @@ export function renderIndex(results, { asOf, cal = null }) {
         <th class="sortable" data-key="vord" data-num="1">内見 <span class="arw">↕</span></th>
         <th class="sortable" data-key="sord" data-num="1">検討状況 <span class="arw">↕</span></th>
         <th class="sortable" data-key="price" data-num="1">売出価格 <span class="arw">↕</span></th>
-        <th class="sortable" data-key="market" data-num="1">市場実勢中央値 <span class="arw">↕</span></th>
-        <th class="sortable" data-key="div" data-num="1">乖離(対市場) <span class="arw">↕</span></th>
-        <th class="sortable" data-key="fair" data-num="1">適正中央値(参考) <span class="arw">↕</span></th>
+        <th class="sortable wrapth" data-key="market" data-num="1">市場実勢中央値 <span class="arw">↕</span></th>
+        <th class="sortable wrapth" data-key="div" data-num="1">乖離(対市場) <span class="arw">↕</span></th>
+        <th class="sortable wrapth" data-key="fair" data-num="1">適正中央値(参考) <span class="arw">↕</span></th>
         <th class="memocol">メモ</th>
       </tr>
       ${rows}
