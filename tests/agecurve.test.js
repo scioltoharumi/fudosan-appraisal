@@ -14,8 +14,12 @@
 // area-config.yaml の坪単価には依存しない。新エリアの坪単価が未較正であることは影響しない。
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { ageCurveStats, ageCurveCI } from "../site/templates/formula.js";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { ageCurveStats, ageCurveCI, ageRatioBuckets } from "../site/templates/formula.js";
+import { hazardClassOf } from "../site/templates/cliff.js";
 import { loadHouseDeals } from "../engine/retail.js";
+import { ROOT } from "../engine/io.js";
 
 const ac = ageCurveStats(loadHouseDeals());
 const byLo = new Map(ac.buckets.map((b) => [b.lo, b]));
@@ -97,4 +101,48 @@ test("築年カーブCI: 決定論 ── 同じ入力なら同じ区間が出�
   const a = ageCurveCI(deals), b = ageCurveCI(deals);
   assert.deepEqual(a.rows.map((x) => [x.lo95, x.hi95]), b.rows.map((x) => [x.lo95, x.hi95]));
   assert.equal(a.cliffLo, b.cliffLo);
+});
+
+// ---- 2026-08-15 追加(cliff.html「30年の崖の検証」): ハザード地区の除外感度 ----
+// ユーザーの核心的な懸念「ハザードマップにかかる事例は除きたい」への恒久ガード。
+// 成約データの住所は地区までしか公開されないため1件単位のハザード照合は原理的に不可能で、
+// できる最大限は「excludeの丁目を含む地区を丸ごと外して結論が変わらないことの確認」。
+// 崖の測定は各成約を「自分の地区の土地相場」と比べる比率なので、低地の安さ自体は
+// 比率に現れない(理屈)ことに加え、実測でも崖は不変(このテスト)。
+const areaScan = JSON.parse(readFileSync(join(ROOT, "market", "area-scan.json"), "utf8"));
+const hazardCls = hazardClassOf(areaScan);
+
+test("ハザード分類: area-scanの丁目判定から地区分類が正しく導出される", () => {
+  // 全丁目exclude=低地 / 一部exclude=混在(丁目単位で分けられない) / excludeなし=台地
+  assert.equal(hazardCls["志茂"], "lowland");
+  assert.equal(hazardCls["神谷"], "lowland");
+  assert.equal(hazardCls["上中里"], "mixed");     // 1丁目=台地・2/3丁目=低地
+  assert.equal(hazardCls["赤羽北"], "mixed");
+  assert.equal(hazardCls["赤羽西"], "tableland");
+  assert.equal(hazardCls["滝野川"], "tableland");
+  assert.equal(hazardCls["中里"], "tableland");
+});
+
+test("築年カーブCI: 低地・混在地区の成約を全部除いた台地側だけでも崖は不変", () => {
+  const tab = loadHouseDeals().filter((d) => hazardCls[d.district] === "tableland");
+  const ci = ageCurveCI(tab);
+  assert.equal(ci.districts, 7, `台地側で基準が立つ地区数: ${ci.districts}`);
+  assert.equal(ci.total, 363, `台地側の有効標本: ${ci.total}`);
+  assert.ok(ci.cliffLo > 0, `崖の差の下限が0超: ${ci.cliffLo.toFixed(3)}`);
+  // 全地区0.323に対し台地のみ0.324 ── 低地の成約は崖を作っていない
+  assert.ok(Math.abs(ci.cliffDiff - 0.324) < 0.01, `台地のみの崖の差: ${ci.cliffDiff.toFixed(3)}`);
+  const old41 = ci.rows.find((b) => b.lo === 41);
+  assert.ok(old41.hi95 < 1, `台地のみでも築41年〜は明確に沈む: ${old41.lo95.toFixed(3)}〜${old41.hi95.toFixed(3)}`);
+});
+
+// samples と buckets は現実装では同一ループで対に push されるため、このテストの検出力は
+// 「将来 samples 側に独自フィルタが入って散布図と統計が食い違う」退行に限られる(構造由来の不変条件)
+test("築年カーブ: samples(散布図用の生標本)は有効標本と件数・帯構成が一致する", () => {
+  const deals = loadHouseDeals();
+  const arb = ageRatioBuckets(deals);
+  const ci = ageCurveCI(deals);
+  assert.equal(arb.samples.length, ci.total, `samples件数=有効標本: ${arb.samples.length}`);
+  const nOld = arb.samples.filter((s) => s.age >= 31).length;
+  const bucketsOld = arb.buckets.filter((b) => b.lo >= 31).reduce((a, b) => a + b.ratios.length, 0);
+  assert.equal(nOld, bucketsOld, "築31年以上の件数がバケツ集計と一致");
 });

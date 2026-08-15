@@ -12,6 +12,7 @@ import { loadHouseDeals } from "../engine/retail.js";
 import { renderMarketBasis } from "./templates/market-basis.js";
 import { renderDataExplorer } from "./templates/data-explorer.js";
 import { renderFormula } from "./templates/formula.js";
+import { renderCliff } from "./templates/cliff.js";
 import { renderTradeoff } from "./templates/tradeoff.js";
 import { renderHazardMap } from "./templates/map.js";
 import { loadVerification } from "../engine/retail.js";
@@ -71,6 +72,11 @@ if (formulaTarget) {
 } else {
   console.warn("⚠ formula.html スキップ(リテール比較が成立する物件なし)");
 }
+// 30年の崖の検証(築年カーブの根拠を一から図解。2026-08-15ユーザー要望)。
+// ハザード地区の分類は area-scan.json(丁目単位の機械判定の正本)から導出する
+const areaScan = JSON.parse(readFileSync(join(ROOT, "market", "area-scan.json"), "utf8"));
+writeFileSync(join(DIST, "cliff.html"), renderCliff({ houseDeals, areaScan, asOf }), "utf8");
+console.log("✓ cliff.html(30年の崖の検証)");
 // 妥協の値段(A/B/C分類とB群工事費早見表): 静的リファレンス
 writeFileSync(join(DIST, "tradeoff.html"), renderTradeoff({ asOf }), "utf8");
 console.log("✓ tradeoff.html");

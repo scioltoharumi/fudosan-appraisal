@@ -16,7 +16,10 @@ const RULE_LO = 1.1, RULE_HI = 1.2;   // 経験則: 実勢 ≒ 公示×1.1〜1.2
 // ものさし価格(土地基準×坪×徒歩 + 建物線形残価)と比べる。比率1.00=ものさしどおりの値付け。
 // 新築プレミアムが実在すれば築0〜3年の比率が1を大きく超えて現れ、
 // 「築30年の崖」は築31年以降の比率の段差として現れる(2026-08 検証会話の定式化)。
-function ageRatioBuckets(houseDeals) {
+// cliff.html(30年の崖の検証)が散布図・実例・地区表を描くために export する。
+// 返り値の base(地区別基準単価)・samples(1件ごとの築年と比率)は追加フィールドで、
+// ageCurveStats / ageCurveCI の既存の読み手には影響しない
+export function ageRatioBuckets(houseDeals) {
   const T = COEFFS.TSUBO_M2;
   const bldg = (d) => Math.max(0, COEFFS.DEFAULT_REBUILD_PPT * (d.floor_m2 / T) * Math.max(0, 1 - d.age / COEFFS.BUILDING_LIFE_Y)
     - Math.min(COEFFS.DEFAULT_REPAIR_MAN, RETAIL.REPAIR_PER_YEAR * d.age));
@@ -36,14 +39,17 @@ function ageRatioBuckets(houseDeals) {
   }
   const EDGES = [0, 3, 7, 11, 16, 21, 26, 31, 41, Infinity];
   const buckets = EDGES.slice(0, -1).map((lo, i) => ({ lo, hi: EDGES[i + 1], ratios: [] }));
-  const newShares = [], newPrices = [];
+  const newShares = [], newPrices = [], samples = [];
   for (const d of rows) {
     if (!(d.district in base)) continue;
     const landPart = base[d.district] * (d.land_m2 / T) * wden(d.walk_min);
-    buckets.find((b) => d.age >= b.lo && d.age < b.hi).ratios.push(d.price_man / (landPart + bldg(d)));
+    const ratio = d.price_man / (landPart + bldg(d));
+    buckets.find((b) => d.age >= b.lo && d.age < b.hi).ratios.push(ratio);
+    samples.push({ age: d.age, ratio, district: d.district, deal: d, landPart, bldgPart: bldg(d) });
     if (d.age < 3) { newShares.push(landPart / d.price_man); newPrices.push(d.price_man); }
   }
-  return { districts: Object.keys(base).length, buckets, newShares, newPrices, med };
+  return { districts: Object.keys(base).length, buckets, newShares, newPrices, med, base, samples,
+    nLandFiltered: rows.length };
 }
 
 export function ageCurveStats(houseDeals) {
@@ -95,6 +101,7 @@ export function ageCurveCI(houseDeals, resamples = 4000) {
     total: young.length + old.length, districts, rows,
     cliffDiff: med(young) - med(old),
     cliffLo: diffs[Math.floor(resamples * 0.025)], cliffHi: diffs[Math.floor(resamples * 0.975)],
+    diffs,   // 4,000回ぶんの差(昇順)。cliff.html が分布ヒストグラムを描くために返す
   };
 }
 
@@ -684,7 +691,7 @@ export function renderFormula({ r, rRef, property }, calArea, houseDeals) {
         <tr><th>築年帯</th><th>件数</th><th>実際÷ものさし</th><th>95%信頼区間</th><th>読み取れること</th></tr>
         ${acCI.rows.map((b) => `<tr><td>${b.label}</td><td class="num">${b.n}</td><td class="num">${b.m.toFixed(2)}</td><td class="num">${b.lo95.toFixed(2)}〜${b.hi95.toFixed(2)}</td><td style="white-space:normal">${b.verdict}</td></tr>`).join("")}
       </table></div>
-      <div style="margin-top:6px">標本を増やすには国交省の原典(不動産情報ライブラリ)からの直接取得が要る。本サイトは再掲サイト経由のため、個別取引の追加取得ができていない(API申請中)。</div></div>
+      <div style="margin-top:6px"><b>この崖の作られ方 ── データが何か・ハザード地区の成約を除いた検算・正規化の全手順・信頼区間の意味 ── は<a href="cliff.html">30年の崖の検証</a>で一から図解している</b>(低地・混在の4地区を丸ごと外して再計算しても崖の差は不変、という検算を含む)。標本の追加は国交省の原典API(不動産情報ライブラリ・2026-08-13接続済み)からの取得で今後も増やせる。</div></div>
       <p class="why" style="margin-top:14px">では、なぜ新築にプレミアムの山が立たないのか。最大の理由は算数で決まっている:</p>
       ${dilutionSvg({ share: ac.landShareNew, total: Math.round(ac.newMedPrice), land: acLand, bldg: acBldg, prem: acPrem, premPct: Math.round(100 * acPrem / ac.newMedPrice), n: ac.nNew })}
       <div class="note"><b>算術的希釈</b>: 新品の割増が乗りうるのは建物側だけで、土地は新築でも中古でも同じ土地。価格の${Math.round(ac.landShareNew * 100)}%が土地であるこのエリアでは、建物に25%の割増が乗っても総額の1割に届かない。加えて、この帯の新築は建売の競争供給(値引き後の成約がこの台帳)であり、上昇局面では業者の利幅が仕入れ土地の含み益から出るため、目に見える上乗せを積む必要自体が薄い。</div>
