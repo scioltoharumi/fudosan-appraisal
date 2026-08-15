@@ -135,6 +135,20 @@ test("築年カーブCI: 低地・混在地区の成約を全部除いた台地�
   assert.ok(old41.hi95 < 1, `台地のみでも築41年〜は明確に沈む: ${old41.lo95.toFixed(3)}〜${old41.hi95.toFixed(3)}`);
 });
 
+// 2026-08-15追記(cliff.html「よくある疑問C」): 再調達単価は実勢レンジからの設定値なので、
+// ±20%(76/114万)に振っても崖の主張(差の95%区間が0を跨がない)が保たれることをガードする。
+// これが崩れたら「崖は建物モデルの仮定の産物」になり、ページの主張ごと書き直しが要る
+test("築年カーブCI: 再調達単価±20%でも崖の差は0を跨がない(仮定への頑健性)", () => {
+  const deals = loadHouseDeals();
+  for (const rebuildPpt of [76, 114]) {
+    const ci = ageCurveCI(deals, 4000, { rebuildPpt });
+    assert.ok(ci.cliffLo > 0, `再調達${rebuildPpt}万でも崖の下限が0超: ${ci.cliffLo.toFixed(3)}`);
+    assert.ok(ci.cliffDiff > 0.2, `再調達${rebuildPpt}万の崖の差: ${ci.cliffDiff.toFixed(3)}`);
+  }
+  // opts省略時は従来と同一(後方互換)
+  assert.equal(ageCurveCI(deals).cliffDiff, ageCurveCI(deals, 4000, {}).cliffDiff);
+});
+
 // samples と buckets は現実装では同一ループで対に push されるため、このテストの検出力は
 // 「将来 samples 側に独自フィルタが入って散布図と統計が食い違う」退行に限られる(構造由来の不変条件)
 test("築年カーブ: samples(散布図用の生標本)は有効標本と件数・帯構成が一致する", () => {

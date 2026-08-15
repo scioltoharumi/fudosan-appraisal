@@ -10,7 +10,7 @@ import { join } from "node:path";
 import { COEFFS, walkAdjOf, WALK_KNOTS } from "../../engine/appraise.js";
 import { RETAIL, loadVerification } from "../../engine/retail.js";
 import { ROOT } from "../../engine/io.js";
-import { ageRatioBuckets, ageCurveStats, ageCurveCI } from "./formula.js";
+import { ageRatioBuckets, ageCurveStats, ageCurveCI, KOJI_PPT, RULE_LO, RULE_HI } from "./formula.js";
 import { layout, esc } from "./layout.js";
 
 // ---- 地区のハザード分類(market/area-scan.json = 丁目単位の機械判定の正本から導出) ----
@@ -274,6 +274,109 @@ function diffHistSvg(v) {
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="崖の差のブートストラップ分布" style="width:100%;height:auto">${el.join("")}</svg>`;
 }
 
+// ---- 図8(よくある疑問A-1): 引き算する建物分は成約価格の何割か ----
+function faqShareSvg(rows) {
+  const W = 640, x0 = 170, barW = 290, barH = 22;   // barWは右横の注記(最長142px)が枠に収まる幅にする
+  const el = [];
+  el.push(`<text x="24" y="16" font-size="10" font-weight="700" fill="#16232E">ものさしが「建物分」として引き算する割合(成約価格に対する中央値・実測)</text>`);
+  rows.forEach((r, i) => {
+    const y = 30 + i * 40;
+    const bw = barW * r.share;
+    el.push(`<text x="${x0 - 10}" y="${y + 15}" font-size="9.5" font-weight="700" text-anchor="end" fill="#16232E">${esc(r.label)}</text>`);
+    el.push(`<rect x="${x0}" y="${y}" width="${(barW - bw).toFixed(1)}" height="${barH}" fill="#2E6E8E"/>`);
+    el.push(`<text x="${x0 + (barW - bw) / 2}" y="${y + 15}" font-size="9" font-weight="700" text-anchor="middle" fill="#FFFFFF">土地 ${(100 - r.share * 100).toFixed(0)}%</text>`);
+    if (bw > 2) {
+      el.push(`<rect x="${x0 + barW - bw}" y="${y}" width="${bw.toFixed(1)}" height="${barH}" fill="#B07C10"/>`);
+      el.push(`<text x="${x0 + barW + 8}" y="${y + 15}" font-size="9.5" font-weight="700" fill="#B07C10">建物 ${(r.share * 100).toFixed(0)}%${esc(r.note ?? "")}</text>`);
+    } else {
+      el.push(`<text x="${x0 + barW + 8}" y="${y + 15}" font-size="9.5" font-weight="700" fill="#B07C10">建物 0%${esc(r.note ?? "")}</text>`);
+    }
+    el.push(`<text x="${x0 - 10}" y="${y + 28}" font-size="8" text-anchor="end" fill="#8A97A5" font-family="monospace">n=${r.n}</text>`);
+  });
+  const H = 30 + rows.length * 40 + 8;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="築年帯別の建物控除シェア" style="width:100%;height:auto">${el.join("")}</svg>`;
+}
+
+// ---- 図9(よくある疑問A-2): 基準帯の選び方の検算 ── 出てくる土地相場は公示と整合するか ----
+function faqBaseGaugeSvg(g) {
+  const W = 640, axisY = 104, MIN = 80, MAX = 320;
+  const X = (v) => 24 + ((v - MIN) / (MAX - MIN)) * 592;
+  const el = [];
+  for (let m = 100; m <= 300; m += 50) {
+    el.push(`<line x1="${X(m)}" y1="${axisY}" x2="${X(m)}" y2="${axisY + 5}" stroke="#43566B" stroke-width="1"/>`);
+    el.push(`<text x="${X(m)}" y="${axisY + 17}" font-size="9" text-anchor="middle" fill="#43566B" font-family="monospace">${m}万</text>`);
+  }
+  el.push(`<line x1="24" y1="${axisY}" x2="616" y2="${axisY}" stroke="#16232E" stroke-width="1"/>`);
+  // 実勢の目安帯(公示×1.1〜1.2)
+  const bx0 = X(g.koji * RULE_LO), bx1 = X(g.koji * RULE_HI);
+  el.push(`<rect x="${bx0}" y="${axisY - 34}" width="${bx1 - bx0}" height="34" fill="#BFD7E4" opacity="0.75"/>`);
+  el.push(`<text x="${(bx0 + bx1) / 2}" y="${axisY - 40}" font-size="9.5" text-anchor="middle" fill="#2E6E8E">実勢の目安 = 公示×1.1〜1.2</text>`);
+  // 公示地価
+  el.push(`<circle cx="${X(g.koji)}" cy="${axisY}" r="4" fill="#16232E"/>`);
+  el.push(`<line x1="${X(g.koji)}" y1="${50}" x2="${X(g.koji)}" y2="${axisY}" stroke="#16232E" stroke-width="1" stroke-dasharray="2,2"/>`);
+  el.push(`<text x="${X(g.koji)}" y="${46}" font-size="9.5" font-weight="700" text-anchor="middle" fill="#16232E">公示地価 ${g.koji}万</text>`);
+  // 崖の帯から作った場合(✗)
+  el.push(`<circle cx="${X(g.baseAlt)}" cy="${axisY}" r="4.5" fill="#C93A2B"/>`);
+  el.push(`<line x1="${X(g.baseAlt)}" y1="${50}" x2="${X(g.baseAlt)}" y2="${axisY}" stroke="#C93A2B" stroke-width="1" stroke-dasharray="2,2"/>`);
+  el.push(`<text x="${X(g.baseAlt)}" y="${32}" font-size="9.5" font-weight="700" text-anchor="middle" fill="#C93A2B">築31年〜(崖の帯)から作ると ${Math.round(g.baseAlt)}万</text>`);
+  el.push(`<text x="${X(g.baseAlt)}" y="${46}" font-size="8.5" text-anchor="middle" fill="#C93A2B">✗ 崖の値引きが混入した「安すぎる土地相場」</text>`);
+  // 現行基準(✓)
+  el.push(`<circle cx="${X(g.baseNow)}" cy="${axisY}" r="4.5" fill="#2C6E49"/>`);
+  el.push(`<line x1="${X(g.baseNow)}" y1="${axisY}" x2="${X(g.baseNow)}" y2="${axisY + 28}" stroke="#2C6E49" stroke-width="1" stroke-dasharray="2,2"/>`);
+  el.push(`<text x="${X(g.baseNow)}" y="${axisY + 40}" font-size="9.5" font-weight="700" text-anchor="middle" fill="#2C6E49">築11〜25年から作った基準 ${Math.round(g.baseNow)}万</text>`);
+  el.push(`<text x="${X(g.baseNow)}" y="${axisY + 54}" font-size="8.5" text-anchor="middle" fill="#2C6E49">✓ 公示からの目安とほぼ整合(独立の物差しで検算できている)</text>`);
+  return `<svg viewBox="0 0 ${W} 168" role="img" aria-label="基準帯の選び方の検算(赤羽西の例)" style="width:100%;height:auto">${el.join("")}</svg>`;
+}
+
+// ---- 図10(よくある疑問B): 売出価格と成約価格 ── このページが使うのはどちらか ----
+function faqAskSvg() {
+  const W = 640, x0 = 130, full = 470, barH = 24;
+  const dealW = full * 0.86, expW = full * 0.14;
+  const el = [];
+  const y1 = 26, y2 = 96;
+  el.push(`<text x="${x0 - 10}" y="${y1 + 16}" font-size="9.5" font-weight="700" text-anchor="end" fill="#16232E">売出価格</text>`);
+  el.push(`<rect x="${x0}" y="${y1}" width="${dealW}" height="${barH}" fill="#BFD7E4"/>`);
+  el.push(`<text x="${x0 + dealW / 2}" y="${y1 + 16}" font-size="9.5" text-anchor="middle" fill="#16232E">成約価格の見込み</text>`);
+  el.push(`<rect x="${x0 + dealW}" y="${y1}" width="${expW}" height="${barH}" fill="rgba(201,58,43,.13)" stroke="#C93A2B" stroke-width="1.4" stroke-dasharray="5,3"/>`);
+  el.push(`<text x="${x0 + dealW + expW / 2}" y="${y1 + 16}" font-size="9" font-weight="700" text-anchor="middle" fill="#C93A2B">売主の期待</text>`);
+  el.push(`<text x="${x0}" y="${y1 - 8}" font-size="8.5" fill="#8A97A5">SUUMO等の広告に出る数字(売主の希望)</text>`);
+  // 削られる矢印
+  const ax = x0 + dealW + expW / 2;
+  el.push(`<line x1="${ax}" y1="${y1 + barH + 4}" x2="${ax}" y2="${y2 - 12}" stroke="#C93A2B" stroke-width="1.4"/>`);
+  el.push(`<polygon points="${ax - 4},${y2 - 14} ${ax + 4},${y2 - 14} ${ax},${y2 - 6}" fill="#C93A2B"/>`);
+  el.push(`<text x="${ax - 8}" y="${(y1 + barH + y2) / 2 + 2}" font-size="8.5" text-anchor="end" fill="#C93A2B">値引き・指値交渉で削られて消える</text>`);
+  el.push(`<text x="${x0 - 10}" y="${y2 + 16}" font-size="9.5" font-weight="700" text-anchor="end" fill="#16232E">成約価格</text>`);
+  el.push(`<rect x="${x0}" y="${y2}" width="${dealW}" height="${barH}" fill="#2E6E8E"/>`);
+  el.push(`<text x="${x0 + dealW / 2}" y="${y2 + 16}" font-size="9.5" font-weight="700" text-anchor="middle" fill="#FFFFFF">実際に売買が成立した価格</text>`);
+  el.push(`<text x="${x0}" y="${y2 + barH + 16}" font-size="8.5" fill="#2E6E8E" font-weight="700">国の成約記録に残る数字 ── このページが使うのは(ものさしも比率の分子も)全部こちら</text>`);
+  return `<svg viewBox="0 0 ${W} 150" role="img" aria-label="売出価格と成約価格の関係" style="width:100%;height:auto">${el.join("")}</svg>`;
+}
+
+// ---- 図11(よくある疑問C): 再調達単価±20%の感度 ── 崖の差はどの仮定でも0に届かない ----
+function faqSensSvg(rows) {
+  const W = 640, axisY = 190, topY = 40, gx = [180, 330, 480];
+  const GY = (d) => axisY - (clamp(d, 0, 0.5) / 0.5) * (axisY - topY);
+  const el = [];
+  el.push(`<text x="24" y="16" font-size="10" font-weight="700" fill="#16232E">再調達単価を±20%動かして全部再計算した「崖の差」(95%区間)</text>`);
+  for (const g of [0.1, 0.2, 0.3, 0.4]) {
+    el.push(`<line x1="120" y1="${GY(g)}" x2="560" y2="${GY(g)}" stroke="#DCE3EA" stroke-width="1"/>`);
+    el.push(`<text x="112" y="${GY(g) + 3}" font-size="8.5" text-anchor="end" fill="#43566B" font-family="monospace">${g.toFixed(1)}</text>`);
+  }
+  el.push(`<line x1="120" y1="${GY(0)}" x2="560" y2="${GY(0)}" stroke="#C93A2B" stroke-width="1.2" stroke-dasharray="4,2"/>`);
+  el.push(`<text x="560" y="${GY(0) - 5}" font-size="8.5" text-anchor="end" fill="#C93A2B">0 = 崖が無い状態 ── どの仮定でも届かない</text>`);
+  rows.forEach((r, i) => {
+    const x = gx[i], color = i === 1 ? "#2E6E8E" : "#43566B";
+    el.push(`<line x1="${x}" y1="${GY(r.lo)}" x2="${x}" y2="${GY(r.hi)}" stroke="${color}" stroke-width="2"/>`);
+    el.push(`<line x1="${x - 7}" y1="${GY(r.lo)}" x2="${x + 7}" y2="${GY(r.lo)}" stroke="${color}" stroke-width="2"/>`);
+    el.push(`<line x1="${x - 7}" y1="${GY(r.hi)}" x2="${x + 7}" y2="${GY(r.hi)}" stroke="${color}" stroke-width="2"/>`);
+    el.push(`<circle cx="${x}" cy="${GY(r.mid)}" r="4.5" fill="${color}"/>`);
+    el.push(`<text x="${x + 11}" y="${GY(r.mid) + 3}" font-size="9.5" font-weight="700" fill="${color}" font-family="monospace">${r.mid.toFixed(2)}</text>`);
+    el.push(`<text x="${x}" y="${axisY + 14}" font-size="9" ${i === 1 ? 'font-weight="700"' : ""} text-anchor="middle" fill="${color}">${esc(r.label)}</text>`);
+    el.push(`<text x="${x}" y="${axisY + 27}" font-size="8" text-anchor="middle" fill="#8A97A5" font-family="monospace">${esc(r.sub)}</text>`);
+  });
+  return `<svg viewBox="0 0 ${W} 226" role="img" aria-label="再調達単価±20%でも崖の差は0を跨がない" style="width:100%;height:auto">${el.join("")}</svg>`;
+}
+
 // ---- 図7: 出口の築年タイムライン(15年住んだら、売るとき築何年か) ----
 function exitTimelineSvg() {
   const W = 640, x0 = 168, x1 = 616, axisY = 252, topY = 34;
@@ -394,6 +497,25 @@ export function renderCliff({ houseDeals, areaScan, asOf }) {
     `実例② ${s2.district}・築${Math.round(s2.age)}年(${s2.deal.quarter}成約・土地${s2.deal.land_m2}m²・延床${s2.deal.floor_m2}m²・徒歩${s2.deal.walk_min}分)`,
     `ものさしはほぼ全部が土地(${Math.round(base2)}万/坪 × ${tsubo2.toFixed(1)}坪 × 徒歩補正${wdenOf(s2.deal.walk_min).toFixed(2)})なのに、実際は土地相場の${Math.round(s2.ratio * 100)}%でしか売れていない ── これが崖の中身`);
 
+  // ---- よくある疑問(2026-08-15ユーザー質問による追記)の実測データ ----
+  const medOf = (xs) => { const s = [...xs].sort((a, b) => a - b); return s.length ? s[Math.floor(s.length / 2)] : null; };
+  // A: ものさしが引き算する建物分は成約価格の何割か(帯別中央値)
+  const shareOf = (lo, hi) => {
+    const xs = arb.samples.filter((s) => s.age >= lo && s.age < hi).map((s) => s.bldgPart / s.deal.price_man);
+    return { n: xs.length, m: medOf(xs) ?? 0 };
+  };
+  const sh03 = shareOf(0, 3), sh1116 = shareOf(11, 16), sh2126 = shareOf(21, 26);
+  // A: 「基準を建物が完全に消えた築31年〜から取ったら」実験(崖が基準に焼き込まれることの実演)
+  const arbAlt = ageRatioBuckets(houseDeals, { matureLo: 31, matureHi: Infinity });
+  const altFlat = medOf(arbAlt.samples.filter((s) => s.age < 31).map((s) => s.ratio));
+  const altOld = medOf(arbAlt.samples.filter((s) => s.age >= 31).map((s) => s.ratio));
+  const baseAlt = arbAlt.base[EX_DISTRICT] ?? null;
+  // C: 再調達単価±20%の感度(全パイプラインを差し替えて再計算)
+  const pptLow = Math.round(COEFFS.DEFAULT_REBUILD_PPT * 0.8), pptHigh = Math.round(COEFFS.DEFAULT_REBUILD_PPT * 1.2);
+  const ciLow = ageCurveCI(houseDeals, 4000, { rebuildPpt: pptLow });
+  const ciHigh = ageCurveCI(houseDeals, 4000, { rebuildPpt: pptHigh });
+  const nb0 = (c) => c.rows.find((b) => b.lo === 0);
+
   // 散布図
   const nClip = arb.samples.filter((s) => s.ratio > 1.6 || s.ratio < 0.2).length;
   const labelled = new Set([0, 31, 41]);
@@ -407,7 +529,7 @@ export function renderCliff({ houseDeals, areaScan, asOf }) {
   const anchorNav = `
     <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">
       ${[["#q-data", "STEP 1 データは何か"], ["#q-hazard", "STEP 2 ハザードの影響"], ["#q-norm", "STEP 3 ものさし価格"],
-    ["#q-bundle", "STEP 4 束ねて比べる"], ["#q-ci", "STEP 5 どこまで信じるか"], ["#q-concl", "STEP 6 結論と限界"]]
+    ["#q-bundle", "STEP 4 束ねて比べる"], ["#q-ci", "STEP 5 どこまで信じるか"], ["#q-faq", "よくある疑問(ものさしの検算)"], ["#q-concl", "STEP 6 結論と限界"]]
       .map(([href, t]) => `<a href="${href}" style="font-size:.74rem;border:1px solid var(--band);padding:3px 10px;text-decoration:none;background:#FDFDFC">${t}</a>`).join("")}
     </div>`;
 
@@ -486,10 +608,10 @@ export function renderCliff({ houseDeals, areaScan, asOf }) {
       <p class="why">有効${ci.total}件は地区(坪単価の水準)も築年数も土地の広さも駅距離もバラバラで、価格をそのまま並べても何も分からない。そこで発想を変える ── <b>1件ずつ「この条件なら、いくらで売れるのが標準か」を機械的に計算し(=ものさし価格)、実際の成約価格をものさしで割った比率だけを取り出す</b>。比率1.00なら「ものさしどおり」、0.70なら「ものさしより3割安い」。単位が消えるので、全${ci.total}件を1枚のグラフに並べられる。ものさしは次の3部品でできている:</p>
       <div class="logic-step"><div class="t"><span class="no">部品1</span>地区の土地相場(万/坪。坪は土地の慣用単位で1坪≒3.3m²)</div>
         <div class="formula">土地相場 = その地区の築11〜25年の成約から建物分を引いた残り ÷ 土地坪数 の中央値(駅徒歩10分の条件に揃える。やり方は部品3)</div>
-        <div class="why">崖を測るのに崖を使わないよう、基準は<b>建物の値段がほぼ消えかけた成熟帯(築11〜25年)</b>から立てる。この帯なら「価格≒土地+わずかな建物」なので、土地の相場が最も素直に読める。この成約が5件未満の地区は基準が立たないため測定から外す(STEP 1の最後の絞り込み)。各地区の値は上のSTEP 2の表のとおり(例: ${esc(EX_DISTRICT)}=${Math.round(baseU)}万/坪)。なおこれは<b>崖測定専用に立て直した値</b>で、物件査定に使う基準坪単価(公示地価ベース・<a href="formula.html">値段の解剖</a>第1項)とは出所が別 ── 崖の測定が査定側の仮定に依存しないようにするためで、数字が一致しないのは仕様。</div></div>
+        <div class="why">崖を測るのに崖を使わないよう、基準は<b>建物の値段がほぼ消えかけた成熟帯(築11〜25年)</b>から立てる。この帯なら「価格≒土地+わずかな建物」なので、土地の相場が最も素直に読める。この成約が5件未満の地区は基準が立たないため測定から外す(STEP 1の最後の絞り込み)。各地区の値は上のSTEP 2の表のとおり(例: ${esc(EX_DISTRICT)}=${Math.round(baseU)}万/坪)。なおこれは<b>崖測定専用に立て直した値</b>で、物件査定に使う基準坪単価(公示地価ベース・<a href="formula.html">値段の解剖</a>第1項)とは出所が別 ── 崖の測定が査定側の仮定に依存しないようにするためで、数字が一致しないのは仕様。<b>「築11年ならまだ建物価値が残っているのでは?」「なぜ建物が完全に消えた築31年〜から取らないのか?」という疑問には<a href="#q-faq">よくある疑問A</a>で、実際に計算をやり直して答えている。</b></div></div>
       <div class="logic-step"><div class="t"><span class="no">部品2</span>建物の残り価値(万円)</div>
         <div class="formula">建物 = ${COEFFS.DEFAULT_REBUILD_PPT}万/坪 × 延床坪数 × (1 − 築年数/${COEFFS.BUILDING_LIFE_Y}) − 繰延修繕 min(${COEFFS.DEFAULT_REPAIR_MAN}万, ${RETAIL.REPAIR_PER_YEAR}万×築年数)</div>
-        <div class="why">新築時の建築費${COEFFS.DEFAULT_REBUILD_PPT}万/坪が${COEFFS.BUILDING_LIFE_Y}年かけて直線でゼロになる、という<a href="formula.html">値段の解剖・第2項</a>と同じ単純な引き算。築${COEFFS.BUILDING_LIFE_Y}年超は残価ゼロ。修繕やリフォームの履歴はデータに無いので、全件「年式相応の未修繕」と置く ── この仮定が帯ごとに大きく偏らない限り、帯どうしの比較は歪みにくい。実際には売却前に手を入れた家が築古ほど混ざりやすく、その場合は築古帯の比率が上振れする=<b>崖はむしろ控えめに出る</b>(保守側の誤差)。</div></div>
+        <div class="why">新築時の建築費${COEFFS.DEFAULT_REBUILD_PPT}万/坪が${COEFFS.BUILDING_LIFE_Y}年かけて直線でゼロになる、という<a href="formula.html">値段の解剖・第2項</a>と同じ単純な引き算。築${COEFFS.BUILDING_LIFE_Y}年超は残価ゼロ。修繕やリフォームの履歴はデータに無いので、全件「年式相応の未修繕」と置く ── この仮定が帯ごとに大きく偏らない限り、帯どうしの比較は歪みにくい。実際には売却前に手を入れた家が築古ほど混ざりやすく、その場合は築古帯の比率が上振れする=<b>崖はむしろ控えめに出る</b>(保守側の誤差)。${COEFFS.DEFAULT_REBUILD_PPT}万/坪という数字の<b>出所と、±20%動かした場合の感度は<a href="#q-faq">よくある疑問C</a></b>。</div></div>
       <div class="logic-step"><div class="t"><span class="no">部品3</span>駅距離の補正</div>
         <div class="formula">徒歩補正 = ${WALK_KNOTS[0][0]}分以内 ±0% / ${WALK_KNOTS.slice(1).map(([m, p]) => `${m}分 ${Math.round(p * 100)}%`).join(" / ")}(間は直線でつなぎ、${WALK_KNOTS[WALK_KNOTS.length - 1][0]}分以降は頭打ち)</div>
         <div class="why">台帳479件の実測(2026-08-12時点。<a href="formula.html">値段の解剖</a>の変数辞典と同じ折れ線)から作った補正。駅から遠い成約を安いまま比べると「遠い=築年のせい」と誤読するため、距離のぶんを先に取り除く。</div></div>
@@ -528,6 +650,52 @@ export function renderCliff({ houseDeals, areaScan, asOf }) {
     </div>
   </div>
 
+  <div class="panel" id="q-faq">
+    <h2>よくある疑問 ── ものさしそのものを疑う3つの検算</h2>
+    <div class="logic-body">
+      <p class="why">ここまでの計算は「地区の土地相場は築11〜25年から立てる」「建物は${COEFFS.DEFAULT_REBUILD_PPT}万/坪から直線で目減り」という<b>仮定</b>の上に立っている。仮定が怪しければ結論も怪しい。そこで、よく出る3つの疑問に、<b>実際に計算をやり直して</b>答える(数値はすべてビルド時の実測)。</p>
+
+      <h2 class="sub" style="margin-top:16px">疑問A: 築11〜25年の家にはまだ建物の価値が残っているのでは? なぜ「完全に消えた帯」を基準にしないのか</h2>
+      <p class="why">前半はそのとおりで、残っている。だからこの方法は建物価値を「無いとみなす」のではなく、<b>部品2で見積もった建物分を成約価格から引き算してから</b>土地の相場を出している(残差法)。では引き算する建物分はどれくらいの大きさか ── 実測するとこうなる:</p>
+      ${faqShareSvg([
+    { label: "築0〜3年(新築)", share: sh03.m, n: sh03.n, note: " ── 価格の4割弱が建物" },
+    { label: "築11〜16年", share: sh1116.m, n: sh1116.n, note: " ── 引き算はこの程度" },
+    { label: "築21〜26年", share: sh2126.m, n: sh2126.n, note: "(修繕の負債と相殺)" },
+  ])}
+      <div class="note">土地が価格の大半を占めるエリアなので、築11年時点でも建物分は<b>価格の2割弱</b>しかない(新築の半分以下)。引き算がこの大きさなら、建物モデルが多少ズレても土地相場への影響は限定的に収まる ── これが下限を築11年に置ける理由。</div>
+      <p class="why" style="margin-top:12px">では上限側 ── 建物が完全に消えた<b>築31年〜を基準にすればもっときれいでは?</b> 実際にやってみた:</p>
+      <div style="overflow-x:auto"><table class="list">
+        <tr><th>基準の取り方</th><th class="num">${esc(EX_DISTRICT)}の土地相場</th><th class="num">フラット圏(築31年未満)の読み</th><th class="num">崖の差</th></tr>
+        <tr style="background:#F2F7F4"><td><b>築11〜25年(現行)</b></td><td class="num"><b>${Math.round(baseU)}万/坪</b></td><td class="num">${medOf(arb.samples.filter((s) => s.age < 31).map((s) => s.ratio)).toFixed(2)}(≒ものさしどおり)</td><td class="num">${ci.cliffDiff.toFixed(2)}</td></tr>
+        <tr style="background:#FBF4F2"><td>築31年〜(建物ゼロの帯)</td><td class="num">${baseAlt ? Math.round(baseAlt) + "万/坪" : "—"}</td><td class="num">${altFlat ? altFlat.toFixed(2) + "(全部が「2〜3割高」に見える)" : "—"}</td><td class="num">${altFlat && altOld ? (altFlat - altOld).toFixed(2) : "—"}</td></tr>
+      </table></div>
+      ${baseAlt ? faqBaseGaugeSvg({ koji: KOJI_PPT, baseNow: baseU, baseAlt }) : ""}
+      <div class="note"><b>何が起きたか</b>: 築31年〜の成約は「土地相場から2〜4割引かれた価格」── つまり<b>崖そのもの</b>だ。そこから土地相場を逆算すると、崖の値引きが混入した「安すぎる相場」(${esc(EX_DISTRICT)}で${baseAlt ? Math.round(baseAlt) : "—"}万/坪)が出てくる。これは公示地価から見た実勢の目安(${KOJI_PPT}×1.1〜1.2=${Math.round(KOJI_PPT * RULE_LO)}〜${Math.round(KOJI_PPT * RULE_HI)}万/坪)と大きく矛盾する。崖の帯を基準に使うと<b>崖が基準に焼き込まれ</b>、「普通の中古はどこも2〜3割高く売れている」という逆立ちした読みになってしまう。築11〜25年を選ぶのは ①崖の外側で ②建物の引き算が小さく ③地区ごとに件数を確保でき ④<b>出てくる相場が公示という独立の物差しと整合する</b>、の4条件を同時に満たす帯だから。④が効いていて、この帯選びは「答えを見て選んだ」のではなく外部の物差しで検算できている。</div>
+
+      <h2 class="sub" style="margin-top:20px">疑問B: ものさし価格には「売主の期待(上乗せ)」も乗っているのではないか</h2>
+      <p class="why"><b>乗っていない。</b>このページの材料は最初から最後まで<b>成約価格</b>(実際に売買が成立した価格)で、SUUMO等の売出価格は1件も使っていない。</p>
+      ${faqAskSvg()}
+      <div class="note">「売主の期待」は売出価格にだけ乗っている部分で、成約に至るまでの値引き・交渉で削られた後の姿がこのデータ。ものさしの土地相場も成約から作り、比率の分子も成約なので、<b>式のどこにも売出価格は登場しない</b>。ただし正確に言うと、ものさしには「実需の買い手が実際に払っている水準」(分譲利益や住宅地としての人気を含む、成約ベースの小売水準)は乗っている ── これは意図的で、同じ市場の成約同士を比べないと築年の効果だけを取り出せないため。売出と成約の差(=売主の期待)の話は<a href="formula.html">値段の解剖・第3項</a>が扱う。</div>
+
+      <h2 class="sub" style="margin-top:20px">疑問C: 「再調達${COEFFS.DEFAULT_REBUILD_PPT}万/坪」とは何で、どこから来た数字か。違っていたら結論は変わるのか</h2>
+      <p class="why"><b>「同じ家をいま新築で建て直したら幾らかかるか」という工事費の坪単価</b>のこと(だから「再調達」と呼ぶ)。2026年時点の木造戸建の実勢建築費<b>90〜110万円/坪というレンジの保守側(下寄り)</b>として${COEFFS.DEFAULT_REBUILD_PPT}万を置いている。公的統計の一次値そのものではなく実勢レンジからの設定値なので、<b>この数字を±20%動かして全部再計算した</b>:</p>
+      ${faqSensSvg([
+    { label: `−20%(${pptLow}万/坪)`, sub: "建物を安く見積もる側", mid: ciLow.cliffDiff, lo: ciLow.cliffLo, hi: ciLow.cliffHi },
+    { label: `採用値 ${COEFFS.DEFAULT_REBUILD_PPT}万/坪`, sub: "実勢90〜110万の保守側", mid: ci.cliffDiff, lo: ci.cliffLo, hi: ci.cliffHi },
+    { label: `+20%(${pptHigh}万/坪)`, sub: "建物を高く見積もる側", mid: ciHigh.cliffDiff, lo: ciHigh.cliffLo, hi: ciHigh.cliffHi },
+  ])}
+      <div style="overflow-x:auto;margin-top:8px"><table class="list">
+        <tr><th>再調達単価</th><th class="num">崖の差(95%区間)</th><th class="num">築0〜3年の比率(95%区間)</th><th>読み</th></tr>
+        ${[
+    [`−20% = ${pptLow}万/坪`, ciLow, nb0(ciLow), ""],
+    [`<b>採用 ${COEFFS.DEFAULT_REBUILD_PPT}万/坪</b>`, ci, nb0(ci), ' style="background:#F2F7F4"'],
+    [`+20% = ${pptHigh}万/坪`, ciHigh, nb0(ciHigh), ""],
+  ].map(([label, c, nb, style]) => `<tr${style}><td>${label}</td><td class="num">${c.cliffDiff.toFixed(2)}(${c.cliffLo.toFixed(2)}〜${c.cliffHi.toFixed(2)})</td><td class="num">${nb.m.toFixed(2)}(${nb.lo95.toFixed(2)}〜${nb.hi95.toFixed(2)})</td><td style="white-space:normal">${c.cliffLo > 0 ? "崖あり(0を跨がない)" : "崖の判別不能"}。新築の山${nb.hi95 < 1 ? "なし" : "は立たないが、区間が1.00に触れ「新築が安い」とまでは言えない"}</td></tr>`).join("")}
+      </table></div>
+      <div class="note"><b>読み方</b>: 崖の大きさ自体は動く(建物を高く見積もるほどものさしが膨らみ、相対的に崖は浅く出る)が、<b>どの仮定でも95%区間が0を跨がず「崖がある」は不変</b>。理由は構造的で、崖の帯(築31年〜)ではものさしの建物項がもともとゼロなので、再調達単価の仮定は崖側にほぼ効かないから。もう一つの結論「新築に上乗せの山なし」は、−20%側では区間の上限が1.00に触れて「ものさしどおりと区別できない」まで弱まる ── それでも<b>山(1.00を明確に超える上乗せ)はどの仮定でも観測されない</b>。なお同じ${COEFFS.DEFAULT_REBUILD_PPT}万を事例側の引き算と対象側の足し算の両方に使う対称設計なので、誤差の一部は比率の上で打ち消し合う。</div>
+    </div>
+  </div>
+
   <div class="panel" id="q-concl">
     <h2>STEP 6: 結論と限界 ── 言えることは2つ、言えないことも書いておく</h2>
     <div class="logic-body">
@@ -535,8 +703,8 @@ export function renderCliff({ houseDeals, areaScan, asOf }) {
         <div style="border:1.5px solid #2C6E49;background:#FDFDFC;padding:11px 13px;flex:1;min-width:250px">
           <div style="font-weight:700;color:#2C6E49;border-bottom:1px solid var(--grid);padding-bottom:5px">この検証から言えること</div>
           <div style="font-size:.78rem;line-height:1.9;margin-top:6px">
-            <b>① 築31年からの崖は本物</b> ── 差${ci.cliffDiff.toFixed(2)}(95%区間${ci.cliffLo.toFixed(2)}〜${ci.cliffHi.toFixed(2)})。低地・混在の${nHazDist}地区を除いても${ciTab.cliffDiff.toFixed(2)}で不変(STEP 2)。<br>
-            <b>② 新築プレミアムの山は無い</b> ── 築0〜3年は${ac.buckets[0].ratio.toFixed(2)}(区間上限${newHi.toFixed(2)}&lt;1.00)。「新築は買った瞬間2割下がる」はこの市場では観測されない。<br>
+            <b>① 築31年からの崖は本物</b> ── 差${ci.cliffDiff.toFixed(2)}(95%区間${ci.cliffLo.toFixed(2)}〜${ci.cliffHi.toFixed(2)})。低地・混在の${nHazDist}地区を除いても${ciTab.cliffDiff.toFixed(2)}で不変(STEP 2)、再調達単価を±20%動かしても不変(よくある疑問C)。<br>
+            <b>② 新築プレミアムの山は無い</b> ── 築0〜3年は${ac.buckets[0].ratio.toFixed(2)}(区間上限${newHi.toFixed(2)}&lt;1.00)。「新築は買った瞬間2割下がる」はこの市場では観測されない(ただし①より仮定への依存が強い ── よくある疑問C)。<br>
             <span style="color:var(--ink-soft)">(参考: 築3〜7年帯も1.00を下回るが、標本${ci.rows.find((b) => b.lo === 3).n}件と薄く、エリア拡張と同時に現れたため母集団の変化と切り分けられない ── 判断の根拠にしない)</span>
           </div>
         </div>

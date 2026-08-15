@@ -8,8 +8,9 @@ import { anatomySvg, rawResidualStats } from "./anatomy.js";
 
 // 公示地価2025 赤羽西・住宅地平均(万円/坪)。出典: 国交省 地価公示
 // (トチノカチ 13117-U0045 / 土地代データ akabanenishi で確認 2026-08-11)
-const KOJI_PPT = 190;
-const RULE_LO = 1.1, RULE_HI = 1.2;   // 経験則: 実勢 ≒ 公示×1.1〜1.2(人気エリア論の検証はページ本文)
+// cliff.html の「よくある疑問」も基準単価の検算(公示との整合)に使うため export する
+export const KOJI_PPT = 190;
+export const RULE_LO = 1.1, RULE_HI = 1.2;   // 経験則: 実勢 ≒ 公示×1.1〜1.2(人気エリア論の検証はページ本文)
 
 // ---- 築年カーブの実測(補論: 新築プレミアム検証) ----
 // 地区ごとに成熟帯(築11〜25年)の残余から土地基準単価を置き、各成約を
@@ -18,10 +19,14 @@ const RULE_LO = 1.1, RULE_HI = 1.2;   // 経験則: 実勢 ≒ 公示×1.1〜1.2
 // 「築30年の崖」は築31年以降の比率の段差として現れる(2026-08 検証会話の定式化)。
 // cliff.html(30年の崖の検証)が散布図・実例・地区表を描くために export する。
 // 返り値の base(地区別基準単価)・samples(1件ごとの築年と比率)は追加フィールドで、
-// ageCurveStats / ageCurveCI の既存の読み手には影響しない
-export function ageRatioBuckets(houseDeals) {
+// ageCurveStats / ageCurveCI の既存の読み手には影響しない。
+// opts は cliff.html「よくある疑問」の感度検算用: matureLo/matureHi で基準帯を差し替え
+// (「築31年〜を基準にしたら崖が基準に焼き込まれる」実験)、rebuildPpt で再調達単価を±20%振る。
+// 既定値は本番の測定と完全に同じ(省略時の挙動は従来どおり)
+export function ageRatioBuckets(houseDeals, opts = {}) {
+  const { matureLo = 11, matureHi = 26, rebuildPpt = COEFFS.DEFAULT_REBUILD_PPT } = opts;
   const T = COEFFS.TSUBO_M2;
-  const bldg = (d) => Math.max(0, COEFFS.DEFAULT_REBUILD_PPT * (d.floor_m2 / T) * Math.max(0, 1 - d.age / COEFFS.BUILDING_LIFE_Y)
+  const bldg = (d) => Math.max(0, rebuildPpt * (d.floor_m2 / T) * Math.max(0, 1 - d.age / COEFFS.BUILDING_LIFE_Y)
     - Math.min(COEFFS.DEFAULT_REPAIR_MAN, RETAIL.REPAIR_PER_YEAR * d.age));
   const wden = (w) => Math.min(RETAIL.WALK_DENOM_CLAMP[1], Math.max(RETAIL.WALK_DENOM_CLAMP[0],
     1 + walkAdjOf(w)));
@@ -33,7 +38,7 @@ export function ageRatioBuckets(houseDeals) {
   for (const d of rows) (byDistrict[d.district] ??= []).push(d);
   const base = {};
   for (const [dist, arr] of Object.entries(byDistrict)) {
-    const mature = arr.filter((d) => d.age >= 11 && d.age < 26)
+    const mature = arr.filter((d) => d.age >= matureLo && d.age < matureHi)
       .map((d) => Math.max(d.price_man - bldg(d), d.price_man * RETAIL.LAND_RESID_MIN_RATIO) / (d.land_m2 / T) / wden(d.walk_min));
     if (mature.length >= 5) base[dist] = med(mature);   // 成熟帯5件未満の地区は基準が立たないため除外
   }
@@ -52,8 +57,8 @@ export function ageRatioBuckets(houseDeals) {
     nLandFiltered: rows.length };
 }
 
-export function ageCurveStats(houseDeals) {
-  const { districts, buckets, newShares, newPrices, med } = ageRatioBuckets(houseDeals);
+export function ageCurveStats(houseDeals, opts = {}) {
+  const { districts, buckets, newShares, newPrices, med } = ageRatioBuckets(houseDeals, opts);
   return {
     districts,
     buckets: buckets.map((b) => ({ lo: b.lo, hi: b.hi, n: b.ratios.length, ratio: b.ratios.length ? med(b.ratios) : null })),
@@ -64,8 +69,8 @@ export function ageCurveStats(houseDeals) {
 // 標本の薄さを明示するための不確実性評価。各築年帯の中央値をブートストラップ(復元抽出)で
 // 4,000回引き直し、2.5%〜97.5%分位を95%信頼区間とする。乱数はLCG固定シードで決定論的
 // (ビルドのたびに数字が動くとページの再現性が失われるため)。
-export function ageCurveCI(houseDeals, resamples = 4000) {
-  const { districts, buckets, med } = ageRatioBuckets(houseDeals);
+export function ageCurveCI(houseDeals, resamples = 4000, opts = {}) {
+  const { districts, buckets, med } = ageRatioBuckets(houseDeals, opts);
   let seed = 20260812;
   const rnd = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
   const ci = (arr) => {
