@@ -31,10 +31,15 @@ test("simulate: 注入データがJSONとして完全(全物件・必須数値�
       assert.ok(Number.isFinite(p[k]), `${p.id}.${k} が有限数値: ${p[k]}`);
     }
     assert.ok(p.land2 > 0 && p.ask > 0, `${p.id} の土地・売出が正`);
+    assert.match(p.color ?? "", /^#[0-9A-Fa-f]{6}$/, `${p.id} に線色が割り当たる`);
+    // 全物件がチェックボックス(既定=全選択)・控除の物件別編集行の両方に出る(2026-08-16の一括表示化)
+    assert.ok(html.includes(`data-id="${p.id}"`), `${p.id} のチェックボックスがある`);
+    assert.ok(html.includes(`data-ded-cap="${p.id}"`), `${p.id} の控除編集行がある`);
   }
-  // 既定の比較対象が実在する(台帳から消えたらフォールバックする設計だが、現状は本物件を指す)
-  assert.ok(d.props.some((p) => p.id === d.defA), "既定Aが台帳に実在");
-  assert.ok(d.props.some((p) => p.id === d.defB), "既定Bが台帳に実在");
+  // 既定は全選択(checkedの無いチェックボックスが無い)
+  const boxes = html.match(/<input type="checkbox" data-id="[^"]+"[^>]*>/g) ?? [];
+  assert.equal(boxes.length, results.length, "チェックボックスが全物件ぶんある");
+  for (const b of boxes) assert.ok(b.includes(" checked"), `既定で全選択: ${b}`);
 });
 
 test("simulate: 出口の実測カーブは cliff.html と同一の帯構成で崖を含む", () => {
