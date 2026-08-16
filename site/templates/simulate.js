@@ -78,58 +78,58 @@ export function renderSimulate(results, curve, { asOf }) {
     </div>
   </section>
 
-  <section class="panel">
-    <h2>物件と仮定を選ぶ</h2>
-    <div class="simgrid">
-      <div class="simctl">
-        <label class="simlab" for="selA"><span class="swatch swA"></span>物件A</label>
-        <select id="selA" class="stsel">${props.map((p) => `<option value="${esc(p.id)}"${p.id === defA ? " selected" : ""}>${esc(p.label)}(売出${fmtMan(p.ask)})</option>`).join("")}</select>
-      </div>
-      <div class="simctl">
-        <label class="simlab" for="selB"><span class="swatch swB"></span>物件B</label>
-        <select id="selB" class="stsel">${props.map((p) => `<option value="${esc(p.id)}"${p.id === defB ? " selected" : ""}>${esc(p.label)}(売出${fmtMan(p.ask)})</option>`).join("")}</select>
-      </div>
+  <div class="simlayout">
+  <section class="panel simside">
+    <h2>物件と仮定</h2>
+    <div class="simctl">
+      <label class="simlab" for="selA"><span class="swatch swA"></span>物件A</label>
+      <select id="selA" class="stsel">${props.map((p) => `<option value="${esc(p.id)}"${p.id === defA ? " selected" : ""}>${esc(p.label)}(売出${fmtMan(p.ask)})</option>`).join("")}</select>
     </div>
-    <div class="simgrid" style="margin-top:10px">
+    <div class="simctl" style="margin-top:6px">
+      <label class="simlab" for="selB"><span class="swatch swB"></span>物件B</label>
+      <select id="selB" class="stsel">${props.map((p) => `<option value="${esc(p.id)}"${p.id === defB ? " selected" : ""}>${esc(p.label)}(売出${fmtMan(p.ask)})</option>`).join("")}</select>
+    </div>
+    <div class="simgrid2" style="margin-top:10px">
       <div class="simctl"><label class="simlab" for="inG">地価の年率 <b id="vG">0.0%</b></label>
-        <input type="range" id="inG" min="-2" max="5" step="0.5" value="0">
-        <div class="note">既定0%=横ばい。台帳の時点修正は直近実勢+10%/年だが、10年先まで外挿する根拠はないため保守側を既定にする</div></div>
-      <div class="simctl"><label class="simlab" for="inAnn">年間経費(固都税・保険等) <b id="vAnn">25万/年</b></label>
-        <input type="range" id="inAnn" min="0" max="60" step="5" value="25">
-        <div class="note">両物件に同額を適用(差がある場合は読み替え)。ローン金利は含まない</div></div>
+        <input type="range" id="inG" min="-2" max="5" step="0.5" value="0"></div>
+      <div class="simctl"><label class="simlab" for="inRent">賃貸の家賃 <b id="vRent">20万/月</b></label>
+        <input type="range" id="inRent" min="10" max="40" step="1" value="20"></div>
+      <div class="simctl"><label class="simlab" for="inAnn">年間経費 <b id="vAnn">25万/年</b></label>
+        <input type="range" id="inAnn" min="0" max="60" step="5" value="25"></div>
       <div class="simctl"><label class="simlab" for="inCyc">定期修繕の周期 <b id="vCyc">15年ごと</b></label>
-        <input type="range" id="inCyc" min="10" max="20" step="1" value="15">
-        <div class="note">建物の築年数がこの倍数を跨ぐたびに下の金額を計上(外壁・屋根・給湯器等の一式)</div></div>
-      <div class="simctl"><label class="simlab" for="inPer">定期修繕1回あたり <b id="vPer">150万</b></label>
-        <input type="range" id="inPer" min="50" max="400" step="25" value="150">
-        <div class="note">木造3階の外壁+屋根塗装は足場込100〜180万が相場。水回り更新まで見るなら増額</div></div>
-      <div class="simctl"><label class="simlab" for="inRent">比較する賃貸の家賃 <b id="vRent">20万/月</b></label>
-        <input type="range" id="inRent" min="10" max="40" step="1" value="20">
-        <div class="note">「買わずに賃貸で月この額を払い続けたら」の累計線をグラフに重ねる。家賃のみ(更新料・引越・住み替えの摩擦は含まない)</div></div>
+        <input type="range" id="inCyc" min="10" max="20" step="1" value="15"></div>
+      <div class="simctl"><label class="simlab" for="inPer">定期修繕1回分 <b id="vPer">150万</b></label>
+        <input type="range" id="inPer" min="50" max="400" step="25" value="150"></div>
+      <div class="simctl"><label class="simlab" for="inRate">ローン金利 <b id="vRate">0.8%</b></label>
+        <input type="range" id="inRate" min="0" max="3" step="0.1" value="0.8"></div>
     </div>
-    <div style="margin-top:14px;border-top:1px dashed var(--grid);padding-top:12px">
-      <label style="font-size:.82rem;font-weight:700"><input type="checkbox" id="ckLoan" checked> ローン金利と住宅ローン控除を織り込む</label>
-      <div class="simgrid" style="margin-top:8px">
-        <div class="simctl"><label class="simlab" for="inRate">ローン金利(全期間) <b id="vRate">0.8%</b></label>
-          <input type="range" id="inRate" min="0" max="3" step="0.1" value="0.8">
-          <div class="note">借入=売出価格の全額(諸費用は現金)・35年元利均等・金利は全期間一定と仮定。途中売却時は残債一括返済(違約金なし)</div></div>
-        <div class="simctl"><label class="simlab">住宅ローン控除の前提(年末残高×0.7%)</label>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:.75rem;align-items:center">
-            <span><span class="swatch swA"></span>A: 上限<input type="number" id="inCapA" class="simnum" step="500" min="0" max="5000">万・<select id="inYrsA" class="stsel"><option>10</option><option>13</option></select>年</span>
-            <span><span class="swatch swB"></span>B: 上限<input type="number" id="inCapB" class="simnum" step="500" min="0" max="5000">万・<select id="inYrsB" class="stsel"><option>10</option><option>13</option></select>年</span>
-          </div>
-          <div class="note">既定は<b>中古(その他住宅)=上限2,000万・10年 / 新築(省エネ基準適合)=上限3,000万・13年</b>。
-          区分ごとの借入限度額・期間は入居年の税制で変わるため<b>必ず最新の制度で確認し、この欄を直すこと</b>。
-          新築は2024年1月以降の建築確認だと<b>省エネ基準適合が控除の必須要件</b>(非適合は控除0)。ただし2025年4月からは
-          省エネ基準適合そのものが建築確認の審査要件(建築物省エネ法の全面義務化)になったため、義務化後に建築確認を受けた
-          新築(ESPACER西が丘2=建築確認2026年が該当)は適合が制度上の前提。<b>残る実務は確定申告用の証明書類
-          (建設住宅性能評価書または住宅省エネルギー性能証明書)が売主側から出るかの確認</b>で、書類が無いと適合していても
-          控除を申請できない。控除は「納税額(所得税+住民税の控除枠)が控除額を上回る」前提で満額計上する</div></div>
-      </div>
+    <div style="margin-top:10px;border-top:1px dashed var(--grid);padding-top:8px">
+      <label style="font-size:.78rem;font-weight:700"><input type="checkbox" id="ckLoan" checked> ローン金利と住宅ローン控除を織り込む</label>
+      <div class="simctl" style="margin-top:6px"><span class="simlab" style="margin-bottom:4px">住宅ローン控除(年末残高×0.7%)</span>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:.73rem;align-items:center">
+          <span><span class="swatch swA"></span>A: 上限<input type="number" id="inCapA" class="simnum" step="500" min="0" max="5000">万・<select id="inYrsA" class="stsel"><option>10</option><option>13</option></select>年</span>
+          <span><span class="swatch swB"></span>B: 上限<input type="number" id="inCapB" class="simnum" step="500" min="0" max="5000">万・<select id="inYrsB" class="stsel"><option>10</option><option>13</option></select>年</span>
+        </div>
+        <div class="note" style="margin-top:4px">既定: 中古(その他)=2,000万・10年 / 新築(省エネ適合)=3,000万・13年。<b>入居年の税制で要確認</b></div></div>
     </div>
+    <details class="dnote"><summary>各仮定の前提と注意(必読)</summary>
+      <ul style="margin:6px 0 0 1.1em;font-size:.7rem;color:var(--ink-soft);line-height:1.7">
+        <li><b>地価の年率</b>: 既定0%=横ばい。台帳の時点修正は直近実勢+10%/年だが、10年先まで外挿する根拠はないため保守側を既定にする</li>
+        <li><b>賃貸の家賃</b>: 「買わずに賃貸で月この額を払い続けたら」の累計線をグラフに重ねる。家賃のみ(更新料・引越・住み替えの摩擦は含まない)</li>
+        <li><b>年間経費</b>(固都税・保険等): 両物件に同額を適用(差がある場合は読み替え)。ローン金利は含まない</li>
+        <li><b>定期修繕</b>: 建物の築年数が周期の倍数を跨ぐたびに1回分を計上(外壁・屋根・給湯器等の一式)。木造3階の外壁+屋根塗装は足場込100〜180万が相場。水回り更新まで見るなら増額</li>
+        <li><b>ローン</b>: 借入=売出価格の全額(諸費用は現金)・35年元利均等・金利は全期間一定と仮定。途中売却時は残債一括返済(違約金なし)</li>
+        <li><b>住宅ローン控除</b>: 区分ごとの借入限度額・期間は入居年の税制で変わるため必ず最新の制度で確認し、上の欄を直すこと。
+        新築は2024年1月以降の建築確認だと<b>省エネ基準適合が控除の必須要件</b>(非適合は控除0)。ただし2025年4月からは
+        省エネ基準適合そのものが建築確認の審査要件(建築物省エネ法の全面義務化)になったため、義務化後に建築確認を受けた
+        新築(ESPACER西が丘2=建築確認2026年が該当)は適合が制度上の前提。<b>残る実務は確定申告用の証明書類
+        (建設住宅性能評価書または住宅省エネルギー性能証明書)が売主側から出るかの確認</b>で、書類が無いと適合していても
+        控除を申請できない。控除は「納税額(所得税+住民税の控除枠)が控除額を上回る」前提で満額計上する</li>
+      </ul>
+    </details>
   </section>
 
-  <section class="panel">
+  <section class="panel simmain">
     <h2>総コスト(取得+保有 − 売却手取り)(保有年数 1〜30年)</h2>
     <div class="scale-wrap"><svg id="simchart" class="scale-svg" viewBox="0 0 760 340" role="img" aria-label="保有年数別の総コスト"></svg></div>
     <div class="simlegend">
@@ -143,6 +143,7 @@ export function renderSimulate(results, curve, { asOf }) {
     − 住宅ローン控除(同) − その年に売った場合の手取り。「その年数住むのに結局いくら払ったことになるか」を表す。下ほど安い。
     縦の点線は各物件が<b>築31年(崖の開始)</b>を跨ぐ年で、実測カーブの段差(崖)がそのまま総コストのジャンプとして現れる。月額換算は下の内訳表に出る。</div>
   </section>
+  </div>
 
   <section class="panel">
     <h2>選んだ年数での内訳</h2>
@@ -186,8 +187,18 @@ export function renderSimulate(results, curve, { asOf }) {
 
   <script type="application/json" id="simdata">${JSON.stringify({ props, SIMC, defA, defB })}</script>
   <style>
+    /* PC幅では「仮定パネル(左)+グラフ(右)」を1画面に収める(2026-08-16ユーザー要望:
+       スライダーとグラフが縦に分断されると、動かした結果が体感できない) */
+    .simlayout{display:grid;grid-template-columns:minmax(300px,360px) 1fr;gap:20px;align-items:start}
+    .simlayout .panel{margin-bottom:20px}
+    .simlayout section+section{margin-top:0}   /* 共通CSSのsection間マージンが右カラムを20pxずらすのを打ち消す */
+    @media (max-width:1080px){.simlayout{grid-template-columns:1fr}.simlayout .panel{margin-bottom:20px}}
     .simgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
-    .simctl{font-size:.8rem}
+    .simgrid2{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px}
+    .simside h2{margin-bottom:10px}
+    .simside .simlab{margin-bottom:1px}
+    .dnote{margin-top:10px;font-size:.72rem}
+    .dnote summary{cursor:pointer;color:var(--band);font-weight:700}
     .simlab{display:block;font-size:.75rem;letter-spacing:.06em;color:var(--ink-soft);margin-bottom:3px}
     .simlab b{font-family:var(--mono);color:var(--ink)}
     .simctl select{width:100%}
