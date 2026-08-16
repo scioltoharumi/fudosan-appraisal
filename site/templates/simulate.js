@@ -67,8 +67,8 @@ export function renderSimulate(results, curve, { asOf }) {
   <section class="panel">
     <h2>これは何をするページか</h2>
     <div class="logic-body">
-      <p style="font-size:.85rem">台帳の2物件を選ぶと、<b>「取得にかかったお金 + 保有中の維持費 − 売ったときの手取り」を保有年数ごとに計算し、
-      月額に換算して比べます</b>。買値が高くても土地の比率が高い物件は出口で回収でき、買値が近くても建物の比率が高い物件は
+      <p style="font-size:.85rem">台帳の2物件を選ぶと、<b>「取得にかかったお金 + 保有中の維持費 − 売ったときの手取り」=総コストを
+      保有年数ごとに計算して比べます</b>。買値が高くても土地の比率が高い物件は出口で回収でき、買値が近くても建物の比率が高い物件は
       築年数とともに回収額が減ります。この違いは「何年住むか」で逆転が起きるため、1つの数字ではなく<b>年数のカーブ</b>で見る必要があります。</p>
       <p style="font-size:.8rem;margin-top:8px" class="position-body">出口(売却額)の見立てには台帳の成約実測(<a href="cliff.html">30年の崖の検証</a>と同じ${SIMC.total}件・${SIMC.districts}地区)を使い、
       帯別の95%信頼区間をそのまま<b>帯(レンジ)として描きます</b>。築31年を跨ぐと成約価格がものさし価格(土地+建物残価)の
@@ -102,20 +102,25 @@ export function renderSimulate(results, curve, { asOf }) {
       <div class="simctl"><label class="simlab" for="inPer">定期修繕1回あたり <b id="vPer">150万</b></label>
         <input type="range" id="inPer" min="50" max="400" step="25" value="150">
         <div class="note">木造3階の外壁+屋根塗装は足場込100〜180万が相場。水回り更新まで見るなら増額</div></div>
+      <div class="simctl"><label class="simlab" for="inRent">比較する賃貸の家賃 <b id="vRent">20万/月</b></label>
+        <input type="range" id="inRent" min="10" max="40" step="1" value="20">
+        <div class="note">「買わずに賃貸で月この額を払い続けたら」の累計線をグラフに重ねる。家賃のみ(更新料・引越・住み替えの摩擦は含まない)</div></div>
     </div>
   </section>
 
   <section class="panel">
-    <h2>月額換算の総コスト(保有年数 1〜30年)</h2>
-    <div class="scale-wrap"><svg id="simchart" class="scale-svg" viewBox="0 0 760 340" role="img" aria-label="保有年数別の月額換算総コスト"></svg></div>
+    <h2>総コスト(取得+保有 − 売却手取り)(保有年数 1〜30年)</h2>
+    <div class="scale-wrap"><svg id="simchart" class="scale-svg" viewBox="0 0 760 340" role="img" aria-label="保有年数別の総コスト"></svg></div>
     <div class="simlegend">
       <span><span class="swatch swA"></span><b id="lgA"></b></span>
       <span><span class="swatch swB"></span><b id="lgB"></b></span>
+      <span><span class="swatch swR"></span><b id="lgR"></b></span>
       <span class="note" style="margin:0">実線=実測カーブ中央値 / 帯=同95%CI / 点線=エンジン式(土地値フロアでじっくり売却できた場合)</span>
     </div>
     <div id="simcross" class="pct-line"></div>
-    <div class="note">縦の点線は各物件が<b>築31年(崖の開始)</b>を跨ぐ年。月額 = (取得総額+保有中の修繕・経費 − 売却手取り) ÷ 保有月数。
-    保有年数が短いほど購入諸費用の按分が重く、月額は高く出る。</div>
+    <div class="note">総コスト = 取得総額(売出+諸費用+入口の繰延修繕) + 保有中の修繕・経費 − その年に売った場合の手取り。
+    「その年数住むのに結局いくら払ったことになるか」を表す。下ほど安い。縦の点線は各物件が<b>築31年(崖の開始)</b>を跨ぐ年で、
+    実測カーブの段差(崖)がそのまま総コストのジャンプとして現れる。月額換算は下の内訳表に出る。</div>
   </section>
 
   <section class="panel">
@@ -142,8 +147,9 @@ export function renderSimulate(results, curve, { asOf }) {
         帯ごとの上下は標本ノイズも含むため、<b>中央値の線より帯(CI)の重なりで読むこと</b>。</div></div>
       <div class="logic-step"><div class="t"><span class="no">外</span>含まれていないもの</div>
         <div class="why">ローン金利と団信(借入条件は人による)/ 住宅ローン控除・登録免許税等の税制(両物件で方向は同じだが新築優遇あり)/
-        引越・仲介以外の取引付帯費 / 賃貸に住み続ける場合との比較 / インフレ(全て名目・今日の円)。
-        <b>金利を足すと月額は両物件とも数万円上がるが、比較の順位は借入額の差(売出価格の差)の分しか動かない</b>。</div></div>
+        引越・仲介以外の取引付帯費 / インフレ(全て名目・今日の円)。賃貸の比較線も<b>家賃のみ</b>で、
+        更新料(2年ごと1か月分が通例)・引越や広さ・立地の質の差は載っていない。
+        <b>金利を足すと総コストは両物件とも上がるが、比較の順位は借入額の差(売出価格の差)の分しか動かない</b>。</div></div>
       <div class="logic-step"><div class="t"><span class="no">注</span>この試算が苦手なこと</div>
         <div class="why">出口の実測掛け率は<b>地区の平均像</b>で、個別物件の駅距離・整形度は
         ものさし価格側にしか入っていない。売り方(仲介でじっくり/業者へ即売り)で崖の深さは大きく変わる
@@ -165,7 +171,7 @@ export function renderSimulate(results, curve, { asOf }) {
     .simctl select{width:100%}
     .simctl input[type=range]{width:100%}
     .swatch{display:inline-block;width:12px;height:12px;margin-right:5px;vertical-align:-1px;border:1px solid var(--ink)}
-    .swA{background:#2E6E8E}.swB{background:#C93A2B}
+    .swA{background:#2E6E8E}.swB{background:#C93A2B}.swR{background:#6B4E9B}
     .simlegend{display:flex;flex-wrap:wrap;gap:14px;font-size:.78rem;margin-top:6px;align-items:center}
     #simtable td.gap{border-bottom:1px solid var(--ink)}
   </style>
@@ -177,7 +183,7 @@ export function renderSimulate(results, curve, { asOf }) {
     var C = D.SIMC;
     var COL = { A: "#2E6E8E", B: "#C93A2B" };
     var $ = function(id){ return document.getElementById(id); };
-    var st = { a: D.defA, b: D.defB, g: 0, ann: 25, cyc: 15, per: 150, t: 10 };
+    var st = { a: D.defA, b: D.defB, g: 0, ann: 25, cyc: 15, per: 150, rent: 20, t: 10 };
 
     function residEngine(p, age){ return Math.max(0, 1 - age / C.life) * p.rebuild * p.floorTsubo; }
     function residMeasure(p, age){ return Math.max(0, residEngine(p, age) - Math.min(C.repairCap, C.repairPerYear * age)); }
@@ -204,10 +210,18 @@ export function renderSimulate(results, curve, { asOf }) {
       return c;
     }
     function inCost(p, t){ return p.ask * (1 + p.fee) + p.repair + maint(p, t) + st.ann * t; }
-    function monthly(p, t, mode){ return (inCost(p, t) - exitNet(p, t, mode)) / t / 12; }
+    function totalC(p, t, mode){ return inCost(p, t) - exitNet(p, t, mode); }
+    function monthly(p, t, mode){ return totalC(p, t, mode) / t / 12; }
 
     var fmt = function(n){ n = Math.round(n); return n.toLocaleString("en-US") + "万円"; };
     var fmt1 = function(n){ return (Math.round(n * 10) / 10).toFixed(1); };
+    // y軸目盛のきざみ: 全体幅を5分割し、100/200/250/500/1000…の「きりのよい値」へ丸める
+    function niceStep(span){
+      var raw = span / 5, pow = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10));
+      var cands = [1, 2, 2.5, 5, 10];
+      for (var i = 0; i < cands.length; i++) if (cands[i] * pow >= raw) return cands[i] * pow;
+      return 10 * pow;
+    }
 
     function drawChart(){
       var A = P[st.a], B = P[st.b], T = 30;
@@ -217,12 +231,14 @@ export function renderSimulate(results, curve, { asOf }) {
       [["A", A], ["B", B]].forEach(function(pair){
         var med = [], lo = [], hi = [], eng = [];
         for (var t = 1; t <= T; t++){
-          med.push(monthly(pair[1], t, "m")); lo.push(monthly(pair[1], t, "hi95"));
-          hi.push(monthly(pair[1], t, "lo95")); eng.push(monthly(pair[1], t, "engine"));
+          med.push(totalC(pair[1], t, "m")); lo.push(totalC(pair[1], t, "hi95"));
+          hi.push(totalC(pair[1], t, "lo95")); eng.push(totalC(pair[1], t, "engine"));
         }
         series.push({ key: pair[0], p: pair[1], med: med, lo: lo, hi: hi, eng: eng });
       });
-      var all = [];
+      var rentLine = [];
+      for (var tr = 1; tr <= T; tr++) rentLine.push(st.rent * 12 * tr);
+      var all = rentLine.slice();
       series.forEach(function(s){ all = all.concat(s.med, s.lo, s.hi, s.eng); });
       var yMin = Math.min.apply(null, all), yMax = Math.max.apply(null, all);
       var span = Math.max(1, yMax - yMin); yMin -= span * 0.06; yMax += span * 0.06;
@@ -232,11 +248,11 @@ export function renderSimulate(results, curve, { asOf }) {
         return arr.map(function(v, i){ return (i ? "L" : "M") + X(i + 1).toFixed(1) + " " + Y(v).toFixed(1); }).join("");
       };
       var out = [];
-      // 目盛(y: 5本・x: 5年刻み)
-      var step = Math.max(1, Math.ceil(span / 5 / 5) * 5);
+      // 目盛(y: きりのよい万円刻み・x: 5年刻み)
+      var step = niceStep(span);
       for (var v = Math.ceil(yMin / step) * step; v <= yMax; v += step){
         out.push('<line x1="' + padL + '" y1="' + Y(v).toFixed(1) + '" x2="' + (W - padR) + '" y2="' + Y(v).toFixed(1) + '" stroke="#DCE3EA"/>');
-        out.push('<text x="' + (padL - 6) + '" y="' + (Y(v) + 4).toFixed(1) + '" text-anchor="end" font-size="11" fill="#43566B">' + v + '万</text>');
+        out.push('<text x="' + (padL - 6) + '" y="' + (Y(v) + 4).toFixed(1) + '" text-anchor="end" font-size="11" fill="#43566B">' + Math.round(v).toLocaleString("en-US") + '万</text>');
       }
       for (var t = 5; t <= T; t += 5){
         out.push('<line x1="' + X(t).toFixed(1) + '" y1="' + padT + '" x2="' + X(t).toFixed(1) + '" y2="' + (H - padB) + '" stroke="#EDF1F4"/>');
@@ -251,6 +267,8 @@ export function renderSimulate(results, curve, { asOf }) {
           out.push('<text x="' + (X(t31) + (si ? 4 : -4)).toFixed(1) + '" y="' + (padT - 8) + '" text-anchor="' + (si ? "start" : "end") + '" font-size="10" fill="' + COL[s.key] + '">' + s.key + ":築31年</text>");
         }
       });
+      // 賃貸の累計線(家賃のみ)。物件の帯より先に描いて背面に置く
+      out.push('<path d="' + path(rentLine) + '" fill="none" stroke="#6B4E9B" stroke-width="1.8" stroke-dasharray="8 3" opacity=".8"/>');
       // 帯(95%CI)→エンジン式(点線)→中央値(実線)の順に描く
       series.forEach(function(s){
         var band = path(s.lo);
@@ -263,20 +281,22 @@ export function renderSimulate(results, curve, { asOf }) {
       out.push('<line x1="' + X(st.t).toFixed(1) + '" y1="' + padT + '" x2="' + X(st.t).toFixed(1) + '" y2="' + (H - padB) + '" stroke="#16232E" stroke-dasharray="1 3"/>');
       svg.innerHTML = out.join("");
       $("lgA").textContent = "A: " + A.label; $("lgB").textContent = "B: " + B.label;
+      $("lgR").textContent = "賃貸 " + st.rent + "万/月の累計";
       // 逆転年(実測中央値どうし)。帯が重なる間は断定しない書き方にする
       var cross = null, sign0 = null;
       for (var tt = 1; tt <= T; tt++){
-        var d = monthly(A, tt, "m") - monthly(B, tt, "m");
+        var d = totalC(A, tt, "m") - totalC(B, tt, "m");
         var sg = d === 0 ? 0 : (d > 0 ? 1 : -1);
         if (sign0 === null) sign0 = sg;
         else if (sg !== 0 && sg !== sign0){ cross = tt; break; }
       }
-      var mA = monthly(A, st.t, "m"), mB = monthly(B, st.t, "m");
-      // 帯(95%CI)が離れているか: Aの悪い側(lo95出口=月額高)とBの良い側(hi95出口=月額安)を突き合わせる
-      var separated = monthly(A, st.t, "lo95") < monthly(B, st.t, "hi95") || monthly(B, st.t, "lo95") < monthly(A, st.t, "hi95");
-      $("simcross").innerHTML = "実測中央値ベース: 保有" + st.t + "年で A <b>" + fmt1(mA) + "万/月</b> ・ B <b>" + fmt1(mB) + "万/月</b>" +
-        (cross ? "(月額の大小は保有" + cross + "年前後で入れ替わる)" : "(1〜30年の範囲では大小は入れ替わらない)") +
-        (separated ? "" : "。<b>この年数では95%CIの帯どうしが離れておらず、差は誤差の範囲で読むこと</b>");
+      var cA = totalC(A, st.t, "m"), cB = totalC(B, st.t, "m");
+      // 帯(95%CI)が離れているか: Aの悪い側(lo95出口=コスト高)とBの良い側(hi95出口=コスト安)を突き合わせる
+      var separated = totalC(A, st.t, "lo95") < totalC(B, st.t, "hi95") || totalC(B, st.t, "lo95") < totalC(A, st.t, "hi95");
+      $("simcross").innerHTML = "実測中央値ベース: 保有" + st.t + "年の総コストは A <b>" + fmt(cA) + "</b> ・ B <b>" + fmt(cB) + "</b>" +
+        " ・ 賃貸" + st.rent + "万/月なら累計 <b>" + fmt(st.rent * 12 * st.t) + "</b>" +
+        (cross ? "(AとBの大小は保有" + cross + "年前後で入れ替わる)" : "(1〜30年の範囲ではAとBの大小は入れ替わらない)") +
+        (separated ? "" : "。<b>この年数では95%CIの帯どうしが離れておらず、AとBの差は誤差の範囲で読むこと</b>");
     }
 
     function row(name, va, vb, cls){
@@ -306,6 +326,7 @@ export function renderSimulate(results, curve, { asOf }) {
       rows.push(row("<b>月額換算(実測中央値)</b>", "<b>" + fmt1((a.inC - a.exM) / t / 12) + "万/月</b>", "<b>" + fmt1((b.inC - b.exM) / t / 12) + "万/月</b>", "em"));
       rows.push(row("月額換算(エンジン式じっくり売却)", fmt1((a.inC - a.exE) / t / 12) + "万/月", fmt1((b.inC - b.exE) / t / 12) + "万/月"));
       rows.push(row("参考: 価格に占める土地の割合", Math.round(A.land2 / A.ask * 100) + "%", Math.round(B.land2 / B.ask * 100) + "%"));
+      rows.push(row("参考: 賃貸" + st.rent + "万/月なら累計(家賃のみ)", fmt(st.rent * 12 * t), "(A欄と同じ)"));
       $("simtable").innerHTML = rows.join("");
     }
 
@@ -319,6 +340,7 @@ export function renderSimulate(results, curve, { asOf }) {
     bind("inAnn", "ann", "vAnn", function(v){ return v + "万/年"; });
     bind("inCyc", "cyc", "vCyc", function(v){ return v + "年ごと"; });
     bind("inPer", "per", "vPer", function(v){ return v + "万"; });
+    bind("inRent", "rent", "vRent", function(v){ return v + "万/月"; });
     bind("inT", "t", "vT", function(v){ return v + "年"; });
     redraw();
   })();
