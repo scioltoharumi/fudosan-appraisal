@@ -11,8 +11,9 @@ import { calibrate } from "../engine/calibrate.js";
 import { loadHouseDeals } from "../engine/retail.js";
 import { renderMarketBasis } from "./templates/market-basis.js";
 import { renderDataExplorer } from "./templates/data-explorer.js";
-import { renderFormula } from "./templates/formula.js";
+import { renderFormula, ageCurveCI } from "./templates/formula.js";
 import { renderCliff } from "./templates/cliff.js";
+import { renderSimulate } from "./templates/simulate.js";
 import { renderTradeoff } from "./templates/tradeoff.js";
 import { renderHazardMap } from "./templates/map.js";
 import { loadVerification } from "../engine/retail.js";
@@ -80,6 +81,11 @@ console.log("✓ cliff.html(30年の崖の検証)");
 // 妥協の値段(A/B/C分類とB群工事費早見表): 静的リファレンス
 writeFileSync(join(DIST, "tradeoff.html"), renderTradeoff({ asOf }), "utf8");
 console.log("✓ tradeoff.html");
+// 保有年数シミュレーター(2026-08-16ユーザー要望): 任意の2物件の「取得+保有−出口」を年数で比較。
+// 出口の実測カーブは cliff.html と同じ ageCurveCI(帯別中央値と95%CI)を注入する
+const simCurve = ageCurveCI(houseDeals);
+writeFileSync(join(DIST, "simulate.html"), renderSimulate(results, simCurve, { asOf }), "utf8");
+console.log(`✓ simulate.html(保有年数シミュレーター・出口実測${simCurve.total}件${simCurve.districts}地区)`);
 // データ探索ページ: 各行に検証状態と出所リンクを付与
 const verification = loadVerification();
 const vByKey = new Map((verification?.rows ?? []).map((v) => [v.key, v]));
