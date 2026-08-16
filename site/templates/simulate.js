@@ -38,6 +38,7 @@ function propData({ r, property }) {
     walk: r.state.walk,
     fairMid: Math.round(r.fairFinal.mid),
     retailMid: r.retail ? Math.round(r.retail.mid) : null,
+    isNew: r.isNewBuild,   // 住宅ローン控除の既定区分(新築/中古)の初期値に使う
   };
 }
 
@@ -106,6 +107,23 @@ export function renderSimulate(results, curve, { asOf }) {
         <input type="range" id="inRent" min="10" max="40" step="1" value="20">
         <div class="note">「買わずに賃貸で月この額を払い続けたら」の累計線をグラフに重ねる。家賃のみ(更新料・引越・住み替えの摩擦は含まない)</div></div>
     </div>
+    <div style="margin-top:14px;border-top:1px dashed var(--grid);padding-top:12px">
+      <label style="font-size:.82rem;font-weight:700"><input type="checkbox" id="ckLoan" checked> ローン金利と住宅ローン控除を織り込む</label>
+      <div class="simgrid" style="margin-top:8px">
+        <div class="simctl"><label class="simlab" for="inRate">ローン金利(全期間) <b id="vRate">0.8%</b></label>
+          <input type="range" id="inRate" min="0" max="3" step="0.1" value="0.8">
+          <div class="note">借入=売出価格の全額(諸費用は現金)・35年元利均等・金利は全期間一定と仮定。途中売却時は残債一括返済(違約金なし)</div></div>
+        <div class="simctl"><label class="simlab">住宅ローン控除の前提(年末残高×0.7%)</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:.75rem;align-items:center">
+            <span><span class="swatch swA"></span>A: 上限<input type="number" id="inCapA" class="simnum" step="500" min="0" max="5000">万・<select id="inYrsA" class="stsel"><option>10</option><option>13</option></select>年</span>
+            <span><span class="swatch swB"></span>B: 上限<input type="number" id="inCapB" class="simnum" step="500" min="0" max="5000">万・<select id="inYrsB" class="stsel"><option>10</option><option>13</option></select>年</span>
+          </div>
+          <div class="note">既定は<b>中古(その他住宅)=上限2,000万・10年 / 新築(省エネ基準適合)=上限3,000万・13年</b>。
+          区分ごとの借入限度額・期間は入居年の税制で変わるため<b>必ず最新の制度で確認し、この欄を直すこと</b>。
+          特に<b>2024年以降に建築確認を受けた新築で省エネ基準に適合しない住宅は控除対象外</b>(該当なら上限を0に)——
+          ESPACER西が丘2は掲載に省エネ性能の記載が無く適合未確認。控除は「納税額(所得税+住民税の控除枠)が控除額を上回る」前提で満額計上する</div></div>
+      </div>
+    </div>
   </section>
 
   <section class="panel">
@@ -115,12 +133,12 @@ export function renderSimulate(results, curve, { asOf }) {
       <span><span class="swatch swA"></span><b id="lgA"></b></span>
       <span><span class="swatch swB"></span><b id="lgB"></b></span>
       <span><span class="swatch swR"></span><b id="lgR"></b></span>
-      <span class="note" style="margin:0">実線=実測カーブ中央値 / 帯=同95%CI / 点線=エンジン式(土地値フロアでじっくり売却できた場合)</span>
+      <span class="note" style="margin:0">実線=実測カーブ中央値 / 帯=同95%CI。エンジン式(じっくり売却)の値は下の内訳表に出す</span>
     </div>
     <div id="simcross" class="pct-line"></div>
-    <div class="note">総コスト = 取得総額(売出+諸費用+入口の繰延修繕) + 保有中の修繕・経費 − その年に売った場合の手取り。
-    「その年数住むのに結局いくら払ったことになるか」を表す。下ほど安い。縦の点線は各物件が<b>築31年(崖の開始)</b>を跨ぐ年で、
-    実測カーブの段差(崖)がそのまま総コストのジャンプとして現れる。月額換算は下の内訳表に出る。</div>
+    <div class="note">総コスト = 取得総額(売出+諸費用+入口の繰延修繕) + 保有中の修繕・経費 + ローン利息(織り込み時)
+    − 住宅ローン控除(同) − その年に売った場合の手取り。「その年数住むのに結局いくら払ったことになるか」を表す。下ほど安い。
+    縦の点線は各物件が<b>築31年(崖の開始)</b>を跨ぐ年で、実測カーブの段差(崖)がそのまま総コストのジャンプとして現れる。月額換算は下の内訳表に出る。</div>
   </section>
 
   <section class="panel">
@@ -136,7 +154,7 @@ export function renderSimulate(results, curve, { asOf }) {
   <section class="panel">
     <h2>モデルの中身と限界(読んでから使うこと)</h2>
     <div class="logic-body">
-      <div class="logic-step"><div class="t"><span class="no">式</span>総コスト(t年) = 売出×(1+諸費用${(COEFFS.DEFAULT_FEE_RATE * 100).toFixed(0)}%) + 入口の繰延修繕 + 定期修繕 + 年間経費×t − 売却手取り(t)</div>
+      <div class="logic-step"><div class="t"><span class="no">式</span>総コスト(t年) = 売出×(1+諸費用${(COEFFS.DEFAULT_FEE_RATE * 100).toFixed(0)}%) + 入口の繰延修繕 + 定期修繕 + 年間経費×t + ローン利息(t) − 住宅ローン控除(t) − 売却手取り(t)</div>
         <div class="formula">売却手取り(t) = ものさし価格(t) × 実測掛け率(出口の築年帯) × (1−売却諸費用${(SIMC.saleCost * 100).toFixed(0)}%)</div>
         <div class="formula">ものさし価格(t) = 土地(補正後実勢×(1+地価年率)^t) + max(0, 再調達${COEFFS.DEFAULT_REBUILD_PPT}万/坪×延床坪×(1−築年/${SIMC.life}) − min(${SIMC.repairCap}, ${SIMC.repairPerYear}×築年))</div>
         <div class="why">土地の「補正後実勢」は各物件の査定と同じ値(徒歩・方位・接道・形状等の個別補正込み)。
@@ -145,16 +163,17 @@ export function renderSimulate(results, curve, { asOf }) {
         <div class="why">${SIMC.rows.map((b) => `${esc(b.label)}: ${b.m.toFixed(2)}(CI ${b.lo95.toFixed(2)}〜${b.hi95.toFixed(2)}・n=${b.n})`).join(" / ")}。
         築7〜31年の帯はいずれもCIが1.00を含み「ものさしどおり」と区別できない(判別できるのは新築の山なしと築31年の崖だけ)。
         帯ごとの上下は標本ノイズも含むため、<b>中央値の線より帯(CI)の重なりで読むこと</b>。</div></div>
-      <div class="logic-step"><div class="t"><span class="no">外</span>含まれていないもの</div>
-        <div class="why">ローン金利と団信(借入条件は人による)/ 住宅ローン控除・登録免許税等の税制(両物件で方向は同じだが新築優遇あり)/
+      <div class="logic-step"><div class="t"><span class="no">外</span>織り込めるもの・いないもの</div>
+        <div class="why">ローン金利と住宅ローン控除(年末残高×0.7%)は上のトグルで織り込める(既定オン)。
+        前提は<b>借入=売出価格の全額・35年元利均等・全期間同一金利・控除は納税額が十分ある前提で満額</b>。
+        含まれていないもの: 団信の上乗せ金利・繰上返済 / 登録免許税・不動産取得税の細目や新築の固定資産税減額(年間経費のスライダーで読み替え)/
         引越・仲介以外の取引付帯費 / インフレ(全て名目・今日の円)。賃貸の比較線も<b>家賃のみ</b>で、
-        更新料(2年ごと1か月分が通例)・引越や広さ・立地の質の差は載っていない。
-        <b>金利を足すと総コストは両物件とも上がるが、比較の順位は借入額の差(売出価格の差)の分しか動かない</b>。</div></div>
+        更新料(2年ごと1か月分が通例)・引越や広さ・立地の質の差は載っていない。</div></div>
       <div class="logic-step"><div class="t"><span class="no">注</span>この試算が苦手なこと</div>
         <div class="why">出口の実測掛け率は<b>地区の平均像</b>で、個別物件の駅距離・整形度は
         ものさし価格側にしか入っていない。売り方(仲介でじっくり/業者へ即売り)で崖の深さは大きく変わる
         ——崖の実測0.55〜0.74倍には即売りチャネルの卸値(手取り86%)が混ざっている。
-        じっくり売れる前提ならエンジン式(点線)寄り、売り急ぐなら実測帯の下側で読む。</div></div>
+        じっくり売れる前提ならエンジン式(内訳表に記載)寄り、売り急ぐなら実測帯の下側で読む。</div></div>
     </div>
   </section>
 
@@ -169,6 +188,8 @@ export function renderSimulate(results, curve, { asOf }) {
     .simlab{display:block;font-size:.75rem;letter-spacing:.06em;color:var(--ink-soft);margin-bottom:3px}
     .simlab b{font-family:var(--mono);color:var(--ink)}
     .simctl select{width:100%}
+    .simctl .simnum{width:72px;font-family:var(--mono);font-size:.75rem;padding:2px 4px;border:1px solid var(--ink-soft)}
+    .simctl span > select.stsel{width:auto}
     .simctl input[type=range]{width:100%}
     .swatch{display:inline-block;width:12px;height:12px;margin-right:5px;vertical-align:-1px;border:1px solid var(--ink)}
     .swA{background:#2E6E8E}.swB{background:#C93A2B}.swR{background:#6B4E9B}
@@ -183,7 +204,10 @@ export function renderSimulate(results, curve, { asOf }) {
     var C = D.SIMC;
     var COL = { A: "#2E6E8E", B: "#C93A2B" };
     var $ = function(id){ return document.getElementById(id); };
-    var st = { a: D.defA, b: D.defB, g: 0, ann: 25, cyc: 15, per: 150, rent: 20, t: 10 };
+    var st = { a: D.defA, b: D.defB, g: 0, ann: 25, cyc: 15, per: 150, rent: 20, t: 10,
+      loan: true, rate: 0.8, capA: null, capB: null, yrsA: null, yrsB: null };
+    // 住宅ローン控除の既定区分: 中古(その他)=2,000万・10年 / 新築(省エネ適合と仮定)=3,000万・13年
+    var DED_DEFAULT = function(p){ return p.isNew ? { cap: 3000, yrs: 13 } : { cap: 2000, yrs: 10 }; };
 
     function residEngine(p, age){ return Math.max(0, 1 - age / C.life) * p.rebuild * p.floorTsubo; }
     function residMeasure(p, age){ return Math.max(0, residEngine(p, age) - Math.min(C.repairCap, C.repairPerYear * age)); }
@@ -209,9 +233,42 @@ export function renderSimulate(results, curve, { asOf }) {
       for (var k = 1; k * st.cyc <= p.age + t; k++) if (k * st.cyc > p.age) c += st.per;
       return c;
     }
+    // ローン(35年元利均等・借入=売出全額)の年次推移: 各年の支払利息と年末残高。
+    // 途中売却は残債一括返済(元本は資金移動であってコストではないため、コストに乗るのは利息のみ)
+    function loanSchedule(p){
+      var L = p.ask, n = 420, rm = st.rate / 100 / 12;
+      var pay = rm > 0 ? L * rm / (1 - Math.pow(1 + rm, -n)) : L / n;
+      var bal = L, years = [];
+      for (var y = 0; y < 35; y++){
+        var interest = 0;
+        for (var m = 0; m < 12; m++){
+          var iv = bal * rm; interest += iv; bal = Math.max(0, bal - (pay - iv));
+        }
+        years.push({ interest: interest, balEnd: bal });
+      }
+      return years;
+    }
+    function dedParams(key, p){
+      var cap = key === "A" ? st.capA : st.capB, yrs = key === "A" ? st.yrsA : st.yrsB;
+      var d = DED_DEFAULT(p);
+      return { cap: cap === null ? d.cap : cap, yrs: yrs === null ? d.yrs : yrs };
+    }
+    // 保有t年での 累計支払利息 と 累計住宅ローン控除(年末残高×0.7%・上限cap・yrs年間)
+    function loanCost(key, p, t){
+      if (!st.loan) return { interest: 0, credit: 0 };
+      var sch = loanSchedule(p), dp = dedParams(key, p), interest = 0, credit = 0;
+      for (var y = 0; y < Math.min(t, 35); y++){
+        interest += sch[y].interest;
+        if (y < dp.yrs) credit += Math.min(sch[y].balEnd, dp.cap) * 0.007;
+      }
+      return { interest: interest, credit: credit };
+    }
     function inCost(p, t){ return p.ask * (1 + p.fee) + p.repair + maint(p, t) + st.ann * t; }
-    function totalC(p, t, mode){ return inCost(p, t) - exitNet(p, t, mode); }
-    function monthly(p, t, mode){ return totalC(p, t, mode) / t / 12; }
+    function totalC(key, p, t, mode){
+      var lc = loanCost(key, p, t);
+      return inCost(p, t) + lc.interest - lc.credit - exitNet(p, t, mode);
+    }
+    function monthly(key, p, t, mode){ return totalC(key, p, t, mode) / t / 12; }
 
     var fmt = function(n){ n = Math.round(n); return n.toLocaleString("en-US") + "万円"; };
     var fmt1 = function(n){ return (Math.round(n * 10) / 10).toFixed(1); };
@@ -229,17 +286,17 @@ export function renderSimulate(results, curve, { asOf }) {
       var W = 760, H = 340, padL = 56, padR = 14, padT = 26, padB = 40;
       var series = [];
       [["A", A], ["B", B]].forEach(function(pair){
-        var med = [], lo = [], hi = [], eng = [];
+        var med = [], lo = [], hi = [];
         for (var t = 1; t <= T; t++){
-          med.push(totalC(pair[1], t, "m")); lo.push(totalC(pair[1], t, "hi95"));
-          hi.push(totalC(pair[1], t, "lo95")); eng.push(totalC(pair[1], t, "engine"));
+          med.push(totalC(pair[0], pair[1], t, "m")); lo.push(totalC(pair[0], pair[1], t, "hi95"));
+          hi.push(totalC(pair[0], pair[1], t, "lo95"));
         }
-        series.push({ key: pair[0], p: pair[1], med: med, lo: lo, hi: hi, eng: eng });
+        series.push({ key: pair[0], p: pair[1], med: med, lo: lo, hi: hi });
       });
       var rentLine = [];
       for (var tr = 1; tr <= T; tr++) rentLine.push(st.rent * 12 * tr);
       var all = rentLine.slice();
-      series.forEach(function(s){ all = all.concat(s.med, s.lo, s.hi, s.eng); });
+      series.forEach(function(s){ all = all.concat(s.med, s.lo, s.hi); });
       var yMin = Math.min.apply(null, all), yMax = Math.max.apply(null, all);
       var span = Math.max(1, yMax - yMin); yMin -= span * 0.06; yMax += span * 0.06;
       var X = function(t){ return padL + (t - 1) / (T - 1) * (W - padL - padR); };
@@ -269,12 +326,12 @@ export function renderSimulate(results, curve, { asOf }) {
       });
       // 賃貸の累計線(家賃のみ)。物件の帯より先に描いて背面に置く
       out.push('<path d="' + path(rentLine) + '" fill="none" stroke="#6B4E9B" stroke-width="1.8" stroke-dasharray="8 3" opacity=".8"/>');
-      // 帯(95%CI)→エンジン式(点線)→中央値(実線)の順に描く
+      // 帯(95%CI)→中央値(実線)の順に描く。エンジン式(じっくり売却)の線は
+      // 「点線が多くて読みにくい」(2026-08-16ユーザー指摘)ためグラフには描かず、内訳表だけに出す
       series.forEach(function(s){
         var band = path(s.lo);
         for (var i = s.hi.length - 1; i >= 0; i--) band += "L" + X(i + 1).toFixed(1) + " " + Y(s.hi[i]).toFixed(1);
         out.push('<path d="' + band + 'Z" fill="' + COL[s.key] + '" opacity=".12"/>');
-        out.push('<path d="' + path(s.eng) + '" fill="none" stroke="' + COL[s.key] + '" stroke-width="1.3" stroke-dasharray="5 4" opacity=".75"/>');
         out.push('<path d="' + path(s.med) + '" fill="none" stroke="' + COL[s.key] + '" stroke-width="2.2"/>');
       });
       // 選択年マーカー
@@ -285,14 +342,14 @@ export function renderSimulate(results, curve, { asOf }) {
       // 逆転年(実測中央値どうし)。帯が重なる間は断定しない書き方にする
       var cross = null, sign0 = null;
       for (var tt = 1; tt <= T; tt++){
-        var d = totalC(A, tt, "m") - totalC(B, tt, "m");
+        var d = totalC("A", A, tt, "m") - totalC("B", B, tt, "m");
         var sg = d === 0 ? 0 : (d > 0 ? 1 : -1);
         if (sign0 === null) sign0 = sg;
         else if (sg !== 0 && sg !== sign0){ cross = tt; break; }
       }
-      var cA = totalC(A, st.t, "m"), cB = totalC(B, st.t, "m");
+      var cA = totalC("A", A, st.t, "m"), cB = totalC("B", B, st.t, "m");
       // 帯(95%CI)が離れているか: Aの悪い側(lo95出口=コスト高)とBの良い側(hi95出口=コスト安)を突き合わせる
-      var separated = totalC(A, st.t, "lo95") < totalC(B, st.t, "hi95") || totalC(B, st.t, "lo95") < totalC(A, st.t, "hi95");
+      var separated = totalC("A", A, st.t, "lo95") < totalC("B", B, st.t, "hi95") || totalC("B", B, st.t, "lo95") < totalC("A", A, st.t, "hi95");
       $("simcross").innerHTML = "実測中央値ベース: 保有" + st.t + "年の総コストは A <b>" + fmt(cA) + "</b> ・ B <b>" + fmt(cB) + "</b>" +
         " ・ 賃貸" + st.rent + "万/月なら累計 <b>" + fmt(st.rent * 12 * st.t) + "</b>" +
         (cross ? "(AとBの大小は保有" + cross + "年前後で入れ替わる)" : "(1〜30年の範囲ではAとBの大小は入れ替わらない)") +
@@ -306,22 +363,25 @@ export function renderSimulate(results, curve, { asOf }) {
       var A = P[st.a], B = P[st.b], t = st.t;
       var rows = ['<tr><th style="text-align:left;font-size:.72rem;color:var(--ink-soft)">保有' + t + "年の内訳</th>" +
         '<th style="text-align:right;color:#2E6E8E">A: ' + A.label + '</th><th style="text-align:right;color:#C93A2B">B: ' + B.label + "</th></tr>"];
-      var f = function(p){ return {
+      var f = function(key, p){ var lc = loanCost(key, p, t), dp = dedParams(key, p); return {
         acq: p.ask * (1 + p.fee), mnt: maint(p, t), ann: st.ann * t,
-        ageX: p.age + t, land: landAt(p, t),
-        bk: bucketAt(p.age + t), inC: inCost(p, t),
-        exM: exitNet(p, t, "m"), exLo: exitNet(p, t, "hi95"), exHi: exitNet(p, t, "lo95"), exE: exitNet(p, t, "engine") }; };
-      var a = f(A), b = f(B);
+        ageX: p.age + t, land: landAt(p, t), lc: lc, dp: dp,
+        bk: bucketAt(p.age + t), inC: inCost(p, t) + lc.interest,
+        exM: exitNet(p, t, "m") + lc.credit, exLo: exitNet(p, t, "hi95") + lc.credit,
+        exHi: exitNet(p, t, "lo95") + lc.credit, exE: exitNet(p, t, "engine") + lc.credit }; };
+      var a = f("A", A), b = f("B", B);
       rows.push(row("売出価格 + 諸費用", fmt(a.acq), fmt(b.acq)));
       rows.push(row("入口の繰延修繕(査定の想定)", fmt(A.repair), fmt(B.repair)));
       rows.push(row("定期修繕(保有中・" + st.cyc + "年周期)", fmt(a.mnt), fmt(b.mnt)));
       rows.push(row("年間経費 " + st.ann + "万 × " + t + "年", fmt(a.ann), fmt(b.ann)));
+      if (st.loan) rows.push(row("ローン利息(金利" + st.rate.toFixed(1) + "%・35年元利均等)", fmt(a.lc.interest), fmt(b.lc.interest)));
       rows.push(row("<b>払うお金の合計</b>", "<b>" + fmt(a.inC) + "</b>", "<b>" + fmt(b.inC) + "</b>", "em"));
+      if (st.loan) rows.push(row("住宅ローン控除(残高0.7%・上限" + a.dp.cap + "万" + a.dp.yrs + "年 / " + b.dp.cap + "万" + b.dp.yrs + "年)", "−" + fmt(a.lc.credit), "−" + fmt(b.lc.credit)));
       rows.push(row("出口の築年数", "築" + fmt1(a.ageX) + "年(" + a.bk.label + "帯)", "築" + fmt1(b.ageX) + "年(" + b.bk.label + "帯)"));
       rows.push(row("土地(補正後実勢・地価" + (st.g >= 0 ? "+" : "") + st.g + "%/年)", fmt(a.land), fmt(b.land)));
       rows.push(row("実測掛け率(中央値・CI)", a.bk.m.toFixed(2) + "(" + a.bk.lo95.toFixed(2) + "〜" + a.bk.hi95.toFixed(2) + ")", b.bk.m.toFixed(2) + "(" + b.bk.lo95.toFixed(2) + "〜" + b.bk.hi95.toFixed(2) + ")"));
-      rows.push(row("売却手取り(実測どおり・CI)", fmt(a.exM) + "(" + fmt(a.exLo) + "〜" + fmt(a.exHi) + ")", fmt(b.exM) + "(" + fmt(b.exLo) + "〜" + fmt(b.exHi) + ")"));
-      rows.push(row("同・エンジン式(じっくり売却)", fmt(a.exE), fmt(b.exE)));
+      rows.push(row("売却手取り(実測どおり・CI)" + (st.loan ? "+控除" : ""), fmt(a.exM) + "(" + fmt(a.exLo) + "〜" + fmt(a.exHi) + ")", fmt(b.exM) + "(" + fmt(b.exLo) + "〜" + fmt(b.exHi) + ")"));
+      rows.push(row("同・エンジン式(じっくり売却)" + (st.loan ? "+控除" : ""), fmt(a.exE), fmt(b.exE)));
       rows.push(row("<b>総コスト(実測中央値)</b>", "<b>" + fmt(a.inC - a.exM) + "</b>", "<b>" + fmt(b.inC - b.exM) + "</b>", "em"));
       rows.push(row("<b>月額換算(実測中央値)</b>", "<b>" + fmt1((a.inC - a.exM) / t / 12) + "万/月</b>", "<b>" + fmt1((b.inC - b.exM) / t / 12) + "万/月</b>", "em"));
       rows.push(row("月額換算(エンジン式じっくり売却)", fmt1((a.inC - a.exE) / t / 12) + "万/月", fmt1((b.inC - b.exE) / t / 12) + "万/月"));
@@ -331,8 +391,15 @@ export function renderSimulate(results, curve, { asOf }) {
     }
 
     function redraw(){ drawChart(); drawTable(); }
-    $("selA").addEventListener("change", function(){ st.a = this.value; redraw(); });
-    $("selB").addEventListener("change", function(){ st.b = this.value; redraw(); });
+    // 控除欄の表示を選択中の物件の既定区分(新築/中古)へ合わせる。ユーザーが手で直した値は
+    // 物件を切り替えた時点で既定へ戻す(前の物件の区分を引き継ぐと気づかず間違うため)
+    function syncDed(key){
+      var p = P[key === "A" ? st.a : st.b], d = DED_DEFAULT(p);
+      if (key === "A"){ st.capA = null; st.yrsA = null; $("inCapA").value = d.cap; $("inYrsA").value = String(d.yrs); }
+      else { st.capB = null; st.yrsB = null; $("inCapB").value = d.cap; $("inYrsB").value = String(d.yrs); }
+    }
+    $("selA").addEventListener("change", function(){ st.a = this.value; syncDed("A"); redraw(); });
+    $("selB").addEventListener("change", function(){ st.b = this.value; syncDed("B"); redraw(); });
     var bind = function(id, key, lab, fmtV){
       $(id).addEventListener("input", function(){ st[key] = +this.value; $(lab).textContent = fmtV(+this.value); redraw(); });
     };
@@ -342,6 +409,19 @@ export function renderSimulate(results, curve, { asOf }) {
     bind("inPer", "per", "vPer", function(v){ return v + "万"; });
     bind("inRent", "rent", "vRent", function(v){ return v + "万/月"; });
     bind("inT", "t", "vT", function(v){ return v + "年"; });
+    bind("inRate", "rate", "vRate", function(v){ return v.toFixed(1) + "%"; });
+    $("ckLoan").addEventListener("change", function(){ st.loan = this.checked; redraw(); });
+    var bindDed = function(id, key){
+      $(id).addEventListener("input", function(){
+        var v = +this.value;
+        st[key] = Number.isFinite(v) && v >= 0 ? v : null;
+        redraw();
+      });
+    };
+    bindDed("inCapA", "capA"); bindDed("inCapB", "capB");
+    $("inYrsA").addEventListener("change", function(){ st.yrsA = +this.value; redraw(); });
+    $("inYrsB").addEventListener("change", function(){ st.yrsB = +this.value; redraw(); });
+    syncDed("A"); syncDed("B");
     redraw();
   })();
   </script>`;
