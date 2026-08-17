@@ -929,5 +929,19 @@
   "ko_codes": [
    "KO4_area_hazard"
   ]
+ },
+ "at_1198508928": {
+  "first_seen": "2026-08-17",
+  "price_man": 8980,
+  "address": "東京都北区神谷2",
+  "walk_min": 12,
+  "kind": "chuko",
+  "media": "athome",
+  "land_m2": 89.03,
+  "floor_m2": 116.91,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
  }
 }
