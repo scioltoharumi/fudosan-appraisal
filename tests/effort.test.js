@@ -29,14 +29,19 @@ test("effort: 図解の構成(SVG4枚・全てにrole/aria-label)と中心概念
   assert.ok(html.includes("身軽さは賃貸の正当な価値"), "賃貸側の価値も併記(片側に寄らない)");
 });
 
-test("effort: 30年合計の内訳と合計値が一致し、関連ページへの導線がある", () => {
-  // 図5の表: 持ち家・賃貸の合計行が内訳の和になっている(EST定義と描画のずれ検知)
-  const own = [[25, 45], [8, 20], [10, 20], [5 * 30, 10 * 30], [3 * 8, 6 * 8], [10 * 2, 20 * 2], [30, 60]];
+test("effort: 3パターンの30年合計が内訳の和と一致し、関連ページへの導線がある", () => {
+  // 図5の表: 新築・中古(築15年)・賃貸の合計行が内訳の和になっている(EST定義と描画のずれ検知)
+  const newBuild = [[20, 35], [0, 0], [10, 20], [5 * 30, 10 * 30], [3 * 6, 6 * 6], [10 * 2, 20 * 2], [30, 60]];
+  const used15 = [[25, 45], [8, 20], [10, 20], [5 * 30, 10 * 30], [3 * 10, 6 * 10], [10 * 2, 20 * 2], [30, 60]];
   const rent = [[3, 5], [10, 20], [0.5 * 14, 1 * 14], [0.5 * 8, 1 * 8]];
   const sum = (rows, i) => rows.reduce((a, r) => a + r[i], 0);
-  assert.ok(html.includes(`<b>${sum(own, 0)}〜${sum(own, 1)}h</b>`), `持ち家合計 ${sum(own, 0)}〜${sum(own, 1)}h が表にある`);
+  assert.ok(html.includes(`<b>${sum(newBuild, 0)}〜${sum(newBuild, 1)}h</b>`), `新築合計 ${sum(newBuild, 0)}〜${sum(newBuild, 1)}h が表にある`);
+  assert.ok(html.includes(`<b>${sum(used15, 0)}〜${sum(used15, 1)}h</b>`), `中古(築15年)合計 ${sum(used15, 0)}〜${sum(used15, 1)}h が表にある`);
   assert.ok(html.includes(`<b>${sum(rent, 0)}〜${sum(rent, 1)}h</b>`), `賃貸合計 ${sum(rent, 0)}〜${sum(rent, 1)}h が表にある`);
-  for (const link of ["simulate.html", "tradeoff.html", "map.html", "formula.html", "index.html"]) {
+  // 3パターン比較の核心(新築の保証の傘・中古の入口の山)が図に残っている
+  assert.ok(html.includes("保証の傘"), "新築レーンの保証の傘がある");
+  assert.ok(html.includes("入口に山"), "中古レーンの入口の山の注記がある");
+  for (const link of ["simulate.html", "tradeoff.html", "map.html", "formula.html", "cliff.html", "index.html"]) {
     assert.ok(html.includes(`href="${link}"`), `${link} への導線がある`);
   }
 });
