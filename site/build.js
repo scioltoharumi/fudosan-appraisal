@@ -3,7 +3,11 @@
 import { mkdirSync, writeFileSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { evaluate, defaultAsOf } from "../engine/appraise.js";
-import { ROOT, loadAreaConfig, loadProperty, listPropertyIds } from "../engine/io.js";
+import { ROOT, loadAreaConfig, loadProperty, listPropertyIds, loadRental, listRentalIds } from "../engine/io.js";
+import { loadRentPool, fitRentModel, evaluateRent, rentFunnel } from "../engine/rent.js";
+import { renderRentIndex } from "./templates/rent-index.js";
+import { renderRentProperty } from "./templates/rent-property.js";
+import { renderRentBasis } from "./templates/rent-basis.js";
 import { renderIndex } from "./templates/index.js";
 import { renderProperty } from "./templates/property.js";
 import { renderGuide } from "./templates/guide.js";
@@ -113,4 +117,38 @@ console.log(`✓ map.html(ハザード対照・${hazardGrid.nx}×${hazardGrid.ny
 
 writeFileSync(join(DIST, "index.html"), renderIndex(results, { asOf, cal }), "utf8");
 console.log(`✓ index.html(${results.length}件・基準日 ${asOf})`);
+
+// ---- 戸建賃貸台帳(2026-08-18新設) ----
+// 購入台帳とはデータもエンジンも別系統(rentals/ + engine/rent.js + market/rent-listings.csv)。
+// 賃貸台帳が空でもビルドは通す(listRentalIds は rentals/ が無ければ空配列を返す)
+const rentalIds = listRentalIds();
+if (rentalIds.length === 0) {
+  console.log("· 賃貸台帳なし(rentals/ が空のためスキップ)");
+} else {
+  mkdirSync(join(DIST, "rent"), { recursive: true });
+  const rentPool = loadRentPool();
+  const rentModel = fitRentModel(rentPool);
+  if (!rentModel.ok) console.warn(`⚠ 募集賃料モデルを推定できず: ${rentModel.reason}`);
+  const rentFun = rentFunnel(rentPool);
+  const rentResults = [];
+  for (const id of rentalIds) {
+    const rental = loadRental(id);
+    if (rental.id !== id) throw new Error(`ファイル名とid不一致: rentals/${id}.yaml の id は ${rental.id}`);
+    const res = evaluateRent(rental, { pool: rentPool, model: rentModel.ok ? rentModel : null, asOf: asOfBuild });
+    writeFileSync(join(DIST, "rent", `${id}.html`),
+      renderRentProperty(res, rental, { asOf, model: rentModel.ok ? rentModel : null }), "utf8");
+    rentResults.push({ res, rental });
+    console.log(`✓ rent/${id}.html 表示${res.listed.total_man}万 / 実質(2年)${res.at2y.monthlyEq.toFixed(2)}万 / ものさし比${res.ratio ? Math.round(res.ratio * 100) + "%" : "—"}`);
+  }
+  writeFileSync(join(DIST, "rent.html"),
+    renderRentIndex(rentResults, { asOf, funnel: rentFun, model: rentModel.ok ? rentModel : null,
+      poolCapturedAt: rentPool[0]?.captured_at ?? null }), "utf8");
+  console.log(`✓ rent.html(賃貸台帳 ${rentResults.length}件・母集団 ${rentPool.length}件)`);
+  if (rentModel.ok) {
+    writeFileSync(join(DIST, "rent-basis.html"),
+      renderRentBasis({ pool: rentPool, model: rentModel, funnel: rentFun, asOf }), "utf8");
+    console.log(`✓ rent-basis.html(募集賃料モデル n=${rentModel.n} R²=${rentModel.r2.toFixed(3)})`);
+  }
+}
+
 console.log(`出力先: ${DIST}`);

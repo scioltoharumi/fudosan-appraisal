@@ -1,0 +1,58 @@
+id: kamiya3-108753472
+status: new
+viewing: none
+source: "SUUMO 賃貸 jnc_000108753472"
+source_url: "https://suumo.jp/chintai/jnc_000108753472/"
+captured_at: 2026-08-18
+rent_history:
+  - {date: 2026-08-18, rent_man: 22, kanri_man: 0}
+location: {district: 神谷, chome: 3, address: "東京都北区神谷３"}
+layout: "3LDK"
+station:
+  walk_min: 7              # 最寄り(東京メトロ南北線 王子神谷)
+  keihin_walk_min: 15      # JR京浜東北線 東十条
+  lines:
+    - {line: "東京メトロ南北線", station: "王子神谷", walk_min: 7}
+    - {line: "東京メトロ南北線", station: "志茂", walk_min: 10}
+    - {line: "ＪＲ京浜東北線", station: "東十条", walk_min: 15}
+building:
+  built_year: 1992
+  built_month: 3
+  floor_m2: 85.51
+  structure: 鉄骨
+  seismic: new             # 1992年竣工=新耐震
+terms:
+  rent_man: 22
+  kanri_man: 0
+  shiki_months: 1
+  rei_months: 1
+  # **契約期間が掲載に無い**。普通借家か定期借家か判別できないため KO判定は suspect。
+  # 定期借家ならユーザー方針(2026-08-18)でKO=台帳から外す。問い合わせで確定させること
+  contract_type: null
+  contract_years: null
+  brokerage_months: 1.0    # 「仲介手数料 1ヶ月」
+  guarantee_initial_months: 0.5    # 「保証会社利用必 50％～」(下限を採る。上振れの可能性あり)
+  insurance_man: 2.5       # 「損保 2.5万円2年」
+  insurance_cycle_y: 2
+facilities:
+  # 台帳4件で唯一、掲載の設備欄に「トイレ2ヶ所」が明記されている
+  toilet2: true
+  parking_raw: "近隣160m23000円/駐3台可"   # 距離と金額の切れ目が掲載側で潰れており読めない。原文のまま保持
+  notes: ["専用庭", "テラス", "物置", "全室南向き", "3面採光", "エアコン4台", "収納2間半", "納戸", "駐車2台可"]
+fine_print:
+  - "室内喫煙不可"
+  - "ペット飼育は原則不可。家賃+8,000円/月・敷金1ヶ月追加で小型犬または猫1匹まで相談可"
+  - "事務所利用相談可"
+  - "掲載の入居条件に国籍による制限の記載がある(原文: 「日本人の方のみ相談可能」)"
+hazard_check:
+  checked_at: 2026-08-18
+  official:
+    query: "東京都北区神谷3丁目"
+    point: "35.77210,139.73286"
+    elevation_m: 2.2
+    flood_l2: "3.0〜5.0m"
+    flood_coverage: "周辺25点の被覆率100%"
+    hits: ["洪水浸水想定区域(想定最大規模): 3.0〜5.0m", "浸水継続時間(想定最大規模): 該当", "高潮浸水想定区域(想定最大規模): 0.5〜3.0m"]
+    reference_verdict: block
+    limit: "丁目代表点ベース。被覆率100%のため丁目全域に及ぶ"
+checklist: {contract_type_verified: false, toilet_count: true, parking_terms: false, viewing: false}

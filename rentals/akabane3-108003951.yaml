@@ -1,0 +1,66 @@
+# 賃貸台帳(1物件1ファイル)。記載ルールは購入台帳と同じ: 事実データと評価パラメータのみ。
+# 交渉メモ・個人的所感・写真は書かない(publicリポジトリ運用・decisions D4)
+id: akabane3-108003951
+status: new                # 検討状況(new/considering/on_hold/declined)。人が一覧ページで設定する
+viewing: none              # 内見の段階(none/wanted/done)
+source: "SUUMO 賃貸 jnc_000108003951 ((株)タウンハウジング東京赤羽店)"
+source_url: "https://suumo.jp/chintai/jnc_000108003951/"
+# 同一物件が別業者からも掲載されている(諸元・賃料・築年月がすべて一致)。
+# 名寄せの根拠: 賃料21万・専有74.26m2・築2011年8月・間取り詳細「洋6.2 洋6 洋5 LDK14.0」が完全一致
+duplicate_of: ["jnc_000108499514"]
+captured_at: 2026-08-18
+rent_history:
+  - {date: 2026-08-18, rent_man: 21, kanri_man: 0}
+location: {district: 赤羽, chome: 3, address: "東京都北区赤羽３"}
+layout: "3LDK"
+madori_detail: "洋6.2 洋6 洋5 LDK14.0"
+station:
+  walk_min: 5              # 最寄り(東京メトロ南北線 赤羽岩淵)
+  keihin_walk_min: 13      # JR京浜東北線 赤羽
+  lines:
+    - {line: "東京メトロ南北線", station: "赤羽岩淵", walk_min: 5}
+    - {line: "ＪＲ京浜東北線", station: "赤羽", walk_min: 13}
+    - {line: "ＪＲ埼京線", station: "北赤羽", walk_min: 15}
+building:
+  built_year: 2011
+  built_month: 8
+  floor_m2: 74.26          # 掲載は「専有面積」。賃貸は土地面積を出さない
+  structure: 木造
+  seismic: new             # 2011年竣工=新耐震
+terms:
+  rent_man: 21
+  kanri_man: 0             # 掲載は「管理費・共益費: -」
+  shiki_months: 1
+  rei_months: 1
+  contract_type: futsu     # 普通借家 2年
+  contract_years: 2
+  brokerage_months: null   # 掲載に記載なし。エンジンの既定(1.1ヶ月)を使い、その旨を開示する
+  guarantee_initial_months: 0.5    # 「初回保証委託料：総賃料等の50％」(全保連イズミシステム)
+  guarantee_monthly_pct: 0
+  # 月額集送金手数料660円 + 継続保証料15,000円/年(=1,250円/月) = 1,910円/月
+  guarantee_monthly_man: 0.191
+  insurance_man: 2.0       # 「損保 2万円2年」
+  insurance_cycle_y: 2
+facilities:
+  parking: "付無料"
+  toilet2: null            # 設備欄に「トイレ2ヶ所」の記載なし。**記載が無いだけで、無いとは限らない**
+  aircon: "エアコン2台"
+  notes: ["バストイレ別", "追焚機能浴室", "温水洗浄便座", "洗面所独立", "防犯シャッター", "駅まで平坦", "角住戸"]
+# 掲載の備考に埋まっていた条件。金額が読めないものは書かず、原文のまま note に残す
+fine_print:
+  - "※短期解約違約金有(金額・期間は掲載に記載なし。申込前に要確認)"
+  - "巡回管理"
+hazard_check:
+  checked_at: 2026-08-18
+  # 掲載条件でハザードを除外しない方針(2026-08-18ユーザー決定「ハザードマップ内もあり」)。
+  # 除外はしないが**事実は必ず記録する**。判定はしない(v3.0.0の思想)
+  official:
+    query: "東京都北区赤羽3丁目"
+    point: "35.78675,139.71831"
+    elevation_m: 3.1
+    flood_l2: "5.0〜10.0m"
+    flood_coverage: "周辺25点の被覆率76%"
+    hits: ["洪水浸水想定区域(想定最大規模): 5.0〜10.0m", "浸水継続時間(想定最大規模): 該当", "高潮浸水想定区域(想定最大規模): 0.5〜3.0m"]
+    reference_verdict: block   # 購入台帳の基準なら掲載条件外。賃貸台帳では**除外せず事実として持つ**
+    limit: "丁目代表点ベース。荒川の氾濫は面的なので確度が高い"
+checklist: {contract_type_verified: true, short_cancel_penalty: false, toilet_count: false, viewing: false}

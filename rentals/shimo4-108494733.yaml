@@ -1,0 +1,64 @@
+id: shimo4-108494733
+status: new
+viewing: none
+source: "SUUMO 賃貸 jnc_000108494733"
+source_url: "https://suumo.jp/chintai/jnc_000108494733/"
+captured_at: 2026-08-18
+rent_history:
+  - {date: 2026-08-18, rent_man: 21.9, kanri_man: 0}
+location: {district: 志茂, chome: 4, address: "東京都北区志茂４"}
+layout: "3LDK"
+madori_detail: "洋5.4 洋4.6 洋4.6 LDK12.7"
+station:
+  walk_min: 7              # 最寄り(東京メトロ南北線 志茂)
+  keihin_walk_min: 15      # JR京浜東北線 赤羽
+  lines:
+    - {line: "東京メトロ南北線", station: "志茂", walk_min: 7}
+    - {line: "東京メトロ南北線", station: "赤羽岩淵", walk_min: 12}
+    - {line: "ＪＲ京浜東北線", station: "赤羽", walk_min: 15}
+building:
+  built_year: 2026
+  built_month: 9           # 新築(入居 '26年9月上旬)
+  floor_m2: 72.3
+  structure: 軽量鉄骨
+  seismic: new
+terms:
+  rent_man: 21.9
+  kanri_man: 0
+  shiki_months: 1
+  rei_months: 1
+  contract_type: futsu     # 普通借家 2年
+  contract_years: 2
+  brokerage_months: null   # 掲載に記載なし
+  guarantee_initial_months: 0.6    # 「初回保証料総賃料60％」
+  guarantee_monthly_pct: 1.5       # 「月額保証料総賃料の1.5％」
+  insurance_man: null      # 掲載は「損保 要」で金額の記載なし。既定(2万/2年)を使う
+  # 備考「退去時クリーニング費用1540円×平米」= 1,540円 × 72.3m2 = 111,342円。
+  # 定額なので原状回復の想定(賃料1ヶ月)ではなくこの実額を使う
+  cleaning_man: 11.13
+  # 備考「24時間サポート1320円（月額）」
+  misc_monthly_man: 0.132
+facilities:
+  parking: null            # 掲載は「駐車場 -」
+  toilet2: null            # 設備欄に記載なし
+  notes: ["バストイレ別", "洗面所独立", "角住戸", "都市ガス", "3口以上コンロ", "IT重説 対応物件"]
+fine_print:
+  - "退去時クリーニング費用 1,540円×平米(72.3m2で約111,342円)"
+  - "24時間サポート 1,320円(月額)"
+hazard_check:
+  checked_at: 2026-08-18
+  official:
+    query: "東京都北区志茂4丁目"
+    point: "35.78286,139.73482"
+    elevation_m: 0.6
+    flood_l2: "5.0〜10.0m"
+    flood_coverage: "周辺25点の被覆率92%"
+    hits:
+      - "洪水浸水想定区域(想定最大規模): 5.0〜10.0m"
+      - "浸水継続時間(想定最大規模): 該当"
+      # 浸水するだけでなく**流れで建物が壊れうる**区域。他の候補には出ていない区分なので明記する
+      - "家屋倒壊等氾濫想定区域(氾濫流): 該当"
+      - "高潮浸水想定区域(想定最大規模): 3.0〜5.0m"
+    reference_verdict: block
+    limit: "丁目代表点ベース。標高0.6mで周辺被覆92%のため面的に確実"
+checklist: {contract_type_verified: true, toilet_count: false, viewing: false}

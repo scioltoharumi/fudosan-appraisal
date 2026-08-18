@@ -140,4 +140,24 @@ table.list th.sortable .arw{opacity:.45;font-size:.65rem}
 
 .disclaimer{font-size:.68rem;color:var(--ink-soft);margin-top:20px;border-top:1px solid var(--grid);padding-top:10px}
 .meta-line{font-family:var(--mono);font-size:.68rem;color:var(--ink-soft);margin-top:10px}
+
+/* ---- 賃貸台帳(2026-08-18新設) ---- */
+/* .logic-body 直下の導入文。従来は .logic-step の中でしか効いていなかった */
+.logic-body>.why{color:var(--ink-soft);font-size:.78rem;margin-bottom:10px}
+.logic-body ul.notes{font-size:.78rem;margin:8px 0 0}
+.logic-body ul.notes li{margin-left:1.2em;margin-bottom:6px}
+/* ハザード該当の表示。**判定ではなく事実の表示**なので、色で善悪を付けすぎない */
+.hz{font-size:.7rem;border:1px solid var(--stamp);color:var(--stamp);padding:1px 6px;white-space:nowrap}
+.hz.ok{border-color:var(--ok);color:var(--ok)}
+/* グラフの線色と一覧行を対応させる印 */
+.swatch{display:inline-block;width:10px;height:10px;margin-right:5px;vertical-align:middle}
+/* 賃貸一覧は列が多い。物件列に下限を与えないと住所が1文字ずつ折り返す(2026-08-18に実測) */
+#rentlist td:first-child{min-width:150px}
+#rentlist th{white-space:normal;line-height:1.35}
+#rentlist td.num{white-space:nowrap}
+#rentlist td.num .note{white-space:normal}
+/* 購入一覧より列が4つ多いので、メモ列は190→150pxに詰めて枠(1098px)に収める。
+   実測: 詰める前は表1123px > 枠1098px でメモ列が枠外へ出ていた */
+#rentlist th.memocol{min-width:150px}
+#rentlist .memota{min-width:130px}
 `;

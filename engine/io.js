@@ -25,3 +25,17 @@ export function listPropertyIds() {
     .map((f) => f.replace(/\.yaml$/, ""))
     .sort();
 }
+
+// ---- 賃貸台帳(rentals/)。購入台帳(properties/)とは別ディレクトリ・別エンジン ----
+export function loadRental(id) {
+  return loadYaml(join(ROOT, "rentals", `${id}.yaml`));
+}
+
+export function listRentalIds() {
+  try {
+    return readdirSync(join(ROOT, "rentals"))
+      .filter((f) => f.endsWith(".yaml"))
+      .map((f) => f.replace(/\.yaml$/, ""))
+      .sort();
+  } catch { return []; }        // 賃貸台帳が無いリポジトリでもビルドが通るようにする
+}
