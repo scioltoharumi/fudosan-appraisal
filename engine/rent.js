@@ -190,7 +190,9 @@ export function effectiveMonthly(p, years, a = RENT_ASSUMPTIONS) {
   const brokerage = (p.brokerage_months ?? a.brokerage_months) * rent;
   const guaranteeInit = (p.guarantee_initial_months ?? a.guarantee_initial_months) * rent;
   const keyExchange = p.key_exchange_man ?? a.key_exchange_man;
-  const insCycles = Math.max(1, Math.ceil(years / a.insurance_cycle_y));
+  // 保険の更新周期は物件ごとに違う(2年契約が多いが1年のものもある)。既定に丸めない
+  const insCycleY = p.insurance_cycle_y ?? a.insurance_cycle_y;
+  const insCycles = Math.max(1, Math.ceil(years / insCycleY));
   const insurance = (p.insurance_man ?? a.insurance_man) * insCycles;
   const renewCycle = p.renewal_cycle_y ?? a.renewal_cycle_y;
   // 2年契約で2年ちょうど住むなら更新は起きない。3年目に入る時点で1回
@@ -254,7 +256,7 @@ export function evaluateRent(property, { pool, model, asOf, assumptions = RENT_A
     guarantee_initial_months: t.guarantee_initial_months ?? null,
     guarantee_monthly_pct: t.guarantee_monthly_pct ?? null,
     guarantee_monthly_man: t.guarantee_monthly_man ?? null,
-    insurance_man: t.insurance_man ?? null,
+    insurance_man: t.insurance_man ?? null, insurance_cycle_y: t.insurance_cycle_y ?? null,
     renewal_months: t.renewal_months ?? null, renewal_cycle_y: t.renewal_cycle_y ?? null,
     key_exchange_man: t.key_exchange_man ?? null, restoration_months: t.restoration_months ?? null,
     misc_initial_man: t.misc_initial_man ?? null, misc_monthly_man: t.misc_monthly_man ?? null,
@@ -292,7 +294,11 @@ export function evaluateRent(property, { pool, model, asOf, assumptions = RENT_A
 // 探索の漏斗。母集団から候補まで**各段で何件落ちたか**を返す。
 // 数字をページに手書きせず、必ずこの関数の実測を通す(母集団が変われば表示も変わる)。
 // 段の順序は「安い条件から順に」ではなく「掲載から確実に読める順に」置いてある
-export function rentFunnel(pool, cfg = { total_min_man: 15, total_max_man: 25, walk_max: 10, rooms_min: 3 }) {
+// 許容する定期借家の年数。crawler/rent-screen.mjs の TEIKI_OK_YEARS と同じ値を持つ
+// (エンジンはクローラに依存しない方針なので定数を二重に置き、tests/rent-engine.test.js で一致を検査する)
+export const TEIKI_OK_YEARS = [3];
+
+export function rentFunnel(pool, cfg = { total_min_man: 15, total_max_man: 25, walk_max: 10, rooms_min: 3, teiki_ok_years: TEIKI_OK_YEARS }) {
   const steps = [];
   let f = pool;
   steps.push({ label: "北区の戸建賃貸(SUUMO・一戸建てのみ)", n: f.length, dropped: 0 });
@@ -305,11 +311,19 @@ export function rentFunnel(pool, cfg = { total_min_man: 15, total_max_man: 25, w
   step(`最寄り駅 徒歩${cfg.walk_max}分以内`, (d) => d.walk_min != null && d.walk_min <= cfg.walk_max);
   step(`${cfg.rooms_min}LDK以上(納戸Sは1室として数える)`, (d) => d.rooms >= cfg.rooms_min && d.has_ldk);
   step("新耐震(1982年以降竣工)", (d) => d.seismic === "new");
-  step("定期借家をKO(2026-08-18ユーザー決定)", (d) => d.contract_type !== "teiki");
+  // 定期借家は**ちょうど3年だけ許容**する(2026-08-18ユーザー指示: 子供の小学校入学前の区切り)。
+  // 短いからKOではなく長さの要件なので、2年も4年以上も落ちる
+  const okYears = cfg.teiki_ok_years ?? TEIKI_OK_YEARS;
+  step(`定期借家は${okYears.join("・")}年ちょうどのみ可(2026-08-18ユーザー指示)`,
+    (d) => d.contract_type !== "teiki" || okYears.includes(d.contract_years));
   const survivors = f;
   // 参考: ここにトイレ2ヶ所の記載を足すと何件になるか。**条件には入れていない**
   const withToilet2 = f.filter((d) => d.toilet2 === true).length;
-  return { steps, survivors, withToilet2,
+  // 生存のうち定期借家(許容年数)の掲載数と、仮に定期借家を全部KOにしたら何件減るか。
+  // 「3年だけ許容している」という条件の効き具合をページで開示するために返す
+  const teikiAllowed = survivors.filter((d) => d.contract_type === "teiki").length;
+  return { steps, survivors, withToilet2, teikiAllowed, teikiOkYears: okYears,
+    teikiInPool: pool.filter((d) => d.contract_type === "teiki").length,
     toilet2Documented: pool.filter((d) => d.toilet2 === true).length, poolN: pool.length };
 }
 

@@ -117,10 +117,12 @@ export function renderRentBasis({ pool, model, funnel, asOf }) {
         <tr><td>プール総数(一戸建てのみ)</td><td class="num">${pool.length}件</td><td>テラス・タウンハウス(連棟)は除外</td></tr>
         <tr><td>普通借家</td><td class="num">${futsu}件</td><td>更新の拒絶に正当事由が要る</td></tr>
         <tr><td>定期借家</td><td class="num">${teiki}件</td><td><b>母集団の${(teiki / pool.length * 100).toFixed(0)}%</b>。例外ではない</td></tr>
+        <tr><td>　うち契約${(funnel.teikiOkYears ?? [3]).join("・")}年(掲載条件で許容)</td><td class="num">${pool.filter((d) => d.contract_type === "teiki" && (funnel.teikiOkYears ?? [3]).includes(d.contract_years)).length}件</td><td>子供の小学校入学前の区切りに長さが合うため許容している</td></tr>
         <tr><td>契約期間の記載なし</td><td class="num">${noContract}件</td><td>問い合わせないと判別できない</td></tr>
         <tr><td>「トイレ2ヶ所」の記載あり</td><td class="num">${funnel.toilet2Documented}件</td><td>設備欄は任意記載。記載が無い=無い、ではない</td></tr>
       </table>
-      <div class="note" style="margin-top:8px"><b>定期借家が${(teiki / pool.length * 100).toFixed(0)}%を占める点は、この市場の構造として重要です。</b>戸建賃貸は「持ち家を転勤等で一時的に貸す」供給が混ざるため、期間を区切った契約が普通のマンション賃貸より厚くなります。掲載条件でこれをKOにすると候補が大きく減りますが、それは条件が厳しいのではなく市場がそうなっている、ということです。</div>
+      <div class="note" style="margin-top:8px"><b>定期借家が${(teiki / pool.length * 100).toFixed(0)}%を占める点は、この市場の構造として重要です。</b>戸建賃貸は「持ち家を転勤等で一時的に貸す」供給が混ざるため、期間を区切った契約が普通のマンション賃貸より厚くなります。定期借家を一律にKOにすると候補が大きく減りますが、それは条件が厳しいのではなく市場がそうなっている、ということです。</div>
+      <div class="note"><b>この台帳は定期借家を「${(funnel.teikiOkYears ?? [3]).join("・")}年ちょうど」だけ許容しています。</b>短いほど悪いという判断ではなく<b>長さの要件</b>です——子供の小学校入学前に区切りをつけたいという前提に3年という長さが合うため、2年(短くて区切りに足りない)も4年以上(満了が入学後に来る)も同じように外れます。定期借家は期間満了で確実に終わるので、この用途では普通借家より予定が立てやすいという面もあります。</div>
     </div>
   </div>
 

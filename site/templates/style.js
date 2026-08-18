@@ -152,12 +152,17 @@ table.list th.sortable .arw{opacity:.45;font-size:.65rem}
 /* グラフの線色と一覧行を対応させる印 */
 .swatch{display:inline-block;width:10px;height:10px;margin-right:5px;vertical-align:middle}
 /* 賃貸一覧は列が多い。物件列に下限を与えないと住所が1文字ずつ折り返す(2026-08-18に実測) */
-#rentlist td:first-child{min-width:150px}
+#rentlist td:first-child{min-width:132px}
 #rentlist th{white-space:normal;line-height:1.35}
 #rentlist td.num{white-space:nowrap}
 #rentlist td.num .note{white-space:normal}
 /* 購入一覧より列が4つ多いので、メモ列は190→150pxに詰めて枠(1098px)に収める。
    実測: 詰める前は表1123px > 枠1098px でメモ列が枠外へ出ていた */
-#rentlist th.memocol{min-width:150px}
-#rentlist .memota{min-width:130px}
+/* 列の min-width の合計が表の幅を決める。枠(1098px)に収まるよう実測で詰めてある
+   (2026-08-18: 詰める前は表1125px でメモ欄が右端から27px はみ出していた) */
+#rentlist th.memocol{min-width:126px}
+#rentlist .memota{min-width:106px}
+/* 契約列は「定期借家3年」が折り返さない幅を確保する(折れると行が5行分の高さになる) */
+#rentlist td:nth-child(9), #rentlist th:nth-child(9){min-width:82px}
+.nw{white-space:nowrap}
 `;

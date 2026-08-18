@@ -1,6 +1,7 @@
 // tests/rent-screen.test.js — 賃貸スクリーニングの回帰ガード。
 // 守りたいこと:
-//   ① 定期借家のKO(2026-08-18ユーザー決定)が外れたら落ちる
+//   ① 定期借家のKO(2026-08-18ユーザー決定)が外れたら落ちる。
+//      **許容は「3年ちょうど」だけ**で、2年も4年以上も落ちること(長さの要件であって短さの問題ではない)
 //   ② **トイレ2個がKO/圏外条件に昇格したら落ちる**(記載なし=無い、と読み替える事故の防止)
 //   ③ 掲載の自由文表記の揺れで契約種別を取りこぼさない
 //   ④ ページ下部の推薦枠の賃料を掴まない(物件ヘッダ限定の抽出)
@@ -8,7 +9,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   parseRentDetail, roomsOfRent, contractTypeOf, seismicOf,
-  rentKoScreen, rentScopeCheck, monthsOf, manOf, RENT_SCOPE,
+  rentKoScreen, rentScopeCheck, monthsOf, manOf, RENT_SCOPE, TEIKI_OK_YEARS,
 } from "../crawler/rent-screen.mjs";
 
 // SUUMO賃貸詳細ページの骨格を最小再現する。実ページの構造(2026-08-18時点)に合わせてある:
@@ -48,12 +49,33 @@ test("徒歩分は物件自身の駅徒歩ブロックから取り、最小値�
   assert.deepEqual(d.walks.map((w) => w.walk_min), [13, 5]);
 });
 
-test("定期借家はKO(RKO1)。この判定が消えたら落ちる", () => {
-  for (const raw of ["定期借家 2年", "定期借家 3年", "定期借家 西暦2030年3月まで"]) {
+test("定期借家は3年ちょうどのみ可。2年・4年以上はKO(RKO1)", () => {
+  // 2026-08-18ユーザー指示「三年のみOK(子供の小学校入学前タイミング)」。
+  // **短いからKOではなく長さの要件**なので、上下どちらに外れても落ちる
+  for (const raw of ["定期借家 1年", "定期借家 2年", "定期借家 4年", "定期借家 5年", "定期借家 6年"]) {
     const ko = rentKoScreen(parseRentDetail(page({ contract: raw })));
     assert.equal(ko.verdict, "block", `${raw} はKOでなければならない`);
     assert.ok(ko.codes.includes("RKO1"));
   }
+  const ok = rentKoScreen(parseRentDetail(page({ contract: "定期借家 3年" })));
+  assert.equal(ok.verdict, "pass", "3年ちょうどは通す");
+  assert.deepEqual(ok.codes, []);
+  // 通すが普通借家と同じ扱いにはしない。満了で終わる契約であることを注記に残す
+  assert.ok(ok.notes.some((n) => /満了/.test(n)), "定期借家である旨の注記が残る");
+  assert.ok(ok.notes.some((n) => /3年/.test(n)), "許容年数が注記に出る");
+});
+
+test("許容する定期借家の年数は3年のみ(方針の記録)", () => {
+  assert.deepEqual([...TEIKI_OK_YEARS], [3],
+    "変更するときは CLAUDE.md の方針記述と rent-basis/rent-index の開示文も同時に直すこと");
+});
+
+test("定期借家で期間が期日表記のものは落とさず人へ回す", () => {
+  // 「西暦2030年3月まで」は入居日が決まらないと長さが判らない。3年ちょうどか判定できないので suspect
+  const ko = rentKoScreen(parseRentDetail(page({ contract: "定期借家 西暦2030年3月まで" })));
+  assert.equal(ko.verdict, "suspect");
+  assert.ok(ko.codes.includes("RKO1?"));
+  assert.ok(ko.notes.some((n) => /実期間を確認/.test(n)));
 });
 
 test("普通借家はKOにならない", () => {

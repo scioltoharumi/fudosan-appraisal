@@ -1,0 +1,59 @@
+id: toshima1-109195206
+status: new
+viewing: none
+source: "SUUMO 賃貸 jnc_000109195206"
+source_url: "https://suumo.jp/chintai/jnc_000109195206/"
+captured_at: 2026-08-18
+rent_history:
+  - {date: 2026-08-18, rent_man: 25, kanri_man: 0}
+location: {district: 豊島, chome: 1, address: "東京都北区豊島１"}
+layout: "4LDK"
+madori_detail: "和4.5 洋8 洋6 洋5.5 LDK14.5"
+station:
+  walk_min: 10             # 最寄り(JR京浜東北線 王子)。掲載条件の上限ちょうど
+  keihin_walk_min: 10
+  lines:
+    - {line: "ＪＲ京浜東北線", station: "王子", walk_min: 10}
+    - {line: "東京メトロ南北線", station: "王子神谷", walk_min: 16}
+    - {line: "ＪＲ京浜東北線", station: "東十条", walk_min: 23}
+building:
+  built_year: 2013
+  built_month: 10
+  floor_m2: 111.0          # 台帳で最大
+  structure: 木造
+  seismic: new
+terms:
+  rent_man: 25
+  kanri_man: 0
+  shiki_months: 1
+  rei_months: 1
+  contract_type: teiki
+  contract_years: 3
+  renewal_months: 0        # 定期借家。期間中の更新料は発生しない
+  brokerage_months: 0.55   # 設備欄の「仲手0.55ヶ月」
+  guarantee_initial_months: 0.5    # 備考「保証委託料（賃料総額に対し、初回額50％、月額2％）」
+  guarantee_monthly_pct: 2.0
+  insurance_man: null      # 掲載は「損保 要」で金額の記載なし。既定(2万/2年)を使う
+  # 備考にのみ書かれた初期の付帯費用: 消毒25,300 + 入居者サポート22,000 + 消火剤・防災グッズ16,500
+  misc_initial_man: 6.38
+facilities:
+  parking: "付無料"
+  toilet2: null            # 設備欄に記載なし
+  notes: ["南向き", "床暖房", "ウォークインクロゼット", "全居室収納", "複層ガラス", "エアコン4台", "浴室乾燥機", "ペット相談", "専有面積30坪以上"]
+fine_print:
+  - "消毒(抗菌費)(初期) 25,300円"
+  - "入居者サポート費用(初期) 22,000円"
+  - "消火剤・防災グッズ代(初期) 16,500円"
+  - "保証委託料 初回50%・月額2%(月額保証料が台帳で最も高い)"
+hazard_check:
+  checked_at: 2026-08-18
+  official:
+    query: "東京都北区豊島1丁目"
+    point: "35.75767,139.74045"
+    elevation_m: 3.4
+    flood_l2: "3.0〜5.0m"
+    flood_coverage: "周辺25点の被覆率100%"
+    hits: ["洪水浸水想定区域(想定最大規模): 3.0〜5.0m", "高潮浸水想定区域(想定最大規模): 0.5m未満"]
+    reference_verdict: block
+    limit: "丁目代表点ベース。被覆率100%のため丁目全域に及ぶ"
+checklist: {contract_type_verified: true, recontract_terms: false, toilet_count: false, viewing: false}

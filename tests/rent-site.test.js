@@ -68,11 +68,29 @@ test("rent: 探索の漏斗が各段の落ちた数つきで出ている(黙っ�
   assert.ok(indexHtml.includes(`${funnel.poolN}件`), "母集団の件数が出ている");
 });
 
-test("rent: 定期借家がKOであること・母集団での比率が開示されている", () => {
+test("rent: 定期借家は3年のみ可という条件と、その理由・母集団比率が開示されている", () => {
   const teiki = pool.filter((d) => d.contract_type === "teiki").length;
   assert.ok(basisHtml.includes(`${teiki}件`), "定期借家の実数が出ている");
   assert.ok(basisHtml.includes("例外ではない"), "定期借家が例外でない旨の開示がある");
-  assert.ok(indexHtml.includes("定期借家はKO"), "掲載条件にKOが明記されている");
+  assert.ok(indexHtml.includes("定期借家3年ちょうど"), "掲載条件に許容年数が明記されている");
+  assert.ok(indexHtml.includes("2年・4年以上はKO"), "上下どちらに外れても落ちることが書かれている");
+  // 「短いからKO」ではなく「長さの要件」という理由が消えると、条件が理不尽に見える
+  assert.ok(basisHtml.includes("長さの要件"), "根拠ページに理由がある");
+  assert.ok(indexHtml.includes("小学校入学前") || basisHtml.includes("小学校入学前"), "許容の理由が書かれている");
+});
+
+test("rent: 定期借家の物件は満了で終わることと、期間超の値が参考値である旨が出ている", () => {
+  const teikiRows = results.filter(({ rental }) => rental.terms?.contract_type === "teiki");
+  assert.ok(teikiRows.length > 0, "台帳に定期借家の物件がある(この条件が効いている証拠)");
+  assert.ok(indexHtml.includes("満了で終了"), "一覧に満了で終わる旨がある");
+  assert.ok(indexHtml.includes("再契約前提の参考値"), "期間超が参考値である旨がある");
+  for (const { res, rental } of teikiRows) {
+    const h = renderRentProperty(res, rental, { asOf, model });
+    assert.ok(h.includes("更新の権利はない"), `${rental.id}: 普通借家との違いが書かれていない`);
+    assert.ok(h.includes("年より先の行は参考値"), `${rental.id}: カーブの期間超の注意がない`);
+    // 定期借家に更新料を計上していないこと(カーブの更新回数が全て0)
+    assert.ok(res.curve.every((c) => c.breakdown.renewal === 0), `${rental.id}: 定期借家に更新料が乗っている`);
+  }
 });
 
 test("rent: ハザードは記録するが除外しない方針が明示されている", () => {

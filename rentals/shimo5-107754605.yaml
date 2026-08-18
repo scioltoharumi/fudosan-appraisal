@@ -1,0 +1,57 @@
+id: shimo5-107754605
+status: new
+viewing: none
+source: "SUUMO 賃貸 jnc_000107754605"
+source_url: "https://suumo.jp/chintai/jnc_000107754605/"
+captured_at: 2026-08-18
+rent_history:
+  - {date: 2026-08-18, rent_man: 18, kanri_man: 0}
+location: {district: 志茂, chome: 5, address: "東京都北区志茂５"}
+layout: "4LDK"
+madori_detail: "和6 和6 洋7.5 洋4.5 LDK12.0"
+station:
+  walk_min: 9              # 最寄り(東京メトロ南北線 志茂)
+  keihin_walk_min: 13      # JR京浜東北線 赤羽
+  lines:
+    - {line: "東京メトロ南北線", station: "志茂", walk_min: 9}
+    - {line: "東京メトロ南北線", station: "赤羽岩淵", walk_min: 10}
+    - {line: "ＪＲ京浜東北線", station: "赤羽", walk_min: 13}
+building:
+  built_year: 1988
+  built_month: 1
+  floor_m2: 87.77
+  structure: 木造
+  seismic: new             # 1988年竣工=新耐震
+terms:
+  rent_man: 18
+  kanri_man: 0
+  shiki_months: 1.5        # 敷金27万(賃料18万の1.5ヶ月)。台帳4件で唯一1ヶ月を超える
+  rei_months: 1
+  # 定期借家3年。2026-08-18ユーザー指示で**3年ちょうどのみ許容**(子供の小学校入学前の区切り)
+  contract_type: teiki
+  contract_years: 3
+  # 定期借家は期間満了で終了するため、契約期間中に更新料は発生しない。
+  # 3年を超えて住むには再契約が要り、その条件は掲載に記載がない(実質月額カーブの3年超は参考値)
+  renewal_months: 0
+  brokerage_months: 1.1    # 掲載「仲介手数料 1.1ヶ月」
+  guarantee_initial_months: 0.5    # 「総額賃料の50％」
+  guarantee_monthly_pct: 0
+  guarantee_monthly_man: 0.125     # 「更新15,000円/年」= 1,250円/月
+  insurance_man: 2.0       # 「損保 2万円2年」
+  insurance_cycle_y: 2
+facilities:
+  parking: null            # 掲載は「駐車場 -」
+  toilet2: null            # 設備欄に記載なし
+  notes: ["バストイレ別", "追焚機能浴室", "温水洗浄便座", "洗面所独立", "角住戸", "2面採光", "収納2間半", "勝手口", "和室2間", "エアコン2台"]
+hazard_check:
+  checked_at: 2026-08-18
+  official:
+    query: "東京都北区志茂5丁目"
+    point: "35.78578,139.73033"
+    elevation_m: 5.7
+    flood_l2: "3.0〜5.0m"
+    flood_coverage: "周辺25点の被覆率56%"
+    hits: ["洪水浸水想定区域(想定最大規模): 3.0〜5.0m"]
+    reference_verdict: block
+    limit: "丁目代表点ベース。被覆率56%は丁目内で浸水想定の内外が分かれることを示すので、番地単位の確認価値が他の低地物件より高い"
+checklist: {contract_type_verified: true, recontract_terms: false, toilet_count: false, viewing: false}

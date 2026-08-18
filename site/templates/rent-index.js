@@ -91,9 +91,14 @@ export function renderRentIndex(results, { asOf, funnel, model, poolCapturedAt }
       ? `<span class="hz">浸水${esc(hz.flood_l2 ?? "該当")}</span><div class="note" style="margin-top:2px">標高${hz.elevation_m}m${(hz.hits ?? []).some((h) => /家屋倒壊/.test(h)) ? "・<b>家屋倒壊等氾濫想定(氾濫流)</b>" : ""}</div>`
       : `<span class="hz ok">該当なし</span><div class="note" style="margin-top:2px">標高${hz.elevation_m ?? "—"}m</div>`;
     const ct = rental.terms?.contract_type;
-    const contractCell = ct === "futsu" ? `普通借家${rental.terms.contract_years ?? ""}年`
-      : ct === "teiki" ? `<b style="color:var(--stamp)">定期借家</b>`
-      : `<b style="color:var(--warn)">記載なし</b><div class="note" style="margin-top:2px">定期借家ならKO。要確認</div>`;
+    const cy = rental.terms?.contract_years;
+    // 定期借家3年は掲載条件として許容している(2026-08-18ユーザー指示)。ただし普通借家と同じには扱わない
+    // ——満了で確実に終わる契約なので、年数を必ず添えて出す
+    // 列が狭いので**ラベルは折り返さない**(1文字ずつ折れて行が異様に高くなる。2026-08-18の実測)。
+    // 詳しい説明は物件ページに置き、ここは最小限の注記にとどめる
+    const contractCell = ct === "futsu" ? `<span class="nw">普通借家${cy ?? ""}年</span>`
+      : ct === "teiki" ? `<span class="nw">定期借家${cy}年</span><div class="note" style="margin-top:2px">満了で終了</div>`
+      : `<b class="nw" style="color:var(--warn)">記載なし</b><div class="note" style="margin-top:2px">要確認</div>`;
     const t2 = rental.facilities?.toilet2 === true
       ? `<span class="hz ok">記載あり</span>`
       : `<span class="hz">記載なし</span>`;
@@ -108,9 +113,15 @@ export function renderRentIndex(results, { asOf, funnel, model, poolCapturedAt }
         })()}
         <div class="note" style="margin-top:2px">${esc(rental.layout ?? "")} ${rental.building?.floor_m2 ?? "—"}m² / ${esc(rental.building?.structure ?? "")} / 台帳登録${fmtDate(rental.captured_at)}</div>
         <div class="note"><a href="rent/${esc(res.id)}.html">この物件の内訳 →</a></div></td>
-      <td class="num">${yen(res.listed.total_man)}<div class="note">賃料${yen(res.listed.rent_man)}+管理${yen(res.listed.kanri_man)}</div></td>
+      <td class="num">${yen(res.listed.total_man)}${
+        // 管理費0の物件で「+管理0万」を出しても情報が増えず、狭い列で3行に折り返して
+        // 右端のメモ欄を押し出す(2026-08-18の実測)。内訳は管理費があるときだけ出す
+        res.listed.kanri_man > 0 ? `<div class="note">賃料${yen(res.listed.rent_man)}+管理${yen(res.listed.kanri_man)}</div>` : ""}</td>
       <td class="num"><b>${m1(res.at2y.monthlyEq)}万</b><div class="note">+${m1(res.at2y.premiumOverListed)}万/月</div></td>
-      <td class="num">${m1(res.at4y.monthlyEq)}万<div class="note">+${m1(res.at4y.premiumOverListed)}万/月</div></td>
+      <td class="num">${m1(res.at4y.monthlyEq)}万<div class="note">+${m1(res.at4y.premiumOverListed)}万/月${
+        // 定期借家は契約期間で終わるので、4年の列は再契約前提の参考値になる。
+        // 実際の想定である「満了時点」の実質月額を必ず添える
+        ct === "teiki" && cy ? `<br><b>${cy}年満了時 ${m1(res.curve[cy - 1].monthlyEq)}万</b>` : ""}</div></td>
       <td class="num">${m1(res.at2y.cashAtStart)}万</td>
       <td class="num">${ratio}<div class="note">基準${res.benchmark ? m1(res.benchmark.mid) + "万" : "—"}</div></td>
       <td class="num">築${rental.building?.built_year ?? "—"}<div class="note">${res.age_y != null ? res.age_y + "年" : ""}</div></td>
@@ -130,7 +141,7 @@ export function renderRentIndex(results, { asOf, funnel, model, poolCapturedAt }
 
   const body = `
   <div class="panel">
-    <div class="cond-banner"><b>台帳掲載の条件</b>: 賃料+管理費 15〜25万円 / 最寄り駅 徒歩10分以内(路線は問わない) / 3LDK以上(納戸Sは1室として数える) / 新耐震(1982年以降竣工) / 一戸建て(テラス・タウンハウスは対象外) / <b>普通借家</b>(定期借家はKO) ── 東京都北区の戸建賃貸をSUUMOから日次クロールして収集。<b>ハザードマップ内も対象に含める</b>(2026-08-18の方針。ただし該当内容は必ず事実として記録する)。駐車場・トイレ2個は条件にしない(下記)。</div>
+    <div class="cond-banner"><b>台帳掲載の条件</b>: 賃料+管理費 15〜25万円 / 最寄り駅 徒歩10分以内(路線は問わない) / 3LDK以上(納戸Sは1室として数える) / 新耐震(1982年以降竣工) / 一戸建て(テラス・タウンハウスは対象外) / <b>普通借家、または定期借家3年ちょうど</b>(定期借家の2年・4年以上はKO) ── 東京都北区の戸建賃貸をSUUMOから日次クロールして収集。<b>ハザードマップ内も対象に含める</b>(2026-08-18の方針。ただし該当内容は必ず事実として記録する)。駐車場・トイレ2個は条件にしない(下記)。</div>
     <div class="cond-banner" style="border-color:var(--ink-soft);background:#FBFAF8"><b>この台帳は「借りる/見送り」の判定を出しません</b>: 出すのは①表示賃料に対して実際にいくら払うことになるか(実質月額)②募集賃料の分布の中でどこに立つか、という事実までです。判断は人が行います(購入台帳 v3.0.0 と同じ思想)。</div>
     <div class="note" style="margin:0 0 10px">購入台帳は <a href="index.html">中古戸建の査定台帳</a>。持ち家と賃貸で「お金では見えない手間」がどう違うかは <a href="effort.html">手間の解剖</a>、何年住むと総コストがどうなるかは <a href="simulate.html">保有年数シミュレーター</a> が扱っています。この賃貸台帳の相場モデルの作り方と限界は <a href="rent-basis.html">募集賃料モデルの根拠</a> に分けて書きました。</div>
   </div>
@@ -140,7 +151,8 @@ export function renderRentIndex(results, { asOf, funnel, model, poolCapturedAt }
     <div class="logic-body">
       <p class="why">賃貸で実際に出ていくのは毎月の賃料だけではありません。礼金・仲介手数料・保証料・火災保険・鍵交換といった<b>一時金</b>と、2年ごとの<b>更新料</b>、退去時の<b>原状回復</b>が乗ります。これらを住む年数で割って月額に均したのが下の曲線です。一時金は年数で薄まるので<b>右肩下がり</b>になり、点線(表示賃料+管理費)との隙間が「掲載の賃料欄に出ていない負担」です。</p>
       <div style="overflow-x:auto">${curveSvg(rows)}</div>
-      <div class="note" style="margin-top:8px">実線=実質月額 / 点線=表示賃料+管理費(同じ色が同じ物件)。<b>敷金は総額に入れていません</b>(原則返還されるため)。ただし入居時に用意する現金には含めています(一覧の「入居時現金」欄)。退去時の原状回復は借主負担なので総額に入れています。</div>
+      <div class="note" style="margin-top:8px"><b>定期借家の物件は契約期間を超えた部分が再契約前提の参考値です</b>(この台帳では定期借家3年を許容しているので、該当物件は3年で満了します)。一覧の実質月額(4年)欄に満了時点の値を併記しました。</div>
+      <div class="note">実線=実質月額 / 点線=表示賃料+管理費(同じ色が同じ物件)。<b>敷金は総額に入れていません</b>(原則返還されるため)。ただし入居時に用意する現金には含めています(一覧の「入居時現金」欄)。退去時の原状回復は借主負担なので総額に入れています。</div>
       <div class="note"><b>曲線がところどころで上向きに折れているのは誤りではありません。</b>2年ごとの更新料が新たに乗る年(7年目・9年目など)は、一時金が薄まる効果よりも更新料の追加が勝つため、実質月額が一度上がります。<b>「あと1年住むと得か」は年によって答えが違う</b>ということで、更新の直前に出るか直後に出るかで負担が変わります。</div>
     </div>
   </div>
@@ -167,7 +179,8 @@ export function renderRentIndex(results, { asOf, funnel, model, poolCapturedAt }
     <div class="logic-body">
       <p class="why">母集団はSUUMOに出ている東京都北区の戸建賃貸${funnel.poolN}件(取得 ${esc(poolCapturedAt ?? asOf)})です。条件を1つずつ掛けると次のように減ります。<b>黙って減らさない</b>ため、各段で落ちた数を出しています。</p>
       ${funnelTable(funnel)}
-      <div class="note" style="margin-top:10px">最も多く落とすのは<b>賃料の下限</b>ではなく<b>間取り</b>です(徒歩10分以内の21件のうち10件が3LDKに届かない)。北区の戸建賃貸は築古の2K〜2LDKが厚く、3LDK以上で新耐震という帯は薄いという構造になっています。<b>定期借家のKOで${funnel.steps[5]?.dropped ?? 0}件</b>落ちている点も効いています——母集団${funnel.poolN}件のうち定期借家は決して例外ではありません。</div>
+      <div class="note" style="margin-top:10px">最も多く落とすのは<b>賃料の下限</b>ではなく<b>間取り</b>です(徒歩10分以内の21件のうち10件が3LDKに届かない)。北区の戸建賃貸は築古の2K〜2LDKが厚く、3LDK以上で新耐震という帯は薄いという構造になっています。</div>
+      <div class="note"><b>定期借家は「3年ちょうど」だけ許容しています</b>(子供の小学校入学前に区切りをつけるため)。短いからKOではなく<b>長さの要件</b>なので、2年も4年以上も同じように外れます。母集団${funnel.poolN}件のうち定期借家は${funnel.teikiInPool}件あり例外ではありませんが、ここまで残った掲載のうち定期借家は${funnel.teikiAllowed}件で、<b>いずれもちょうど3年</b>でした——この条件で今回落ちた掲載は0件です。</div>
     </div>
   </div>
 

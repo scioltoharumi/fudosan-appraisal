@@ -1,0 +1,63 @@
+id: nakajujo3-107424334
+status: new
+viewing: none
+source: "SUUMO 賃貸 jnc_000107424334 ((株)タウンハウジング東京 駒込店)"
+source_url: "https://suumo.jp/chintai/jnc_000107424334/"
+# 同一物件が別業者からも掲載されている(賃料25万・専有89.42m2・築2008年8月・
+# 間取り詳細「和8 洋6 洋4.5 LDK17.5」が完全一致)。
+# **駅徒歩の表記が媒体間で1分ずれる**(本掲載=東十条6分/十条7分、jnc_000108449757=東十条5分/十条6分)。
+# 保守側の本掲載の値を採用し、ずれを事実として残す
+duplicate_of: ["jnc_000108449757"]
+captured_at: 2026-08-18
+rent_history:
+  - {date: 2026-08-18, rent_man: 25, kanri_man: 0}
+location: {district: 中十条, chome: 3, address: "東京都北区中十条３"}
+layout: "3LDK"
+madori_detail: "和8 洋6 洋4.5 LDK17.5"
+station:
+  walk_min: 6              # 最寄り(JR京浜東北線 東十条)。台帳で唯一、最寄りが京浜東北線
+  keihin_walk_min: 6
+  lines:
+    - {line: "ＪＲ京浜東北線", station: "東十条", walk_min: 6}
+    - {line: "ＪＲ埼京線", station: "十条", walk_min: 7}
+    - {line: "東京メトロ南北線", station: "王子神谷", walk_min: 18}
+building:
+  built_year: 2008
+  built_month: 8
+  floor_m2: 89.42
+  structure: 木造
+  seismic: new
+terms:
+  rent_man: 25
+  kanri_man: 0
+  shiki_months: 1
+  rei_months: 1
+  contract_type: teiki
+  contract_years: 3
+  renewal_months: 0        # 定期借家。期間中の更新料は発生しない
+  brokerage_months: null   # 掲載に記載なし
+  guarantee_initial_months: 0.5    # 「初回保証料 月額総支払額の50％」
+  guarantee_monthly_pct: 0
+  guarantee_monthly_man: 0.1       # 「賃料収納月以降 1,000円／月」
+  insurance_man: 1.3       # 「損保 1.3万円1年」= **1年更新**(台帳で唯一)
+  insurance_cycle_y: 1
+  # 備考「退去時清掃費用借主負担特約：137,706円（税込）」= 定額なので原状回復の想定より優先する
+  cleaning_man: 13.77
+facilities:
+  parking: "付無料"
+  toilet2: null            # 設備欄に記載なし
+  notes: ["バストイレ別", "南向き", "追焚機能浴室", "温水洗浄便座", "洗面所独立", "IHクッキングヒーター", "食器洗乾燥機", "TVインターホン"]
+fine_print:
+  - "退去時清掃費用 借主負担特約 137,706円(税込)"
+  - "保証会社利用必須(初回 賃料等の50%、賃料収納月以降 1,000円/月)"
+hazard_check:
+  checked_at: 2026-08-18
+  official:
+    query: "東京都北区中十条3丁目"
+    point: "35.76481,139.72403"
+    elevation_m: 20.6
+    flood_l2: "0.5m未満"
+    hits: ["洪水浸水想定区域(想定最大規模): 0.5m未満"]
+    reference_verdict: caution   # 台地側。浅い区分のみ
+    limit: "丁目代表点ベース。標高20.6mの台地側で、荒川低地の物件とは水害の性質が違う。ただし崖線沿いの帯状の土砂災害区域は代表点では取りこぼす"
+checklist: {contract_type_verified: true, recontract_terms: false, toilet_count: false, walk_min_discrepancy: false, viewing: false}

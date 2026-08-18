@@ -7,8 +7,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   loadRentPool, fitRentModel, benchmarkRent, effectiveMonthly, effectiveMonthlyCurve,
-  evaluateRent, rentFunnel, parseCsv, asOfString, RENT_ASSUMPTIONS,
+  evaluateRent, rentFunnel, parseCsv, asOfString, RENT_ASSUMPTIONS, TEIKI_OK_YEARS,
 } from "../engine/rent.js";
+import { TEIKI_OK_YEARS as SCREEN_TEIKI_OK_YEARS } from "../crawler/rent-screen.mjs";
 import { loadRental, listRentalIds } from "../engine/io.js";
 
 const pool = loadRentPool();
@@ -156,8 +157,13 @@ test("台帳の全物件が評価でき、掲載条件を満たしている", ()
     assert.ok(p.station.walk_min <= 10, `${id}: 徒歩が条件外`);
     assert.ok(p.building.built_year >= 1982, `${id}: 新耐震でない`);
     assert.equal(p.building.seismic, "new");
-    // 定期借家がKOである以上、台帳に定期借家が入っていてはいけない
-    assert.notEqual(p.terms.contract_type, "teiki", `${id}: 定期借家が台帳に入っている(KO条件違反)`);
+    // 定期借家は3年ちょうどだけ許容(2026-08-18ユーザー指示)。それ以外が台帳にあってはいけない
+    if (p.terms.contract_type === "teiki") {
+      assert.ok(TEIKI_OK_YEARS.includes(p.terms.contract_years),
+        `${id}: 定期借家${p.terms.contract_years}年が台帳に入っている(許容は${TEIKI_OK_YEARS.join("・")}年のみ)`);
+      // 定期借家は期間満了で終わるので契約期間中に更新料は発生しない
+      assert.equal(p.terms.renewal_months, 0, `${id}: 定期借家に更新料が設定されている`);
+    }
     assert.ok(Number.isFinite(r.at2y.monthlyEq), `${id}: 実質月額が算出できない`);
     assert.ok(r.at2y.monthlyEq > r.listed.total_man, `${id}: 実質月額が表示賃料以下`);
   }
@@ -175,6 +181,23 @@ test("ハザードは記録されているが除外条件にはなっていな�
   const blocked = ids.filter((id) => loadRental(id).hazard_check.official.reference_verdict === "block");
   assert.ok(blocked.length > 0,
     "購入台帳基準ならblockの物件が1件も無い。賃貸台帳はハザード内も対象にする方針(2026-08-18)");
+});
+
+test("許容する定期借家の年数がエンジンとクローラで一致している", () => {
+  // 定数を二重に持っているので、片方だけ変えたら落ちるようにしておく
+  assert.deepEqual([...TEIKI_OK_YEARS].sort(), [...SCREEN_TEIKI_OK_YEARS].sort());
+  assert.deepEqual([...TEIKI_OK_YEARS], [3], "2026-08-18ユーザー指示: 3年ちょうどのみ");
+});
+
+test("漏斗の定期借家の段は3年を通し、2年・4年以上を落とす", () => {
+  const pass = { total_man: 20, area_m2: 80, age_y: 10, walk_min: 5, rooms: 3, has_ldk: true, seismic: "new" };
+  const mk = (years) => ({ ...pass, contract_type: "teiki", contract_years: years });
+  const f = rentFunnel([mk(2), mk(3), mk(4), { ...pass, contract_type: "futsu", contract_years: 2 }]);
+  const survivors = f.survivors;
+  assert.equal(survivors.length, 2, "3年の定借と普通借家だけが残る");
+  assert.ok(survivors.some((d) => d.contract_type === "teiki" && d.contract_years === 3));
+  assert.ok(!survivors.some((d) => d.contract_type === "teiki" && d.contract_years !== 3));
+  assert.equal(f.teikiAllowed, 1);
 });
 
 test("探索の漏斗は各段の落ちた数を返す(黙って減らさない)", () => {

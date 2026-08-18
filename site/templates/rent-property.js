@@ -80,11 +80,12 @@ export function renderRentProperty(res, rental, { asOf, model }) {
       </div>
     </div>` : "";
 
+  const isTeiki = rental.terms?.contract_type === "teiki";
   const contractBlock = rental.terms?.contract_type === "futsu"
     ? `<tr><td>契約種別</td><td>普通借家 ${rental.terms.contract_years ?? ""}年<div class="note">更新の拒絶には貸主側の正当事由が要る=住み続ける前提が立つ</div></td></tr>`
-    : rental.terms?.contract_type === "teiki"
-    ? `<tr><td>契約種別</td><td><b style="color:var(--stamp)">定期借家</b><div class="note">期間満了で終了。KO条件に該当する</div></td></tr>`
-    : `<tr><td>契約種別</td><td><b style="color:var(--warn)">掲載に記載なし</b><div class="note">普通借家か定期借家か判別できない。<b>定期借家ならKO</b>なので、問い合わせで確定させるまでこの物件の評価は仮のもの</div></td></tr>`;
+    : isTeiki
+    ? `<tr><td>契約種別</td><td><b>定期借家 ${rental.terms.contract_years}年</b><div class="note">期間満了で契約は<b>終了</b>し、住み続けるには貸主の同意による再契約が要る(更新の権利はない)。掲載条件では<b>3年ちょうどのみ許容</b>している——子供の小学校入学前に区切りをつけるという前提に、この長さが合うため。したがって同じ定期借家でも2年・4年以上はKOになる</div></td></tr>`
+    : `<tr><td>契約種別</td><td><b style="color:var(--warn)">掲載に記載なし</b><div class="note">普通借家か定期借家か判別できない。<b>定期借家で3年以外ならKO</b>なので、問い合わせで確定させるまでこの物件の評価は仮のもの</div></td></tr>`;
 
   const body = `
   <div class="panel">
@@ -122,7 +123,10 @@ export function renderRentProperty(res, rental, { asOf, model }) {
   <div class="panel">
     <h2>住む年数で実質月額はどう動くか</h2>
     <div class="logic-body">
-      <p class="why">一時金は住む年数で割るので、長く住むほど月額は下がります。逆に短期で出ると跳ね上がります。更新料は${rental.terms?.contract_years ?? 2}年ごとに乗ります。</p>
+      <p class="why">一時金は住む年数で割るので、長く住むほど月額は下がります。逆に短期で出ると跳ね上がります。${isTeiki
+        ? `この物件は<b>定期借家${rental.terms.contract_years}年</b>なので契約期間中に更新料は発生しません。`
+        : `更新料は${rental.terms?.contract_years ?? 2}年ごとに乗るため、更新のある年は月額が一度上がります。`}</p>
+      ${isTeiki ? `<div class="note" style="margin-bottom:8px"><b>${rental.terms.contract_years}年より先の行は参考値です。</b>定期借家は期間満了で終了するため、それ以上住むには貸主の同意による再契約が要ります。再契約料の有無・条件は掲載に記載がなく、この表には織り込んでいません。<b>${rental.terms.contract_years}年の行がこの物件の実際の想定です。</b></div>` : ""}
       ${curveTable(res.curve)}
     </div>
   </div>

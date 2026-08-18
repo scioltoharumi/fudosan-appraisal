@@ -5,7 +5,11 @@
 //   ③ 読み取れない項目は null を返し、**判定しない**(誤って落とさない)
 //
 // 賃貸のKO基準(2026-08-18ユーザー決定):
-//   RKO1 定期借家 — 再契約の保証がない。北区の戸建賃貸66件の実測で23件(39%)が該当する
+//   RKO1 定期借家 — ただし**契約期間がちょうど3年のものだけは可**(2026-08-18ユーザー指示)。
+//        理由は子供の小学校入学前に区切りをつけたいという生活側の事情で、
+//        「短いからKO」ではなく「3年という長さが要件に合う」という指定。したがって
+//        2年(短すぎる)も4年以上(入学後に退去期限が来る)も等しくKOになる。
+//        北区の戸建賃貸66件の実測では定期借家23件のうち3年は5件
 //   RKO2 告知事項あり(心理的瑕疵・事故物件)
 //   RKO3 建物種別が一戸建てでない(テラス・タウンハウス=連棟は対象外)
 // 掲載条件(KOではなく「圏外」。条件を変えれば戻せるものはこちら):
@@ -159,15 +163,32 @@ export function seismicOf(builtYear, builtMonth) {
 }
 
 // ---- KO判定 ----
+// 許容する定期借家の契約年数(2026-08-18ユーザー指示「三年のみOK(子供の小学校入学前タイミング)」)。
+// **長さの要件**であって「短いほど悪い」ではないので、2年も4年以上も等しく外れる。
+// 変更するときは tests/rent-screen.test.js と CLAUDE.md の方針記述も同時に直すこと
+export const TEIKI_OK_YEARS = new Set([3]);
+
 // verdict: block=登録しない / suspect=人の判断へ / pass=候補
 export function rentKoScreen(detail) {
   const codes = [], notes = [];
   if (!detail) return { verdict: "suspect", codes: ["RKO0"], notes: ["詳細ページを取得できず判定不能"] };
 
   if (detail.contract?.type === "teiki") {
-    codes.push("RKO1");
-    const dur = detail.contract.years ? `${detail.contract.years}年` : detail.contract.until ? `${detail.contract.until}まで` : "期間不明";
-    notes.push(`定期借家(${dur})。期間満了で契約が終了し、再契約は貸主の同意が要る(2026-08-18ユーザー決定でKO)`);
+    const y = detail.contract.years;
+    if (y != null && TEIKI_OK_YEARS.has(y)) {
+      // 落とさないが、普通借家と同じものとして扱わない。期間満了で確実に終わる契約であることを残す
+      notes.push(`定期借家${y}年。期間満了で契約は終了し再契約は貸主の同意が要るが、` +
+        `${[...TEIKI_OK_YEARS].join("・")}年は掲載条件として許容している(2026-08-18ユーザー指示: 子供の小学校入学前の区切り)`);
+    } else if (y == null) {
+      // 「西暦2030年3月まで」形式。期間の長さが読めないので落とさず人へ回す
+      return { verdict: "suspect", codes: ["RKO1?"],
+        notes: [`定期借家だが契約期間が期日表記(${detail.contract.until ?? "不明"})で長さを判定できない。` +
+          `許容は${[...TEIKI_OK_YEARS].join("・")}年ちょうどなので、入居日と満了日から実期間を確認すること`] };
+    } else {
+      codes.push("RKO1");
+      notes.push(`定期借家${y}年。許容は${[...TEIKI_OK_YEARS].join("・")}年ちょうどのみ` +
+        `(2026-08-18ユーザー指示: 子供の小学校入学前の区切り)。${y < 3 ? "短くて区切りに足りない" : "満了が入学後に来る"}ためKO`);
+    }
   }
   if (detail.notice === true) {
     codes.push("RKO2");
