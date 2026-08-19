@@ -160,6 +160,34 @@ await T("物件ページが存在し、実質月額の内訳と仮定の開示�
   return /実質月額/.test(t) && /(仮定|既定)/.test(t) && (await p.locator(".stamp").count()) === 0;
 });
 
+// ---- ペット絞り込み(2026-08-19ユーザー要望「猫を飼っている」) ----
+await T("ペットの絞り込みは既定オフで、切り替えると隠した件数を必ず出す", async () => {
+  await p.goto(url);
+  const all = await p.locator("tr.prow").count();
+  const visible = async () => p.locator("tr.prow:visible").count();
+  const before = await visible();
+  if (before !== all) return false;                       // 既定は全件表示
+  await p.click('#petchips .chip[data-pet="ok"]');
+  await p.waitForTimeout(120);
+  const okN = await visible();
+  const info = await p.textContent("#petinfo");
+  // 「記載なし=不可」ではないので既定で隠さない。隠したときは理由と件数を出す
+  const discloses = /非表示/.test(info) && new RegExp(`${all - okN}件`).test(info);
+  await p.click('#petchips .chip[data-pet="okcond"]');
+  await p.waitForTimeout(120);
+  const okCondN = await visible();
+  await p.click('#petchips .chip[data-pet="all"]');
+  await p.waitForTimeout(120);
+  return okN >= 1 && okN <= all && okCondN >= okN && discloses && (await visible()) === all;
+});
+
+await T("ペット列が4値を出し、記載なしの行に要確認が付く", async () => {
+  const vals = await p.locator("tr.prow").evaluateAll((rs) => rs.map((r) => r.getAttribute("data-pet")));
+  const cells = await p.locator("tr.prow td:nth-child(11)").allTextContents();
+  return vals.every((v) => ["ok", "cond", "ng", "none"].includes(v)) &&
+    vals.includes("none") && cells.some((c) => /記載なし/.test(c) && /要確認/.test(c));
+});
+
 await b.close();
 console.log(ok.map((s) => "  OK  " + s).join("\n"));
 if (fail.length) console.log(fail.map((s) => "  NG  " + s).join("\n"));

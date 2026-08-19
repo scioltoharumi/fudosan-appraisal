@@ -129,12 +129,24 @@ export function renderRentIndex(results, { asOf, funnel, model, poolCapturedAt, 
       : `<b class="nw" style="color:var(--warn)">記載なし</b><div class="note" style="margin-top:2px">要確認</div>`;
     const t2 = rental.facilities?.toilet2 === true
       ? `<span class="hz ok">記載あり</span>` : `<span class="hz">記載なし</span>`;
+    // ペット(2026-08-19ユーザー要望「猫を飼っている」)。掲載の記載を4値でそのまま出す。
+    // **「記載なし」を「不可」と読ませない**——SUUMOの入居条件欄・設備欄は任意記載で、
+    // 相談可の明記があるのは台帳7件のうち2件しかない。絞り込みチップで人が切り替える
+    const petSt = rental.facilities?.pet ?? null;
+    const petFee = rental.terms?.pet_monthly_man ?? null;
+    const petShiki = rental.terms?.pet_shiki_months ?? null;
+    const petExtra = [petFee ? `+${m1(petFee)}万/月` : null, petShiki ? `敷金+${petShiki}ヶ月` : null]
+      .filter(Boolean).join("・");
+    const petCell = petSt === "ok" ? `<span class="hz ok">相談可</span>${petExtra ? `<div class="note" style="margin-top:2px">${esc(petExtra)}</div>` : ""}`
+      : petSt === "cond" ? `<span class="hz warnhz">条件付き</span><div class="note" style="margin-top:2px">${esc(petExtra || "要確認")}</div>`
+      : petSt === "ng" ? `<b class="nw" style="color:var(--warn)">不可</b>`
+      : `<span class="hz">記載なし</span><div class="note" style="margin-top:2px">要確認</div>`;
     const ratio = Number.isFinite(res.ratio) ? `${(res.ratio * 100).toFixed(0)}%` : "—";
     const label = `${rental.location?.district ?? ""}${rental.location?.chome ? rental.location.chome + "丁目" : ""}` || res.id;
     const st = RENT_STATUS_LABEL[rental.status] ?? RENT_STATUS_LABEL.new;
     const vw = RENT_VIEW_LABEL[rental.viewing] ?? RENT_VIEW_LABEL.none;
     const opt = (choices, cur) => choices.map((s) => `<option${s === cur ? " selected" : ""}>${esc(s)}</option>`).join("");
-    return `<tr class="prow" data-id="${esc(res.id)}" data-yaml-status="${esc(st)}" data-yaml-viewing="${esc(vw)}" data-status="${esc(st)}" data-viewing="${esc(vw)}">
+    return `<tr class="prow" data-id="${esc(res.id)}" data-yaml-status="${esc(st)}" data-yaml-viewing="${esc(vw)}" data-status="${esc(st)}" data-viewing="${esc(vw)}" data-pet="${esc(petSt ?? "none")}">
       <td><span class="swatch" style="background:${c}"></span>
         ${url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(label)}</a>` : esc(label)}
         <span class="unsync">未同期</span>
@@ -151,6 +163,7 @@ export function renderRentIndex(results, { asOf, funnel, model, poolCapturedAt, 
       <td class="num">${esc(rental.station?.walk_min ?? "—")}分<div class="note">京浜${esc(rental.station?.keihin_walk_min ?? "—")}分</div></td>
       <td>${contractCell}</td>
       <td>${t2}</td>
+      <td>${petCell}</td>
       <td>${hazardCell}</td>
       <td><select class="stsel">${opt(RENT_STATUS_CHOICES, st)}</select></td>
       <td><select class="vwsel">${opt(RENT_VIEW_CHOICES, vw)}</select></td>
@@ -196,16 +209,24 @@ export function renderRentIndex(results, { asOf, funnel, model, poolCapturedAt, 
       <textarea id="rent-json" spellcheck="false"></textarea>
     </div>
     <div style="overflow-x:auto">
+    <div class="rentchips" id="petchips">
+      <span class="note" style="margin:0">ペットで絞る:</span>
+      <button type="button" class="chip on" data-pet="all">すべて</button>
+      <button type="button" class="chip" data-pet="ok">相談可の明記のみ</button>
+      <button type="button" class="chip" data-pet="okcond">相談可+条件付き</button>
+      <span class="note" style="margin:0" id="petinfo"></span>
+    </div>
     <table class="list" id="rentlist">
       <tr>
         <th>物件</th><th class="wrapth">表示<br>賃料+管理費</th><th class="wrapth">実質月額<br>(2年)</th><th class="wrapth">実質月額<br>(4年)</th>
         <th class="wrapth">入居時<br>現金</th><th class="wrapth">ものさし比</th><th>築年</th><th class="wrapth">徒歩</th>
-        <th>契約</th><th class="wrapth">トイレ2個</th><th>ハザード</th><th>検討状況</th><th>内見</th><th class="memocol">メモ</th>
+        <th>契約</th><th class="wrapth">トイレ2個</th><th class="wrapth">ペット</th><th>ハザード</th><th>検討状況</th><th>内見</th><th class="memocol">メモ</th>
       </tr>
       ${tableRows}
     </table>
     </div>
     <div class="note" style="margin-top:10px"><b>「トイレ2個」の欄が「記載なし」でも、トイレが1つとは限りません。</b> SUUMOの設備欄は任意記載で、母集団のうち「トイレ2ヶ所」の記載があるのは${funnel.toilet2Documented}件しかありません。条件に加えると候補が${funnel.withToilet2}件まで落ちるため、<b>掲載条件には入れず事実欄として持ち</b>、内見・問い合わせで確認する運用にしています。</div>
+    <div class="note" style="margin-top:10px"><b>ペットは「不可の明記」だけを掲載条件で落としています</b>(母集団${funnel.poolN}物件のうち${funnel.pet.inPool.ng}物件)。<b>「記載なし」は落としていません</b> ── 入居条件欄も設備欄も任意記載で、書いていないことは不可を意味しないためです。実測すると母集団で相談可の明記があるのは${funnel.pet.inPool.ok}物件・記載なしが${funnel.pet.inPool.none}物件で、<b>台帳${rows.length}件のうち相談可の明記があるのは${funnel.pet.inSurvivors.ok}件、条件付きが${funnel.pet.inSurvivors.cond}件、残る${funnel.pet.inSurvivors.none}件は記載なし</b>です。記載なしまで掲載条件にすると台帳は${funnel.pet.inSurvivors.ok + funnel.pet.inSurvivors.cond}件まで落ちるので、<b>条件にはせず上の絞り込みで切り替える</b>形にしました。<b>「ペット相談」＝猫可とは限りません</b>(小型犬のみを指す掲載があります)。母集団で猫が明記されているのは${funnel.pet.catDocumented}物件だけなので、<b>種別と頭数は必ず問い合わせで確認してください</b>。</div>
     <div class="note"><b>検討状況・内見・メモはこの端末のブラウザ(localStorage)にのみ保存されます。</b>公開リポジトリには書き込みません。台帳YAMLの値が初期値で、この端末の値と食い違う行には「未同期」印が出ます。<b>YAMLへ反映してよいのは検討状況と内見だけで、メモは反映しません。</b></div>
   </div>
 
@@ -319,6 +340,25 @@ export function renderRentIndex(results, { asOf, funnel, model, poolCapturedAt, 
       });
       save(data); refreshInfo();
       msg.textContent=n+"件を読み込みました(メモは変更していません)。";
+    });
+    // ペットの絞り込み。**既定は「すべて」**——掲載の記載は任意で、「記載なし=不可」ではないため
+    // 既定で隠すと、問い合わせれば飼える物件が最初から見えなくなる(2026-08-19)
+    var petchips=document.getElementById("petchips"), petinfo=document.getElementById("petinfo");
+    function applyPet(mode){
+      var shown=0, hidden=0;
+      rows.forEach(function(tr){
+        var v=tr.getAttribute("data-pet");
+        var keep = mode==="all" ? true : mode==="ok" ? v==="ok" : (v==="ok"||v==="cond");
+        tr.style.display = keep ? "" : "none";
+        if(keep) shown++; else hidden++;
+      });
+      petinfo.textContent = mode==="all" ? "" : shown+"件を表示(記載なし・不可の"+hidden+"件を非表示)";
+      refreshInfo();
+    }
+    petchips.addEventListener("click", function(e){
+      var b=e.target.closest(".chip"); if(!b) return;
+      petchips.querySelectorAll(".chip").forEach(function(x){ x.classList.toggle("on", x===b); });
+      applyPet(b.getAttribute("data-pet"));
     });
     document.getElementById("rent-reset").addEventListener("click", function(){
       if(!confirm("この端末に保存した検討状況・内見・メモを消します。よろしいですか。")) return;

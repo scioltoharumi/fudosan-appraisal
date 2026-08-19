@@ -82,6 +82,11 @@ export function readRentPoolCsv(path = join(ROOT, "market", "rent-listings.csv")
     parking: r.parking || null,
     // 空欄は「トイレが1つ」ではなく「掲載に記載が無い」。false ではなく null で持つ
     toilet2: r.toilet2 === "1" ? true : null,
+    // ペット: "ok"(相談可) / "ng"(不可の明記) / "cond"(条件付き=人の判断へ) / null(記載なし)。
+    // **null を "ng" と読み替えないこと**。pet_cat は猫の明記の有無(true/false/null)
+    pet: r.pet || null,
+    pet_cat: r.pet_cat === "1" ? true : r.pet_cat === "0" ? false : null,
+    pet_raw: r.pet_raw || null,
     shikibiki_raw: r.shikibiki_raw || null,
     madori_detail: r.madori_detail || null,
     listing_count: num(r.listing_count) ?? 1,
@@ -257,7 +262,14 @@ export function effectiveMonthly(p, years, a = RENT_ASSUMPTIONS) {
   const gPct = pctGiven ? p.guarantee_monthly_pct : (manGiven ? 0 : a.guarantee_monthly_pct);
   const guaranteeMonthly = rent * (gPct / 100) + (p.guarantee_monthly_man ?? 0);
   const miscMonthly = p.misc_monthly_man ?? 0;      // 24時間サポート等の月額付帯
-  const monthly = (rent + kanri + guaranteeMonthly + miscMonthly) * months;
+  // ペット飼育の追加負担(2026-08-19ユーザー要望「猫を飼っている」)。実データでは3つの形で出る:
+  //   ① 家賃の上乗せ(神谷3: +8,000円/月)  ② 敷金の積み増し(豊島1: 1ヶ月=25万)
+  //   ③ 退去時の負担増(明示されないことが多い)
+  // ②の敷金は返還前提なので total には入れず cashAtStart にだけ乗せる(敷金の扱いと同じ規律)。
+  // **掲載に金額が書かれていない「ペット相談」は0として計算する**——申込時に判明する費用を
+  // 勝手に見積もると、物件間の比較で書いてある物件だけが不利になる。0は「無い」ではなく「未記載」
+  const petMonthly = p.pet_monthly_man ?? 0;
+  const monthly = (rent + kanri + guaranteeMonthly + miscMonthly + petMonthly) * months;
   const miscInitial = p.misc_initial_man ?? 0;      // 消火剤・消毒・入居者サポート等の初期付帯
   // 退去時費用は「定額クリーニング」が書いてあればそれを優先する(原状回復の想定より確度が高い)
   const restoration = p.cleaning_man != null ? p.cleaning_man : (p.restoration_months ?? a.restoration_months) * rent;
@@ -266,18 +278,21 @@ export function effectiveMonthly(p, years, a = RENT_ASSUMPTIONS) {
   // 抽出はしていたのに誰も使っておらず、「敷金は返るので総額に入れない」という前提が
   // 静かに崩れる状態だった(2026-08-19の監査指摘。実データでは66件中2件に存在する)
   const shikibiki = p.shikibiki_man != null ? p.shikibiki_man : (p.shikibiki_months ?? 0) * rent;
-  const oneTime = rei + brokerage + guaranteeInit + keyExchange + insurance + miscInitial + shikibiki;
+  const petInitial = p.pet_initial_man ?? 0;        // 敷金以外のペット初期費用(消臭・抗菌など)
+  const oneTime = rei + brokerage + guaranteeInit + keyExchange + insurance + miscInitial + shikibiki + petInitial;
   const total = oneTime + renewal + monthly + restoration;
   return {
     years, months, renewals,
     // 入居時に用意する現金(敷金を含む。敷金は原則返るので下の total には入れない)
-    cashAtStart: (p.shiki_months ?? 0) * rent + rei + brokerage + guaranteeInit + keyExchange
-      + (p.insurance_man ?? a.insurance_man) + miscInitial + rent + kanri,
+    cashAtStart: ((p.shiki_months ?? 0) + (p.pet_shiki_months ?? 0)) * rent + rei + brokerage
+      + guaranteeInit + keyExchange + (p.insurance_man ?? a.insurance_man) + miscInitial + rent + kanri
+      + (p.pet_initial_man ?? 0),
     breakdown: {
       rentAndKanri: (rent + kanri) * months,
       guaranteeMonthly: guaranteeMonthly * months,
       miscMonthly: miscMonthly * months,
-      reikin: rei, brokerage, guaranteeInit, keyExchange, insurance, miscInitial, shikibiki, renewal, restoration,
+      petMonthly: petMonthly * months,
+      reikin: rei, brokerage, guaranteeInit, keyExchange, insurance, miscInitial, shikibiki, petInitial, renewal, restoration,
     },
     total,
     monthlyEq: total / months,
@@ -321,6 +336,12 @@ export function evaluateRent(property, { pool, model, asOf, assumptions = RENT_A
     key_exchange_man: t.key_exchange_man ?? null, restoration_months: t.restoration_months ?? null,
     misc_initial_man: t.misc_initial_man ?? null, misc_monthly_man: t.misc_monthly_man ?? null,
     cleaning_man: t.cleaning_man ?? null,
+    // ペットを飼う前提の追加負担(2026-08-19)。掲載に金額が書かれた物件だけに入る。
+    // **書かれていない物件を0で計算する**ので、物件間の比較では「書いてある物件が不利に見える」。
+    // この非対称は物件ページに明記する(黙って均さない)
+    pet_monthly_man: t.pet_monthly_man ?? null,
+    pet_shiki_months: t.pet_shiki_months ?? null,
+    pet_initial_man: t.pet_initial_man ?? null,
   };
   const curve = effectiveMonthlyCurve(inputs, assumptions);
   const bench = model && b.floor_m2 ? benchmarkRent(model, { area_m2: b.floor_m2, age_y: age, walk_min: st.walk_min }) : null;
@@ -384,6 +405,11 @@ export function rentFunnel(pool, cfg = { total_min_man: 15, total_max_man: 25, w
   step(`居室${cfg.rooms_min}室以上(納戸Sは1室として数える)`, (d) => d.rooms >= cfg.rooms_min);
   step("LDKがあること(3DK・4Kは対象外)", (d) => d.has_ldk);
   step("新耐震(1982年以降竣工)", (d) => d.seismic === "new");
+  // ペット(2026-08-19ユーザー要望「猫を飼っている」)。**落とすのは「不可」の明記だけ**。
+  // 「記載なし」を落とさないのは、SUUMOの入居条件欄・設備欄がどちらも任意記載で
+  // 「書いていない=不可」ではないため(トイレ2個とまったく同じ理由)。
+  // cond(不可と相談可が同居する条件付き)も落とさない——条件次第で飼えるので人が問い合わせる
+  step("ペット不可の明記を除く(猫を飼うため)", (d) => d.pet !== "ng");
   // 定期借家は**ちょうど3年だけ許容**する(2026-08-18ユーザー指示: 子供の小学校入学前の区切り)。
   // 短いからKOではなく長さの要件なので、2年も4年以上も落ちる
   const okYears = cfg.teiki_ok_years ?? TEIKI_OK_YEARS;
@@ -395,7 +421,19 @@ export function rentFunnel(pool, cfg = { total_min_man: 15, total_max_man: 25, w
   // 生存のうち定期借家(許容年数)の掲載数と、仮に定期借家を全部KOにしたら何件減るか。
   // 「3年だけ許容している」という条件の効き具合をページで開示するために返す
   const teikiAllowed = survivors.filter((d) => d.contract_type === "teiki").length;
-  return { steps, survivors, withToilet2, teikiAllowed, teikiOkYears: okYears, cfg,
+  // ペットの内訳。**条件にしているのは「不可の明記を落とす」ことだけ**なので、
+  // 「相談可の明記がある物件が何件か」は結果として別に数えて開示する。
+  // ここを条件にすると候補が激減する(トイレ2個と同じ構図)ため、数字を出して人に判断させる
+  const petCount = (arr, v) => arr.filter((d) => (d.pet ?? null) === v).length;
+  const pet = {
+    inPool: { ok: petCount(pool, "ok"), ng: petCount(pool, "ng"), cond: petCount(pool, "cond"), none: petCount(pool, null) },
+    inSurvivors: { ok: petCount(survivors, "ok"), cond: petCount(survivors, "cond"), none: petCount(survivors, null) },
+    // 相談可の明記があるもののうち、猫と明記されている/犬のみと読めるもの
+    catDocumented: pool.filter((d) => d.pet_cat === true).length,
+    dogOnly: pool.filter((d) => d.pet_cat === false).length,
+    survivorsCat: survivors.filter((d) => d.pet_cat === true).length,
+  };
+  return { steps, survivors, withToilet2, teikiAllowed, teikiOkYears: okYears, cfg, pet,
     teikiInPool: pool.filter((d) => d.contract_type === "teiki").length,
     toilet2Documented: pool.filter((d) => d.toilet2 === true).length, poolN: pool.length };
 }

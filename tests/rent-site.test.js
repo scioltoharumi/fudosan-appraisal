@@ -234,3 +234,47 @@ test("rent: 母集団はSUUMOのみという被覆の限界を開示している
   assert.ok(/athome|アットホーム/.test(basisHtml),
     "根拠ページに『SUUMO以外の媒体には出ていない掲載がある』という被覆の限界が書かれていない");
 });
+
+// ---- ペット(2026-08-19ユーザー要望「猫を飼っている」) ----
+test("rent: ペットは事実として出し、「記載なし=不可」と読ませない", () => {
+  assert.ok(indexHtml.includes("<th class=\"wrapth\">ペット</th>"), "一覧にペット列がある");
+  assert.ok(/記載なし.*不可を意味しない|書いていないことは不可を意味しない/.test(indexHtml),
+    "『記載なし』を不可と読み替えないという開示が消えている");
+  // 掲載条件で落としているのは「不可の明記」だけ、という事実を数字つきで出す
+  assert.ok(indexHtml.includes(`相談可の明記があるのは${funnel.pet.inSurvivors.ok}件`),
+    "台帳のうち相談可が何件かを実データから出す");
+  for (const h of propHtml) {
+    assert.ok(/ペット/.test(h), "物件ページにペットの欄がある");
+  }
+});
+
+test("rent: 「ペット相談」を猫可と断定しない開示がある", () => {
+  assert.ok(/猫可とは限りません/.test(indexHtml),
+    "小型犬のみを指す掲載があるという注意書きが消えている(母集団で猫の明記は少数)");
+});
+
+test("rent: 漏斗のペットの段は「不可の明記」だけを落としている", () => {
+  const step = funnel.steps.find((s) => /ペット/.test(s.label));
+  assert.ok(step, "漏斗にペットの段がある(黙って絞らない)");
+  assert.equal(step.dropped, funnel.survivorsBeforePet == null ? step.dropped : step.dropped);
+  // 条件を通った物件に「不可の明記」が残っていないこと
+  assert.equal(funnel.survivors.filter((d) => d.pet === "ng").length, 0);
+  // **記載なしは残っている**こと(記載なしまで落とす実装に変わったらここで落ちる)
+  assert.ok(funnel.pet.inSurvivors.none > 0,
+    "記載なしの物件が全部消えた=『書いていない=不可』の実装になっている。方針変更なら本文とCLAUDE.mdも直すこと");
+});
+
+test("rent: ペットの追加費用は実質月額に織り込まれ、その旨が書かれている", () => {
+  const withFee = results.filter(({ rental }) => (rental.terms?.pet_monthly_man ?? 0) > 0);
+  assert.ok(withFee.length > 0, "掲載に金額の明記がある物件が台帳にある(神谷3)");
+  for (const { res, rental } of withFee) {
+    const plain = evaluateRent({ ...rental, terms: { ...rental.terms, pet_monthly_man: 0, pet_shiki_months: 0 } },
+      { model, asOf });
+    assert.ok(res.at2y.monthlyEq > plain.at2y.monthlyEq,
+      `${res.id}: ペット加算が実質月額に乗っていない`);
+    assert.ok(res.at2y.cashAtStart > plain.at2y.cashAtStart,
+      `${res.id}: ペットの敷金追加が入居時現金に乗っていない`);
+  }
+  const h = propHtml[results.findIndex(({ rental }) => (rental.terms?.pet_monthly_man ?? 0) > 0)];
+  assert.ok(/実質月額にはこの加算を織り込んで/.test(h), "織り込んだ事実の開示が消えている");
+});

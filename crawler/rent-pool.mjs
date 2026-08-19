@@ -28,6 +28,11 @@ const LIST_BASE = "https://suumo.jp/chintai/tokyo/sc_kita/ikkodate/";
 const MAX_LIST_PAGES = 8;
 const OUT = join(ROOT, "market", "rent-listings.csv");
 const CACHE = process.env.RENT_CACHE_DIR ?? null;
+// 取得したHTMLを保存する先(任意)。**パーサを直すたびに相手サイトを叩き直さないため**に要る。
+// 2026-08-19: petOf を直したとき、キャッシュが読み出し専用だったせいで107+92リクエストを
+// もう一度出す羽目になった。以後 `RENT_CACHE_SAVE=<dir> node crawler/rent-pool.mjs` で溜めて、
+// 再解析は `RENT_CACHE_DIR=<dir>` でネットワークに出ずに回せる
+const CACHE_SAVE = process.env.RENT_CACHE_SAVE ?? null;
 
 // 一覧カードから詳細URLを集める。賃貸の詳細は /chintai/jnc_<12桁>/
 export function detailUrlsFrom(html) {
@@ -46,7 +51,7 @@ export const POOL_COLUMNS = ["captured_at", "media", "source_id", "listing_count
   "rent_man", "kanri_man", "total_man", "area_m2", "layout", "rooms", "has_ldk",
   "built_year", "built_month", "age_y", "seismic", "walk_min", "walk_lines", "structure",
   "contract_type", "contract_years", "shiki_months", "rei_months", "shikibiki_raw", "madori_detail",
-  "parking", "toilet2", "building_type", "source_url"];
+  "parking", "toilet2", "pet", "pet_cat", "pet_raw", "building_type", "source_url"];
 
 export function poolRow(detail, id, asOf, media = "suumo") {
   const age = detail.built_year ? Math.max(0, Number(String(asOf).slice(0, 4)) - detail.built_year) : null;
@@ -83,6 +88,12 @@ export function poolRow(detail, id, asOf, media = "suumo") {
     parking: detail.parking,
     // 記載があれば1、無ければ空欄。**空欄は「トイレが1つ」ではなく「掲載に記載が無い」**
     toilet2: detail.toilet2 === true ? 1 : "",
+    // ペット(2026-08-19ユーザー要望)。ok=相談可 / ng=不可の明記 / cond=不可と相談可が同居(人の判断へ)
+    // / 空欄=記載なし。**空欄を「不可」と読み替えないこと**。cat は猫の明記があるかどうかで、
+    // 「ペット相談」だけでは猫可とは限らない(小型犬のみを指す掲載がある)
+    pet: detail.pet?.status ?? "",
+    pet_cat: detail.pet?.cat === true ? 1 : detail.pet?.cat === false ? 0 : "",
+    pet_raw: detail.pet?.raw ?? "",
     building_type: detail.building_type,
     source_url: media === "athome" ? `https://www.athome.co.jp/chintai/${id}/` : `https://suumo.jp/chintai/${id}/`,
   };
@@ -112,6 +123,19 @@ export function dedupeRows(rows) {
     if (types.length > 1) { base.building_type = "混在"; conflicts.push({ key: k, field: "building_type", values: types }); }
     const walkSet = [...new Set(walks)];
     if (walkSet.length > 1) conflicts.push({ key: k, field: "walk_min", values: walkSet });
+    // **任意記載の事実は「1件でも書いてあれば書いてある」**。g[0] をそのまま採ると、
+    // 記載のある店舗の掲載が記載のない掲載に上書きされて事実が消える(2026-08-19)
+    if (g.some((x) => x.toilet2 === 1)) base.toilet2 = 1;
+    const pets = [...new Set(g.map((x) => x.pet).filter(Boolean))];
+    if (pets.length > 1) {
+      // 「相談可」と「不可」が店舗で割れている。どちらかが古い/誤りなので人が問い合わせる
+      base.pet = "cond";
+      conflicts.push({ key: k, field: "pet", values: pets });
+    } else if (pets.length === 1) base.pet = pets[0];
+    if (g.some((x) => x.pet_cat === 1)) base.pet_cat = 1;
+    else if (g.some((x) => x.pet_cat === 0)) base.pet_cat = 0;
+    const raws = [...new Set(g.map((x) => x.pet_raw).filter(Boolean))];
+    if (raws.length) base.pet_raw = raws.join(" ‖ ").slice(0, 300);
     // 掲載が複数媒体にまたがるときは media を "suumo+athome" のように残す
     const medias = [...new Set(g.map((x) => x.media))].sort();
     base.media = medias.join("+");
@@ -143,9 +167,11 @@ async function collectSuumo(fetchPage, asOf) {
   const uniq = [...new Set(urls.map((u) => u.match(/jnc_\d+/)[0]))];
   console.error(`SUUMO一覧: 掲載${uniq.length}件`);
   const out = [];
+  if (CACHE_SAVE) mkdirSync(CACHE_SAVE, { recursive: true });
   for (const id of uniq) {
     const { html, status, error } = await fetchPage(`https://suumo.jp/chintai/${id}/`);
     if (error || status !== 200) { console.error(`  詳細取得失敗 ${id} http=${status}`); continue; }
+    if (CACHE_SAVE) writeFileSync(join(CACHE_SAVE, `${id}.html`), html);
     out.push([id, parseRentDetail(html), "suumo"]);
   }
   return { details: out, truncated };

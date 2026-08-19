@@ -19,6 +19,9 @@ function breakdownBar(e) {
     { label: "初期付帯費用", v: b.miscInitial, c: "#A0432E" },
     { label: "敷引・償却", v: b.shikibiki, c: "#7E3B57" },
     { label: "月額付帯費用", v: b.miscMonthly, c: "#8E5A3A" },
+    // ペットの追加負担。掲載に金額が書かれた物件にだけ出る(0の物件は「無い」ではなく「未記載」)
+    { label: "ペット加算(月額)", v: b.petMonthly, c: "#8E3A6B" },
+    { label: "ペット初期費用", v: b.petInitial, c: "#A03A7C" },
     { label: "更新料", v: b.renewal, c: "#2C6E49" },
     { label: "退去時費用", v: b.restoration, c: "#4A7C59" },
   ].filter((p) => p.v > 0.0001);
@@ -107,6 +110,20 @@ export function renderRentProperty(res, rental, { asOf, model }) {
         <tr><td>トイレ2個</td><td>${rental.facilities?.toilet2 === true
           ? `<span class="hz ok">掲載の設備欄に「トイレ2ヶ所」の記載あり</span>`
           : `<span class="hz">掲載に記載なし</span><div class="note">SUUMOの設備欄は任意記載。<b>記載が無いだけで、2個でないとは限りません</b>。内見で確認してください</div>`}</td></tr>
+        <tr><td>ペット(猫)</td><td>${(() => {
+          const st = rental.facilities?.pet ?? null;
+          const note = rental.facilities?.pet_note ? `<div class="note">${esc(rental.facilities.pet_note)}</div>` : "";
+          const fee = [rental.terms?.pet_monthly_man ? `家賃 +${m1(rental.terms.pet_monthly_man)}万/月` : null,
+            rental.terms?.pet_shiki_months ? `敷金 +${rental.terms.pet_shiki_months}ヶ月` : null,
+            rental.terms?.pet_initial_man ? `初期 +${m1(rental.terms.pet_initial_man)}万` : null].filter(Boolean).join(" / ");
+          const feeNote = fee ? `<div class="note"><b>上の実質月額にはこの加算を織り込んであります</b>: ${esc(fee)}(敷金は返還前提なので総額ではなく「入居時に用意する現金」に乗ります)</div>` : "";
+          const cat = rental.facilities?.pet_cat === true ? `<div class="note"><b>猫が名指しで書かれている数少ない掲載です</b></div>`
+            : st === "ok" ? `<div class="note"><b>「ペット相談」＝猫可とは限りません</b>。小型犬のみを指す掲載があるため、種別と頭数は問い合わせで確認してください</div>` : "";
+          if (st === "ok") return `<span class="hz ok">掲載に「ペット相談」の記載あり</span>${note}${cat}${feeNote}`;
+          if (st === "cond") return `<span class="hz warnhz">条件付き(掲載内で食い違う)</span>${note}<div class="note">入居条件欄は「ペット相談」だが備考は「原則不可」。<b>条件を満たせば飼えるという書き方</b>なので、掲載条件では落とさず問い合わせで確定させます</div>${cat}${feeNote}`;
+          if (st === "ng") return `<b style="color:var(--warn)">掲載に「ペット不可」の明記あり</b>${note}`;
+          return `<span class="hz">掲載に記載なし</span>${note}<div class="note">入居条件欄・設備欄・備考のいずれにもペットの語がありません。SUUMOはどれも任意記載なので<b>記載が無いだけで不可とは限りません</b>。猫を飼う前提なので<b>問い合わせの最優先項目</b>です</div>`;
+        })()}</td></tr>
         <tr><td>駐車場</td><td>${esc(rental.facilities?.parking ?? rental.facilities?.parking_raw ?? "掲載に記載なし")}${rental.facilities?.parking_raw ? `<div class="note">掲載の原文をそのまま保持(距離と金額の切れ目が掲載側で潰れており読めないため)</div>` : ""}</td></tr>
         <tr><td>出典</td><td>${url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(rental.source ?? url)}</a>` : esc(rental.source ?? "—")}<div class="note">取得 ${fmtDate(rental.captured_at)}</div></td></tr>
         ${(rental.duplicate_of ?? []).length ? `<tr><td>同一物件の別掲載</td><td>${rental.duplicate_of.map((d) => esc(d)).join(" / ")}<div class="note">賃料・専有面積・築年月・間取り詳細が完全一致するため同一物件として名寄せ済み(同一社の別店舗による重複掲載を含む)</div></td></tr>` : ""}

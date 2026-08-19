@@ -149,6 +149,13 @@ table.list th.sortable .arw{opacity:.45;font-size:.65rem}
 /* ハザード該当の表示。**判定ではなく事実の表示**なので、色で善悪を付けすぎない */
 .hz{font-size:.7rem;border:1px solid var(--stamp);color:var(--stamp);padding:1px 6px;white-space:nowrap}
 .hz.ok{border-color:var(--ok);color:var(--ok)}
+/* 条件付き(不可と相談可が同居する掲載)。可でも不可でもないので中間色にする */
+.hz.warnhz{border-color:var(--warn);color:var(--warn)}
+/* 絞り込みチップ(賃貸一覧)。購入一覧の .chip と同じ見え方に揃える */
+.rentchips{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:10px 0 4px}
+.rentchips .chip{font-family:inherit;font-size:.72rem;padding:3px 9px;border:1px solid var(--ink-soft);
+  background:#FDFDFC;color:var(--ink);cursor:pointer}
+.rentchips .chip.on{background:var(--band);border-color:var(--band);color:#fff;font-weight:700}
 /* グラフの線色と一覧行を対応させる印 */
 .swatch{display:inline-block;width:10px;height:10px;margin-right:5px;vertical-align:middle}
 /* 賃貸一覧は列が多い。物件列に下限を与えないと住所が1文字ずつ折り返す(2026-08-18に実測) */
@@ -164,20 +171,35 @@ table.list th.sortable .arw{opacity:.45;font-size:.65rem}
 #rentlist .memota{min-width:106px}
 /* 契約列は「定期借家3年」が折り返さない幅を確保する(折れると行が5行分の高さになる) */
 #rentlist td:nth-child(9), #rentlist th:nth-child(9){min-width:82px}
+/* 2026-08-19: ペット列を足したら1440/1280で表が71pxはみ出した(列を1つ増やすと必ず起きる)。
+   ハザードは折り返してよい文言なので幅を固定しない。バッジ列とメモ列を実測で詰めて枠に収める */
+/* 折り返してよいのは**ハザード列だけ**。バッジ(「記載なし」「条件付き」「相談可」)を折ると
+   「記載な/し」のように語の途中で切れて読めなくなる(2026-08-19に実測して気づいた) */
+#rentlist td:nth-child(12) .hz{white-space:normal}
+/* 「該当なし」は短いので折らない(折ると「該当な/し」になる) */
+#rentlist td:nth-child(12) .hz.ok{white-space:nowrap}
+#rentlist th.memocol{min-width:96px}
+#rentlist th:nth-child(10){min-width:64px}                               /* トイレ2個 */
+#rentlist th:nth-child(11){min-width:72px}                               /* ペット */
+#rentlist th:nth-child(12){min-width:60px}                               /* ハザード */
+#rentlist th:nth-child(13), #rentlist th:nth-child(14){min-width:78px}   /* 検討状況・内見 */
+#rentlist td:first-child{min-width:120px}
+#rentlist .stsel, #rentlist .vwsel{font-size:.7rem;padding:2px 4px}
 /* 狭い画面(≤1100px)。購入一覧と同じ事故——表の幅が固定のまま枠だけ縮み、右端のメモ欄が
    枠外へ出る——が賃貸一覧でも起きていた(2026-08-19の機械検査で実測: 1024pxで148pxはみ出し)。
    横スクロールに逃がすとメモが読めず用をなさないので、実測して列を詰める。
    tests/ui/rent.ui.mjs が1440/1280/1024で見切れないことを検査する */
 @media (max-width:1100px){
   #rentlist{font-size:.72rem}
-  #rentlist th.memocol{min-width:96px}
-  #rentlist .memota{min-width:80px}
-  #rentlist td:first-child{min-width:116px}
+  #rentlist th.memocol{min-width:80px}
+  #rentlist .memota{min-width:64px}
+  #rentlist td:first-child{min-width:112px}
   #rentlist .stsel, #rentlist .vwsel{font-size:.68rem;padding:2px 3px}
-  #rentlist td:nth-child(11), #rentlist th:nth-child(11){min-width:76px}  /* ハザード */
-  #rentlist td:nth-child(10), #rentlist th:nth-child(10){min-width:54px}  /* トイレ2個 */
+  #rentlist td:nth-child(12), #rentlist th:nth-child(12){min-width:54px}  /* ハザード */
+  #rentlist td:nth-child(10), #rentlist th:nth-child(10){min-width:50px}  /* トイレ2個 */
+  #rentlist td:nth-child(11), #rentlist th:nth-child(11){min-width:62px}  /* ペット */
   #rentlist td:nth-child(5), #rentlist th:nth-child(5){min-width:52px}    /* 入居時現金 */
-  #rentlist .hz{white-space:normal}   /* 「浸水5〜10m」は折り返してよい。列幅を固定する価値はない */
+  #rentlist td:nth-child(12) .hz{white-space:normal}  /* 「浸水5〜10m」は折り返してよい */
   #rentlist th, #rentlist td{padding-left:4px;padding-right:4px}
 }
 .nw{white-space:nowrap}

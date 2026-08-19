@@ -9,7 +9,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   parseRentDetail, roomsOfRent, contractTypeOf, seismicOf,
-  rentKoScreen, rentScopeCheck, isRentOnlyScope, monthsOf, manOf, RENT_SCOPE, TEIKI_OK_YEARS,
+  rentKoScreen, rentScopeCheck, isRentOnlyScope, monthsOf, manOf, RENT_SCOPE, TEIKI_OK_YEARS, petOf,
 } from "../crawler/rent-screen.mjs";
 
 // SUUMO賃貸詳細ページの骨格を最小再現する。実ページの構造(2026-08-18時点)に合わせてある:
@@ -247,5 +247,59 @@ test("掲載条件の定数が勝手に変わっていないか(方針の記録)
   assert.deepEqual(RENT_SCOPE, {
     total_min_man: 15, total_max_man: 25, walk_max: 10,
     rooms_min: 3, require_ldk: true, seismic_new_only: true,
+    // 2026-08-19ユーザー要望「ペット相談可でも絞って欲しい(猫を飼っている)」で追加。
+    // **落とすのは「不可の明記」だけ**。記載なしまで落とすと台帳7件が2件になる
+    // (母集団54物件のうち相談可の明記は18・記載なしが34)。任意記載の欄で
+    // 「書いていない=不可」と読み替えないという規律(トイレ2個と同じ)を優先し、
+    // 記載なしの絞り込みは一覧のチップで人が切り替える形にした
+    pet_exclude_ng: true, pet_require_documented: false,
   }, "条件を変えるときはCLAUDE.mdの方針も同時に更新すること");
+});
+
+// ---- ペット(2026-08-19ユーザー要望「ペット相談可でも絞って欲しい(猫を飼っている)」) ----
+// SUUMOではペットの情報が①入居条件欄②設備タグ③備考の3箇所に散り、**同じ掲載の中で食い違う**。
+// 実測(神谷3): 入居条件欄「子供可/ペット相談」・備考「原則としてペットの飼育は不可とさせて
+// 頂いておりますが、家賃を月額＋8,000円の増額の上、敷金を1ヵ月分追加で小型犬、猫1匹迄相談可能」
+test("ペット: 相談可・不可・条件付き・記載なしの4値を読み分ける", () => {
+  assert.equal(petOf("子供可/ペット相談").status, "ok");
+  assert.equal(petOf("ペット可").status, "ok");
+  assert.equal(petOf("ペット応相談").status, "ok");
+  assert.equal(petOf("ペット不可").status, "ng", "「不可」の『可』を可否の『可』と取り違えない");
+  assert.equal(petOf("ペット飼育禁止").status, "ng");
+  assert.equal(petOf("単身者可/二人入居可").status, null, "記載が無ければ null。false にしない");
+  assert.equal(petOf("事務所利用不可/子供可").status, null, "他の項目の『不可』でペット不可にしない");
+});
+
+test("ペット: 不可の後ろに逃げ道が書かれている掲載は cond(人の判断へ回す)", () => {
+  const r = petOf("原則としてペットの飼育は不可とさせて頂いておりますが、家賃を月額+8,000円の増額の上、敷金を1ヵ月分追加で小型犬、猫1匹迄相談可能でございます。");
+  assert.equal(r.status, "cond", "不可と書いてあるだけで落とすと、条件次第で飼える物件を捨てる");
+  assert.equal(r.cat, true, "猫が名指しされていることを拾う");
+  // 一般的な「要相談」は逃げ道ではない(cond を乱発しない)
+  assert.equal(petOf("ペット不可。その他の条件は要相談").status, "ng");
+});
+
+test("ペット: 判定は全文で行い、切り詰めるのは保存用の抜粋だけ", () => {
+  // 設備タグは80個並ぶことがある。先に切り詰めると**備考が判定前に消える**
+  // (実測でこの事故が起き、神谷3が cond ではなく ok になっていた)
+  const tags = Array.from({ length: 80 }, (_, i) => `設備${i}`).join("、");
+  const r = petOf([tags, "ペット飼育は不可ですが猫1匹まで相談可能です"]);
+  assert.equal(r.status, "cond", "長いタグ列の後ろにある備考を落としてはいけない");
+  assert.equal(r.cat, true);
+  assert.ok(r.raw.length <= 300, "保存用の抜粋は切り詰める");
+  assert.ok(/猫/.test(r.raw), "抜粋にはペットに関する箇所を残す(タグの羅列で埋めない)");
+});
+
+test("ペット: 「ペット相談」は猫可を意味しない(小型犬のみの掲載がある)", () => {
+  assert.equal(petOf("ペット相談(小型犬のみ)").cat, false);
+  assert.equal(petOf("子供可/ペット相談").cat, null, "種別の記載が無ければ null=不明");
+});
+
+test("圏外: ペットは不可の明記だけ落とし、記載なしは落とさない", () => {
+  const base = { walk_min: 5, rooms: 3, has_ldk: true, built_year: 2011, built_month: 1, total_man: 21, layout: "3LDK" };
+  assert.equal(rentScopeCheck({ ...base, pet: { status: null } }), null, "記載なしを不可と読み替えない");
+  assert.equal(rentScopeCheck({ ...base, pet: { status: "ok" } }), null);
+  assert.equal(rentScopeCheck({ ...base, pet: { status: "cond" } }), null, "条件付きは人の判断へ回す");
+  assert.match(rentScopeCheck({ ...base, pet: { status: "ng" } }), /ペット不可/);
+  // ペットは恒久条件。値下げでは戻らないので rent-only にしない
+  assert.equal(isRentOnlyScope(rentScopeCheck({ ...base, pet: { status: "ng" } })), false);
 });

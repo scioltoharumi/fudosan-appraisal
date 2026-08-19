@@ -104,6 +104,14 @@ export function parseRentDetail(html) {
   const builtRaw = fld("築年月");
   const bm = builtRaw ? zen(builtRaw).match(/(\d{4})年(\d{1,2})月/) : null;
   const setsubi = (t.match(/\|部屋の特徴・設備\|([^|]+)/) ?? [])[1] ?? "";
+  // 「条件」欄(入居条件)は値がラベルの直後ではなく空白セグメントを挟んで来る。
+  // fld() は直後の1セグメントしか見ないので専用に読む(実測: |条件| |子供可/ペット相談| )
+  const joukenRaw = (() => {
+    const m = body.match(/\|条件\|((?:[^|]*\|){0,3})/);
+    if (!m) return null;
+    const seg = m[1].split("|").map((x) => x.trim()).find((x) => x && x !== "-" && x !== "－");
+    return seg ?? null;
+  })();
   const btype = fld("建物種別");
   const contractRaw = fld("契約期間");
 
@@ -158,7 +166,61 @@ export function parseRentDetail(html) {
     // 「告知事項」の語は必須のままにし、区切り文字だけ許す
     notice: /告知事項[\s:：]*(?:あり|有)|心理的瑕疵|事故物件/.test(body) ? true : null,
     bikou: fld("備考"),
+    jouken_raw: joukenRaw,
+    // ペットは「条件」欄・設備タグ・備考の3箇所に散る。原文も残す(頭数・種別・追加費用は人が読む)
+    pet: petOf([joukenRaw, setsubi, fld("備考")]),
   };
+}
+
+// ---- ペット(2026-08-19ユーザー要望「ペット相談可でも絞って欲しい(猫を飼っている)」) ----
+// 出所は3つあり、**どれも任意記載**:
+//   ① 物件概要の「条件」欄(入居条件)  例: 「子供可/ペット相談」「事務所利用不可」
+//   ② 部屋の特徴・設備のタグ           例: 「…、ペット相談、駐車場1台無料、…」
+//   ③ 備考の自由文                     例: 「ペット飼育は原則不可。家賃+8,000円/月・敷金1ヶ月追加で猫1匹まで相談可」
+// ③のように**不可と相談可が同じ文に同居する**掲載があるため、単純な語の有無では判定を誤る。
+// 返り値は4値:
+//   "ok"   … 相談可・可の明記
+//   "ng"   … 不可の明記(条件付きの逃げ道が書かれていないもの)
+//   "cond" … 不可と相談可が同居する=条件付き。**機械で決めず人の判断へ回す**
+//   null   … 記載なし。**「記載なし=不可」と読み替えてはいけない**(トイレ2個と同じ規律)
+// さらに `cat` を別に持つ。「ペット相談」は**小型犬のみ**を指すことがあり、猫可とは限らないため。
+//   true=猫の明記 / false=犬のみと読める明記 / null=種別の記載なし
+// 「ペット不可」の『可』を可否の『可』と取り違えないよう、直前の1文字を後読みで弾く
+const PET_OK_RE = /ペット[^。、|]{0,6}(?:相談|(?<![不否])可能|(?<![不否])可(?![否能]))/;
+const PET_NG_RE = /ペット(?:飼育)?[^。、|]{0,6}(?:不可|禁止|不可能)/;
+const CAT_RE = /猫|ネコ|ねこ/;
+const DOG_ONLY_RE = /(?:小型犬|犬)のみ|犬に限[るり]/;
+
+export function petOf(parts) {
+  // 拾った箇所は原文として残す(金額や頭数の換算は人が行う。誤読の害が大きい)
+  const chunks = (Array.isArray(parts) ? parts : [parts]).filter(Boolean).map(String);
+  const hit = chunks.filter((c) => /ペット/.test(c));
+  if (!hit.length) return { status: null, cat: null, raw: null };
+  // **判定は全文で行い、切り詰めるのは保存用の抜粋だけ**。以前は先に200字へ切っていたため、
+  // 設備タグの長い羅列が枠を食い潰して、**肝心の備考(条件付きの記述)が判定前に消えていた**
+  // (実測: 神谷3「原則としてペットの飼育は不可…猫1匹迄相談可能」が cond ではなく ok になっていた)
+  const full = hit.join(" / ").replace(/\s+/g, " ").trim();
+  // 保存用の抜粋。設備欄は「、」区切りのタグが80個並ぶので該当タグだけを抜き、
+  // 備考のような自由文は「ペット」を含む文だけを抜く。丸ごと持っても人が読めない
+  const excerpt = (c) => {
+    const items = c.split("、");
+    if (items.length > 8) return items.filter((x) => /ペット/.test(x)).map((x) => x.trim());
+    return c.split(/(?<=[。])/).filter((x) => /ペット/.test(x)).map((x) => x.trim());
+  };
+  const parts2 = [...new Set(hit.flatMap(excerpt).filter(Boolean))];
+  const raw = (parts2.length ? parts2.join(" ‖ ") : full).replace(/\s+/g, " ").trim().slice(0, 300);
+  const ngM = full.match(PET_NG_RE);
+  const ng = !!ngM;
+  // 「不可」の後ろに逃げ道が書かれていることがある(実測: 神谷3「…原則不可。家賃+8,000円/月・
+  // 敷金1ヶ月追加で小型犬または猫1匹まで相談可」)。**句点をまたぐので語の近接では拾えない**。
+  // 不可の後ろに「相談」と動物・頭数の語が揃っているときだけ条件付き(cond)とみなす
+  // (「ペット不可。その他は要相談」のような一般的な相談は cond にしない)
+  const rescue = ng && /相談/.test(full.slice(ngM.index + ngM[0].length)) &&
+    /猫|犬|匹|頭|ペット/.test(full.slice(ngM.index + ngM[0].length));
+  const ok = PET_OK_RE.test(full);
+  const status = ng && (rescue || ok) ? "cond" : ng ? "ng" : ok ? "ok" : null;
+  const cat = CAT_RE.test(full) ? true : DOG_ONLY_RE.test(full) ? false : null;
+  return { status, cat, raw };
 }
 
 // 「4LDK」=4室 / 「2SLDK」=3室(納戸を1室として数える) / 「3DK」=3室だがLDK無し。
@@ -273,6 +335,14 @@ export const RENT_SCOPE = {
   rooms_min: 3,          // 居室数。納戸(S)は1室として数える
   require_ldk: true,     // 3DK・4Kは対象外(条件は3LDK)
   seismic_new_only: true,
+  // ペット(2026-08-19ユーザー要望「ペット相談可でも絞って欲しい(猫を飼っている)」)。
+  // **「不可の明記」だけを落とす**。記載なしは落とさない——SUUMOの入居条件欄・設備欄はどちらも
+  // 任意記載で、「記載が無い=不可」ではないため(トイレ2個と同じ規律)。
+  // 実測してこの方針を決めた根拠は rent.html の漏斗と CLAUDE.md に残す
+  pet_exclude_ng: true,
+  // 記載なしまで落とすかどうか。既定はfalse(落とさない)。trueにすると候補が激減するので、
+  // 変えるときは漏斗の実測と合わせてユーザーの判断を仰ぐこと
+  pet_require_documented: false,
 };
 
 // 判定順は**恒久条件が先・賃料が最後**。掲載が変わらない限り動かない条件(徒歩・居室数・LDK・新耐震)を
@@ -288,6 +358,11 @@ export function rentScopeCheck(detail, cfg = RENT_SCOPE) {
     const s = seismicOf(detail.built_year, detail.built_month);
     if (s.level === "old") return `${detail.built_raw}築=${s.label}`;
   }
+  // ペットは恒久条件(値下げでは戻らない)なので賃料より前に置く。
+  // cond(不可と相談可が同居)は落とさない——条件次第で飼えるので人が問い合わせる
+  const pet = detail.pet?.status ?? null;
+  if (cfg.pet_exclude_ng && pet === "ng") return `ペット不可の明記(猫を飼うため掲載条件)`;
+  if (cfg.pet_require_documented && pet == null) return `ペットの記載なし(掲載条件は相談可のみ)`;
   const t = detail.total_man;
   if (t != null && t < cfg.total_min_man) return `賃料+管理費${t}万(下限${cfg.total_min_man}万)`;
   if (t != null && t > cfg.total_max_man) return `賃料+管理費${t}万(上限${cfg.total_max_man}万)`;
