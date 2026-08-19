@@ -18,13 +18,11 @@
 //     (COEFFS 由来の定数は SIMC として注入し、client側にマジックナンバーを書かない)
 import { COEFFS, fmtMan } from "../../engine/appraise.js";
 import { RETAIL } from "../../engine/retail.js";
-import { layout, esc } from "./layout.js";
+import { layout, esc, PALETTE } from "./layout.js";
 
 // 物件ごとの線色(16色・賃貸線の紫#6B4E9Bと選択年マーカー#16232Eは避ける)。台帳順に割り当てる
-export const PALETTE = [
-  "#2E6E8E", "#C93A2B", "#3A8A4D", "#B8860B", "#C25596", "#1F9E9E", "#8A5A2B", "#4A6FD0",
-  "#8C3A5C", "#5F7A22", "#B4471F", "#3AA0C9", "#7A4E9B", "#2F7A5F", "#A05252", "#5C6B7A",
-];
+// 線色は site/templates/layout.js に一本化した(賃貸一覧と共有。配列の中身は変えていない)
+export { PALETTE } from "./layout.js";
 const CI_MAX_SHOWN = 4;   // 95%CIの帯を描く選択数の上限(超えたら線のみ+凡例で明示)
 
 // evaluate結果 → シミュレーターに必要な最小データ(全てエンジン算出値)

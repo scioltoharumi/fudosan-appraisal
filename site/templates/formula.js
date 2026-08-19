@@ -1,7 +1,7 @@
 // site/templates/formula.js — 成約事例ベースの算出ロジック図解「値段の解剖」
 // 総額 = 土地実勢単価×土地坪数 + 建物残価 + 売主の期待、の3層を実物件(赤羽西4)の数字で図解する。
 // 図中の値はすべてビルド時にエンジンから再計算され、台帳と常に一致する。
-import { COEFFS, fmtMan, walkAdjOf } from "../../engine/appraise.js";
+import { COEFFS, fmtMan, walkAdjOf, mulberry32 } from "../../engine/appraise.js";
 import { RETAIL, ADJACENT_DISTRICTS, districtOf } from "../../engine/retail.js";
 import { layout, esc } from "./layout.js";
 import { anatomySvg, rawResidualStats } from "./anatomy.js";
@@ -71,8 +71,11 @@ export function ageCurveStats(houseDeals, opts = {}) {
 // (ビルドのたびに数字が動くとページの再現性が失われるため)。
 export function ageCurveCI(houseDeals, resamples = 4000, opts = {}) {
   const { districts, buckets, med } = ageRatioBuckets(houseDeals, opts);
-  let seed = 20260812;
-  const rnd = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
+  // 2026-08-19: ここも engine/rent.js と同型の線形合同法を使っていたが、倍精度で桁あふれして
+  // 周期が10,466まで縮んでいた(監査で実測)。engine/appraise.js の mulberry32 に統一する。
+  // 崖の判別可能性(差が0を跨がない)は壊れたLCG・正しいLCG・mulberry32のいずれでも同じだが、
+  // 区間幅は 0.108 → 0.117 と広がる(壊れたRNGは区間を狭く見せる=false positive方向だった)
+  const rnd = mulberry32(20260812);
   const ci = (arr) => {
     if (!arr.length) return [null, null];
     const ms = [];

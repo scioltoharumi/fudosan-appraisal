@@ -16,9 +16,13 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { ROOT } from "./io.js";
+import { mulberry32 } from "./appraise.js";
 
 // ---- CSV(引用符対応。walk_lines等に区切り文字が混じっても壊れないように自前で読む) ----
 export function parseCsv(text) {
+  // BOM を落とす。付いたままだと1列目のキーが "\ufeffcaptured_at" になり、
+  // 以降の全行で値が undefined になって**母集団が黙って空になる**(Excelで開いて保存すると付く)
+  text = String(text).replace(/^\ufeff/, "");
   const rows = [];
   let row = [], cur = "", q = false;
   for (let i = 0; i < text.length; i++) {
@@ -38,8 +42,23 @@ export function parseCsv(text) {
 
 const num = (v) => (v === "" || v === undefined || v === null ? null : Number.isFinite(Number(v)) ? Number(v) : null);
 
-export function loadRentPool(path = join(ROOT, "market", "rent-listings.csv")) {
-  return parseCsv(readFileSync(path, "utf8")).map((r) => ({
+// 1帖 = 1.6562m²。間取り詳細の帖合計が専有面積を超える掲載は、**出典の中で自己矛盾している**。
+// 実例: 西ケ原3の掲載は「洋5.6 洋4.1 洋4.1 LDK15.1」=28.9帖(47.9m²)なのに専有面積26.5m²で、
+// 賃料26.5万と同じ値が入っている(出典側の誤記)。標本56件では1件で面積の弾力性が18%動くため、
+// 症状(面積==賃料)ではなく**出典内の整合**で機械的に落とし、理由を開示する(2026-08-19の監査指摘)
+const TATAMI_M2 = 1.6562;
+export function tatamiConflict(d) {
+  if (!d.madori_detail || !(d.area_m2 > 0)) return false;
+  const jo = [...String(d.madori_detail).matchAll(/([\d.]+)/g)].map((m) => Number(m[1])).filter((v) => v > 0 && v < 60);
+  if (!jo.length) return false;
+  return jo.reduce((a, b) => a + b, 0) * TATAMI_M2 > d.area_m2;
+}
+
+// CSVを読み、**採用した行と落とした行を分けて**返す。
+// 落とした行を黙って消すと rentFunnel の第0段(母集団)が理由なく減り、
+// 「落とした件数と理由を必ず開示する」という中心原則が破れる(2026-08-19の監査指摘)。
+export function readRentPoolCsv(path = join(ROOT, "market", "rent-listings.csv")) {
+  const rows = parseCsv(readFileSync(path, "utf8")).map((r) => ({
     captured_at: r.captured_at,
     source_id: r.source_id,
     district: r.district || null,
@@ -63,11 +82,28 @@ export function loadRentPool(path = join(ROOT, "market", "rent-listings.csv")) {
     parking: r.parking || null,
     // 空欄は「トイレが1つ」ではなく「掲載に記載が無い」。false ではなく null で持つ
     toilet2: r.toilet2 === "1" ? true : null,
+    shikibiki_raw: r.shikibiki_raw || null,
+    madori_detail: r.madori_detail || null,
+    listing_count: num(r.listing_count) ?? 1,
+    media: r.media || "suumo",
     source_url: r.source_url || null,
-  })).filter((d) =>
-    d.total_man > 0 && d.area_m2 > 0 &&
-    Number.isFinite(d.age_y) && d.age_y >= 0 && d.age_y <= 100 &&
-    Number.isFinite(d.walk_min) && d.walk_min >= 0 && d.walk_min <= 30);
+  }));
+  const pool = [], dropped = [];
+  for (const d of rows) {
+    const why = tatamiConflict(d) ? `出典内で矛盾(間取り詳細の帖合計が専有面積${d.area_m2}m²を超える)`
+      : !(d.total_man > 0) ? "賃料+管理費が読めない"
+      : !(d.area_m2 > 0) ? "専有面積が読めない"
+      : !(Number.isFinite(d.age_y) && d.age_y >= 0 && d.age_y <= 100) ? `築年が範囲外(${d.age_y})`
+      : !(Number.isFinite(d.walk_min) && d.walk_min >= 0 && d.walk_min <= 30) ? `徒歩分が範囲外(${d.walk_min})`
+      : null;
+    if (why) dropped.push({ source_id: d.source_id, reason: why }); else pool.push(d);
+  }
+  return { pool, dropped, csvRows: rows.length };
+}
+
+// 従来どおり配列だけ欲しい呼び出し向けの薄いラッパ
+export function loadRentPool(path = join(ROOT, "market", "rent-listings.csv")) {
+  return readRentPoolCsv(path).pool;
 }
 
 // ---- 賃料モデル ----
@@ -117,8 +153,12 @@ export function fitRentModel(pool, { bootN = RENT_BOOT_N, seed = RENT_MODEL_SEED
   const sst = y.reduce((s, v) => s + (v - ybar) ** 2, 0);
   const sd = Math.sqrt(ssr / Math.max(1, y.length - X[0].length));
 
-  let s = seed;
-  const rnd = () => { s = (s * 1103515245 + 12345) % 2147483648; return s / 2147483648; };
+  // 乱数は engine/appraise.js の mulberry32 を使う。
+  // 2026-08-19の監査で、当初使っていた線形合同法 s=(s*1103515245+12345)%2147483648 が
+  // **JavaScriptの倍精度で桁あふれしている**ことが判明した(初回の積が 2.2e16 で 2^53 を超える)。
+  // 実測の周期は10,466(正しいLCGの2^31に対し20万分の1)で、抽出インデックスの度数分布も
+  // χ²=1959(棄却域84.8)と偏っていた。決定論は保たれるが区間が系統的にずれるため置換した。
+  const rnd = mulberry32(seed);
   const draws = [[], [], [], []];
   for (let b = 0; b < bootN; b++) {
     const bx = [], by = [];
@@ -134,8 +174,11 @@ export function fitRentModel(pool, { bootN = RENT_BOOT_N, seed = RENT_MODEL_SEED
   const pct = (v) => (Math.exp(v) - 1) * 100;
   const terms = [
     { key: "intercept", label: "切片", est: coef[0], ci: ci[0], unit: "log", decisive: null },
+    // 「1.00(=面積に比例)を跨がないか」で判別する。
+    // 当初は lo>0 かつ hi<1 と書いていたが、弾力性が1を超える市場(広い戸建ほど割高)では
+    // 1.00を明確に排除している区間を「判別不能」と表示してしまう(2026-08-19の監査指摘)
     { key: "area", label: "面積の弾力性(log面積)", est: coef[1], ci: ci[1], unit: "elasticity",
-      decisive: ci[1] ? ci[1].lo > 0 && ci[1].hi < 1 : null },
+      decisive: ci[1] ? ci[1].hi < 1 || ci[1].lo > 1 : null },
     { key: "age", label: "築年", est: coef[2], ci: ci[2], unit: "pct_per_year",
       est_pct: pct(coef[2]), ci_pct: ci[2] ? { lo: pct(ci[2].lo), hi: pct(ci[2].hi) } : null,
       decisive: ci[2] ? ci[2].hi < 0 || ci[2].lo > 0 : null },
@@ -155,9 +198,14 @@ export function fitRentModel(pool, { bootN = RENT_BOOT_N, seed = RENT_MODEL_SEED
 // 「同じ条件の物件でも現に散っている幅」を表す
 export function benchmarkRent(model, { area_m2, age_y, walk_min }) {
   if (!model?.ok || !(area_m2 > 0)) return null;
+  // 築年・徒歩分が欠測のとき 0 で埋めると「新築で駅前」として扱われ、ものさしが約9%高く出る。
+  // 埋めた事実を imputed で返し、物件ページで開示する(黙って補完しない)
+  const imputed = [];
+  if (age_y == null) imputed.push("age_y");
+  if (walk_min == null) imputed.push("walk_min");
   const x = [1, Math.log(area_m2), age_y ?? 0, walk_min ?? 0];
   const lg = x.reduce((s, v, i) => s + v * model.coef[i], 0);
-  return { mid: Math.exp(lg), lo: Math.exp(lg - model.residSd), hi: Math.exp(lg + model.residSd) };
+  return { mid: Math.exp(lg), lo: Math.exp(lg - model.residSd), hi: Math.exp(lg + model.residSd), imputed };
 }
 
 // ---- 実質月額 ----
@@ -195,18 +243,30 @@ export function effectiveMonthly(p, years, a = RENT_ASSUMPTIONS) {
   const insCycles = Math.max(1, Math.ceil(years / insCycleY));
   const insurance = (p.insurance_man ?? a.insurance_man) * insCycles;
   const renewCycle = p.renewal_cycle_y ?? a.renewal_cycle_y;
-  // 2年契約で2年ちょうど住むなら更新は起きない。3年目に入る時点で1回
-  const renewals = Math.max(0, Math.ceil(years / renewCycle) - 1);
-  const renewal = renewals * (p.renewal_months ?? a.renewal_months) * rent;
-  const guaranteeMonthly = rent * ((p.guarantee_monthly_pct ?? a.guarantee_monthly_pct) / 100)
-    + (p.guarantee_monthly_man ?? 0);
+  const renewalFee = p.renewal_months ?? a.renewal_months;
+  // 2年契約で2年ちょうど住むなら更新は起きない。3年目に入る時点で1回。
+  // 更新料が0の契約(定期借家)は回数も0にする——金額は0でも回数だけ「1回」と出ると、
+  // 同じページの「更新料は発生しません」と矛盾して読める(2026-08-19の監査指摘)
+  const renewals = renewalFee > 0 ? Math.max(0, Math.ceil(years / renewCycle) - 1) : 0;
+  const renewal = renewals * renewalFee * rent;
+  // 月額保証料は%と定額のどちらか一方が掲載に書かれる。**どちらかが明示されたら他方の既定は落とす**。
+  // 以前は定額を書いても既定1%が残って加算され、賃料20万なら月2,000円が黙って上乗せされていた
+  // (2026-08-19の監査指摘。現行の台帳は全件 pct を明示していたため実害は無かった)
+  const pctGiven = p.guarantee_monthly_pct != null;
+  const manGiven = p.guarantee_monthly_man != null;
+  const gPct = pctGiven ? p.guarantee_monthly_pct : (manGiven ? 0 : a.guarantee_monthly_pct);
+  const guaranteeMonthly = rent * (gPct / 100) + (p.guarantee_monthly_man ?? 0);
   const miscMonthly = p.misc_monthly_man ?? 0;      // 24時間サポート等の月額付帯
   const monthly = (rent + kanri + guaranteeMonthly + miscMonthly) * months;
   const miscInitial = p.misc_initial_man ?? 0;      // 消火剤・消毒・入居者サポート等の初期付帯
   // 退去時費用は「定額クリーニング」が書いてあればそれを優先する(原状回復の想定より確度が高い)
   const restoration = p.cleaning_man != null ? p.cleaning_man : (p.restoration_months ?? a.restoration_months) * rent;
 
-  const oneTime = rei + brokerage + guaranteeInit + keyExchange + insurance + miscInitial;
+  // 敷引・償却は敷金のうち**返ってこない**部分で、性質は礼金と同じ一時金。
+  // 抽出はしていたのに誰も使っておらず、「敷金は返るので総額に入れない」という前提が
+  // 静かに崩れる状態だった(2026-08-19の監査指摘。実データでは66件中2件に存在する)
+  const shikibiki = p.shikibiki_man != null ? p.shikibiki_man : (p.shikibiki_months ?? 0) * rent;
+  const oneTime = rei + brokerage + guaranteeInit + keyExchange + insurance + miscInitial + shikibiki;
   const total = oneTime + renewal + monthly + restoration;
   return {
     years, months, renewals,
@@ -217,7 +277,7 @@ export function effectiveMonthly(p, years, a = RENT_ASSUMPTIONS) {
       rentAndKanri: (rent + kanri) * months,
       guaranteeMonthly: guaranteeMonthly * months,
       miscMonthly: miscMonthly * months,
-      reikin: rei, brokerage, guaranteeInit, keyExchange, insurance, miscInitial, renewal, restoration,
+      reikin: rei, brokerage, guaranteeInit, keyExchange, insurance, miscInitial, shikibiki, renewal, restoration,
     },
     total,
     monthlyEq: total / months,
@@ -298,10 +358,19 @@ export function evaluateRent(property, { pool, model, asOf, assumptions = RENT_A
 // (エンジンはクローラに依存しない方針なので定数を二重に置き、tests/rent-engine.test.js で一致を検査する)
 export const TEIKI_OK_YEARS = [3];
 
-export function rentFunnel(pool, cfg = { total_min_man: 15, total_max_man: 25, walk_max: 10, rooms_min: 3, teiki_ok_years: TEIKI_OK_YEARS }) {
+export function rentFunnel(pool, cfg = { total_min_man: 15, total_max_man: 25, walk_max: 10, rooms_min: 3, teiki_ok_years: TEIKI_OK_YEARS }, meta = {}) {
   const steps = [];
   let f = pool;
-  steps.push({ label: "北区の戸建賃貸(SUUMO・一戸建てのみ)", n: f.length, dropped: 0 });
+  // CSVにあったが読み取り不能で母集団から外れた行を最初に開示する(黙って減らさない)
+  const droppedRows = meta.dropped ?? [];
+  if (droppedRows.length) {
+    // CSVは1行=1物件(名寄せ済み)。「掲載」と書くと元の掲載数と混同されるので物件と書く
+    const n0 = meta.csvRows ?? pool.length + droppedRows.length;
+    steps.push({ label: `CSVの物件(${n0}物件・名寄せ済み)`, n: n0, dropped: 0 });
+    steps.push({ label: `読み取り不能で除外(${droppedRows.map((d) => d.reason).join(" / ")})`, n: f.length, dropped: droppedRows.length });
+  }
+  const listings = f.reduce((a2, d) => a2 + (d.listing_count ?? 1), 0);
+  steps.push({ label: `北区の戸建賃貸(一戸建てのみ・元になった掲載は${listings})`, n: f.length, dropped: 0 });
   const step = (label, pred) => {
     const before = f.length;
     f = f.filter(pred);
@@ -309,7 +378,11 @@ export function rentFunnel(pool, cfg = { total_min_man: 15, total_max_man: 25, w
   };
   step(`賃料+管理費 ${cfg.total_min_man}〜${cfg.total_max_man}万`, (d) => d.total_man >= cfg.total_min_man && d.total_man <= cfg.total_max_man);
   step(`最寄り駅 徒歩${cfg.walk_max}分以内`, (d) => d.walk_min != null && d.walk_min <= cfg.walk_max);
-  step(`${cfg.rooms_min}LDK以上(納戸Sは1室として数える)`, (d) => d.rooms >= cfg.rooms_min && d.has_ldk);
+  // 「3LDK以上」は本来2つの条件。混ぜると LDK表記が無いだけで落ちた掲載が漏斗に出てこない
+  // (実測 2026-08-19: 徒歩10分以内18物件のうち、室数不足が6物件・室数は足りるがLDK無しが3物件)。
+  // crawler/rent-screen.mjs は既に rooms_min と require_ldk を別条件として持っている
+  step(`居室${cfg.rooms_min}室以上(納戸Sは1室として数える)`, (d) => d.rooms >= cfg.rooms_min);
+  step("LDKがあること(3DK・4Kは対象外)", (d) => d.has_ldk);
   step("新耐震(1982年以降竣工)", (d) => d.seismic === "new");
   // 定期借家は**ちょうど3年だけ許容**する(2026-08-18ユーザー指示: 子供の小学校入学前の区切り)。
   // 短いからKOではなく長さの要件なので、2年も4年以上も落ちる
@@ -322,7 +395,7 @@ export function rentFunnel(pool, cfg = { total_min_man: 15, total_max_man: 25, w
   // 生存のうち定期借家(許容年数)の掲載数と、仮に定期借家を全部KOにしたら何件減るか。
   // 「3年だけ許容している」という条件の効き具合をページで開示するために返す
   const teikiAllowed = survivors.filter((d) => d.contract_type === "teiki").length;
-  return { steps, survivors, withToilet2, teikiAllowed, teikiOkYears: okYears,
+  return { steps, survivors, withToilet2, teikiAllowed, teikiOkYears: okYears, cfg,
     teikiInPool: pool.filter((d) => d.contract_type === "teiki").length,
     toilet2Documented: pool.filter((d) => d.toilet2 === true).length, poolN: pool.length };
 }

@@ -164,5 +164,21 @@ table.list th.sortable .arw{opacity:.45;font-size:.65rem}
 #rentlist .memota{min-width:106px}
 /* 契約列は「定期借家3年」が折り返さない幅を確保する(折れると行が5行分の高さになる) */
 #rentlist td:nth-child(9), #rentlist th:nth-child(9){min-width:82px}
+/* 狭い画面(≤1100px)。購入一覧と同じ事故——表の幅が固定のまま枠だけ縮み、右端のメモ欄が
+   枠外へ出る——が賃貸一覧でも起きていた(2026-08-19の機械検査で実測: 1024pxで148pxはみ出し)。
+   横スクロールに逃がすとメモが読めず用をなさないので、実測して列を詰める。
+   tests/ui/rent.ui.mjs が1440/1280/1024で見切れないことを検査する */
+@media (max-width:1100px){
+  #rentlist{font-size:.72rem}
+  #rentlist th.memocol{min-width:96px}
+  #rentlist .memota{min-width:80px}
+  #rentlist td:first-child{min-width:116px}
+  #rentlist .stsel, #rentlist .vwsel{font-size:.68rem;padding:2px 3px}
+  #rentlist td:nth-child(11), #rentlist th:nth-child(11){min-width:76px}  /* ハザード */
+  #rentlist td:nth-child(10), #rentlist th:nth-child(10){min-width:54px}  /* トイレ2個 */
+  #rentlist td:nth-child(5), #rentlist th:nth-child(5){min-width:52px}    /* 入居時現金 */
+  #rentlist .hz{white-space:normal}   /* 「浸水5〜10m」は折り返してよい。列幅を固定する価値はない */
+  #rentlist th, #rentlist td{padding-left:4px;padding-right:4px}
+}
 .nw{white-space:nowrap}
 `;

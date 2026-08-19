@@ -44,6 +44,8 @@ fine_print:
   - "消火剤・防災グッズ代(初期) 70,950円"
   - "消毒(抗菌費)(初期) 36,850円"
   - "入居者サポート費用(初期) 22,000円"
+  - "入居時期 2026年8月中旬"
+  - "入居条件 子供可"
 hazard_check:
   checked_at: 2026-08-18
   official:
@@ -52,6 +54,6 @@ hazard_check:
     elevation_m: 20.4
     flood_l2: null
     hits: []
-    reference_verdict: pass   # 台帳4件で唯一、台地側で公式マップの該当なし
+    reference_verdict: pass   # 台帳で唯一、台地側で公式マップの該当なし
     limit: "丁目代表点ベース。帯状の土砂災害区域は代表点では取りこぼす"
 checklist: {contract_type_verified: true, toilet_count: false, viewing: false}

@@ -35,12 +35,21 @@ terms:
   insurance_man: 2.5       # 「損保 2.5万円2年」
   insurance_cycle_y: 2
 facilities:
-  # 台帳4件で唯一、掲載の設備欄に「トイレ2ヶ所」が明記されている
+  # 台帳で唯一、掲載の設備欄に「トイレ2ヶ所」が明記されている
   toilet2: true
   parking_raw: "近隣160m23000円/駐3台可"   # 距離と金額の切れ目が掲載側で潰れており読めない。原文のまま保持
   notes: ["専用庭", "テラス", "物置", "全室南向き", "3面採光", "エアコン4台", "収納2間半", "納戸", "駐車2台可"]
+# 掲載の鮮度。他6件が情報更新日2026/08/18なのに対しこの掲載だけ7/25で、
+# 次回更新予定日(8/9)を過ぎたまま動いていない=募集停止・成約済みの兆候。
+# 台帳で唯一、契約種別が読めずKO判定が保留の物件でもあるので**問い合わせの優先度が最も高い**
+listing_freshness:
+  info_updated: 2026-07-25
+  next_update: 2026-08-09
+  observed_at: 2026-08-19
+  note: "次回更新予定日を超過。掲載終了の可能性がある"
 fine_print:
   - "室内喫煙不可"
+  - "入居時期 相談"
   - "ペット飼育は原則不可。家賃+8,000円/月・敷金1ヶ月追加で小型犬または猫1匹まで相談可"
   - "事務所利用相談可"
   - "掲載の入居条件に国籍による制限の記載がある(原文: 「日本人の方のみ相談可能」)"
@@ -55,4 +64,4 @@ hazard_check:
     hits: ["洪水浸水想定区域(想定最大規模): 3.0〜5.0m", "浸水継続時間(想定最大規模): 該当", "高潮浸水想定区域(想定最大規模): 0.5〜3.0m"]
     reference_verdict: block
     limit: "丁目代表点ベース。被覆率100%のため丁目全域に及ぶ"
-checklist: {contract_type_verified: false, toilet_count: true, parking_terms: false, viewing: false}
+checklist: {contract_type_verified: false, toilet_count: true, parking_terms: false, listing_alive: false, viewing: false}

@@ -3,11 +3,13 @@ status: new
 viewing: none
 source: "SUUMO 賃貸 jnc_000107424334 ((株)タウンハウジング東京 駒込店)"
 source_url: "https://suumo.jp/chintai/jnc_000107424334/"
-# 同一物件が別業者からも掲載されている(賃料25万・専有89.42m2・築2008年8月・
-# 間取り詳細「和8 洋6 洋4.5 LDK17.5」が完全一致)。
-# **駅徒歩の表記が媒体間で1分ずれる**(本掲載=東十条6分/十条7分、jnc_000108449757=東十条5分/十条6分)。
-# 保守側の本掲載の値を採用し、ずれを事実として残す
-duplicate_of: ["jnc_000108449757"]
+# 同一物件が複数の掲載から出ている(賃料25万・専有89.42m2・築2008年8月・
+# 間取り詳細「和8 洋6 洋4.5 LDK17.5」が完全一致)。**同一社(株)タウンハウジング東京の別店舗**による
+# 重複掲載を含み、免許番号も同一なので「別業者だから独立の裏取りになる」とは読めない。
+# **駅徒歩の表記が掲載ごとに1分ずれる**(東十条5分/6分・十条6分/7分)。最短の5分を採り、ずれを残す。
+# 2026-08-19の再取得では取扱店舗が三井のリハウス池袋センターへ差し替わっている掲載もあり、
+# 同じURLでも内容が入れ替わりうる(watch が contract_conflict と rent_changed で拾う)
+duplicate_of: ["jnc_000108449757", "jnc_000108471152"]
 captured_at: 2026-08-18
 rent_history:
   - {date: 2026-08-18, rent_man: 25, kanri_man: 0}
@@ -15,12 +17,13 @@ location: {district: 中十条, chome: 3, address: "東京都北区中十条３"
 layout: "3LDK"
 madori_detail: "和8 洋6 洋4.5 LDK17.5"
 station:
-  walk_min: 6              # 最寄り(JR京浜東北線 東十条)。台帳で唯一、最寄りが京浜東北線
-  keihin_walk_min: 6
+  walk_min: 5              # 最寄り(JR京浜東北線 東十条)。台帳で唯一、最寄りが京浜東北線
+  keihin_walk_min: 5
+  # 掲載により5分/6分(十条は6分/7分)と割れる。最短を採り、割れている事実をここに残す
   lines:
-    - {line: "ＪＲ京浜東北線", station: "東十条", walk_min: 6}
-    - {line: "ＪＲ埼京線", station: "十条", walk_min: 7}
-    - {line: "東京メトロ南北線", station: "王子神谷", walk_min: 18}
+    - {line: "ＪＲ京浜東北線", station: "東十条", walk_min: 5, note: "掲載により5分/6分"}
+    - {line: "ＪＲ埼京線", station: "十条", walk_min: 6, note: "掲載により6分/7分"}
+    - {line: "東京メトロ南北線", station: "王子神谷", walk_min: 18, note: "この駅を載せない掲載もある"}
 building:
   built_year: 2008
   built_month: 8
@@ -49,6 +52,8 @@ facilities:
   notes: ["バストイレ別", "南向き", "追焚機能浴室", "温水洗浄便座", "洗面所独立", "IHクッキングヒーター", "食器洗乾燥機", "TVインターホン"]
 fine_print:
   - "退去時清掃費用 借主負担特約 137,706円(税込)"
+  - "喫煙不可"
+  - "入居時期 相談"
   - "保証会社利用必須(初回 賃料等の50%、賃料収納月以降 1,000円/月)"
 hazard_check:
   checked_at: 2026-08-18
@@ -60,4 +65,4 @@ hazard_check:
     hits: ["洪水浸水想定区域(想定最大規模): 0.5m未満"]
     reference_verdict: caution   # 台地側。浅い区分のみ
     limit: "丁目代表点ベース。標高20.6mの台地側で、荒川低地の物件とは水害の性質が違う。ただし崖線沿いの帯状の土砂災害区域は代表点では取りこぼす"
-checklist: {contract_type_verified: true, recontract_terms: false, toilet_count: false, walk_min_discrepancy: false, viewing: false}
+checklist: {contract_type_verified: true, recontract_terms: false, toilet_count: false, walk_min_discrepancy: false, agency_changed: false, viewing: false}

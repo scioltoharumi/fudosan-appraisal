@@ -4,7 +4,7 @@ import { mkdirSync, writeFileSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { evaluate, defaultAsOf } from "../engine/appraise.js";
 import { ROOT, loadAreaConfig, loadProperty, listPropertyIds, loadRental, listRentalIds } from "../engine/io.js";
-import { loadRentPool, fitRentModel, evaluateRent, rentFunnel } from "../engine/rent.js";
+import { readRentPoolCsv, fitRentModel, evaluateRent, rentFunnel } from "../engine/rent.js";
 import { renderRentIndex } from "./templates/rent-index.js";
 import { renderRentProperty } from "./templates/rent-property.js";
 import { renderRentBasis } from "./templates/rent-basis.js";
@@ -126,10 +126,11 @@ if (rentalIds.length === 0) {
   console.log("· 賃貸台帳なし(rentals/ が空のためスキップ)");
 } else {
   mkdirSync(join(DIST, "rent"), { recursive: true });
-  const rentPool = loadRentPool();
+  const { pool: rentPool, dropped: rentDropped, csvRows: rentCsvRows } = readRentPoolCsv();
+  if (rentDropped.length) console.warn(`⚠ 募集賃料プールで読み取り不能により除外: ${rentDropped.length}件 ${rentDropped.map((d) => `${d.source_id}(${d.reason})`).join(" ")}`);
   const rentModel = fitRentModel(rentPool);
   if (!rentModel.ok) console.warn(`⚠ 募集賃料モデルを推定できず: ${rentModel.reason}`);
-  const rentFun = rentFunnel(rentPool);
+  const rentFun = rentFunnel(rentPool, undefined, { dropped: rentDropped, csvRows: rentCsvRows });
   const rentResults = [];
   for (const id of rentalIds) {
     const rental = loadRental(id);
@@ -142,11 +143,19 @@ if (rentalIds.length === 0) {
   }
   writeFileSync(join(DIST, "rent.html"),
     renderRentIndex(rentResults, { asOf, funnel: rentFun, model: rentModel.ok ? rentModel : null,
-      poolCapturedAt: rentPool[0]?.captured_at ?? null }), "utf8");
+      poolCapturedAt: rentPool[0]?.captured_at ?? null, hasBasisPage: rentModel.ok }), "utf8");
   console.log(`✓ rent.html(賃貸台帳 ${rentResults.length}件・母集団 ${rentPool.length}件)`);
   if (rentModel.ok) {
+    // ページ本文の実数はここで注入する(テンプレートに手書きしない)
+    const rentRatios = rentResults.map((r) => r.res.ratio).filter(Number.isFinite);
+    const sample = rentResults.find((r) => Number.isFinite(r.res.at2y?.monthlyEq));
     writeFileSync(join(DIST, "rent-basis.html"),
-      renderRentBasis({ pool: rentPool, model: rentModel, funnel: rentFun, asOf }), "utf8");
+      renderRentBasis({ pool: rentPool, model: rentModel, funnel: rentFun, asOf,
+        houseDealsTotal: simCurve.total, houseDealsDistricts: simCurve.districts,
+        ratioLo: rentRatios.length ? Math.round(Math.min(...rentRatios) * 100) : null,
+        ratioHi: rentRatios.length ? Math.round(Math.max(...rentRatios) * 100) : null,
+        sampleEffective: sample ? { listed: sample.res.listed.total_man, eff: sample.res.at2y.monthlyEq.toFixed(1) } : null,
+      }), "utf8");
     console.log(`✓ rent-basis.html(募集賃料モデル n=${rentModel.n} R²=${rentModel.r2.toFixed(3)})`);
   }
 }

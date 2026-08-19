@@ -3,8 +3,7 @@
 // **何が言えて何が言えないか**を係数ごとに名指しする。数値はすべてビルド時計算(手書きしない)。
 import { layout, esc } from "./layout.js";
 
-const m1 = (v) => (v == null ? "—" : v.toFixed(1));
-const p2 = (v) => (v == null ? "—" : v.toFixed(2));
+const p2 = (v) => (Number.isFinite(v) ? v.toFixed(2) : "—");
 
 // 散布図: 横=専有面積(対数目盛) 縦=賃料+管理費。点は築年で塗り分ける
 function scatterSvg(pool, model) {
@@ -14,7 +13,8 @@ function scatterSvg(pool, model) {
   const xs = pool.map((d) => Math.log(d.area_m2)), ys = pool.map((d) => d.total_man);
   const x0 = Math.min(...xs), x1 = Math.max(...xs);
   const y0 = 0, y1 = Math.ceil(Math.max(...ys) / 10) * 10;
-  const X = (v) => ML + ((Math.log(v) - x0) / (x1 - x0)) * pw;
+  const xSpan = (x1 - x0) || 1;   // 全件同一面積だと分母0でNaN座標になる
+  const X = (v) => ML + ((Math.log(v) - x0) / xSpan) * pw;
   const Y = (v) => MT + ph - ((v - y0) / (y1 - y0)) * ph;
   const ageColor = (a) => (a <= 5 ? "#2C6E49" : a <= 20 ? "#2E6E8E" : a <= 40 ? "#B07C10" : "#B03A2E");
 
@@ -64,6 +64,11 @@ function ciSvg(model) {
   const blocks = terms.map((t, i) => {
     const yy = 50 + i * rowH;   // 見出し行(y=16)と区間ラベル(yy-10)が重ならない位置
     const isElast = t.key === "area";
+    // ブートストラップが成立しないと ci が null になる。落とさずその旨を描く
+    if (!(isElast ? t.ci : t.ci_pct)) {
+      return `<text x="10" y="${yy + 4}" font-size="11.5" fill="#16232E">${esc(t.label)}</text>
+        <text x="${ML}" y="${yy + 4}" font-size="10.5" fill="#B07C10">信頼区間を推定できず(ブートストラップ失敗)</text>`;
+    }
     const lo = isElast ? t.ci.lo : t.ci_pct.lo, hi = isElast ? t.ci.hi : t.ci_pct.hi;
     const est = isElast ? t.est : t.est_pct;
     const ref = isElast ? 1 : 0;              // 効果なしの基準
@@ -86,7 +91,7 @@ function ciSvg(model) {
   </svg>`;
 }
 
-export function renderRentBasis({ pool, model, funnel, asOf }) {
+export function renderRentBasis({ pool, model, funnel, asOf, houseDealsTotal = null, houseDealsDistricts = null, ratioLo = null, ratioHi = null, sampleEffective = null }) {
   const ageT = model.terms.find((t) => t.key === "age");
   const walkT = model.terms.find((t) => t.key === "walk");
   const areaT = model.terms.find((t) => t.key === "area");
@@ -100,9 +105,11 @@ export function renderRentBasis({ pool, model, funnel, asOf }) {
     <div class="logic-body">
       <p class="why">賃貸台帳の一覧に出ている「ものさし比」が、<b>どこまで信じてよい数字なのか</b>を示すためのページです。結論を先に書きます。</p>
       <ul class="notes">
-        <li><b>言えること①</b>: 賃料は専有面積に<b>比例しない</b>。弾力性は ${p2(areaT.est)}(95%CI ${p2(areaT.ci.lo)}〜${p2(areaT.ci.hi)})で1.00を含まない。広い家ほどm²単価は下がる。</li>
-        <li><b>言えること②</b>: 築年は効く。1年あたり ${p2(ageT.est_pct)}%(95%CI ${p2(ageT.ci_pct.lo)}〜${p2(ageT.ci_pct.hi)}%)で区間が0を跨がない。</li>
-        <li><b>言えないこと</b>: 駅からの徒歩分の効果は<b>判別できない</b>。推定は ${p2(walkT.est_pct)}%/分(95%CI ${p2(walkT.ci_pct.lo)}〜${p2(walkT.ci_pct.hi)}%)で、区間が0を跨ぐどころか<b>点推定の符号が「遠いほど高い」</b>という向きになっている。駅から遠い戸建ほど広い・新しいという交絡が疑われるが、この標本では切り分けられない。</li>
+        <li><b>言えること①</b>: 賃料は専有面積に<b>比例しない</b>。弾力性は ${p2(areaT.est)}(95%CI ${p2(areaT.ci?.lo)}〜${p2(areaT.ci?.hi)})で1.00を含まない。広い家ほどm²単価は下がる。</li>
+        <li><b>言えること②</b>: 築年は効く。1年あたり ${p2(ageT.est_pct)}%(95%CI ${p2(ageT.ci_pct?.lo)}〜${p2(ageT.ci_pct?.hi)}%)で区間が0を跨がない。</li>
+        <li><b>言えないこと</b>: 駅からの徒歩分の効果は<b>判別できない</b>。推定は ${p2(walkT.est_pct)}%/分(95%CI ${p2(walkT.ci_pct?.lo)}〜${p2(walkT.ci_pct?.hi)}%)で、区間が0を跨ぐどころか<b>点推定の符号が「遠いほど高い」</b>という向きになっている。駅から遠い戸建ほど広い・新しいという交絡が疑われるが、この標本では切り分けられない。</li>
+        <li><b>母集団はSUUMO単独である。</b>2026-08-19の実測で、athomeにのみ出ている北区の賃貸一戸建てが8〜10件あり、一戸建ての和集合に対するSUUMOの被覆は約85%だった。逆にSUUMOにしか無い掲載も12件あるので、どちらも他方の上位集合ではない。athomeは現在ボット対策の認証画面を返すため、機械取得の経路を確立できていない。</li>
+        <li><b>点推定は標本1件の増減で5%程度動く。</b>この標本サイズでは点推定を主役にせず、<b>信頼区間の側</b>を読むこと。</li>
         <li><b>最大の限界</b>: 母集団は<b>成約ではなく募集</b>賃料である。賃貸の成約賃料は公開されていない。購入台帳が国交省の成約データを使えているのとは決定的に違い、ここで測れるのは「貸主の希望の分布」でしかない。</li>
       </ul>
     </div>
@@ -114,7 +121,8 @@ export function renderRentBasis({ pool, model, funnel, asOf }) {
       <p class="why">SUUMOの「東京都北区・賃貸一戸建て」一覧を全ページ走査し、各物件の詳細ページから実値を取りました(取得 ${esc(pool[0]?.captured_at ?? asOf)})。<b>一覧カードの値は使っていません</b>——一覧の切り出しは隣接カードや広告枠を巻き込むことがあり、購入台帳でも同じ事故が起きています。詳細ページでも、ページ下部の「この物件を見た人はこんな物件も見ています」に同じ形の賃料ブロックがあるため、抽出は物件ヘッダに限定しています。</p>
       <table class="list">
         <tr><th>項目</th><th>件数</th><th>備考</th></tr>
-        <tr><td>プール総数(一戸建てのみ)</td><td class="num">${pool.length}件</td><td>テラス・タウンハウス(連棟)は除外</td></tr>
+        <tr><td>プール総数(一戸建てのみ)</td><td class="num">${pool.length}物件</td><td>テラス・タウンハウス(連棟)は除外。<b>掲載ではなく物件の数</b>(同一物件の複数店舗掲載は名寄せ済み)</td></tr>
+        <tr><td>　元になった掲載数</td><td class="num">${pool.reduce((a, d) => a + (d.listing_count ?? 1), 0)}掲載</td><td>名寄せしないと同じ物件を何度も数え、残差が実際より狭く出る</td></tr>
         <tr><td>普通借家</td><td class="num">${futsu}件</td><td>更新の拒絶に正当事由が要る</td></tr>
         <tr><td>定期借家</td><td class="num">${teiki}件</td><td><b>母集団の${(teiki / pool.length * 100).toFixed(0)}%</b>。例外ではない</td></tr>
         <tr><td>　うち契約${(funnel.teikiOkYears ?? [3]).join("・")}年(掲載条件で許容)</td><td class="num">${pool.filter((d) => d.contract_type === "teiki" && (funnel.teikiOkYears ?? [3]).includes(d.contract_years)).length}件</td><td>子供の小学校入学前の区切りに長さが合うため許容している</td></tr>
@@ -142,11 +150,11 @@ export function renderRentBasis({ pool, model, funnel, asOf }) {
       <div style="overflow-x:auto">${ciSvg(model)}</div>
       <table class="list" style="margin-top:12px">
         <tr><th>変数</th><th>推定値</th><th>95%信頼区間</th><th>判別</th></tr>
-        <tr><td>面積の弾力性</td><td class="num">${p2(areaT.est)}</td><td class="num">${p2(areaT.ci.lo)} 〜 ${p2(areaT.ci.hi)}</td><td>${areaT.decisive ? "可能(1.00を含まない)" : "不能"}</td></tr>
-        <tr><td>築年</td><td class="num">${p2(ageT.est_pct)}%/年</td><td class="num">${p2(ageT.ci_pct.lo)} 〜 ${p2(ageT.ci_pct.hi)}%</td><td>${ageT.decisive ? "可能(0を跨がない)" : "不能"}</td></tr>
-        <tr><td>徒歩分</td><td class="num">${p2(walkT.est_pct)}%/分</td><td class="num">${p2(walkT.ci_pct.lo)} 〜 ${p2(walkT.ci_pct.hi)}%</td><td>${walkT.decisive ? "可能" : "<b>不能(0を跨ぐ)</b>"}</td></tr>
+        <tr><td>面積の弾力性</td><td class="num">${p2(areaT.est)}</td><td class="num">${p2(areaT.ci?.lo)} 〜 ${p2(areaT.ci?.hi)}</td><td>${areaT.decisive ? "可能(1.00を含まない)" : "不能"}</td></tr>
+        <tr><td>築年</td><td class="num">${p2(ageT.est_pct)}%/年</td><td class="num">${p2(ageT.ci_pct?.lo)} 〜 ${p2(ageT.ci_pct?.hi)}%</td><td>${ageT.decisive ? "可能(0を跨がない)" : "不能"}</td></tr>
+        <tr><td>徒歩分</td><td class="num">${p2(walkT.est_pct)}%/分</td><td class="num">${p2(walkT.ci_pct?.lo)} 〜 ${p2(walkT.ci_pct?.hi)}%</td><td>${walkT.decisive ? "可能" : "<b>不能(0を跨ぐ)</b>"}</td></tr>
       </table>
-      <div class="note" style="margin-top:8px">モデル全体の説明力は R² = ${model.r2.toFixed(3)}、残差は <b>±${model.spreadPct.toFixed(0)}%</b> です。つまり同じ面積・築年・徒歩分でも、募集賃料はこのくらい散っています。<b>ものさし比が95%と107%の物件の差(12ポイント)は、この散らばりの内側です</b>——差があるとは読めません。</div>
+      <div class="note" style="margin-top:8px">モデル全体の説明力は R² = ${model.r2.toFixed(3)}、残差は <b>±${model.spreadPct.toFixed(0)}%</b> です。つまり同じ面積・築年・徒歩分でも、募集賃料はこのくらい散っています。${ratioLo != null && ratioHi != null ? `<b>ものさし比が${ratioLo}%と${ratioHi}%の物件の差(${ratioHi - ratioLo}ポイント)は、この散らばりの内側です</b>` : "<b>台帳の物件間のものさし比の差は、この散らばりの内側です</b>"}——差があるとは読めません。</div>
     </div>
   </div>
 
@@ -156,11 +164,11 @@ export function renderRentBasis({ pool, model, funnel, asOf }) {
       <table class="list">
         <tr><th></th><th>購入台帳</th><th>賃貸台帳(このページ)</th></tr>
         <tr><td>母集団</td><td>成約価格(国交省 不動産情報ライブラリ / 再掲サイト)</td><td><b>募集賃料のみ</b>(成約賃料は非公開)</td></tr>
-        <tr><td>件数</td><td>戸建成約 551件11地区</td><td>${pool.length}件(北区全域)</td></tr>
+        <tr><td>件数</td><td>戸建成約 ${houseDealsTotal ?? "—"}件${houseDealsDistricts ?? "—"}地区</td><td>${pool.length}物件(北区全域)</td></tr>
         <tr><td>外部での検算</td><td>公示地価と突き合わせできる</td><td><b>できない</b>(公的な賃料指標が地区単位で存在しない)</td></tr>
         <tr><td>出せるもの</td><td>適正中央値・市場実勢中央値などの参照水準</td><td>分布の中での位置と、実質月額の内訳</td></tr>
       </table>
-      <div class="note" style="margin-top:8px">この非対称は標本を増やしても解消しません(募集は募集のままです)。したがって賃貸台帳の主役は<b>相場判定ではなく実質月額の可視化</b>に置いています。「表示21万が2年住むと24.5万/月になる」という事実は、相場観がなくても効く情報です。</div>
+      <div class="note" style="margin-top:8px">この非対称は標本を増やしても解消しません(募集は募集のままです)。したがって賃貸台帳の主役は<b>相場判定ではなく実質月額の可視化</b>に置いています。${sampleEffective ? `「表示${sampleEffective.listed}万が2年住むと${sampleEffective.eff}万/月になる」という事実は、相場観がなくても効く情報です。` : "「表示賃料と実質月額の差」という事実は、相場観がなくても効く情報です。"}</div>
     </div>
   </div>
 

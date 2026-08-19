@@ -45,6 +45,9 @@ fine_print:
   - "入居者サポート費用(初期) 22,000円"
   - "消火剤・防災グッズ代(初期) 16,500円"
   - "保証委託料 初回50%・月額2%(月額保証料が台帳で最も高い)"
+  - "ペット飼育の場合 敷金1ヶ月分(25万円)増"
+  - "入居時期 即"
+  - "入居条件 子供可・ペット相談"
 hazard_check:
   checked_at: 2026-08-18
   official:
@@ -53,7 +56,7 @@ hazard_check:
     elevation_m: 3.4
     flood_l2: "3.0〜5.0m"
     flood_coverage: "周辺25点の被覆率100%"
-    hits: ["洪水浸水想定区域(想定最大規模): 3.0〜5.0m", "高潮浸水想定区域(想定最大規模): 0.5m未満"]
+    hits: ["洪水浸水想定区域(想定最大規模): 3.0〜5.0m", "浸水継続時間(想定最大規模): 該当", "高潮浸水想定区域(想定最大規模): 0.5m未満"]
     reference_verdict: block
     limit: "丁目代表点ベース。被覆率100%のため丁目全域に及ぶ"
 checklist: {contract_type_verified: true, recontract_terms: false, toilet_count: false, viewing: false}

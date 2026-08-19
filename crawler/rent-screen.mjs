@@ -26,8 +26,13 @@ export const zen = (s) => String(s ?? "").replace(/[０-９Ａ-Ｚａ-ｚ]/g, (c
 // (購入版 screen.mjs と同じ考え方。空白だけで潰すと広告文と本文が地続きになる)
 export function flattenDetail(html) {
   let t = String(html ?? "").replace(/<[^>]+>/g, "|");
-  t = t.replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<")
-       .replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+  // 数値実体参照は汎用にデコードする。SUUMOは &#039;(ゼロ埋め)を出すため、&#39; だけを置換していた
+  // 旧実装では入居時期が "&#039;26年9月下旬" のまま残っていた(2026-08-19の監査指摘)。
+  // &amp; の復元は**最後**に回す(先にやると &amp;gt; が二重復元される)
+  t = t.replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+       .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(Number(d)))
+       .replace(/&nbsp;/g, " ").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+       .replace(/&quot;/g, '"').replace(/&amp;/g, "&");
   t = t.replace(/ /g, " ").replace(/\s+/g, " ");
   return t.replace(/(\s*\|\s*)+/g, "|");
 }
@@ -58,7 +63,11 @@ export function monthsOf(s, rentMan) {
   return null;
 }
 
-const LINE_WALK_RE = /\|([^|/]{2,20}?線)\/(\S{1,20}?駅)\s*歩(\d+)分/g;
+// 事業者名は「◯◯線」とは限らない。赤羽岩淵は南北線と**埼玉高速鉄道**の境界駅で、
+// SUUMOは掲載ごとに書き分ける。「線」で終わることを要求していたため、埼玉高速鉄道表記の掲載で
+// 最寄り駅(徒歩5分)が丸ごと落ちて「徒歩13分」と記録されていた(2026-08-19の監査指摘)。
+// **ヘッダ窓の限定は外さないこと**——外すと推薦枠の「赤羽岩淵 歩1分」を拾う
+const LINE_WALK_RE = /\|([^|/]{2,24}?(?:線|鉄道|ライナー|モノレール|新交通))\/(\S{1,20}?駅)\s*歩(\d+)分/g;
 
 // 詳細ページから台帳に必要な実値を取る。
 // **物件ヘッダ(建物種別より前)に限定する欄がある**: 賃料・所在地・駅徒歩・間取り・専有面積。
@@ -67,23 +76,31 @@ const LINE_WALK_RE = /\|([^|/]{2,20}?線)\/(\S{1,20}?駅)\s*歩(\d+)分/g;
 export function parseRentDetail(html) {
   const t = flattenDetail(html);
   const iType = t.indexOf("|建物種別|");
-  const head = iType > 0 ? t.slice(0, iType) : t.slice(0, 20000);
-  // 物件概要表のラベルは最初の出現が対象物件のもの(推薦枠は概要表を持たない)
+  // 「建物種別」の欄が無いページ(一覧・掲載終了で /library/ へ転送された先)は詳細ページではない。
+  // 呼び出し側がKO/圏外判定を行わずに済むよう is_detail で返す(2026-08-19の監査指摘)
+  const isDetail = iType > 0;
+  const head = isDetail ? t.slice(0, iType) : t.slice(0, 20000);
+  // 物件概要表は建物種別より後ろにある。全文から探すと推薦枠・広告を拾いうるので範囲を絞る。
+  // ラベルは正規表現へ埋めるので必ずエスケープする(「敷引・償却(税別)」のような括弧付きでも壊れない)
+  const body = isDetail ? t.slice(iType) : t;
   const fld = (label) => {
-    const m = t.match(new RegExp("\\|" + label + "\\|([^|]*)"));
+    const lab = String(label).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const m = body.match(new RegExp("\\|" + lab + "\\|([^|]*)"));
     const v = m ? m[1].trim() : null;
     return v === "" || v === "-" || v === "－" || v === "ー" ? null : v;
   };
 
-  const money = head.match(/\|([\d.]+万円)\|管理費・共益費:\s*([^|]*)\|敷金:\s*([^|]*)\|礼金:\s*([^|]*)\|保証金:\s*([^|]*)\|敷引・償却:\s*([^|]*)/);
+  const money = zen(head).match(/\|([\d.]+万円)\|管理費・共益費:\s*([^|]*)\|敷金:\s*([^|]*)\|礼金:\s*([^|]*)\|保証金:\s*([^|]*)\|敷引・償却:\s*([^|]*)/);
   const rentMan = money ? manOf(money[1]) : null;
 
   const addr = (head.match(/\|所在地\|(東京都北区[^|]*)/) ?? [])[1]?.trim() ?? null;
   const walks = [];
-  for (const m of head.matchAll(LINE_WALK_RE)) walks.push({ line: m[1], station: m[2], walk_min: Number(m[3]) });
+  for (const m of zen(head).matchAll(LINE_WALK_RE)) walks.push({ line: m[1], station: m[2], walk_min: Number(m[3]) });
 
-  const layout = (head.match(/\|間取り\|(\d+[SLDKR]{1,4})/) ?? [])[1] ?? null;
-  const area = (head.match(/専有面積\|([\d.]+)\s*m/) ?? [])[1] ?? null;
+  // 物件ヘッダは全角数字の掲載がありうる。半角化してから当てる(半角化前は間取り・面積・徒歩が全部 null になる)
+  const headH = zen(head);
+  const layout = (headH.match(/\|間取り\|(\d+[SLDKR+＋]{1,6})/) ?? [])[1] ?? null;
+  const area = (headH.match(/専有面積\|([\d.]+)\s*m/) ?? [])[1] ?? null;
   const builtRaw = fld("築年月");
   const bm = builtRaw ? zen(builtRaw).match(/(\d{4})年(\d{1,2})月/) : null;
   const setsubi = (t.match(/\|部屋の特徴・設備\|([^|]+)/) ?? [])[1] ?? "";
@@ -123,11 +140,23 @@ export function parseRentDetail(html) {
     move_in: fld("入居"),
     contract_raw: contractRaw,
     contract: contractTypeOf(contractRaw),
+    // 詳細ページかどうか。false のときKO/圏外判定を行ってはいけない
+    // (掲載終了の転送先ページから徒歩分を拾って「徒歩20分で圏外」と恒久除外した事故がある)
+    is_detail: isDetail,
+    // 物件概要表の「ほか初期費用」「ほか諸費用」。**原文のまま持つ**(金額換算は人が行う)。
+    // 実測66件中26件・29件に記載があり、鍵交換・消毒・24時間サポート・更新料などが入る。
+    // 敷礼の欄だけ見ていると実質月額を過小評価する(赤羽3で0.61万/月)
+    misc_initial_raw: fld("ほか初期費用"),
+    misc_other_raw: fld("ほか諸費用"),
+    info_updated: fld("情報更新日"),
+    next_update: fld("次回更新予定日"),
     setsubi: setsubi ? setsubi.split(/[、,]/).map((x) => x.trim()).filter(Boolean) : [],
     // 記載があれば true、無ければ null(=不明)。false は「無いと確認できた」場合だけに使いたいが
     // 掲載からは確認できないため出さない。**null を false と読み替えないこと**
-    toilet2: /トイレ\s*[2２]\s*[ヶケ箇]所/.test(t) ? true : null,
-    notice: /告知事項\s*(?:あり|有)|心理的瑕疵|事故物件/.test(t) ? true : null,
+    toilet2: /トイレ\s*[2２]\s*[ヶケ箇]所/.test(body) ? true : null,
+    // 「告知事項：有」「告知事項 : 有」も拾う。「広告・宣伝・告知」の定型文に当たらないよう
+    // 「告知事項」の語は必須のままにし、区切り文字だけ許す
+    notice: /告知事項[\s:：]*(?:あり|有)|心理的瑕疵|事故物件/.test(body) ? true : null,
     bikou: fld("備考"),
   };
 }
@@ -136,20 +165,35 @@ export function parseRentDetail(html) {
 // 数えられない表記は null を返し、条件判定を行わない(誤って落とさない)
 export function roomsOfRent(layout) {
   if (!layout) return null;
-  const t = zen(String(layout));
+  const t = zen(String(layout)).replace(/＋/g, "+");   // ＋(U+FF0B)は zen の変換対象外
   const m = t.match(/^(\d{1,2})\s*([SLDKR]{1,4})/);
   if (!m) return null;
-  return Number(m[1]) + (m[2].includes("S") ? 1 : 0);
+  let n = Number(m[1]) + (m[2].includes("S") ? 1 : 0);
+  // 後置の納戸「3LDK+S」「4LDK+2S」も数える(購入版 crawler/daily.mjs の roomsOf と同じ語彙)。
+  // 対応前は「3LDK+S」を3室と読み、実4室の物件を**誤って圏外に落とす**向きに壊れていた
+  for (const x of t.slice(m[0].length).matchAll(/\+\s*(\d{1,2})?\s*S/g)) n += x[1] ? Number(x[1]) : 1;
+  return n;
 }
 
 // 契約期間欄「普通借家 2年」「定期借家 西暦2030年3月まで」→ {type, years, until}
 export function contractTypeOf(raw) {
-  if (!raw) return { type: null, years: null, raw: null };
+  if (!raw) return { type: null, years: null, months: null, until: null, raw: null };
   const t = zen(String(raw));
   const type = /定期借家/.test(t) ? "teiki" : /普通借家/.test(t) ? "futsu" : null;
-  const y = t.match(/(\d+(?:\.\d+)?)\s*年/);
   const until = t.match(/西暦(\d{4})年(\d{1,2})月/);
-  return { type, years: y && !until ? Number(y[1]) : null, until: until ? `${until[1]}-${String(until[2]).padStart(2, "0")}` : null, raw: t };
+  // **月数で持つ**。年だけを取ると「定期借家 3年6ヶ月」が3年として許容条件を通ってしまう
+  // (2026-08-19の監査指摘)。年は12で割り切れるときだけ設定する
+  let months = null;
+  if (!until) {
+    const y = t.match(/(\d+(?:\.\d+)?)\s*年/);
+    const m = t.match(/(\d+)\s*[ヶケ箇]?月/);
+    const only = t.match(/^\D*(\d+)\s*[ヶケ箇]月/);          // 「36ヶ月」形式(年の記載なし)
+    if (y) months = Math.round(Number(y[1]) * 12) + (m ? Number(m[1]) : 0);
+    else if (only) months = Number(only[1]);
+  }
+  const years = months != null && months % 12 === 0 ? months / 12 : null;
+  return { type, years, months,
+    until: until ? `${until[1]}-${String(until[2]).padStart(2, "0")}` : null, raw: t };
 }
 
 // 新耐震の判定。基準は「1981年6月1日以降の建築確認」だが、掲載に出るのは**竣工の築年月**だけ。
@@ -166,29 +210,47 @@ export function seismicOf(builtYear, builtMonth) {
 // 許容する定期借家の契約年数(2026-08-18ユーザー指示「三年のみOK(子供の小学校入学前タイミング)」)。
 // **長さの要件**であって「短いほど悪い」ではないので、2年も4年以上も等しく外れる。
 // 変更するときは tests/rent-screen.test.js と CLAUDE.md の方針記述も同時に直すこと
-export const TEIKI_OK_YEARS = new Set([3]);
+// 正本は engine/rent.js。crawler → engine の依存は既存の慣行(rent-daily/rent-pool も engine/io.js を読む)。
+// 以前は両側に定義があり、しかも一方が Set・他方が Array で型がねじれていた(2026-08-19の監査指摘)
+import { TEIKI_OK_YEARS } from "../engine/rent.js";
+export { TEIKI_OK_YEARS };
+const TEIKI_OK_YEARS_LIST = [...TEIKI_OK_YEARS];
+const TEIKI_OK_MONTHS = TEIKI_OK_YEARS_LIST.map((y) => y * 12);
 
 // verdict: block=登録しない / suspect=人の判断へ / pass=候補
+// **途中で return しない**。以前は定期借家の期日表記で早期returnしており、同じ掲載にある
+// 告知事項(RKO2)・連棟(RKO3)という確定KOが評価されずに suspect として出ていた(2026-08-19の監査指摘)。
+// 末尾で一括判定する: 確定コードが1つでもあれば block / 「?」付きだけなら suspect / 何も無ければ pass
 export function rentKoScreen(detail) {
   const codes = [], notes = [];
   if (!detail) return { verdict: "suspect", codes: ["RKO0"], notes: ["詳細ページを取得できず判定不能"] };
+  const okLabel = TEIKI_OK_YEARS_LIST.join("・");
 
   if (detail.contract?.type === "teiki") {
-    const y = detail.contract.years;
-    if (y != null && TEIKI_OK_YEARS.has(y)) {
+    const mo = detail.contract.months;
+    if (mo != null && TEIKI_OK_MONTHS.includes(mo)) {
       // 落とさないが、普通借家と同じものとして扱わない。期間満了で確実に終わる契約であることを残す
-      notes.push(`定期借家${y}年。期間満了で契約は終了し再契約は貸主の同意が要るが、` +
-        `${[...TEIKI_OK_YEARS].join("・")}年は掲載条件として許容している(2026-08-18ユーザー指示: 子供の小学校入学前の区切り)`);
-    } else if (y == null) {
+      notes.push(`定期借家${mo / 12}年。期間満了で契約は終了し再契約は貸主の同意が要るが、` +
+        `${okLabel}年は掲載条件として許容している(2026-08-18ユーザー指示: 子供の小学校入学前の区切り)`);
+    } else if (mo == null) {
       // 「西暦2030年3月まで」形式。期間の長さが読めないので落とさず人へ回す
-      return { verdict: "suspect", codes: ["RKO1?"],
-        notes: [`定期借家だが契約期間が期日表記(${detail.contract.until ?? "不明"})で長さを判定できない。` +
-          `許容は${[...TEIKI_OK_YEARS].join("・")}年ちょうどなので、入居日と満了日から実期間を確認すること`] };
+      codes.push("RKO1?");
+      notes.push(`定期借家だが契約期間が期日表記(${detail.contract.until ?? "不明"})で長さを判定できない。` +
+        `許容は${okLabel}年ちょうどなので、入居日と満了日から実期間を確認すること`);
+    } else if (mo % 12 !== 0) {
+      // 「3年6ヶ月」のような端数。block ではなく人の判断へ(実期間の確認が要る)
+      codes.push("RKO1?");
+      notes.push(`定期借家${Math.floor(mo / 12)}年${mo % 12}ヶ月。許容は${okLabel}年ちょうどのみで端数は該当しないが、` +
+        `掲載の表記ゆれの可能性もあるため実期間を確認すること`);
     } else {
       codes.push("RKO1");
-      notes.push(`定期借家${y}年。許容は${[...TEIKI_OK_YEARS].join("・")}年ちょうどのみ` +
-        `(2026-08-18ユーザー指示: 子供の小学校入学前の区切り)。${y < 3 ? "短くて区切りに足りない" : "満了が入学後に来る"}ためKO`);
+      notes.push(`定期借家${mo / 12}年。許容は${okLabel}年ちょうどのみ` +
+        `(2026-08-18ユーザー指示: 子供の小学校入学前の区切り)。${mo < 36 ? "短くて区切りに足りない" : "満了が入学後に来る"}ためKO`);
     }
+  } else if (detail.contract?.type == null) {
+    // 契約期間が掲載に無い物件は定期借家かどうか分からない。落とさず人へ回す
+    codes.push("RKO1?");
+    notes.push("契約期間の記載が無く、普通借家か定期借家か判別できない。問い合わせで確認が要る");
   }
   if (detail.notice === true) {
     codes.push("RKO2");
@@ -198,11 +260,8 @@ export function rentKoScreen(detail) {
     codes.push("RKO3");
     notes.push(`建物種別が「${detail.building_type}」(掲載条件は一戸建てのみ。テラス・タウンハウス=連棟は対象外)`);
   }
-  // 契約期間が掲載に無い物件は定期借家かどうか分からない。落とさず人へ回す
-  if (!codes.length && detail.contract?.type === null) {
-    return { verdict: "suspect", codes: ["RKO1?"], notes: ["契約期間の記載が無く、普通借家か定期借家か判別できない。問い合わせで確認が要る"] };
-  }
-  return { verdict: codes.length ? "block" : "pass", codes, notes };
+  const certain = codes.filter((c) => !c.endsWith("?"));
+  return { verdict: certain.length ? "block" : codes.length ? "suspect" : "pass", codes, notes };
 }
 
 // ---- 掲載条件(圏外)判定 ----
@@ -216,17 +275,27 @@ export const RENT_SCOPE = {
   seismic_new_only: true,
 };
 
+// 判定順は**恒久条件が先・賃料が最後**。掲載が変わらない限り動かない条件(徒歩・居室数・LDK・新耐震)を
+// 先に返すことで、呼び出し側は「賃料だけが理由で外れた掲載」を値下げの再判定対象として区別できる。
+// 賃料を先頭に置いていた頃は、恒久条件でも落ちる掲載まで「賃料レンジ外」と報告されていた
+// (2026-08-19の監査指摘。実測では rent_range 34件のうち28件が恒久条件でも落ちる)
 export function rentScopeCheck(detail, cfg = RENT_SCOPE) {
   if (!detail) return null;
-  const t = detail.total_man;
-  if (t != null && t < cfg.total_min_man) return `賃料+管理費${t}万(下限${cfg.total_min_man}万)`;
-  if (t != null && t > cfg.total_max_man) return `賃料+管理費${t}万(上限${cfg.total_max_man}万)`;
   if (detail.walk_min != null && detail.walk_min > cfg.walk_max) return `最寄り徒歩${detail.walk_min}分(上限${cfg.walk_max}分)`;
   if (detail.rooms != null && detail.rooms < cfg.rooms_min) return `${detail.layout}=${detail.rooms}室(条件は${cfg.rooms_min}室以上)`;
-  if (cfg.require_ldk && detail.has_ldk === false) return `${detail.layout}(条件はLDKのある3LDK以上)`;
+  if (cfg.require_ldk && detail.has_ldk === false) return `${detail.layout}(条件はLDKのある${cfg.rooms_min}LDK以上)`;
   if (cfg.seismic_new_only) {
     const s = seismicOf(detail.built_year, detail.built_month);
     if (s.level === "old") return `${detail.built_raw}築=${s.label}`;
   }
+  const t = detail.total_man;
+  if (t != null && t < cfg.total_min_man) return `賃料+管理費${t}万(下限${cfg.total_min_man}万)`;
+  if (t != null && t > cfg.total_max_man) return `賃料+管理費${t}万(上限${cfg.total_max_man}万)`;
   return null;
+}
+
+// 圏外理由が「賃料の上限超え」だけかどうか。値下げで条件内へ戻りうるものを
+// 恒久除外(settled)にしないために使う。下限割れは値上げが要るので恒久側に含める
+export function isRentOnlyScope(reason) {
+  return typeof reason === "string" && /^賃料\+管理費.*上限/.test(reason);
 }

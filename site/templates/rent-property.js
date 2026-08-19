@@ -2,8 +2,8 @@
 // 主役は「表示賃料 → 実質月額」の解剖。購入台帳の anatomy.js と同じ書き方(式に実数を代入して見せる)。
 import { layout, esc, safeUrl, fmtDate } from "./layout.js";
 
-const m1 = (v) => (v == null ? "—" : v.toFixed(1));
-const m2 = (v) => (v == null ? "—" : v.toFixed(2));
+const m1 = (v) => (Number.isFinite(v) ? v.toFixed(1) : "—");
+const m2 = (v) => (Number.isFinite(v) ? v.toFixed(2) : "—");
 
 // 実質月額の内訳バー。何が効いているかを面積で見せる
 function breakdownBar(e) {
@@ -17,6 +17,7 @@ function breakdownBar(e) {
     { label: "火災保険", v: b.insurance, c: "#6B4E9B" },
     { label: "鍵交換", v: b.keyExchange, c: "#7C6BA0" },
     { label: "初期付帯費用", v: b.miscInitial, c: "#A0432E" },
+    { label: "敷引・償却", v: b.shikibiki, c: "#7E3B57" },
     { label: "月額付帯費用", v: b.miscMonthly, c: "#8E5A3A" },
     { label: "更新料", v: b.renewal, c: "#2C6E49" },
     { label: "退去時費用", v: b.restoration, c: "#4A7C59" },
@@ -56,7 +57,7 @@ export function renderRentProperty(res, rental, { asOf, model }) {
         <table class="list">
           <tr><th>項目</th><th>値</th></tr>
           <tr><td>照合した点</td><td>${esc(hz.query ?? "—")}(${esc(hz.point ?? "—")})</td></tr>
-          <tr><td>標高</td><td class="num">${hz.elevation_m ?? "—"} m</td></tr>
+          <tr><td>標高</td><td class="num">${esc(hz.elevation_m ?? "—")} m</td></tr>
           <tr><td>洪水浸水想定(想定最大規模)</td><td>${esc(hz.flood_l2 ?? "該当なし")}</td></tr>
           <tr><td>周辺の被覆</td><td>${esc(hz.flood_coverage ?? "—")}</td></tr>
           <tr><td>該当した区域</td><td>${(hz.hits ?? []).map((h) => `<div>${/家屋倒壊/.test(h) ? `<b style="color:var(--stamp)">${esc(h)}</b>` : esc(h)}</div>`).join("")}</td></tr>
@@ -68,7 +69,7 @@ export function renderRentProperty(res, rental, { asOf, model }) {
     </div>` : `
     <div class="panel">
       <h2>ハザード</h2>
-      <div class="logic-body"><p class="why">公式マップ(国土地理院タイル)の丁目代表点では該当なし。標高${hz.elevation_m ?? "—"}m。${esc(hz.limit ?? "")}</p></div>
+      <div class="logic-body"><p class="why">公式マップ(国土地理院タイル)の丁目代表点では該当なし。標高${esc(hz.elevation_m ?? "—")}m。${esc(hz.limit ?? "")}</p></div>
     </div>`;
 
   const finePrint = (rental.fine_print ?? []).length ? `
@@ -81,10 +82,12 @@ export function renderRentProperty(res, rental, { asOf, model }) {
     </div>` : "";
 
   const isTeiki = rental.terms?.contract_type === "teiki";
+  // 契約年数はYAML由来。非数値でビルドを落とさない
+  const cy = Number.isFinite(Number(rental.terms?.contract_years)) ? Number(rental.terms.contract_years) : null;
   const contractBlock = rental.terms?.contract_type === "futsu"
-    ? `<tr><td>契約種別</td><td>普通借家 ${rental.terms.contract_years ?? ""}年<div class="note">更新の拒絶には貸主側の正当事由が要る=住み続ける前提が立つ</div></td></tr>`
+    ? `<tr><td>契約種別</td><td>普通借家 ${cy ?? ""}年<div class="note">更新の拒絶には貸主側の正当事由が要る=住み続ける前提が立つ</div></td></tr>`
     : isTeiki
-    ? `<tr><td>契約種別</td><td><b>定期借家 ${rental.terms.contract_years}年</b><div class="note">期間満了で契約は<b>終了</b>し、住み続けるには貸主の同意による再契約が要る(更新の権利はない)。掲載条件では<b>3年ちょうどのみ許容</b>している——子供の小学校入学前に区切りをつけるという前提に、この長さが合うため。したがって同じ定期借家でも2年・4年以上はKOになる</div></td></tr>`
+    ? `<tr><td>契約種別</td><td><b>定期借家 ${cy ?? "(年数を確認)"}年</b><div class="note">期間満了で契約は<b>終了</b>し、住み続けるには貸主の同意による再契約が要る(更新の権利はない)。掲載条件では<b>3年ちょうどのみ許容</b>している——子供の小学校入学前に区切りをつけるという前提に、この長さが合うため。したがって同じ定期借家でも2年・4年以上はKOになる</div></td></tr>`
     : `<tr><td>契約種別</td><td><b style="color:var(--warn)">掲載に記載なし</b><div class="note">普通借家か定期借家か判別できない。<b>定期借家で3年以外ならKO</b>なので、問い合わせで確定させるまでこの物件の評価は仮のもの</div></td></tr>`;
 
   const body = `
@@ -97,16 +100,16 @@ export function renderRentProperty(res, rental, { asOf, model }) {
         <tr><td><b>実質月額(2年住む場合)</b></td><td class="num"><b>${m2(e2.monthlyEq)}万/月</b> ── 表示より <b>+${m2(e2.premiumOverListed)}万/月</b></td></tr>
         <tr><td>実質月額(4年住む場合)</td><td class="num">${m2(res.at4y.monthlyEq)}万/月(+${m2(res.at4y.premiumOverListed)})</td></tr>
         <tr><td>入居時に用意する現金</td><td class="num">${m1(e2.cashAtStart)}万<div class="note">敷金・礼金・仲介手数料・保証料・保険・鍵交換・初期付帯・前家賃の合計</div></td></tr>
-        <tr><td>専有面積 / 間取り</td><td>${rental.building?.floor_m2 ?? "—"}m² / ${esc(rental.layout ?? "—")}${rental.madori_detail ? `<div class="note">${esc(rental.madori_detail)}</div>` : ""}</td></tr>
-        <tr><td>築年月 / 構造</td><td>${rental.building?.built_year ?? "—"}年${rental.building?.built_month ?? ""}月(築${res.age_y ?? "—"}年) / ${esc(rental.building?.structure ?? "—")}<div class="note">新耐震(1982年以降竣工)</div></td></tr>
-        <tr><td>駅徒歩</td><td>${(rental.station?.lines ?? []).map((l) => `<div>${esc(l.line)} ${esc(l.station)} 徒歩${l.walk_min}分</div>`).join("")}</td></tr>
+        <tr><td>専有面積 / 間取り</td><td>${esc(rental.building?.floor_m2 ?? "—")}m² / ${esc(rental.layout ?? "—")}${rental.madori_detail ? `<div class="note">${esc(rental.madori_detail)}</div>` : ""}</td></tr>
+        <tr><td>築年月 / 構造</td><td>${esc(rental.building?.built_year ?? "—")}年${esc(rental.building?.built_month ?? "")}月(築${esc(res.age_y ?? "—")}年) / ${esc(rental.building?.structure ?? "—")}<div class="note">新耐震(1982年以降竣工)</div></td></tr>
+        <tr><td>駅徒歩</td><td>${(rental.station?.lines ?? []).map((l) => `<div>${esc(l.line)} ${esc(l.station)} 徒歩${esc(l.walk_min)}分</div>`).join("")}</td></tr>
         ${contractBlock}
         <tr><td>トイレ2個</td><td>${rental.facilities?.toilet2 === true
           ? `<span class="hz ok">掲載の設備欄に「トイレ2ヶ所」の記載あり</span>`
           : `<span class="hz">掲載に記載なし</span><div class="note">SUUMOの設備欄は任意記載。<b>記載が無いだけで、2個でないとは限りません</b>。内見で確認してください</div>`}</td></tr>
         <tr><td>駐車場</td><td>${esc(rental.facilities?.parking ?? rental.facilities?.parking_raw ?? "掲載に記載なし")}${rental.facilities?.parking_raw ? `<div class="note">掲載の原文をそのまま保持(距離と金額の切れ目が掲載側で潰れており読めないため)</div>` : ""}</td></tr>
-        <tr><td>出典</td><td>${url ? `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(rental.source ?? url)}</a>` : esc(rental.source ?? "—")}<div class="note">取得 ${fmtDate(rental.captured_at)}</div></td></tr>
-        ${(rental.duplicate_of ?? []).length ? `<tr><td>同一物件の別掲載</td><td>${rental.duplicate_of.map((d) => esc(d)).join(" / ")}<div class="note">賃料・専有面積・築年月・間取り詳細が完全一致するため同一物件として名寄せ済み</div></td></tr>` : ""}
+        <tr><td>出典</td><td>${url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(rental.source ?? url)}</a>` : esc(rental.source ?? "—")}<div class="note">取得 ${fmtDate(rental.captured_at)}</div></td></tr>
+        ${(rental.duplicate_of ?? []).length ? `<tr><td>同一物件の別掲載</td><td>${rental.duplicate_of.map((d) => esc(d)).join(" / ")}<div class="note">賃料・専有面積・築年月・間取り詳細が完全一致するため同一物件として名寄せ済み(同一社の別店舗による重複掲載を含む)</div></td></tr>` : ""}
       </table>
     </div>
   </div>
@@ -116,7 +119,7 @@ export function renderRentProperty(res, rental, { asOf, model }) {
     <div class="logic-body">
       <p class="why">表示賃料 ${m1(res.listed.total_man)}万が、なぜ実質 ${m2(e2.monthlyEq)}万/月 になるのか。${e2.years}年(${e2.months}ヶ月)の総支払を費目別に分解したのが下の帯です。</p>
       ${breakdownBar(e2)}
-      <div class="note" style="margin-top:8px"><b>敷金${rental.terms?.shiki_months ?? 0}ヶ月はこの合計に入れていません</b>(原則として退去時に返還されるため)。ただし入居時には現金が要るので「入居時に用意する現金」には含めています。退去時の原状回復は借主負担なので合計に入れています。</div>
+      <div class="note" style="margin-top:8px"><b>敷金${esc(rental.terms?.shiki_months ?? 0)}ヶ月はこの合計に入れていません</b>(原則として退去時に返還されるため)。ただし入居時には現金が要るので「入居時に用意する現金」には含めています。退去時の原状回復は借主負担なので合計に入れています。</div>
     </div>
   </div>
 
@@ -124,9 +127,9 @@ export function renderRentProperty(res, rental, { asOf, model }) {
     <h2>住む年数で実質月額はどう動くか</h2>
     <div class="logic-body">
       <p class="why">一時金は住む年数で割るので、長く住むほど月額は下がります。逆に短期で出ると跳ね上がります。${isTeiki
-        ? `この物件は<b>定期借家${rental.terms.contract_years}年</b>なので契約期間中に更新料は発生しません。`
-        : `更新料は${rental.terms?.contract_years ?? 2}年ごとに乗るため、更新のある年は月額が一度上がります。`}</p>
-      ${isTeiki ? `<div class="note" style="margin-bottom:8px"><b>${rental.terms.contract_years}年より先の行は参考値です。</b>定期借家は期間満了で終了するため、それ以上住むには貸主の同意による再契約が要ります。再契約料の有無・条件は掲載に記載がなく、この表には織り込んでいません。<b>${rental.terms.contract_years}年の行がこの物件の実際の想定です。</b></div>` : ""}
+        ? `この物件は<b>定期借家${cy ?? "?"}年</b>なので契約期間中に更新料は発生しません。`
+        : `更新料は${cy ?? 2}年ごとに乗るため、更新のある年は月額が一度上がります。`}</p>
+      ${isTeiki && cy ? `<div class="note" style="margin-bottom:8px"><b>${cy}年より先の行は参考値です。</b>定期借家は期間満了で終了するため、それ以上住むには貸主の同意による再契約が要ります。掲載の「ほか諸費用」に更新料の記載があっても、それは契約種別によらず埋められる欄で、定期借家の期間中に更新は発生しません。再契約料が同額かは掲載から確定できないため、この表には織り込んでいません。<b>${cy}年の行がこの物件の実際の想定です。</b></div>` : ""}
       ${curveTable(res.curve)}
     </div>
   </div>
@@ -134,13 +137,16 @@ export function renderRentProperty(res, rental, { asOf, model }) {
   <div class="panel">
     <h2>募集賃料の分布の中での位置</h2>
     <div class="logic-body">
-      ${b ? `<p class="why">北区の戸建賃貸${model?.n ?? "—"}件から作った募集賃料モデルでは、この条件(専有${rental.building?.floor_m2}m²・築${res.age_y}年・徒歩${rental.station?.walk_min}分)のものさしは <b>${m1(b.mid)}万</b>、同じ条件の物件が現に散っている幅は <b>${m1(b.lo)}〜${m1(b.hi)}万</b> です。実測は ${m1(res.listed.total_man)}万で、ものさし比 <b>${(res.ratio * 100).toFixed(0)}%</b>。</p>
+      ${b && Number.isFinite(res.ratio) ? `<p class="why">北区の戸建賃貸${model?.n ?? "—"}件から作った募集賃料モデルでは、この条件(専有${esc(rental.building?.floor_m2)}m²・築${esc(res.age_y)}年・徒歩${esc(rental.station?.walk_min)}分)のものさしは <b>${m1(b.mid)}万</b>、同じ条件の物件が現に散っている幅は <b>${m1(b.lo)}〜${m1(b.hi)}万</b> です。実測は ${m1(res.listed.total_man)}万で、ものさし比 <b>${(res.ratio * 100).toFixed(0)}%</b>。</p>
       <ul class="notes">
         ${res.listed.total_man >= b.lo && res.listed.total_man <= b.hi ? `<li>この値は<b>散らばりの幅の中</b>にあります。つまりこの標本では「割安・割高」を言えません。</li>` : `<li>この値は同条件の散らばりの幅(${m1(b.lo)}〜${m1(b.hi)}万)の<b>外</b>にあります。ただし標本は${model?.n ?? "—"}件と小さく、母集団は成約ではなく募集です。</li>`}
         <li><b>母集団は募集賃料であって成約ではありません。</b>「その額で決まった」ことは示せません。</li>
       </ul>
       <div class="note" style="margin-top:8px">モデルの作り方と限界は <a href="../rent-basis.html">募集賃料モデルの根拠</a> を参照。</div>`
-      : `<p class="why">専有面積が取れないためものさしを出していません。</p>`}
+      : `<p class="why">${!model ? "募集賃料モデルが立たないため(標本が足りないか、プールのデータが読めていません)"
+          : !rental.building?.floor_m2 ? "専有面積が取れないため"
+          : "表示賃料が読めないため"}ものさしを出していません。</p>`}
+      ${b && b.imputed?.length ? `<div class="note"><b>この物件は${b.imputed.map((k) => (k === "age_y" ? "築年" : "徒歩分")).join("・")}が掲載から読めず、0として計算しています。</b>築年係数は負・徒歩係数は正なので、欠測はものさしを「新築で駅前」の側へ約9%押し上げます。比を読むときはこの分を割り引いてください。</div>` : ""}
     </div>
   </div>
 

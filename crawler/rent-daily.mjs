@@ -7,15 +7,13 @@
 //   ② 一覧カードからは契約種別(定期借家)が読めない。**KO判定には必ず詳細ページが要る**ため、
 //      詳細取得の予算を購入版より厚く取る(北区の戸建賃貸は全部で70件程度しかなく現実的)
 //   ③ ハザードは掲載条件から外した(2026-08-18ユーザー決定)。丁目ハザード遮断は掛けない
-import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { ROOT, loadRental, listRentalIds } from "../engine/io.js";
-import { parseRentDetail, rentKoScreen, rentScopeCheck, RENT_SCOPE, seismicOf } from "./rent-screen.mjs";
+import { parseRentDetail, rentKoScreen, rentScopeCheck, isRentOnlyScope, RENT_SCOPE, seismicOf } from "./rent-screen.mjs";
+import { makeFetcher } from "./http.mjs";
 
-const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36";
-const SLEEP_MS = 2200;
 // 1実行あたりの取得上限。watch(台帳件数)+一覧8頁+新着の詳細判定ぶん。
 // 上限到達は例外にせず打ち切り、errors[]で開示する(購入版の2026-08-12監査と同じ理由:
 // 例外だとレポート不出力のまま異常終了し、無人運用で沈黙する)
@@ -26,35 +24,35 @@ const MAX_LIST_PAGES = 8;
 const SEEN_PATH = join(ROOT, "market", "crawl", "rent-seen.json");
 const EXCLUDED_PATH = join(ROOT, "market", "crawl", "rent-excluded.json");
 
-let fetchCount = 0;
 const errors = [];
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-async function fetchPage(url, reserve = 0) {
-  if (fetchCount >= MAX_PAGES - reserve) {
-    errors.push({ where: "fetchPage", detail: `ページ上限${MAX_PAGES}(取り置き${reserve})到達につき取得を打ち切り: ${url}` });
-    return { html: "", status: 0, exhausted: true };
-  }
-  if (fetchCount > 0) await sleep(SLEEP_MS);
-  fetchCount++;
-  try {
-    const out = execFileSync("curl", ["-sS", "-L", "--max-time", "30", "-A", UA,
-      "-H", "Accept-Language: ja,en;q=0.8",
-      "-w", "\n@@HTTP_CODE@@%{http_code}", url], { maxBuffer: 16 * 1024 * 1024, encoding: "utf8" });
-    const m = out.match(/@@HTTP_CODE@@(\d+)\s*$/);
-    return { html: out.replace(/\n@@HTTP_CODE@@\d+\s*$/, ""), status: m ? Number(m[1]) : 0 };
-  } catch (e) {
-    return { html: "", status: 0, error: String(e.message ?? e).slice(0, 200) };
-  }
-}
+const { fetchPage, count: fetchedCount } = makeFetcher({ maxPages: MAX_PAGES, errors });
 
 // 賃貸の掲載終了。SUUMOは掲載が切れると検索結果へ誘導するページを返す
-export const RENT_DELISTED_RE = /掲載(?:を|が)?終了|募集(?:を|が)?終了|ご?成約済|現在掲載されて(?:いま|おりま)せん|この物件は(?:現在)?(?:ご)?紹介できません/;
+// 掲載終了の判定。**「成約済」を入れてはいけない**——SUUMOの全ページ共通フッタに
+// 「『成約済にもかかわらず掲載されている』…」という定型文があり、生きている掲載66/66に誤爆する
+// (2026-08-19の監査で実測)。逆に、掲載終了は /library/ へ転送されて HTTP 200 を返すことがあり、
+// その転送先は「過去の掲載情報を元に作成」を必ず含む(生きている掲載には出現しない)
+export const RENT_DELISTED_RE = /掲載(?:を|が)?終了|募集(?:を|が)?終了|現在掲載されて(?:いま|おりま)せん|この物件は(?:現在)?(?:ご)?紹介できません|過去の掲載情報を元に作成/;
 
 export function detailIdsFrom(html) {
   const ids = new Set();
   for (const m of String(html).matchAll(/href="\/chintai\/(jnc_\d+)\//g)) ids.add(m[1]);
   return [...ids];
+}
+
+// 台帳の契約条件と掲載の食い違い。null なら食い違いなし
+export function contractConflict(terms, contract) {
+  if (!terms || !contract) return null;
+  if (terms.contract_type != null && contract.type != null && terms.contract_type !== contract.type) {
+    return `契約種別 台帳=${terms.contract_type} / 掲載=${contract.type}`;
+  }
+  if (terms.contract_years != null && contract.years != null && terms.contract_years !== contract.years) {
+    return `契約年数 台帳=${terms.contract_years}年 / 掲載=${contract.years}年`;
+  }
+  if (terms.contract_type === "teiki" && contract.type === "teiki" && contract.years == null) {
+    return `掲載の契約期間が年数で読めなくなった(${contract.raw ?? "不明"})`;
+  }
+  return null;
 }
 
 // ---- watch: 台帳物件の更新チェック ----
@@ -75,7 +73,8 @@ async function watch() {
     const d = parseRentDetail(html);
     // 賃料が読めない=掲載構造が変わったか掲載終了。**前回値の複写は絶対にしない**
     if (d.rent_man == null) {
-      if (RENT_DELISTED_RE.test(html)) { results.push({ id, status: "delisted_suspect", http: 200 }); continue; }
+      // 詳細ページの構造でない(建物種別の欄が無い)なら掲載終了の転送先とみて良い
+      if (RENT_DELISTED_RE.test(html) || !d.is_detail) { results.push({ id, status: "delisted_suspect", http: 200 }); continue; }
       errors.push({ where: `watch:${id}`, detail: "賃料抽出失敗(ページ構造変化の疑い)" });
       results.push({ id, status: "parse_error", http: 200 });
       continue;
@@ -91,13 +90,27 @@ async function watch() {
       diff_man: hist.length ? d.total_man - totalPrev : null,
       contract: d.contract, ko_verdict: ko.verdict, ko_codes: ko.codes,
       // 台帳が持っている契約種別と掲載が食い違ったら人へ知らせる(KOの根拠が動く)
-      contract_conflict: p.terms?.contract_type != null && d.contract.type != null
-        && p.terms.contract_type !== d.contract.type
-        ? `台帳=${p.terms.contract_type} / 掲載=${d.contract.type}` : null,
+      // 種別だけでなく**年数の変化も検出する**。定期借家は3年ちょうどのみ許容なので、
+      // teiki のまま3年→2年に直されるとKOの根拠が動くのに種別比較では気づけない(2026-08-19の監査指摘)
+      contract_conflict: contractConflict(p.terms, d.contract),
       url: p.source_url,
     });
   }
   return results;
+}
+
+// 一覧から消えた掲載を検出する純関数。listComplete=false のときは何も返さない
+export function detectGone(seen, listedToday, today, { listComplete = true } = {}) {
+  if (!listComplete) return [];
+  const out = [];
+  for (const [id, v] of Object.entries(seen)) {
+    if (v.settled || listedToday.has(id) || v.gone_since) continue;
+    if (v.last_seen && v.last_seen !== today) {
+      v.gone_since = today;
+      out.push({ id, event: "gone_from_list", last_seen: v.last_seen, rent_man: v.rent_man, address: v.address });
+    }
+  }
+  return out;
 }
 
 // ---- discover: 新着探索 ----
@@ -106,17 +119,23 @@ async function discover(ledgerIds) {
   const excluded = existsSync(EXCLUDED_PATH) ? JSON.parse(readFileSync(EXCLUDED_PATH, "utf8")) : {};
   const today = new Date().toISOString().slice(0, 10);
   const found = [];
+  let listComplete = true;
   for (let pn = 1; pn <= MAX_LIST_PAGES; pn++) {
     const url = pn === 1 ? LIST_BASE : `${LIST_BASE}?page=${pn}`;
     const { html, status, error, exhausted } = await fetchPage(url, KO_DETAIL_MAX);
-    if (exhausted) break;
-    if (error || status !== 200) { errors.push({ where: `discover:page${pn}`, detail: `http=${status} ${error ?? ""}` }); break; }
+    if (exhausted) { listComplete = false; errors.push({ where: `discover:page${pn}`, detail: "取得予算切れで一覧を最後まで見ていない" }); break; }
+    if (error || status !== 200) { listComplete = false; errors.push({ where: `discover:page${pn}`, detail: `http=${status} ${error ?? ""}` }); break; }
     const ids = detailIdsFrom(html);
     if (!ids.length) break;
     found.push(...ids);
     if (!html.includes(`?page=${pn + 1}`)) break;
+    if (pn === MAX_LIST_PAGES) { listComplete = false; errors.push({ where: "discover", detail: `一覧が上限${MAX_LIST_PAGES}頁に達したが次ページが残っている` }); }
   }
-  const uniq = [...new Set(found)].filter((id) => !ledgerIds.has(id) && !excluded[id]);
+  // **今日の一覧に載っていたIDの集合**。台帳・除外による絞り込みを掛ける前の生の集合を使う。
+  // 絞り込み後の集合で「消えた」を判定していたため、台帳へ登録した物件が翌日から毎回
+  // 「掲載が消えた」と誤報されていた(2026-08-19の監査で再現確認)
+  const listedToday = new Set(found);
+  const uniq = [...listedToday].filter((id) => !ledgerIds.has(id) && !excluded[id]);
   const report = [];
   let detailFetches = 0;
   for (const id of uniq) {
@@ -151,8 +170,13 @@ async function discover(ledgerIds) {
     seen[id] = { first_seen: prev?.first_seen ?? today, last_seen: today,
       rent_man: d.rent_man, kanri_man: d.kanri_man, address: d.address, walk_min: d.walk_min };
     if (scope) {
-      seen[id].settled = true; seen[id].out_of_scope = scope;
-      report.push({ ...entry, event: "new_out_of_scope", out_of_scope: scope });
+      // 賃料の**上限超え**だけが理由なら値下げで条件内へ戻りうるので恒久除外にしない。
+      // 恒久条件(徒歩・居室数・LDK・新耐震)や下限割れは settled にしてよい
+      // (rentScopeCheck は恒久条件を先に返すので、ここに来る賃料理由は他の条件を通っている)
+      const permanent = !isRentOnlyScope(scope);
+      if (permanent) { seen[id].settled = true; }
+      seen[id].out_of_scope = scope; seen[id].settled_by = permanent ? "permanent" : "rent_max";
+      report.push({ ...entry, event: "new_out_of_scope", out_of_scope: scope, recheck_on_price_drop: !permanent });
     } else if (ko.verdict === "block") {
       seen[id].settled = true; seen[id].ko_codes = ko.codes;
       report.push({ ...entry, event: "new_ko_blocked" });
@@ -164,12 +188,10 @@ async function discover(ledgerIds) {
       report.push({ ...entry, event: "new" });
     }
   }
-  // 消えた掲載(前回見えていたのに今回の一覧に無い)= 申込が入った可能性。賃貸ではこれが主要な変化
-  const nowSet = new Set(uniq);
-  for (const [id, v] of Object.entries(seen)) {
-    if (v.settled || nowSet.has(id) || v.gone_since) continue;
-    if (v.last_seen && v.last_seen !== today) { v.gone_since = today; report.push({ id, event: "gone_from_list", last_seen: v.last_seen, rent_man: v.rent_man, address: v.address }); }
-  }
+  // 消えた掲載(前回見えていたのに今回の一覧に無い)= 申込が入った可能性。賃貸ではこれが主要な変化。
+  // **一覧を最後まで走査できなかった回は判定しない**——部分集合で判定すると未走査ページの掲載が
+  // 全部「消えた」と報告され、gone_since は一度立つと解除されないので偽陽性が焼き付く
+  report.push(...detectGone(seen, listedToday, today, { listComplete }));
   mkdirSync(join(ROOT, "market", "crawl"), { recursive: true });
   writeFileSync(SEEN_PATH, JSON.stringify(seen, null, 1) + "\n", "utf8");
   return { report, scanned: found.length, unique: uniq.length, detailFetches };
@@ -192,6 +214,8 @@ if (isMain) {
     rent_changes: out.watch.filter((w) => w.status === "rent_changed").length,
     delisted_suspects: out.watch.filter((w) => w.status === "delisted_suspect").length,
     contract_conflicts: out.watch.filter((w) => w.contract_conflict).length,
+    // 台帳物件がKOへ転じたら最優先で人へ報告する(定期借家の年数変更などで起きる)
+    watch_ko_blocked: out.watch.filter((w) => w.ko_verdict === "block").length,
     new_listings: ev("new"),
     ko_blocked: ev("new_ko_blocked"),
     ko_suspects: ev("new_ko_suspect"),
@@ -199,8 +223,8 @@ if (isMain) {
     undecided: ev("new_undecided"),
     gone_from_list: ev("gone_from_list"),
     discover_rent_changes: ev("rent_changed"),
-    errors: errors.length, pages_fetched: fetchCount, page_budget: MAX_PAGES,
-    budget_exhausted: fetchCount >= MAX_PAGES,
+    errors: errors.length, pages_fetched: fetchedCount(), page_budget: MAX_PAGES,
+    budget_exhausted: fetchedCount() >= MAX_PAGES,
     watch_skipped: out.watch.filter((w) => w.status === "skipped_budget").length,
     scanned: disc?.unique ?? null,
   };
