@@ -34,6 +34,16 @@ test("事故の再現: 別業者・別番号でも諸元一致なら取得ゼロ
   assert.match(ko.reasons[0], /除外済み現場と諸元一致/);
 });
 
+test("除外現場の1号棟も unit 文字列から諸元を復元して照合できる", () => {
+  // 2026-08-21: レッドゾーン現場の1号棟が別番号(nc_20593134)で再出現し、値下げとして報告された。
+  // 初見がKOスクリーニング導入前だったため seen に諸元も ko 印も無く、値下げ経路が素通りしていた。
+  // 照合そのものは効くことをここで固定する(値下げ経路側の適用は crawler/daily.mjs)
+  const hit = matchExcludedSite({ district: "西が丘", chome: "2", land_m2: 57.65, floor_m2: 92.34 }, index);
+  assert.equal(hit?.level, "exact");
+  assert.equal(hit.ref, "nc_20767290", "1号棟の除外エントリに当たること");
+  assert.equal(hit.hazard, true);
+});
+
 test("価格が動いても現場の同一性判定は変わらない(値下げ後の再掲を拾えること)", () => {
   const hit = matchExcludedSite({ ...ACCIDENT, price_man: 5480 }, index);
   assert.equal(hit?.level, "exact", "価格は同一戸の判定条件に入れない");

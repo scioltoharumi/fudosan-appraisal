@@ -225,10 +225,16 @@
  },
  "nc_20593134": {
   "first_seen": "2026-08-12",
-  "price_man": 5980,
+  "price_man": 5780,
   "address": "東京都北区西が丘２",
   "walk_min": 17,
-  "kind": "shinchiku"
+  "kind": "shinchiku",
+  "land_m2": 57.65,
+  "floor_m2": 92.34,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_hazard"
+  ]
  },
  "nc_21194756": {
   "first_seen": "2026-08-12",
@@ -942,6 +948,20 @@
   "ko_blocked": true,
   "ko_codes": [
    "KO4_area_hazard"
+  ]
+ },
+ "at_1193462819": {
+  "first_seen": "2026-08-20",
+  "price_man": 5780,
+  "address": "東京都北区西が丘2",
+  "walk_min": 5,
+  "kind": "shinchiku",
+  "media": "athome",
+  "land_m2": 58.53,
+  "floor_m2": 93.55,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_hazard"
   ]
  }
 }

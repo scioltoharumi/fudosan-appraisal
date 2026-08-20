@@ -44,6 +44,11 @@ export function matchExcludedSite(unit, index) {
     const s = index.sites.find((x) => x.key === unit.nc);
     return { level: "exact", by: "id", ref: unit.nc, hazard: s?.hazard ?? false, reason: s?.reason ?? "", unit: s?.unit ?? null };
   }
+  // **全件を見てから決める**。近接一致で即returnすると、同じ丁目に複数戸を除外している現場で
+  // 手前の別戸(1.5m²圏)に当たった時点で打ち切られ、後ろにある完全一致に到達しない。
+  // 実害: レッドゾーン現場の1号棟(57.65/92.34)が2号棟(58.53/93.55)に near で当たり、
+  // exact なら自動ブロックのところ「要判断」に落ちる(2026-08-21に回帰テストで検出)
+  let fallback = null;
   for (const s of index.sites) {
     if (!s.district || s.district !== unit.district) continue;
     if (s.chome !== unit.chome) continue;
@@ -53,15 +58,15 @@ export function matchExcludedSite(unit, index) {
         return { level: "exact", by: "specs", ref: s.key, hazard: s.hazard, reason: s.reason, unit: s.unit };
       }
       // 同一開発の別戸は区画がわずかに違う。1.5m²圏は同一現場を第一に疑う(取りこぼし防止の緩衝)
-      if (near(s.land_m2, unit.land_m2, 1.5) || near(s.floor_m2, unit.floor_m2, 1.5)) {
-        return { level: "near", by: "specs", ref: s.key, hazard: s.hazard, reason: s.reason, unit: s.unit };
+      if (!fallback && (near(s.land_m2, unit.land_m2, 1.5) || near(s.floor_m2, unit.floor_m2, 1.5))) {
+        fallback = { level: "near", by: "specs", ref: s.key, hazard: s.hazard, reason: s.reason, unit: s.unit };
       }
-    } else if (s.price_man != null && s.price_man === unit.price_man) {
+    } else if (!fallback && s.price_man != null && s.price_man === unit.price_man) {
       // 面積が記録されていない除外物件(赤羽西3等)は丁目+価格一致のみ弱一致として拾う
-      return { level: "near", by: "price", ref: s.key, hazard: s.hazard, reason: s.reason, unit: s.unit };
+      fallback = { level: "near", by: "price", ref: s.key, hazard: s.hazard, reason: s.reason, unit: s.unit };
     }
   }
-  return null;
+  return fallback;
 }
 
 // ---- 詳細ページのKO信号スキャン ----

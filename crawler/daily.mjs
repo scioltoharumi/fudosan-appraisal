@@ -371,8 +371,24 @@ async function discover(ledgerNcs, ledgerFps, ledgerUnits) {
       }
     } else if (prev.price_man !== u.price_man) {
       seen[u.nc].price_man = u.price_man;
+      // 諸元は後から使うので毎回埋め直す(KOスクリーニング導入前の既見エントリは持っていない)
+      if (u.land_m2 != null) seen[u.nc].land_m2 = u.land_m2;
+      if (u.floor_m2 != null) seen[u.nc].floor_m2 = u.floor_m2;
       // KO済み・圏外と判定済みの掲載は値下げしても再提案しない(判断は現場属性で決まり価格で変わらない)
       if (prev.ko_blocked || prev.out_of_scope) continue;
+      // 2026-08-21: KOスクリーニング導入前に初見だった掲載は ko 印も諸元も持たないため、
+      // 値下げのたびに除外済み現場が再提案されていた(西が丘2のレッドゾーン1号棟が nc_20593134 として再出現)。
+      // 新着と同じ現場照合をここでも掛ける。取得ゼロで済む(一覧から取れた諸元だけで判定できる)
+      const cand = { ...u, district: districtOf(u.address), chome: chomeOf(u.address) };
+      const hit = matchExcludedSite(cand, exIndex);
+      if (hit?.level === "exact") {
+        seen[u.nc].ko_blocked = true;
+        seen[u.nc].ko_codes = [hit.hazard ? "KO4_hazard" : "KO_excluded"];
+        report.push({ ...cand, event: "ko_blocked_on_recheck", prev_price_man: prev.price_man, first_seen: prev.first_seen,
+          ko: { verdict: "block", codes: seen[u.nc].ko_codes, site_match: hit,
+            reasons: [`除外済み現場と諸元一致(${hit.ref}${hit.unit ? " " + hit.unit : ""}・照合=${hit.by})。${hit.reason}`] } });
+        continue;
+      }
       report.push({ ...u, district: districtOf(u.address), event: "price_changed", prev_price_man: prev.price_man, first_seen: prev.first_seen });
     }
   }
@@ -417,7 +433,8 @@ out.summary = {
   // new_listings = KOスクリーニングを通過し「自動登録の対象になる」件数。
   // 落とした件数も黙って消さず開示する(ko_blocked / ko_suspects / out_of_scope)
   new_listings: out.discover.filter((d) => d.event === "new").length,
-  ko_blocked: out.discover.filter((d) => d.event === "new_ko_blocked").length,
+  // 既見だった掲載が再判定でKOになったぶんも同じ枠で数える(黙って減らさない)
+  ko_blocked: out.discover.filter((d) => d.event === "new_ko_blocked" || d.event === "ko_blocked_on_recheck").length,
   ko_suspects: out.discover.filter((d) => d.event === "new_ko_suspect").length,
   out_of_scope: out.discover.filter((d) => d.event === "new_out_of_scope").length,
   sibling_suspects: out.discover.filter((d) => d.sibling_hint).length,
