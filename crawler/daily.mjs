@@ -367,6 +367,8 @@ async function discover(ledgerNcs, ledgerFps, ledgerUnits) {
       } else if (ko.verdict === "suspect") {
         report.push({ ...entry, event: "new_ko_suspect" });
       } else {
+        // 新着として詳細まで審査を通した掲載は、以後の値下げで再取得しない
+        seen[u.nc].ko_screened = true;
         report.push({ ...entry, event: "new" });
       }
     } else if (prev.price_man !== u.price_man) {
@@ -381,13 +383,40 @@ async function discover(ledgerNcs, ledgerFps, ledgerUnits) {
       // 新着と同じ現場照合をここでも掛ける。取得ゼロで済む(一覧から取れた諸元だけで判定できる)
       const cand = { ...u, district: districtOf(u.address), chome: chomeOf(u.address) };
       const hit = matchExcludedSite(cand, exIndex);
-      if (hit?.level === "exact") {
+      // 丁目単位のハザードも同時に見る。除外台帳(個別の現場)と丁目判定(面)は別の網なので、
+      // 片方だけ掛けると素通りする(2026-08-22: 志茂2の値下げが候補として上がった)
+      const area = areaHazardBlock(cand, areaIndex);
+      const blocked = hit?.level === "exact" ? { code: hit.hazard ? "KO4_hazard" : "KO_excluded",
+          reason: `除外済み現場と諸元一致(${hit.ref}${hit.unit ? " " + hit.unit : ""}・照合=${hit.by})。${hit.reason}` }
+        : area?.level === "block" ? { code: "KO4_area_hazard",
+            reason: `${cand.district}${cand.chome ?? ""}丁目は公式マップ照合で掲載条件外(${area.notes.join(" / ")})` }
+        : null;
+      if (blocked) {
         seen[u.nc].ko_blocked = true;
-        seen[u.nc].ko_codes = [hit.hazard ? "KO4_hazard" : "KO_excluded"];
+        seen[u.nc].ko_codes = [blocked.code];
         report.push({ ...cand, event: "ko_blocked_on_recheck", prev_price_man: prev.price_man, first_seen: prev.first_seen,
-          ko: { verdict: "block", codes: seen[u.nc].ko_codes, site_match: hit,
-            reasons: [`除外済み現場と諸元一致(${hit.ref}${hit.unit ? " " + hit.unit : ""}・照合=${hit.by})。${hit.reason}`] } });
+          ko: { verdict: "block", codes: seen[u.nc].ko_codes, site_match: hit ?? null, reasons: [blocked.reason] } });
         continue;
+      }
+      // 一度もKO判定を通っていない既見掲載(導入前の初見)は、ここで詳細まで審査する。
+      // 2026-08-22: 中里3の値下げ2件が候補として上がったが、実際は土地が旧法賃借権(KO2)で
+      // 宅地造成工事規制区域(KO4)だった。面の判定(丁目)と点の判定(除外台帳)だけでは掲載固有のKOを見逃す。
+      // 一度通れば ko_screened を立てて以後は取りに行かない(値下げのたびに取得しない)
+      if (!prev.ko_screened && koFetches < KO_DETAIL_MAX) {
+        const d = await fetchPage(u.url);
+        if (!d.exhausted && !d.error && d.status === 200) {
+          koFetches++;
+          const ko = koScreen({ unit: cand, siteHit: hit, scan: scanKO(d.html, u.media), areaHazard: area });
+          if (ko.verdict === "block") {
+            seen[u.nc].ko_blocked = true; seen[u.nc].ko_codes = ko.codes;
+            report.push({ ...cand, event: "ko_blocked_on_recheck", prev_price_man: prev.price_man, first_seen: prev.first_seen, ko });
+            continue;
+          }
+          seen[u.nc].ko_screened = true;
+          report.push({ ...cand, event: "price_changed", prev_price_man: prev.price_man, first_seen: prev.first_seen, ko });
+          continue;
+        }
+        errors.push({ where: `ko-recheck:${u.nc}`, detail: `詳細取得失敗 http=${d.status} ${d.error ?? ""}` });
       }
       report.push({ ...u, district: districtOf(u.address), event: "price_changed", prev_price_man: prev.price_man, first_seen: prev.first_seen });
     }
