@@ -619,13 +619,14 @@
  },
  "nc_79190442": {
   "first_seen": "2026-08-13",
-  "price_man": 6980,
+  "price_man": 6480,
   "address": "東京都北区滝野川１",
   "walk_min": 5,
   "kind": "chuko",
   "media": "suumo",
   "land_m2": 54.27,
-  "floor_m2": 65.72
+  "floor_m2": 65.72,
+  "out_of_scope": "延床65.72m2(条件は70m2超)"
  },
  "nc_21439305": {
   "first_seen": "2026-08-13",

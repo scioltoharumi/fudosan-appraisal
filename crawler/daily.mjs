@@ -24,6 +24,17 @@ const PRICE_RANGE = [5000, 9000];   // discover対象(万円)
 const WALK_MAX = 20;                // discover徒歩上限(分)
 const FLOOR_MIN_M2 = 70;            // 掲載条件「延床70m2超」(CLAUDE.md)。これ以下は自動登録候補から外す
 const ROOMS_MIN = 3;                // 掲載条件「3室以上」。2LDK=2室 / 2LDK+S=3室 / 4LDK=4室
+// 掲載条件の圏外判定。新着と、値下げ時の再判定の**両方**から呼ぶ
+// (2026-08-25: 再判定側に入れ忘れており、延床65.72m2の滝野川1が候補として上がった)
+export function scopeMissOf(attrs, walkDetail) {
+  const floor = attrs?.floor_m2 ?? null;
+  const rooms = roomsOf(attrs?.layout);
+  if (walkDetail != null && walkDetail > WALK_MAX) return `徒歩${walkDetail}分(上限${WALK_MAX})`;
+  if (floor != null && floor <= FLOOR_MIN_M2) return `延床${floor}m2(条件は${FLOOR_MIN_M2}m2超)`;
+  if (rooms != null && rooms < ROOMS_MIN) return `${attrs.layout}=${rooms}室(条件は${ROOMS_MIN}室以上)`;
+  return null;
+}
+
 // 間取り文字列から居室数を数える。「2LDK+2S(納戸)」=4室、「2LDK+S」=3室、「4LDK」=4室。
 // 数えられない表記(「1DKK+」のような媒体側の崩れ)は null を返し、条件判定を行わない(誤って落とさない)
 export function roomsOf(layout) {
@@ -351,12 +362,7 @@ async function discover(ledgerNcs, ledgerFps, ledgerUnits) {
       // 掲載条件(CLAUDE.md「登録条件」)のうち掲載から機械判定できるもの。KOではなく「圏外」扱いにして、
       // 報告には出しつつ自動登録の候補から外す。2026-08-13: 滝野川1の2件(延床65.24/65.72)が
       // verdict=pass のまま自動登録候補に上がり、人が延床70m2超の条件で弾く必要があった
-      const floor = ko.attrs?.floor_m2 ?? null;
-      const rooms = roomsOf(ko.attrs?.layout);
-      const scopeMiss = walkDetail != null && walkDetail > WALK_MAX ? `徒歩${walkDetail}分(上限${WALK_MAX})`
-        : floor != null && floor <= FLOOR_MIN_M2 ? `延床${floor}m2(条件は${FLOOR_MIN_M2}m2超)`
-        : rooms != null && rooms < ROOMS_MIN ? `${ko.attrs.layout}=${rooms}室(条件は${ROOMS_MIN}室以上)`
-        : null;
+      const scopeMiss = scopeMissOf(ko.attrs, walkDetail);
       if (scopeMiss) {
         // 以後の再判定が要らないよう seen に記録して落とす(諸元は掲載が変わらない限り動かない)
         seen[u.nc].out_of_scope = scopeMiss;
@@ -412,6 +418,14 @@ async function discover(ledgerNcs, ledgerFps, ledgerUnits) {
             report.push({ ...cand, event: "ko_blocked_on_recheck", prev_price_man: prev.price_man, first_seen: prev.first_seen, ko });
             continue;
           }
+          // KOを通っても掲載条件(延床70m2超・3室以上・徒歩20分以内)を外れていれば候補にしない
+          const miss = scopeMissOf(ko.attrs, ko.attrs?.walk_min ?? null);
+          if (miss) {
+            seen[u.nc].out_of_scope = miss;
+            report.push({ ...cand, event: "out_of_scope_on_recheck", out_of_scope: miss,
+              prev_price_man: prev.price_man, first_seen: prev.first_seen, ko });
+            continue;
+          }
           seen[u.nc].ko_screened = true;
           report.push({ ...cand, event: "price_changed", prev_price_man: prev.price_man, first_seen: prev.first_seen, ko });
           continue;
@@ -465,7 +479,7 @@ out.summary = {
   // 既見だった掲載が再判定でKOになったぶんも同じ枠で数える(黙って減らさない)
   ko_blocked: out.discover.filter((d) => d.event === "new_ko_blocked" || d.event === "ko_blocked_on_recheck").length,
   ko_suspects: out.discover.filter((d) => d.event === "new_ko_suspect").length,
-  out_of_scope: out.discover.filter((d) => d.event === "new_out_of_scope").length,
+  out_of_scope: out.discover.filter((d) => d.event === "new_out_of_scope" || d.event === "out_of_scope_on_recheck").length,
   sibling_suspects: out.discover.filter((d) => d.sibling_hint).length,
   discover_price_changes: out.discover.filter((d) => d.event === "price_changed").length,
   errors: errors.length, pages_fetched: fetchCount, page_budget: MAX_PAGES,
