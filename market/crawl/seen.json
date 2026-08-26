@@ -997,5 +997,19 @@
   "ko_codes": [
    "KO4_hazard"
   ]
+ },
+ "nc_20722464": {
+  "first_seen": "2026-08-26",
+  "price_man": 7980,
+  "address": "東京都北区滝野川２",
+  "walk_min": 12,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 51.43,
+  "floor_m2": 86.71,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_hazard"
+  ]
  }
 }
