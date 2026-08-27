@@ -51,6 +51,16 @@ export function roomsOf(layout) {
 // 使うため。**登録可否は丁目単位のハザード判定(screen.mjs の areaHazardBlock)で別途止める**
 export const DISTRICTS = ["上十条", "中十条", "十条仲原", "岩淵町", "志茂", "神谷", "西が丘", "赤羽", "赤羽北", "赤羽南", "赤羽台", "赤羽西",
   "王子本町", "岸町", "滝野川", "西ケ原", "中里", "上中里"];
+// 住所→地区名。**長い名前を優先**して照合する。DISTRICTS は "赤羽" が "赤羽北"/"赤羽西" より
+// 前にあるため、素朴な find だと「赤羽北2」が "赤羽" に当たって丁目ハザードを「赤羽2」として引く。
+// 2026-08-28に実害を確認: 赤羽北2(浸水5〜10m)が赤羽2(3〜5m)として報告された。より深刻なのは
+// **赤羽西1〜3が赤羽1〜3として誤ってブロックされる**こと(台帳の中核地区なのに候補を取りこぼす)
+const DISTRICTS_BY_LEN = [...DISTRICTS].sort((a, b) => b.length - a.length);
+export function districtOfAddress(addr, prefix = "東京都北区") {
+  const t = zen(String(addr ?? ""));
+  return DISTRICTS_BY_LEN.find((d) => t.startsWith(prefix + d)) ?? null;
+}
+
 // 媒体横断の同一物件は指紋(地区丁目|価格|土地面積)で名寄せする。先頭の媒体を優先採用
 // するため、SUUMO(watch対象と同じ媒体・物件番号で台帳と直結)を先に置く
 const LIST_SOURCES = [
@@ -306,7 +316,7 @@ async function discover(ledgerNcs, ledgerFps, ledgerUnits) {
       if (!html.includes(nextMark)) break;   // 次ページへのリンクが無ければ最終ページ
     }
   }
-  const districtOf = (addr) => DISTRICTS.find((d) => zen(String(addr ?? "")).startsWith("東京都北区" + d)) ?? null;
+  const districtOf = (addr) => districtOfAddress(addr);
   // 重複統合: ①同一キー(媒体内) ②媒体横断の指紋一致(LIST_SOURCES順=SUUMO優先で初出を採用)
   const byNc = new Map();
   const fpSeen = new Set();
@@ -326,7 +336,7 @@ async function discover(ledgerNcs, ledgerFps, ledgerUnits) {
   const today = new Date().toISOString().slice(0, 10);
   // 既見物件の媒体横断照合用: seen済みエントリの指紋(媒体が違ってもキーが違っても同一物件を再報告しない)
   const seenFps = new Set(Object.entries(seen).map(([k, v]) =>
-    fingerprint(DISTRICTS.find((d) => zen(String(v.address ?? "")).startsWith("東京都北区" + d)) ?? null,
+    fingerprint(districtOfAddress(v.address),
       chomeOf(v.address), v.price_man, v.land_m2 ?? null, v.floor_m2 ?? null)).filter(Boolean));
   // 除外済み現場の索引(ハザード等で見送った現場。業者を替えた別番号の再掲を止める)
   const excluded = existsSync(EXCLUDED_PATH) ? JSON.parse(readFileSync(EXCLUDED_PATH, "utf8")) : {};
@@ -454,7 +464,7 @@ const ledgerNcs = new Set(listPropertyIds().flatMap((id) => {
 const ledgerFps = new Set(listPropertyIds().map((id) => {
   const p = loadProperty(id);
   const ph = [...(p.price_history ?? [])].sort((a, b) => new Date(a.date) - new Date(b.date));
-  const d = DISTRICTS.find((x) => String(p.location?.address ?? "").startsWith("北区" + x)) ?? null;
+  const d = districtOfAddress(p.location?.address, "北区");
   const chome = (zen(p.location?.address ?? "").match(/北区\D+([0-9]+)/) ?? [])[1] ?? null;
   return fingerprint(d, chome, ph.length ? ph[ph.length - 1].price_man : null, p.land?.registered_m2 ?? null, p.building?.floor_m2 ?? null);
 }).filter(Boolean));
@@ -462,7 +472,7 @@ const ledgerFps = new Set(listPropertyIds().map((id) => {
 const ledgerUnits = listPropertyIds().map((id) => {
   const p = loadProperty(id);
   const ph = [...(p.price_history ?? [])].sort((a, b) => new Date(a.date) - new Date(b.date));
-  return { id, district: DISTRICTS.find((x) => String(p.location?.address ?? "").startsWith("北区" + x)) ?? null,
+  return { id, district: districtOfAddress(p.location?.address, "北区"),
     chome: (zen(p.location?.address ?? "").match(/北区\D+([0-9]+)/) ?? [])[1] ?? null,
     price_man: ph.length ? ph[ph.length - 1].price_man : null,
     land_m2: p.land?.registered_m2 ?? null, floor_m2: p.building?.floor_m2 ?? null };

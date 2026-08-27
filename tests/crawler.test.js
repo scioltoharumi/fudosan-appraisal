@@ -3,9 +3,9 @@
 // 事故の型: 新築の複数戸掲載は一覧が開発の代表価格(下限値)を出すため、価格が一致しても別戸でありうる。
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { fingerprint, siblingHint, DISTRICTS, roomsOf } from "../crawler/daily.mjs";
+import { fingerprint, siblingHint, DISTRICTS, roomsOf, districtOfAddress } from "../crawler/daily.mjs";
 
-const districtOf = (addr) => DISTRICTS.find((d) => String(addr ?? "").startsWith("東京都北区" + d)) ?? null;
+const districtOf = (addr) => districtOfAddress(addr);
 // 事故当時の台帳(1号棟のみ登録・価格は誤って5980万だった)
 const LEDGER = [{ id: "nishigaoka2-20767290", district: "西が丘", chome: "2", price_man: 5980, land_m2: 57.65, floor_m2: 92.34 }];
 const unit = (o) => ({ address: "東京都北区西が丘2", ...o });
@@ -77,4 +77,17 @@ test("拡張した探索地区が DISTRICTS に入っており、住所からの
   for (const d of ["赤羽西", "西が丘", "赤羽台", "中十条", "十条仲原", "上十条", "志茂"]) {
     assert.ok(DISTRICTS.includes(d), `${d}が探索対象から消えた`);
   }
+});
+
+test("地区名は長い方を優先して照合する(赤羽北を赤羽と読まない)", () => {
+  // 2026-08-28の実害: DISTRICTS は "赤羽" が "赤羽北"/"赤羽西" より前にあるため、素朴な find だと
+  // 「赤羽北2」が "赤羽" に当たり、丁目ハザードを別の丁目(赤羽2)として引いていた。
+  // より重いのは 赤羽西1〜3 が 赤羽1〜3 として**誤ってブロック**され候補を取りこぼすこと
+  assert.equal(districtOfAddress("東京都北区赤羽北2"), "赤羽北");
+  assert.equal(districtOfAddress("東京都北区赤羽西4"), "赤羽西");
+  assert.equal(districtOfAddress("東京都北区赤羽台3"), "赤羽台");
+  assert.equal(districtOfAddress("東京都北区赤羽南1"), "赤羽南");
+  assert.equal(districtOfAddress("東京都北区赤羽2"), "赤羽", "赤羽そのものは従来どおり");
+  assert.equal(districtOfAddress("北区赤羽西4", "北区"), "赤羽西", "台帳YAMLの「北区」表記でも同じ");
+  assert.equal(districtOfAddress("東京都北区未知町1"), null, "対象外の地区はnull");
 });
