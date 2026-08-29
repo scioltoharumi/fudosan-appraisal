@@ -1,0 +1,49 @@
+# 物件データ(1物件1ファイル)。記載ルール: 事実データと査定パラメータのみ。
+# 指値方針・交渉メモ・個人的所感・写真・紹介文は書かない(publicリポジトリ運用・decisions D4)
+id: takinogawa3-21106162
+status: new
+viewing: none
+source: "SUUMO新築一戸建て(仲介=(株)マトリックスホーム)。**2026-08-13の初回クロールで既に発見されていたが、
+  詳細取得の予算切れで未審査のまま16日間埋もれていた**掲載(2026-08-29の再審査条件の修正と棚卸しで発掘)。
+  建築確認番号 第SJK-KX265106450号"
+source_url: "https://suumo.jp/ikkodate/tokyo/sc_kita/nc_21106162/"   # 実在確認済み 2026-08-29(200)。住所・価格・土地・建物・間取り・構造の6項目一致
+captured_at: 2026-08-29
+price_history:
+  - {date: 2026-08-29, price_man: 6280}   # 媒体の情報提供日時点
+location: {area: takinogawa, address: "北区滝野川3"}
+layout: "2LDK+S(納戸)"   # 居室3室相当(roomsOf=3)
+station: {walk_min: 7, multi_station: true}   # 都営三田線「西巣鴨」7分 /「新板橋」10分 / JR埼京線「板橋」11分
+land:
+  registered_m2: 38.72     # 11.71坪。**13坪未満**のためエンジンの狭小地補正(-0.5%/坪)が掛かる
+  setback_m2: 0            # 掲載「私道負担: 無」
+  road: {width_m: 5.4, quality: good_4m, direction: N,
+    note: "北5.4m幅・私道負担無。公道/私道の別は掲載に記載なし・要確認"}
+  shape: regular           # 媒体に形状記載なし(assumed)
+  legal: {zoning: "1種中高", bcr: 60, far: 200, ownership: shoyuken, rebuildable: true,
+    note: "準防火地域。容積は延床70.3/敷地38.72=181.6%で指定200%内。前面5.4m×0.4=216%なので指定容積が効く"}
+building:
+  built: 2027-01           # 完成時期(未完成)
+  floor_m2: 70.3           # 21.26坪。**掲載条件『延床70m2超』をぎりぎり満たす**
+  type: wood_3f_narrow
+  repair: {status: new_construction, cost_man: 0}
+costs: {fee_rate: 0.05, demolition_man: 130, demolition_assumed: true}   # 21.26坪×6万/坪≒128→130
+income: {rent_man: 20, rent_assumed: true, expense_rate: 0.15, cap_rate: 0.045}
+checklist: {road_type_verified: false, retaining_wall: false, hazard: false, seismic: true}
+hazard_check:
+  checked_at: 2026-08-29
+  suumo: none        # 「その他制限事項」は「準防火地域」のみ
+  athome: unchecked
+  note: "掲載の法令等制限欄に洪水浸水想定は原則載らないため、下の official で照合する"
+  official:
+    checked_at: 2026-08-29
+    query: "東京都北区滝野川3丁目 + 掲載徒歩分3駅からの位置絞り込み(siteFromWalk)"
+    point: "35.74484,139.72737"   # 西巣鴨7分/新板橋10分/板橋11分 を連立した解集合(88点・南北160m×東西225m)の中心
+    elevation_m: 26.2
+    flood_l2: "0.5m未満"
+    flood_coverage: "6/15点(徒歩分で絞った解集合の標本)"
+    hits: []
+    verdict: pass
+    note: "解集合の標高は26.2〜28.0mで台地。浸水想定は15点中6点が『0.5m未満』で、
+      台地上に局所的に出る浅い区分(赤羽西4=標高21mでも同じ区分が出る)。
+      代表点±450mを約18mメッシュで841点走査して**土砂災害区域はレッド0点・イエロー0点**"
+    limit: "駅出入口の座標は駅の住所ベース。個別区画の確定は番地・現地・重説で行う"

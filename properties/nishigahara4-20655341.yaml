@@ -1,0 +1,52 @@
+# 物件データ(1物件1ファイル)。記載ルール: 事実データと査定パラメータのみ。
+# 指値方針・交渉メモ・個人的所感・写真・紹介文は書かない(publicリポジトリ運用・decisions D4)
+id: nishigahara4-20655341
+status: new
+viewing: none
+source: "SUUMO新築一戸建て(仲介=三井のリハウス駒込センター)。**2026-08-13の初回クロールで既に発見されていたが、
+  詳細取得の予算切れで未審査のまま16日間埋もれていた**掲載(2026-08-29の再審査条件の修正と棚卸しで発掘)。
+  建築確認番号 R08SHC100729"
+source_url: "https://suumo.jp/ikkodate/tokyo/sc_kita/nc_20655341/"   # 実在確認済み 2026-08-29(200)。住所・価格・土地・建物・間取り・構造の6項目一致
+captured_at: 2026-08-29
+price_history:
+  - {date: 2026-08-28, price_man: 7980}   # 媒体の情報提供日時点
+location: {area: nishigahara, address: "北区西ケ原4"}
+layout: "2LDK+S(納戸)"   # 居室3室相当(roomsOf=3)
+station: {walk_min: 9, multi_station: true}   # 南北線「西ケ原」9分 / 都電荒川線「西ヶ原四丁目」6分 /「滝野川一丁目」6分
+land:
+  registered_m2: 45.25     # 13.68坪(実測)
+  setback_m2: 4.91         # 掲載の「私道負担・道路」欄は面積4.91m2のみで、含む/別途の別が読めない。保守側で控除(assumed)
+  road:
+    width_m: 4.0           # **掲載に幅員の記載はない**。その他制限事項「容積率は前面道路幅員により160%に制限されます」
+                           # から逆算(1種中高の低減係数0.4 × 4.0m = 160%)。役所調査で要確認
+    quality: good_4m
+    note: "私道負担4.91m2。幅員は容積制限160%からの逆算値で、掲載に直接の記載はない。公道/私道の別も記載なし"
+  shape: regular           # 媒体に形状記載なし(assumed)
+  legal: {zoning: "1種中高", bcr: 60, far: 200, ownership: shoyuken, rebuildable: true,
+    note: "その他制限事項『容積率は前面道路幅員により160%に制限されます』。実効容積160%に対し
+      延床72.03/敷地45.25=159.2%でぎりぎり充足している=**設計上の余裕はない**"}
+building:
+  built: 2026-10           # 引渡可能時期 2026年10月予定(未完成)
+  floor_m2: 72.03          # 21.78坪(実測)
+  type: wood_3f_narrow
+  repair: {status: new_construction, cost_man: 0}
+costs: {fee_rate: 0.05, demolition_man: 140, demolition_assumed: true}   # 21.78坪×6万/坪≒131→140
+income: {rent_man: 21, rent_assumed: true, expense_rate: 0.15, cap_rate: 0.045}
+checklist: {road_type_verified: false, retaining_wall: false, hazard: false, seismic: true}
+hazard_check:
+  checked_at: 2026-08-29
+  suumo: none        # 「その他制限事項」は容積率制限のみでハザードの記載なし
+  athome: unchecked  # athome掲載は未確認(SUUMOは該当物件でも空欄のことがあるため単独では不十分)
+  note: "掲載の法令等制限欄に洪水浸水想定は原則載らない(重説の義務項目であって広告欄の項目ではない)ため、下の official で照合する"
+  official:
+    checked_at: 2026-08-29
+    query: "東京都北区西ケ原4丁目"
+    point: "35.74329,139.73511"
+    elevation_m: 20.4
+    flood_l2: none
+    hits: []
+    verdict: pass
+    note: "代表点に該当なし。**番地1〜14を個別に照合**したところ標高15.4〜17.3mの台地で、
+      浸水想定が出るのは11番の『0.5m未満』1点のみ。代表点±450mを約18mメッシュで841点走査して
+      **土砂災害区域はレッド0点・イエロー0点**(岸町2で崖線の帯を取りこぼした反省から実施)"
+    limit: "丁目代表点+番地照合。個別区画の確定は番地・現地・重説で行う"
