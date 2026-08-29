@@ -94,6 +94,46 @@ console.log("✓ effort.html(手間の解剖)");
 const simCurve = ageCurveCI(houseDeals);
 writeFileSync(join(DIST, "simulate.html"), renderSimulate(results, simCurve, { asOf }), "utf8");
 console.log(`✓ simulate.html(保有年数シミュレーター・出口実測${simCurve.total}件${simCurve.districts}地区)`);
+// 本命比較(2026-08-29ユーザー要望「この2つの物件とESPACERのC号棟と賃貸で専用に比較するサイトを」):
+// simulate と同一テンプレートの絞り込み(コピーではない)。物件の入れ替えは FOCUS_IDS を書き換えるだけ
+const FOCUS_IDS = ["kishimachi2-adcast", "kishimachi2-mirasumo-204", "nishigaoka2-21096431"];
+const focusPreface = `
+  <section class="panel">
+    <h2>本命3物件の前提のずれ(グラフを読む前に)</h2>
+    <div class="logic-body">
+      <div style="overflow-x:auto"><table class="kv" style="min-width:640px;font-size:.78rem">
+        <tr><th></th><th>岸町2 新築(アドキャスト図面)</th><th>岸町2-4-9 土地(MIRASUMO)</th><th>西が丘2 ESPACER C号棟</th></tr>
+        <tr><td>総額</td><td>7,180万</td><td>7,480万(土地5,810+建物1,670)</td><td>7,680万</td></tr>
+        <tr><td>居住面積(車庫等除く)</td><td><b>80.3m²</b>(延床90.89のうち車庫10.59)</td><td><b>97.7m²</b>(参考プラン・車庫なし)</td><td><b>約90.6m²</b>(延床104.69のうち車庫11.66+備蓄倉庫2.43)</td></tr>
+        <tr><td>最寄り</td><td>東十条 歩9分</td><td>東十条 歩7分(幾何検算では8〜9分相当)</td><td>十条 歩15分</td></tr>
+        <tr><td>標高・浸水想定</td><td>約6m・0.5〜3.0m(崖線の下)</td><td>6.5m・地番の点は0.5m未満(周辺の半分は0.5〜3.0m)</td><td>19.6m・該当なし(台地)</td></tr>
+        <tr><td>土砂災害</td><td>推定位置からレッド94〜211m</td><td><b>地番からレッド52m・イエロー32m</b></td><td>代表点で該当なし</td></tr>
+        <tr><td>私道</td><td>二方私道・公道非接道・<b>持分の記載なし</b></td><td>私道(42条2項)だが<b>通行掘削承諾取得済と図面に明記</b></td><td>—(接道は各自の物件ページ参照)</td></tr>
+        <tr><td>入居できる時期</td><td>2026年12月(完成済を確認して引渡)</td><td><b>着工から最短半年〜最長1年</b>(未着工)</td><td>完成済(即入居可の建売)</td></tr>
+      </table></div>
+      <p class="note" style="margin-top:8px"><b>このグラフが公平に比べられていない点を先に開示する:</b>
+      ①岸町2-4-9(土地)の線は「図面の建物1,670万で参考プランどおり建つ」前提で、
+      つなぎ融資の金利・更地期間の固定資産税(住宅用地特例なし)・完成までの二重家賃は<b>1円も入っていない</b>
+      (合計で年60〜200万規模になりうる)。建築費が図面から576万(較正値ベースなら369万)超過すると「適正より安い」も消える。
+      ②岸町2の2件の適正値は<b>岸町の成約を1件も含まない</b>(事例は上十条・中十条=十条の台地)。
+      崖下の低地という立地差をエンジンは測れない。
+      ③賃貸の線は家賃のみ(更新料・引越は含まない)。戸建賃貸の<b>実質月額</b>は表示賃料より2〜4万高い
+      (<a href="rent.html">戸建賃貸台帳</a>の実測: 表示21万→2年居住で25.1万/月)。既定の${25}万/月は
+      賃貸台帳の本命帯(実質25〜29万/月)の下側で、賃貸に甘い設定。
+      詳細は各物件ページ(<a href="property/kishimachi2-adcast.html">岸町2 新築</a> /
+      <a href="property/kishimachi2-mirasumo-204.html">岸町2-4-9 土地</a> /
+      <a href="property/nishigaoka2-21096431.html">ESPACER C号棟</a>)の「採用した仮定」と caveat を参照。</p>
+    </div>
+  </section>`;
+writeFileSync(join(DIST, "focus.html"), renderSimulate(results, simCurve, { asOf, focus: {
+  ids: FOCUS_IDS,
+  slug: "focus",
+  title: "本命比較 ── 岸町2の2物件 × ESPACER C号棟 × 賃貸",
+  subtitle: "検討中の3物件+賃貸だけを並べる専用ページ(判定はしない・仮定は全部動かせる)",
+  rentDefault: 25,
+  preface: focusPreface,
+} }), "utf8");
+console.log("✓ focus.html(本命比較: " + FOCUS_IDS.join(" / ") + ")");
 // データ探索ページ: 各行に検証状態と出所リンクを付与
 const verification = loadVerification();
 const vByKey = new Map((verification?.rows ?? []).map((v) => [v.key, v]));

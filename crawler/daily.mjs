@@ -26,13 +26,27 @@ const AREA_SCAN_PATH = join(ROOT, "market", "area-scan.json");
 const PRICE_RANGE = [5000, 9000];   // discover対象(万円)
 const WALK_MAX = 20;                // discover徒歩上限(分)
 const FLOOR_MIN_M2 = 70;            // 掲載条件「延床70m2超」(CLAUDE.md)。これ以下は自動登録候補から外す
+// ---- 土地(分譲地)の探索(2026-08-29ユーザー決定「土地カテゴリは当然ここも考慮したいので入れたい」)----
+// 岸町2-4-9(建築条件なし土地)が土地カテゴリ非巡回のせいで機械探索に一度も乗らなかったことを受けて追加。
+// 建物条件(延床70m2超・3室以上)は土地に適用できないため、土地側の圏外条件は次の2つ:
+//   価格 2,500〜7,500万(総予算9,000万 − ローコスト建築1,500万〜 の逆算。上下限はClaudeの置いた既定で要調整)
+//   土地 45m2以上(実効容積160%=前面4m×0.4 なら延床72m2 ≒「延床70m2超」の土地への翻訳)
+// KO1(再建築不可)/KO2(所有権以外)/KO6(通行料)/丁目ハザード遮断は戸建と同じ網を通す
+const TOCHI_PRICE_RANGE = [2500, 7500];
+const TOCHI_LAND_MIN_M2 = 45;
 const ROOMS_MIN = 3;                // 掲載条件「3室以上」。2LDK=2室 / 2LDK+S=3室 / 4LDK=4室
 // 掲載条件の圏外判定。新着と、値下げ時の再判定の**両方**から呼ぶ
 // (2026-08-25: 再判定側に入れ忘れており、延床65.72m2の滝野川1が候補として上がった)
-export function scopeMissOf(attrs, walkDetail) {
+export function scopeMissOf(attrs, walkDetail, kind = null) {
+  if (walkDetail != null && walkDetail > WALK_MAX) return `徒歩${walkDetail}分(上限${WALK_MAX})`;
+  if (kind === "tochi") {
+    // 土地に建物条件は適用できない。面積が読めない掲載は判定しない(数えられないものは落とさない規律)
+    const land = attrs?.land_m2 ?? null;
+    if (land != null && land < TOCHI_LAND_MIN_M2) return `土地${land}m2(土地の条件は${TOCHI_LAND_MIN_M2}m2以上)`;
+    return null;
+  }
   const floor = attrs?.floor_m2 ?? null;
   const rooms = roomsOf(attrs?.layout);
-  if (walkDetail != null && walkDetail > WALK_MAX) return `徒歩${walkDetail}分(上限${WALK_MAX})`;
   if (floor != null && floor <= FLOOR_MIN_M2) return `延床${floor}m2(条件は${FLOOR_MIN_M2}m2超)`;
   if (rooms != null && rooms < ROOMS_MIN) return `${attrs.layout}=${rooms}室(条件は${ROOMS_MIN}室以上)`;
   return null;
@@ -69,6 +83,8 @@ export function districtOfAddress(addr, prefix = "東京都北区") {
 const LIST_SOURCES = [
   { media: "suumo", kind: "chuko", base: "https://suumo.jp/chukoikkodate/tokyo/sc_kita/" },
   { media: "suumo", kind: "shinchiku", base: "https://suumo.jp/ikkodate/tokyo/sc_kita/" },
+  // 土地は当面SUUMOのみ(athomeはボット保護で取得経路なし=賃貸と同じ限界)
+  { media: "suumo", kind: "tochi", base: "https://suumo.jp/tochi/tokyo/sc_kita/" },
   { media: "athome", kind: "chuko", base: "https://www.athome.co.jp/kodate/chuko/tokyo/kita-city/list/" },
   { media: "athome", kind: "shinchiku", base: "https://www.athome.co.jp/kodate/shinchiku/tokyo/kita-city/list/" },
 ];
@@ -212,6 +228,11 @@ async function watch() {
 // 一度も報告されないまま埋もれていた(ユーザーが店舗でチラシを受け取って初めて発覚)。
 // seen.json 全113件のうち82件が同じ「印が1つも無い=一度も詳細まで審査していない」状態だった。
 // 判定済み(ko_blocked / out_of_scope / ko_screened)のものは価格が動いたときだけ見れば足りる。
+// 「審査済み」の印を立ててよい判定か。**unknown(詳細未取得)に印を立てると、その掲載は
+// 二度と再審査されない**——2026-08-13の取りこぼしと同じ穴で、2026-08-29の土地カテゴリ初回クロールで
+// 再発を確認した(NO_DETAILの24件に ko_screened が付いていた)。pass/suspectだけが審査済み
+export function isScreenedVerdict(v) { return v === "pass" || v === "suspect"; }
+
 export function needsRescreen(prev, priceMan) {
   if (!prev) return false;                                    // 新着は呼び出し側の別経路
   if (prev.ko_blocked || prev.out_of_scope) return false;     // 判定済み。現場属性は価格で覆らない
@@ -224,7 +245,7 @@ function parseSuumoUnits(html, kind) {
   const units = [];
   const parts = html.split(/property_unit-title/).slice(1);
   for (const part of parts) {
-    const link = part.match(/href="(\/(?:chukoikkodate|ikkodate)\/[^"]*?(nc_[0-9]+)\/)"/);
+    const link = part.match(/href="(\/(?:chukoikkodate|ikkodate|tochi)\/[^"]*?(nc_[0-9]+)\/)"/);
     if (!link) continue;
     const seg = strip(part.slice(0, 6000));
     const price = (() => { const m = seg.match(/販売価格\s*([0-9]+億[0-9,]*万?円|[0-9][0-9,]{1,7}万円)/); return m ? parseMan(m[1]) : null; })();
@@ -343,8 +364,9 @@ async function discover(ledgerNcs, ledgerFps, ledgerUnits) {
     if (fp) fpSeen.add(fp);
     byNc.set(u.nc, u);
   }
+  const rangeOf = (u) => (u.kind === "tochi" ? TOCHI_PRICE_RANGE : PRICE_RANGE);
   const matches = [...byNc.values()].filter((u) =>
-    u.price_man !== null && u.price_man >= PRICE_RANGE[0] && u.price_man <= PRICE_RANGE[1] &&
+    u.price_man !== null && u.price_man >= rangeOf(u)[0] && u.price_man <= rangeOf(u)[1] &&
     districtOf(u.address) !== null &&
     u.walk_min !== null && u.walk_min <= WALK_MAX &&
     !ledgerNcs.has(u.nc) &&
@@ -389,7 +411,7 @@ async function discover(ledgerNcs, ledgerFps, ledgerUnits) {
       // 掲載条件(CLAUDE.md「登録条件」)のうち掲載から機械判定できるもの。KOではなく「圏外」扱いにして、
       // 報告には出しつつ自動登録の候補から外す。2026-08-13: 滝野川1の2件(延床65.24/65.72)が
       // verdict=pass のまま自動登録候補に上がり、人が延床70m2超の条件で弾く必要があった
-      const scopeMiss = scopeMissOf(ko.attrs, walkDetail);
+      const scopeMiss = scopeMissOf(ko.attrs, walkDetail, u.kind);
       if (scopeMiss) {
         // 以後の再判定が要らないよう seen に記録して落とす(諸元は掲載が変わらない限り動かない)
         seen[u.nc].out_of_scope = scopeMiss;
@@ -403,8 +425,9 @@ async function discover(ledgerNcs, ledgerFps, ledgerUnits) {
         seen[u.nc].ko_screened = true; seen[u.nc].ko_suspect = ko.codes;
         report.push({ ...entry, event: "new_ko_suspect" });
       } else {
-        // 新着として詳細まで審査を通した掲載は、以後の値下げで再取得しない
-        seen[u.nc].ko_screened = true;
+        // 新着として詳細まで審査を通した掲載は、以後の値下げで再取得しない。
+        // **詳細未取得(unknown)には印を立てない**——立てると needsRescreen が二度と拾わない
+        if (isScreenedVerdict(ko.verdict)) seen[u.nc].ko_screened = true;
         report.push({ ...entry, event: "new" });
       }
     } else if (needsRescreen(prev, u.price_man)) {
@@ -452,7 +475,7 @@ async function discover(ledgerNcs, ledgerFps, ledgerUnits) {
             continue;
           }
           // KOを通っても掲載条件(延床70m2超・3室以上・徒歩20分以内)を外れていれば候補にしない
-          const miss = scopeMissOf(ko.attrs, ko.attrs?.walk_min ?? null);
+          const miss = scopeMissOf(ko.attrs, ko.attrs?.walk_min ?? null, u.kind);
           if (miss) {
             seen[u.nc].out_of_scope = miss;
             report.push({ ...cand, event: "out_of_scope_on_recheck", out_of_scope: miss,
@@ -485,9 +508,12 @@ const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv
 if (isMain) {
 const mode = process.argv[2] ?? "";
 const ledgerNcs = new Set(listPropertyIds().flatMap((id) => {
-  const u = loadProperty(id).source_url ?? "";
+  const p = loadProperty(id);
+  const u = p.source_url ?? "";
   const at = u.match(/athome\.co\.jp\/kodate\/([0-9]+)/)?.[1];
-  return [u.match(/nc_[0-9]+/)?.[0], at ? "at_" + at : null].filter(Boolean);
+  // crawl_ids: source_url に置けない掲載ID(例: 土地物件で価格の正本が「土地+参考建物」の合成のため、
+  // 土地単体価格の掲載を source_url にすると watch が毎日誤って値下げ報告する)。discover の重複報告だけ止める
+  return [u.match(/nc_[0-9]+/)?.[0], at ? "at_" + at : null, ...(p.crawl_ids ?? [])].filter(Boolean);
 }));
 // 台帳物件の指紋(他媒体の同一掲載を新着扱いしないため)
 const ledgerFps = new Set(listPropertyIds().map((id) => {

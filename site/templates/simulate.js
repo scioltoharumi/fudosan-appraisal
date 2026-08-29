@@ -62,8 +62,20 @@ function simConstants(curve) {
 }
 
 // curve: formula.js の ageCurveCI() の戻り値(cliff.html と同一の実測)
-export function renderSimulate(results, curve, { asOf }) {
-  const props = results.map(propData);
+// focus(2026-08-29ユーザー要望「この2つの物件とESPACERのC号棟と賃貸で専用に比較するサイト」):
+//   { ids, title, subtitle, slug, rentDefault, preface } を渡すと、台帳全件ではなく
+//   指定IDだけの専用比較ページとして描画する。計算・スライダー・凡例は全物件版と完全に同一
+//   (コピーではなく同じテンプレートの絞り込みなので、モデル修正が両ページへ同時に効く)
+export function renderSimulate(results, curve, { asOf, focus = null }) {
+  const src = focus
+    ? focus.ids.map((id) => results.find((x) => x.r.id === id)).filter(Boolean)
+    : results;
+  if (focus && src.length !== focus.ids.length) {
+    const missing = focus.ids.filter((id) => !results.some((x) => x.r.id === id));
+    throw new Error("focus.ids に台帳に無い物件がある: " + missing.join(", "));
+  }
+  const rentDef = focus?.rentDefault ?? 20;
+  const props = src.map(propData);
   const SIMC = simConstants(curve);
   const oldRows = SIMC.rows.filter((b) => b.lo >= 31);
 
@@ -71,8 +83,11 @@ export function renderSimulate(results, curve, { asOf }) {
   <section class="panel">
     <h2>これは何をするページか</h2>
     <div class="logic-body">
-      <p style="font-size:.85rem">台帳の全${props.length}物件について、<b>「取得にかかったお金 + 保有中の維持費 − 売ったときの手取り」=総コストを
-      保有年数ごとに計算して一括で比べます</b>。買値が高くても土地の比率が高い物件は出口で回収でき、買値が近くても建物の比率が高い物件は
+      <p style="font-size:.85rem">${focus
+        ? `検討の本命${props.length}物件と賃貸に絞って、<b>「取得にかかったお金 + 保有中の維持費 − 売ったときの手取り」=総コストを
+      保有年数ごとに計算して比べます</b>(台帳全件で同じ比較をするページは<a href="simulate.html">保有年数シミュレーター</a>)。`
+        : `台帳の全${props.length}物件について、<b>「取得にかかったお金 + 保有中の維持費 − 売ったときの手取り」=総コストを
+      保有年数ごとに計算して一括で比べます</b>。`}買値が高くても土地の比率が高い物件は出口で回収でき、買値が近くても建物の比率が高い物件は
       築年数とともに回収額が減ります。この違いは「何年住むか」で逆転が起きるため、1つの数字ではなく<b>年数のカーブ</b>で見る必要があります。
       左のチェックで任意の組に絞れます(<b>${SIMC.ciMax}件以下に絞ると95%CIの帯まで表示</b>されます)。</p>
       <p style="font-size:.8rem;margin-top:8px" class="position-body">出口(売却額)の見立てには台帳の成約実測(<a href="cliff.html">30年の崖の検証</a>と同じ${SIMC.total}件・${SIMC.districts}地区)を使い、
@@ -83,6 +98,8 @@ export function renderSimulate(results, curve, { asOf }) {
       <a href="effort.html">手間の解剖</a>で確認してください(賃貸の累計線と対で読む前提のページです)。</p>
     </div>
   </section>
+
+  ${focus?.preface ?? ""}
 
   <div class="simlayout">
   <section class="panel simside">
@@ -95,8 +112,8 @@ export function renderSimulate(results, curve, { asOf }) {
     <div class="simgrid2" style="margin-top:10px">
       <div class="simctl"><label class="simlab" for="inG">地価の年率 <b id="vG">0.0%</b></label>
         <input type="range" id="inG" min="-2" max="5" step="0.5" value="0"></div>
-      <div class="simctl"><label class="simlab" for="inRent">賃貸の家賃 <b id="vRent">20万/月</b></label>
-        <input type="range" id="inRent" min="10" max="40" step="1" value="20"></div>
+      <div class="simctl"><label class="simlab" for="inRent">賃貸の家賃 <b id="vRent">${rentDef}万/月</b></label>
+        <input type="range" id="inRent" min="10" max="40" step="1" value="${rentDef}"></div>
       <div class="simctl"><label class="simlab" for="inAnn">年間経費 <b id="vAnn">25万/年</b></label>
         <input type="range" id="inAnn" min="0" max="60" step="5" value="25"></div>
       <div class="simctl"><label class="simlab" for="inCyc">定期修繕の周期 <b id="vCyc">15年ごと</b></label>
@@ -226,7 +243,7 @@ export function renderSimulate(results, curve, { asOf }) {
     var C = D.SIMC;
     var ORDER = D.props.map(function(p){ return p.id; });
     var $ = function(id){ return document.getElementById(id); };
-    var st = { sel: {}, g: 0, ann: 25, cyc: 15, per: 150, rent: 20, t: 10,
+    var st = { sel: {}, g: 0, ann: 25, cyc: 15, per: 150, rent: ${rentDef}, t: 10,
       loan: true, rate: 0.8, ded: {} };   // ded[id] = {cap, yrs} の上書き(未編集は既定)
     ORDER.forEach(function(id){ st.sel[id] = true; });
     // 住宅ローン控除の既定区分: 中古(その他)=2,000万・10年 / 新築(省エネ適合と仮定)=3,000万・13年
@@ -466,9 +483,9 @@ export function renderSimulate(results, curve, { asOf }) {
   </script>`;
 
   return layout({
-    title: "保有年数シミュレーター ── 何年住むと総コストはどうなるか",
-    subtitle: "台帳の全物件を一括比較(判定はしない・仮定は全部動かせる)",
-    docNo: `FUDOSAN-APPRAISAL/SIMULATE<br>基準日 ${esc(asOf)}<br>出口実測 ${curve.total}件${curve.districts}地区`,
+    title: focus?.title ?? "保有年数シミュレーター ── 何年住むと総コストはどうなるか",
+    subtitle: focus?.subtitle ?? "台帳の全物件を一括比較(判定はしない・仮定は全部動かせる)",
+    docNo: `FUDOSAN-APPRAISAL/${focus ? esc(focus.slug.toUpperCase()) : "SIMULATE"}<br>基準日 ${esc(asOf)}<br>出口実測 ${curve.total}件${curve.districts}地区`,
     body,
   });
 }

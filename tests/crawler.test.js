@@ -116,3 +116,43 @@ test("再審査: 未審査の既見掲載は価格が動かなくても拾う(�
 
   assert.equal(needsRescreen(null, 7180), false, "新着は別経路");
 });
+
+// 2026-08-29ユーザー決定「土地カテゴリも考慮したい」。岸町2-4-9(建築条件なし土地)が
+// 土地カテゴリ非巡回のせいで機械探索に一度も乗らなかったことを受けて追加した。
+// 土地の圏外条件(価格2,500〜7,500万・土地45m2以上)と「建物条件を土地に当てない」ことを固定する。
+test("土地(tochi): 建物条件は適用せず、土地面積の条件だけで判定する", async () => {
+  const { scopeMissOf } = await import("../crawler/daily.mjs");
+  // 岸町2-4-9 相当: 土地64.03m2・建物なし → 圏外にならない
+  assert.equal(scopeMissOf({ land_m2: 64.03, floor_m2: null, layout: null }, 7, "tochi"), null);
+  // 土地45m2未満は圏外
+  assert.match(scopeMissOf({ land_m2: 40.39 }, 3, "tochi") ?? "", /土地40\.39m2/);
+  // 面積が読めない掲載は判定しない(数えられないものは落とさない規律)
+  assert.equal(scopeMissOf({ land_m2: null }, 5, "tochi"), null);
+  // 徒歩上限は土地にも効く
+  assert.match(scopeMissOf({ land_m2: 64 }, 21, "tochi") ?? "", /徒歩21分/);
+  // 戸建の判定は従来どおり(延床70m2以下は圏外のまま)
+  assert.match(scopeMissOf({ floor_m2: 65.24 }, 4, "chuko") ?? "", /延床65\.24m2/);
+});
+
+test("土地(tochi): KO5の必須項目に建物面積を要求しない(戸建は従来どおり要求する)", async () => {
+  const { koScreen } = await import("../crawler/screen.mjs");
+  const scan = { flags: [], notes: [], attrs: { land_m2: 64.03, floor_m2: null }, hazard_media: "suumo" };
+  const tochi = koScreen({ unit: { kind: "tochi", price_man: 5810, district: "岸町", chome: 2 }, siteHit: null, scan, areaHazard: null });
+  assert.equal(tochi.verdict, "pass", "土地は建物面積なしでもKO5にならない: " + JSON.stringify(tochi.codes));
+  const kodate = koScreen({ unit: { kind: "chuko", price_man: 5810, district: "岸町", chome: 2 }, siteHit: null, scan, areaHazard: null });
+  assert.equal(kodate.verdict, "block", "戸建は建物面積が無ければ従来どおりKO5で止まる");
+  assert.ok(kodate.codes.includes("KO5_incomplete"));
+});
+
+// 2026-08-29: 土地カテゴリ初回クロールで、詳細未取得(NO_DETAIL=verdict unknown)の新着24件に
+// ko_screened が付いてしまった(=needsRescreenが二度と拾わない)。8/13の取りこぼしと同じ穴の再発。
+// 「印を立ててよいのは実際に詳細を審査した pass / suspect だけ」を固定する。
+test("再審査: unknown(詳細未取得)には審査済みの印を立てない", async () => {
+  const { isScreenedVerdict, needsRescreen } = await import("../crawler/daily.mjs");
+  assert.equal(isScreenedVerdict("pass"), true);
+  assert.equal(isScreenedVerdict("suspect"), true);
+  assert.equal(isScreenedVerdict("unknown"), false, "詳細未取得は審査済みではない");
+  assert.equal(isScreenedVerdict("block"), false, "blockはko_blockedで記録する(ko_screenedではない)");
+  // unknownのまま残った掲載は、価格が動かなくても needsRescreen が拾い続ける
+  assert.equal(needsRescreen({ price_man: 4480, kind: "tochi" }, 4480), true);
+});

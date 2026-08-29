@@ -278,11 +278,13 @@ export function koScreen({ unit, siteHit, scan, areaHazard = null }) {
     return { verdict: "block", codes, reasons, site_match: siteHit, attrs: scan?.attrs ?? null };
   }
   for (const f of scan?.flags ?? []) { codes.push(f.code); reasons.push(`${f.label}: ${f.evidence ?? "掲載に明記"}`); }
-  // 必須項目(価格・所在地・土地/建物面積)が詳細で確定できないものは誤登録防止で止める
+  // 必須項目(価格・所在地・土地/建物面積)が詳細で確定できないものは誤登録防止で止める。
+  // 土地(kind=tochi)は建物が存在しないので建物面積を要求しない(2026-08-29の土地カテゴリ追加)
   const a = scan?.attrs ?? {};
-  if (scan && (a.land_m2 == null || a.floor_m2 == null || unit.price_man == null)) {
+  const needFloor = unit.kind !== "tochi";
+  if (scan && (a.land_m2 == null || (needFloor && a.floor_m2 == null) || unit.price_man == null)) {
     codes.push("KO5_incomplete");
-    reasons.push(`詳細ページから必須項目を確定できず(土地${a.land_m2 ?? "?"}/建物${a.floor_m2 ?? "?"}/価格${unit.price_man ?? "?"})`);
+    reasons.push(`詳細ページから必須項目を確定できず(土地${a.land_m2 ?? "?"}/建物${needFloor ? (a.floor_m2 ?? "?") : "土地につき不要"}/価格${unit.price_man ?? "?"})`);
   }
   if (codes.length) return { verdict: "block", codes, reasons, site_match: siteHit ?? null, attrs: scan?.attrs ?? null };
   if (areaHazard?.level === "suspect") {

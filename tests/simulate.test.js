@@ -66,3 +66,21 @@ test("simulate: 判定語を出さない(エンジンv3.0.0の思想の回帰ガ
   assert.ok(html.includes("このページは判定をしません"), "判定しない宣言がある");
   assert.ok(!/class="stamp"/.test(html), "判定スタンプのUI部品を持たない");
 });
+
+// 2026-08-29ユーザー要望「この2つの物件とESPACERのC号棟と賃貸で専用に比較するサイトを」。
+// focus.html は simulate と同一テンプレートの絞り込みで、コピーではないこと(モデル修正が両方へ効くこと)を
+// このテストが担保する: 同じ renderSimulate に focus を渡すだけで、注入データが指定3物件に限定される。
+test("focus: 本命比較ページは指定3物件だけを含み、CI帯の表示条件(4件以下)を満たす", () => {
+  const FOCUS_IDS = ["kishimachi2-adcast", "kishimachi2-mirasumo-204", "nishigaoka2-21096431"];
+  const fh = renderSimulate(results, curve, { asOf: "2026-08-29", focus: {
+    ids: FOCUS_IDS, slug: "focus", title: "本命比較", subtitle: "", rentDefault: 25, preface: "" } });
+  const m = fh.match(/<script type="application\/json" id="simdata">(.*?)<\/script>/s);
+  assert.ok(m, "focus に simdata がある");
+  const d = JSON.parse(m[1]);
+  assert.deepEqual(d.props.map((p) => p.id), FOCUS_IDS, "指定IDだけが指定順で入る");
+  assert.ok(d.props.length <= d.SIMC.ciMax, "3件≦4件なので95%CIの帯が既定で描かれる");
+  assert.ok(fh.includes('value="25"') && fh.includes("rent: 25"), "賃貸の家賃の既定が25万/月");
+  // 台帳に無いIDを渡したら黙って欠けずに落ちる(物件IDの改名・削除で本命比較が静かに空になる事故を防ぐ)
+  assert.throws(() => renderSimulate(results, curve, { asOf: "2026-08-29", focus: {
+    ids: ["not-exist"], slug: "x", rentDefault: 25 } }), /台帳に無い物件/);
+});
