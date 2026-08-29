@@ -117,8 +117,19 @@ export const SHAPE = {
 };
 export const BUILDING_TYPE = {
   wood_std: 0,          // 木造2階建等の標準
-  wood_3f_narrow: -0.05 // 木造3階建・狭小(建物残価が残る場合のみ適用)
+  wood_3f_narrow: -0.05, // 木造3階建・狭小(建物残価が残る場合のみ適用)
+  // 鉄骨3階建・狭小(2026-08-29新設。上十条3 nc_20530443 の登録に伴いユーザー承認)。
+  // **鉄骨固有の市場性差は立てていない**。国交省の取引データ(北区・住宅地の戸建2,706件の木造に対し
+  // 鉄骨254件)で測ると総額/土地m²は木造比+19.1%(CI +14.0〜+33.3%)と出るが、これは鉄骨が
+  // 狭小地に大きな延床を載せる(3階建・近隣商業)ことの反映で、**建物の市場性ではなく建物/土地比の交絡**。
+  // 分離できないため木造3階建・狭小と同じ-5%に置き、鉄骨の違いは耐用年数(下記)と
+  // 再調達単価・解体費(物件ごとの rebuild_ppt_man / demolition_man)で表現する
+  steel_3f_narrow: -0.05
 };
+// 建物の市場評価が尽きるまでの年数。既定は COEFFS.BUILDING_LIFE_Y(=30・木造)で、
+// 構造で明確に違うものだけをここに置く。鉄骨は法定耐用年数が住宅用34年(骨格材肉厚4mm超)で
+// 木造22年の約1.55倍。市場30年に同じ比を当てると46年になるが、保守側に丸めて40年とする
+export const BUILDING_LIFE_BY_TYPE = { steel_3f_narrow: 40 };
 
 // ---- ユーティリティ ----
 
@@ -183,7 +194,7 @@ export function appraise(s, opts = {}) {
   adj = Math.max(adj, -0.8);   // 補正合計のクランプ。(1+adj)が負になると単価が負転しlo/hi逆転・フロア逆転が起きる(第2次監査)
   const landRaw = ppt * (1 + adj) * tsubo;
   const land2 = landRaw * (1 + s.lc);                             // 土地制約は常時適用
-  let resid = Math.max(0, 1 - s.age / COEFFS.BUILDING_LIFE_Y) * s.rebuild * (s.floor / COEFFS.TSUBO_M2);
+  let resid = Math.max(0, 1 - s.age / (s.life ?? COEFFS.BUILDING_LIFE_Y)) * s.rebuild * (s.floor / COEFFS.TSUBO_M2);
   if (noise.resid) resid = Math.max(0, resid * (1 + noise.resid));
   const alive = resid > 0;
   const demo = Math.max(0, s.demo * (1 + (noise.demo || 0)));
@@ -452,6 +463,8 @@ export function toState(property, areaConfig, asOf, { calChosen = null } = {}) {
     age: ageYears(property.building?.built, asOf),
     floor: property.building?.floor_m2,
     bm, rebuild,
+    // 構造別の耐用年数(未登録の構造は木造既定)。鉄骨は法定34年/木造22年の比から市場40年
+    life: BUILDING_LIFE_BY_TYPE[property.building?.type] ?? COEFFS.BUILDING_LIFE_Y,
     demo: demoMan,
     repair: repairMan,
     fee,
