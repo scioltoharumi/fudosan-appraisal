@@ -3,7 +3,10 @@
 id: jujonakahara2-21028966
 status: on_hold
 source: "SUUMO 21028966 (福屋不動産販売赤羽店)"
-source_url: "https://suumo.jp/chukoikkodate/tokyo/sc_kita/nc_21028966/"   # 実在確認済み 2026-07-24
+# 2026-08-29: source_url を再掲載側 nc_21333273 へ張り替えた。旧番号 nc_21028966 は404のままで、
+# 向け直さないと**日次クロールが毎日「掲載終了疑い」を出し続ける**(実際に2026-08-28・29と2日続けて出た)。
+# 旧: https://suumo.jp/chukoikkodate/tokyo/sc_kita/nc_21028966/(2026-07-24に実在確認 → 2026-08-28以降404)
+source_url: "https://suumo.jp/chukoikkodate/tokyo/sc_kita/nc_21333273/"   # 実在確認済み 2026-08-29(200)
 captured_at: 2026-07-24
 # 掲載終了の疑い(2026-08-28にSUUMO 404)は **2026-08-29に解消**。
 # 別番号 nc_21333273 で再掲載されているのを棚卸しで確認した(仲介が福屋不動産販売赤羽店 →

@@ -180,7 +180,13 @@
   "price_man": 5555,
   "address": "東京都北区神谷２",
   "walk_min": 14,
-  "kind": "chuko"
+  "kind": "chuko",
+  "land_m2": 32.16,
+  "floor_m2": 78.49,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
  },
  "nc_21004497": {
   "first_seen": "2026-08-12",
@@ -1851,6 +1857,28 @@
   "media": "suumo",
   "land_m2": 87.65,
   "floor_m2": null,
+  "ko_screened": true
+ },
+ "nc_21587170": {
+  "first_seen": "2026-08-29",
+  "price_man": 6690,
+  "address": "東京都北区滝野川６",
+  "walk_min": 5,
+  "kind": "chuko",
+  "media": "suumo",
+  "land_m2": 62.78,
+  "floor_m2": 70.58,
+  "ko_screened": true
+ },
+ "nc_21551661": {
+  "first_seen": "2026-08-29",
+  "price_man": 7798,
+  "address": "東京都北区滝野川４",
+  "walk_min": 9,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 71,
+  "floor_m2": 121,
   "ko_screened": true
  }
 }

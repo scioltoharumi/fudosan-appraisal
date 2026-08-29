@@ -44,8 +44,14 @@ const problems = await p.evaluate(() => {
         const ox = Math.min(a.x + a.w, c.x + c.w) - Math.max(a.x, c.x);
         const oy = Math.min(a.y + a.h, c.y + c.h) - Math.max(a.y, c.y);
         if (ox > 0 && oy > 0) {
+          // 白フチ表現の除外(2026-08-29): 着色セルの上でも読めるように、同じ文字を
+          // stroke(白フチ)→fill の2パスで**同じ座標に重ねて描く**手法がある(map.js のマーカー)。
+          // これは意図された重ね描きなので、**同一文字列がほぼ同一座標にある**ペアは検査対象外にする。
+          // map.html はこの手法で68組を誤検出し、本物の重なりが0件でも必ず落ちていた。
+          // 文字列が違う、または座標がずれているペアは従来どおり検出する
+          const halo = a.s === c.s && Math.abs(a.x - c.x) < 1.5 && Math.abs(a.y - c.y) < 1.5;
           const inter = ox * oy, minA = Math.min(a.w * a.h, c.w * c.h);
-          if (inter > 0.08 * minA) {
+          if (!halo && inter > 0.08 * minA) {
             out.push(`[重なり] ${label} / "${a.s}" × "${c.s}" 交差${ox.toFixed(0)}×${oy.toFixed(0)}px`);
           }
         }

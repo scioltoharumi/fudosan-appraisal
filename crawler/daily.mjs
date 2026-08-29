@@ -142,11 +142,35 @@ function parseDetailPrice(html) {
 // 複数戸掲載(新築分譲)のSUUMOページは号棟ごとの構造化データ(madoriList)を持つ。
 // 台帳YAMLの土地・建物面積で該当戸を特定して価格を取る(ページ代表価格を拾うと毎日
 // 誤って値下げ扱いになる。2026-08-12監査: nishigaoka2-21063164 で顕在化)。
-// 戸が特定できない場合は null を返し、呼び出し側でエラーとして開示する
+// 戸が特定できない場合は null を返し、呼び出し側でエラーとして開示する。
+//
+// 2026-08-29追加(salesUnitsOf): **構造化データが不完全な複数戸掲載**がある。
+// 滝野川3 nc_21133135 は madoriList が1件ぶんしか無く(tochiMensekiDisp が1つだけ)、
+// 号棟別の価格は写真キャプションにしか載っていない。この形だと units.length<2 で
+// 「単独掲載」と誤認し、ページ代表価格=**最安戸の価格**をその戸の価格として拾ってしまう。
+// 実害: 台帳のA号棟6,380万に対しB号棟6,180万を拾い、**毎日「-200万の値下げ」と誤報**していた。
+// 掲載の「販売戸数」欄は構造化データが壊れていても読めるので、これで複数戸を検出して
+// 既存の unit_unresolved ガードへ落とす(誤検出を価格変動と誤認しない、の原則どおり)。
+export function salesUnitsOf(html) {
+  const t = strip(html);
+  for (const re of [/販売戸数[^0-9]{0,8}([0-9]+)\s*戸/, /総戸数[^0-9]{0,8}([0-9]+)\s*戸/]) {
+    const m = t.match(re);
+    if (m) return Number(m[1]);
+  }
+  return null;   // 記載なし=判定しない
+}
+
 function parseUnitPriceSuumo(html, landM2, floorM2) {
   const units = [...html.matchAll(/title\s*:\s*"([^"]{1,20}号棟[^"]{0,10})"[\s\S]{0,300}?kakakuDisp\s*:\s*"(\d+)"[\s\S]{0,400}?tochiMensekiDisp\s*:\s*"([\d.]+)"[\s\S]{0,200}?tatemonoMensekiDisp\s*:\s*"([\d.]+)"/g)]
     .map((m) => ({ title: m[1], man: Math.round(Number(m[2]) / 10000), land: Number(m[3]), floor: Number(m[4]) }));
-  if (units.length < 2) return { multi: false };
+  if (units.length < 2) {
+    // 構造化データからは戸を並べられなかった。掲載欄が複数戸だと言っているなら代表価格を使わない
+    const sold = salesUnitsOf(html);
+    if (sold !== null && sold >= 2) {
+      return { multi: true, price: null, units, salesUnits: sold, structuredBroken: true };
+    }
+    return { multi: false };
+  }
   const hit = units.filter((u) => Math.abs(u.land - landM2) < 0.02 && Math.abs(u.floor - floorM2) < 0.02);
   if (hit.length !== 1) return { multi: true, price: null, units };
   return { multi: true, price: hit[0].man, unit: hit[0].title, units };
@@ -191,8 +215,13 @@ async function watch() {
     if (unitInfo.multi) {
       price = unitInfo.price; unitLabel = unitInfo.unit ?? null;
       if (price === null) {
-        errors.push({ where: `watch:${id}`, detail: `複数戸掲載(${unitInfo.units.length}戸)で該当戸を面積特定できず。掲載の戸: ` +
-          unitInfo.units.map((u) => `${u.title} ${u.man}万/${u.land}/${u.floor}`).join(" | ") + ` (台帳: 土地${p.land?.registered_m2}/建物${p.building?.floor_m2})` });
+        errors.push({ where: `watch:${id}`, detail: unitInfo.structuredBroken
+          ? `複数戸掲載(掲載の販売戸数${unitInfo.salesUnits}戸)だが号棟別の構造化データが不完全で戸を特定できず。`
+            + `ページ代表価格は最安戸の価格なので採用しない(台帳: 土地${p.land?.registered_m2}/建物${p.building?.floor_m2})。`
+            + `価格の確認は掲載元の号棟別表記を人が見ること`
+          : `複数戸掲載(${unitInfo.units.length}戸)で該当戸を面積特定できず。掲載の戸: `
+            + unitInfo.units.map((u) => `${u.title} ${u.man}万/${u.land}/${u.floor}`).join(" | ")
+            + ` (台帳: 土地${p.land?.registered_m2}/建物${p.building?.floor_m2})` });
         results.push({ id, status: "unit_unresolved", http: 200, units: unitInfo.units }); continue;
       }
     } else {

@@ -8,6 +8,7 @@ source_url: "https://suumo.jp/chukoikkodate/tokyo/sc_kita/nc_21474554/"   # 実�
 captured_at: 2026-08-12
 price_history:
   - {date: 2026-08-10, price_man: 7580}   # 媒体の情報提供日時点
+  - {date: 2026-08-29, price_man: 7280}   # -300万。2026-08-29の日次クロールで検出、掲載に「価格更新 7280万円」の明記あり
 location: {area: akabane-nishi, address: "北区赤羽西3"}
 layout: "2LDK+S(納戸)"   # 間取り(媒体記載)
 station: {walk_min: 14, multi_station: true}   # 東十条14分/赤羽14分/十条17分

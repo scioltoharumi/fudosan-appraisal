@@ -3,7 +3,7 @@
 // 事故の型: 新築の複数戸掲載は一覧が開発の代表価格(下限値)を出すため、価格が一致しても別戸でありうる。
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { fingerprint, siblingHint, DISTRICTS, roomsOf, districtOfAddress, needsRescreen } from "../crawler/daily.mjs";
+import { fingerprint, siblingHint, DISTRICTS, roomsOf, districtOfAddress, needsRescreen, salesUnitsOf } from "../crawler/daily.mjs";
 
 const districtOf = (addr) => districtOfAddress(addr);
 // 事故当時の台帳(1号棟のみ登録・価格は誤って5980万だった)
@@ -155,4 +155,22 @@ test("再審査: unknown(詳細未取得)には審査済みの印を立てない
   assert.equal(isScreenedVerdict("block"), false, "blockはko_blockedで記録する(ko_screenedではない)");
   // unknownのまま残った掲載は、価格が動かなくても needsRescreen が拾い続ける
   assert.equal(needsRescreen({ price_man: 4480, kind: "tochi" }, 4480), true);
+});
+
+// 複数戸掲載の代表価格を戸の価格として拾わないこと(2026-08-29の誤報を受けた回帰ガード)。
+// 滝野川3 nc_21133135 は madoriList が1件ぶんしか無く、号棟別価格は写真キャプションにしかない。
+// 構造化データだけを見ていると「単独掲載」と誤認し、ページ代表価格=**最安戸**を拾って
+// 台帳のA号棟6,380万に対しB号棟6,180万を「-200万の値下げ」と毎日誤報していた。
+test("salesUnitsOf: 掲載の販売戸数で複数戸を検出する(構造化データが壊れていても読める)", () => {
+  assert.equal(salesUnitsOf("<div>販売戸数</div><div>2戸</div>"), 2);
+  assert.equal(salesUnitsOf("<span>販売戸数</span> <span>4戸</span>"), 4);
+  assert.equal(salesUnitsOf("販売戸数 1戸"), 1, "単独掲載は1");
+  // 販売戸数が無ければ総戸数へ退避する
+  assert.equal(salesUnitsOf("<td>総戸数</td><td>3戸</td>"), 3);
+  assert.equal(salesUnitsOf("販売戸数 2戸 総戸数 5戸"), 2, "販売戸数を優先する");
+  // **記載なしは判定しない**(0や1で埋めると単独掲載として代表価格を拾ってしまう)
+  assert.equal(salesUnitsOf("<div>価格 6180万円</div>"), null);
+  assert.equal(salesUnitsOf(""), null);
+  // タグを跨いでも読めること(SUUMOはラベルと値が別要素)
+  assert.equal(salesUnitsOf('<th class="x">販売戸数</th><td class="y">2</td><td>戸</td>'), 2);
 });
