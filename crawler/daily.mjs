@@ -14,10 +14,13 @@ const SLEEP_MS = 2200;              // N1: リクエスト間隔2秒以上
 // N1: 1実行あたりの取得上限。watch(台帳件数ぶん)を先に消費し、残りがdiscoverの探索予算になる。
 // 到達しても例外にせず打ち切る(2026-08-12監査: 例外だとレポート不出力のまま異常終了し無人運用で沈黙した)。
 // 現在の最大需要は watch 17 + discover 32(4媒体×8頁) + KO詳細 8 = 57
-const MAX_PAGES = 72;
+const MAX_PAGES = 72 + Math.max(0, Number(process.env.KO_DETAIL_MAX ?? 8) - 8);
 // 新着のKO判定に使う詳細ページ取得の上限。一覧の走査に予算を食われてKO判定が
 // 「詳細未取得」で終わらないよう、この枠を先に取り置く(discover側が reserve として尊重する)
-const KO_DETAIL_MAX = 8;
+// 平時は8。**未審査の積み残しを一気に消化する棚卸しのときだけ** 環境変数で引き上げる
+// (例: KO_DETAIL_MAX=40 node crawler/daily.mjs --discover-only)。
+// 相手サイトへの間隔2.2秒は crawler/http.mjs 側で常に効くので、上げるのは件数だけ
+const KO_DETAIL_MAX = Number(process.env.KO_DETAIL_MAX ?? 8);
 const EXCLUDED_PATH = join(ROOT, "market", "crawl", "excluded.json");
 const AREA_SCAN_PATH = join(ROOT, "market", "area-scan.json");
 const PRICE_RANGE = [5000, 9000];   // discover対象(万円)
@@ -203,6 +206,19 @@ async function watch() {
   return results;
 }
 
+// 既見の掲載を再審査すべきか。**価格が動いたときだけ**見ていると、初見時に詳細取得の予算
+// (KO_DETAIL_MAX)が尽きて verdict=unknown になった掲載が、価格が動かない限り永久に再審査されない。
+// 2026-08-29に実害を確認: 岸町2 nc_21485594(7,180万・新築)が2026-08-13の初見から16日間、
+// 一度も報告されないまま埋もれていた(ユーザーが店舗でチラシを受け取って初めて発覚)。
+// seen.json 全113件のうち82件が同じ「印が1つも無い=一度も詳細まで審査していない」状態だった。
+// 判定済み(ko_blocked / out_of_scope / ko_screened)のものは価格が動いたときだけ見れば足りる。
+export function needsRescreen(prev, priceMan) {
+  if (!prev) return false;                                    // 新着は呼び出し側の別経路
+  if (prev.ko_blocked || prev.out_of_scope) return false;     // 判定済み。現場属性は価格で覆らない
+  if (!prev.ko_screened) return true;                         // 未審査 → 価格が同じでも審査する
+  return prev.price_man !== priceMan;
+}
+
 // ---- discover: 新着探索(12地区・5000〜9000万・徒歩20分以内) ----
 function parseSuumoUnits(html, kind) {
   const units = [];
@@ -345,6 +361,7 @@ async function discover(ledgerNcs, ledgerFps, ledgerUnits) {
   // 掲載欄の記載に依らず止める。ファイルが無ければ索引は空になり、従来どおりの判定に戻る
   const areaIndex = buildAreaHazardIndex(existsSync(AREA_SCAN_PATH) ? JSON.parse(readFileSync(AREA_SCAN_PATH, "utf8")) : null);
   let koFetches = 0;
+  let backlogPending = 0;   // 未審査のまま今回も予算に届かなかった件数(黙って減らさないため返す)
   const report = [];
   for (const u of matches) {
     const prev = seen[u.nc];
@@ -381,13 +398,19 @@ async function discover(ledgerNcs, ledgerFps, ledgerUnits) {
         seen[u.nc].ko_blocked = true; seen[u.nc].ko_codes = ko.codes;
         report.push({ ...entry, event: "new_ko_blocked" });
       } else if (ko.verdict === "suspect") {
+        // 詳細まで取って「人へ回す」と判定済み。印を付けないと needsRescreen が毎回取りに行くため、
+        // 審査済みの印とコードを残す(人はレポートの new_ko_suspect を見て判断する)
+        seen[u.nc].ko_screened = true; seen[u.nc].ko_suspect = ko.codes;
         report.push({ ...entry, event: "new_ko_suspect" });
       } else {
         // 新着として詳細まで審査を通した掲載は、以後の値下げで再取得しない
         seen[u.nc].ko_screened = true;
         report.push({ ...entry, event: "new" });
       }
-    } else if (prev.price_man !== u.price_man) {
+    } else if (needsRescreen(prev, u.price_man)) {
+      // 価格が動いた再判定と、未審査のまま溜まっていた掲載の初回審査を、同じ経路で処理する。
+      // 後者は first_seen が古いだけで中身は新着と同じなので、レポートの event も new 系に揃える
+      const priceMoved = prev.price_man !== u.price_man;
       seen[u.nc].price_man = u.price_man;
       // 諸元は後から使うので毎回埋め直す(KOスクリーニング導入前の既見エントリは持っていない)
       if (u.land_m2 != null) seen[u.nc].land_m2 = u.land_m2;
@@ -437,17 +460,23 @@ async function discover(ledgerNcs, ledgerFps, ledgerUnits) {
             continue;
           }
           seen[u.nc].ko_screened = true;
-          report.push({ ...cand, event: "price_changed", prev_price_man: prev.price_man, first_seen: prev.first_seen, ko });
+          if (ko.verdict === "suspect") seen[u.nc].ko_suspect = ko.codes;
+          const ev = priceMoved ? "price_changed" : (ko.verdict === "suspect" ? "new_ko_suspect" : "new");
+          report.push({ ...cand, event: ev, backlog: !priceMoved,
+            prev_price_man: prev.price_man, first_seen: prev.first_seen, ko });
           continue;
         }
         errors.push({ where: `ko-recheck:${u.nc}`, detail: `詳細取得失敗 http=${d.status} ${d.error ?? ""}` });
       }
+      // 予算切れ等で審査できなかった未審査分は **price_changed を騙らない**。
+      // 次回以降も needsRescreen が拾うので、件数だけ返して黙って持ち越す
+      if (!priceMoved) { backlogPending++; continue; }
       report.push({ ...u, district: districtOf(u.address), event: "price_changed", prev_price_man: prev.price_man, first_seen: prev.first_seen });
     }
   }
   mkdirSync(join(ROOT, "market", "crawl"), { recursive: true });
   writeFileSync(SEEN_PATH, JSON.stringify(seen, null, 1) + "\n", "utf8");
-  return { report, scanned: byNc.size, matched: matches.length };
+  return { report, scanned: byNc.size, matched: matches.length, backlog_pending: backlogPending };
 }
 
 // ---- main ----
@@ -479,13 +508,18 @@ const ledgerUnits = listPropertyIds().map((id) => {
 }).filter((x) => x.district);
 const out = { crawled_at: new Date().toISOString(), watch: [], discover: [], errors };
 if (mode !== "--discover-only") out.watch = await watch();
-if (mode !== "--watch-only") out.discover = (await discover(ledgerNcs, ledgerFps, ledgerUnits)).report;
+let discovered = null;
+if (mode !== "--watch-only") { discovered = await discover(ledgerNcs, ledgerFps, ledgerUnits); out.discover = discovered.report; }
 out.summary = {
   price_changes: out.watch.filter((w) => w.status === "price_changed").length,
   delisted_suspects: out.watch.filter((w) => w.status === "delisted_suspect").length,
   // new_listings = KOスクリーニングを通過し「自動登録の対象になる」件数。
   // 落とした件数も黙って消さず開示する(ko_blocked / ko_suspects / out_of_scope)
   new_listings: out.discover.filter((d) => d.event === "new").length,
+  // 未審査のまま積み残っていた既見掲載のうち、今回審査できた件数と、予算に届かず持ち越した件数。
+  // 「価格が動いたときだけ再審査する」設計で16日埋もれた事故(岸町2 nc_21485594)の再発を可視化する
+  backlog_screened: out.discover.filter((d) => d.backlog === true).length,
+  backlog_pending: discovered?.backlog_pending ?? 0,
   // 既見だった掲載が再判定でKOになったぶんも同じ枠で数える(黙って減らさない)
   ko_blocked: out.discover.filter((d) => d.event === "new_ko_blocked" || d.event === "ko_blocked_on_recheck").length,
   ko_suspects: out.discover.filter((d) => d.event === "new_ko_suspect").length,

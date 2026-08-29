@@ -3,7 +3,7 @@
 // 事故の型: 新築の複数戸掲載は一覧が開発の代表価格(下限値)を出すため、価格が一致しても別戸でありうる。
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { fingerprint, siblingHint, DISTRICTS, roomsOf, districtOfAddress } from "../crawler/daily.mjs";
+import { fingerprint, siblingHint, DISTRICTS, roomsOf, districtOfAddress, needsRescreen } from "../crawler/daily.mjs";
 
 const districtOf = (addr) => districtOfAddress(addr);
 // 事故当時の台帳(1号棟のみ登録・価格は誤って5980万だった)
@@ -90,4 +90,29 @@ test("地区名は長い方を優先して照合する(赤羽北を赤羽と読�
   assert.equal(districtOfAddress("東京都北区赤羽2"), "赤羽", "赤羽そのものは従来どおり");
   assert.equal(districtOfAddress("北区赤羽西4", "北区"), "赤羽西", "台帳YAMLの「北区」表記でも同じ");
   assert.equal(districtOfAddress("東京都北区未知町1"), null, "対象外の地区はnull");
+});
+
+// 2026-08-29: 既見の掲載を「価格が動いたときだけ」再審査していたため、初見時に詳細取得の予算
+// (KO_DETAIL_MAX=8)が尽きて未審査のまま残った掲載が永久に埋もれていた。
+// 実害: 岸町2 nc_21485594(7,180万・新築・掲載条件を満たす)が2026-08-13の初見から16日間、
+// 一度も報告されなかった。seen.json 113件中82件が同じ状態だった。
+// このテストは「印が1つも無い既見は価格が同じでも再審査に上がる」ことを固定する。
+test("再審査: 未審査の既見掲載は価格が動かなくても拾う(予算切れの取りこぼしを埋もれさせない)", () => {
+  const kishimachi = { first_seen: "2026-08-13", price_man: 7180, address: "東京都北区岸町２", floor_m2: null };
+  assert.equal(needsRescreen(kishimachi, 7180), true, "未審査(印なし)は価格据え置きでも再審査する");
+
+  // 判定済みのものは価格が動いたときだけでよい(現場属性は価格で覆らない)
+  assert.equal(needsRescreen({ ko_screened: true, price_man: 7180 }, 7180), false, "審査済み・価格据え置きは取りに行かない");
+  assert.equal(needsRescreen({ ko_screened: true, price_man: 7180 }, 6980), true, "審査済みでも値下げしたら再判定する");
+
+  // KO・圏外は価格が動いても再提案しない(既存の規律を壊さない)
+  assert.equal(needsRescreen({ ko_blocked: true, price_man: 7180 }, 6980), false, "KO済みは値下げしても戻さない");
+  assert.equal(needsRescreen({ out_of_scope: { floor_m2: 65 }, price_man: 7180 }, 6980), false, "圏外は値下げしても戻さない");
+
+  // suspect も詳細まで取ったうえでの判定なので、印が付いていれば取りに行かない
+  // (印を付け忘れると毎回全件の詳細を取りに行き、相手サイトへの負荷と予算浪費になる)
+  assert.equal(needsRescreen({ ko_screened: true, ko_suspect: ["ROAD_NO_SHARE"], price_man: 7180 }, 7180), false,
+    "suspectは審査済みとして扱う(毎回再取得しない)");
+
+  assert.equal(needsRescreen(null, 7180), false, "新着は別経路");
 });
