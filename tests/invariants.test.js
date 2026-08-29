@@ -187,12 +187,22 @@ test("データ規律: 全物件YAMLに必須フィールドが揃っている(�
 test("データ規律: 全物件に hazard_check があり、該当(hit)物件が台帳に残っていない", () => {
   // 2026-08-12: 重要事項説明は契約直前に来るため、ハザードは検討の早期に潰す必要がある。
   // 掲載の制限事項欄は該当物件でも空欄のことがあり(西が丘2の実例)、媒体単独の確認では不十分。
+  //
+  // 例外リスト(2026-08-29新設): **ユーザーが個別に承認した物件だけ** hit のまま台帳に残せる。
+  // 経緯: 岸町2-4-9(kishimachi2-mirasumo-204)のSUUMO掲載に「宅地造成工事規制区域」の明記があり、
+  // 規律どおりなら除外だが、ユーザーが2026-08-29に「例外として残す(開示つき)」を選択した。
+  // 宅造区域は切土・盛土・擁壁に許可が要る区域で、それ自体は建築不可ではない(KO4の中では最も軽い区分)。
+  // **このリストへの追加は必ずユーザー承認とセット**(勝手に足せば規律が死ぬ)。承認日と理由を残すこと
+  const HIT_ALLOWED = {
+    "kishimachi2-mirasumo-204": "2026-08-29ユーザー承認: 宅地造成工事規制区域(SUUMO nc_21089174)。開示つきで台帳に残す",
+  };
   const OK = ["none", "hit", "unchecked", "na"];
   for (const id of listPropertyIds()) {
     const h = loadProperty(id).hazard_check;
     assert.ok(h, `${id}: hazard_check が無い(ハザード確認状況の記録は必須)`);
     for (const k of ["suumo", "athome"]) assert.ok(OK.includes(h[k]), `${id}: hazard_check.${k} が不正 (${h[k]})`);
     assert.ok(h.checked_at, `${id}: hazard_check.checked_at が無い`);
+    if (HIT_ALLOWED[id]) continue;   // 承認済み例外(上記)。開示は物件YAMLのcaveatが担う
     assert.notEqual(h.suumo, "hit", `${id}: ハザード該当物件は台帳に載せない(excluded.jsonへ)`);
     assert.notEqual(h.athome, "hit", `${id}: ハザード該当物件は台帳に載せない(excluded.jsonへ)`);
   }

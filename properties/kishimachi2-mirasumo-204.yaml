@@ -56,10 +56,10 @@ income: {rent_man: 26, rent_assumed: true, expense_rate: 0.15, cap_rate: 0.045}
 checklist: {road_type_verified: false, retaining_wall: false, hazard: false, seismic: true}
 hazard_check:
   checked_at: 2026-08-29
-  suumo: na          # **暫定**。SUUMO掲載(nc_21089174)を2026-08-29に確認し、その他制限事項に
-                     # 「宅地造成工事規制区域」の明記がある=台帳の規律では hit に当たる。
-                     # ただし hit は「台帳に載せない」ガード(tests)と衝突するため、掲載条件の例外と
-                     # するか除外するかの**ユーザー判断が出るまで na のまま**とし、事実は下の caveat に全て記録する
+  suumo: hit         # SUUMO掲載(nc_21089174・2026-08-29確認)の「その他制限事項」に
+                     # **宅地造成工事規制区域**の明記(+景観法・準防火)。台帳の規律では除外区分だが、
+                     # **2026-08-29にユーザーが「例外として残す(開示つき)」を選択**した。
+                     # tests/invariants.test.js の HIT_ALLOWED に承認記録あり。詳細は下の caveat
   athome: unchecked
   note: "販売図面にハザードの記載は一切ない。**この欄に洪水浸水想定は原則載らない**(重説の義務項目であって
     広告欄の項目ではない)ため、下の official で公式マップと照合した"
