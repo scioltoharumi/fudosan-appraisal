@@ -2,7 +2,7 @@
 // スケールSVG / 明細表 / MC分布 / トルネード / 算出根拠の全文開示 / 予算 / モデル外チェックリスト / 仮定一覧
 import { fmtMan, pct, COEFFS } from "../../engine/appraise.js";
 import { districtOf } from "../../engine/retail.js";
-import { layout, esc, STATUS_LABEL, fmtDate, safeUrl } from "./layout.js";
+import { layout, esc, escRich, STATUS_LABEL, fmtDate, safeUrl } from "./layout.js";
 import { anatomySvg, rawResidualStats } from "./anatomy.js";
 
 const DIR_LABEL = { "0.05": "南", "0.02": "東・南西・南東", "0": "西", "-0.03": "北" };
@@ -283,9 +283,9 @@ function checklistHtml(property) {
 function assumptionsHtml(r) {
   const src = r.area.source === "koji_fallback"
     ? "公示地価×1.15フォールバック(成約事例3件未満)"
-    : esc(String(r.area.source));
+    : escRich(String(r.area.source));
   const items = r.assumptions.length
-    ? r.assumptions.map((a) => `<li><b>${esc(a.field)}</b> = ${esc(a.value)} <span class="why">── ${esc(a.why)}</span></li>`).join("")
+    ? r.assumptions.map((a) => `<li><b>${esc(a.field)}</b> = ${esc(a.value)} <span class="why">── ${escRich(a.why)}</span></li>`).join("")
     : "<li>なし(全項目が実測・記載値)</li>";
   return `<section>
     <h2 class="sub">採用した仮定と出典 ── この査定が立っている足場</h2>
@@ -388,7 +388,7 @@ function marketCalHtml(r, marketCal) {
       <div class="logic-body">
         <table class="kv">
           <tr><td>公示ベースの従来単価(公示×実勢係数)</td><td>${rRef ? Math.round(rRef.state.ppt) + "万円/坪" : "—"}</td></tr>
-          <tr><td>土地成約による較正値${chosen ? `<div class="note" style="margin-top:2px">${esc(chosen.basis)} / 信頼度: ${esc(chosen.confidence)}</div>` : ""}</td><td>${chosen ? chosen.ppt + "万円/坪" : "データ不足"}</td></tr>
+          <tr><td>土地成約による較正値${chosen ? `<div class="note" style="margin-top:2px">${escRich(chosen.basis)} / 信頼度: ${esc(chosen.confidence)}</div>` : ""}</td><td>${chosen ? chosen.ppt + "万円/坪" : "データ不足"}</td></tr>
           <tr class="em"><td>本査定の採用単価</td><td>${Math.round(r.state.ppt)}万円/坪(${adopted && chosen ? `較正値${chosen.ppt}万と従来値${rRef ? Math.round(rRef.state.ppt) : "—"}万のブレンド` : chosen ? "較正値は信頼度不足のため従来値を採用" : "従来値"})</td></tr>
           ${rRef && Math.round(rRef.fairFinal.mid) !== Math.round(r.fairFinal.mid) ? `<tr><td>(参考)従来単価のままの場合の適正中央値</td><td>${fmtMan(rRef.fairFinal.mid)}(本査定 ${fmtMan(r.fairFinal.mid)})</td></tr>` : ""}
         </table>
@@ -417,14 +417,14 @@ function hazardHtml(property) {
       ／ SUUMO掲載: ${esc(LABEL[h.suumo] ?? h.suumo)}
       ／ athome掲載: ${esc(LABEL[h.athome] ?? h.athome)}${h.athome_ref ? `(${esc(h.athome_ref)})` : ""}
       ／ 確認日 ${esc(fmtDate(h.checked_at))}
-      <div class="note" style="margin-top:3px">${esc(h.note ?? "")}</div>
+      <div class="note" style="margin-top:3px">${escRich(h.note ?? "")}</div>
       ${o ? `<div style="margin-top:7px;padding-top:7px;border-top:1px dashed ${color}">
         <b>公式マップ照合</b>(国土地理院タイル・${esc(fmtDate(o.checked_at))}) ／ ${esc(o.query)} の代表点 ${esc(o.point)} ／ 標高 ${esc(o.elevation_m)}m<br>
         ${Array.isArray(o.hits) && o.hits.length
           ? o.hits.map((x) => `<span style="color:${color};font-weight:700">${esc(x)}</span>`).join(" ／ ")
           : "代表点では該当なし"}${o.flood_l2 ? `<br>周辺±200mの25点サンプルでの浸水想定の被覆: ${esc(o.flood_coverage)}` : ""}
         ${o.reason ? `<div style="margin-top:3px;color:${color}"><b>${bad ? "掲載条件「台地側(荒川低地の浸水想定域外)」から外れている" : "要確認"}</b>: ${esc(o.reason)}</div>` : ""}
-        <div class="note" style="margin-top:3px">${esc(o.limit ?? "")} <a href="../map.html">エリア全体のハザードマップ対照を見る↗</a></div>
+        <div class="note" style="margin-top:3px">${escRich(o.limit ?? "")} <a href="../map.html">エリア全体のハザードマップ対照を見る↗</a></div>
       </div>` : ""}
       ${pending ? `<div class="note" style="margin-top:3px;color:var(--stamp)"><b>掲載の制限事項欄は該当物件でも空欄のことがある</b>(実例: 西が丘2の2棟現場はSUUMOが空欄で、athomeの4業者掲載のみが土砂災害特別警戒区域を明記)。<b>内見・申込より前に</b>、重ねるハザードマップと東京都の土砂災害警戒区域等マップで自分で照合し、仲介には法令上の制限の全項目を書面で出してもらうこと。重要事項説明は契約直前のため、そこまで進めてから判明すると引き返しにくい。</div>` : ""}
     </div>`;
@@ -438,9 +438,9 @@ function caveatsHtml(property) {
   if (!Array.isArray(cs) || cs.length === 0) return "";
   const items = cs.map((c) => `
     <li style="margin-bottom:10px">
-      <b>${esc(c.title)}</b>${c.effect ? `<span class="status" style="margin-left:6px">${esc(c.effect)}</span>` : ""}
-      <div style="font-size:.82rem;line-height:1.8;margin-top:3px">${esc(c.detail)}</div>
-      ${c.check ? `<div class="note" style="margin-top:2px">確認方法: ${esc(c.check)}</div>` : ""}
+      <b>${escRich(c.title)}</b>${c.effect ? `<span class="status" style="margin-left:6px">${esc(c.effect)}</span>` : ""}
+      <div style="font-size:.82rem;line-height:1.8;margin-top:3px">${escRich(c.detail)}</div>
+      ${c.check ? `<div class="note" style="margin-top:2px">確認方法: ${escRich(c.check)}</div>` : ""}
     </li>`).join("");
   return `
     <section>
@@ -460,7 +460,7 @@ export function renderProperty(r, property, marketCal = null, houseDeals = null)
   <div style="margin-bottom:12px;font-size:.8rem"><a href="../index.html">← 物件一覧へ</a></div>
   <div class="panel">
     <h2>${esc(property.location?.address ?? r.id)}${property.unit_label ? `<span class="unit-tag">${esc(property.unit_label)}</span>` : ""} <span class="status">${esc(status)}</span></h2>
-    <div class="note">ID: ${esc(r.id)} / 出典: ${esc(property.source ?? "—")} / 取得日: ${esc(fmtDate(property.captured_at))} / 駅徒歩${esc(property.station?.walk_min)}分 / 土地${esc(property.land?.registered_m2)}m² / 延床${esc(property.building?.floor_m2)}m² / 築: ${esc(fmtDate(property.building?.built))}</div>
+    <div class="note">ID: ${esc(r.id)} / 出典: ${escRich(property.source ?? "—")} / 取得日: ${esc(fmtDate(property.captured_at))} / 駅徒歩${esc(property.station?.walk_min)}分 / 土地${esc(property.land?.registered_m2)}m² / 延床${esc(property.building?.floor_m2)}m² / 築: ${esc(fmtDate(property.building?.built))}</div>
     ${safeUrl(property.source_url) ? `<a class="src-link" href="${esc(property.source_url)}" target="_blank" rel="noopener noreferrer">元の掲載ページを見る ↗</a>` : ""}
 
     ${specTable(r, property)}
