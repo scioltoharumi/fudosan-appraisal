@@ -28,6 +28,7 @@ function summary(r, property) {
   L.push(`適正レンジ: ${fmtMan(r.fairFinal.lo)} 〜 ${fmtMan(r.fairFinal.mid)} 〜 ${fmtMan(r.fairFinal.hi)}`);
   if (r.retail) L.push(`リテール比較: ${fmtMan(r.retail.lo)} 〜 ${fmtMan(r.retail.mid)} 〜 ${fmtMan(r.retail.hi)}(類似成約${r.retail.n}件・${r.retail.districtScoped ? "近接地区限定" : "全地区(参考)"}・${r.retail.shapeBasis}) / 原価法中央値 ${fmtMan(r.mid.fair)} / 重み リテール${(r.fairFinal.weights.retail*100).toFixed(0)}%:原価${(r.fairFinal.weights.cost*100).toFixed(0)}%`);
   else L.push(`リテール比較: 類似成約が不足のため原価法のみ`);
+  if (r.retail?.breadthBasis) L.push(`事例の接道    : ${r.retail.breadthBasis}`);
   L.push(`乖離      : ${r.premium >= 0 ? "+" : ""}${fmtMan(r.premium)}(売出 − 査定中央値)`);
   L.push(`即時含み損: ${fmtMan(r.instLoss)}(総取得 ${fmtMan(r.totalCost)} − 査定中央値)`);
   L.push(`MC        : P10 ${fmtMan(r.mc.p10)} / P50 ${fmtMan(r.mc.p50)} / P90 ${fmtMan(r.mc.p90)}・売出は${r.mc.askPercentile.toFixed(0)}パーセンタイル(原価法サイドのみの分布・参考。seed=${r.mc.seed})`);

@@ -26,7 +26,48 @@ export const RETAIL = {
   LAND_RESID_MIN_RATIO: 0.3, // 土地残差の下限(総額の30%。建物控除のしすぎ防止)
   REPAIR_PER_YEAR: 30,   // 繰延修繕の築年比例上限(万円/年)。築浅事例に一律800万を仮定する過大控除の防止
   SHAPE_POOL_MIN: 8,     // 整形地限定プールを採用する最低件数。これを割ると混合プール+半減へ退避する
+  BREADTH_KO_M: 1.8,     // 前面道路の幅員がこれ未満の事例はプールから外す(下記 BREADTH_KNOTS のコメント参照)
 };
+
+// ---- 前面道路の幅員(2026-08-29新設) ----
+// 経緯: 上十条3(築42年)の事例プール5件が 52〜223万/坪 と4.3倍に割れ、中央値が1,564万まで落ちた。
+// 出所を国交省APIの生データまで遡ると、5件はすべて実在するが幅員が 1.2m / 1.7m / 記載なし×2 / 2.5m で、
+// **最も安い2件は接道義務(建築基準法42条)を満たさない**=再建築不可相当だった。
+// 台帳はこれをKO1(再建築不可)で候補から落とすのに、**ものさしの側には入れていた**という非対称。
+//
+// 当初は「土地値の50%未満の事例を外す」案を検討したが、これは答え(土地値)を先に決めて
+// それに逆らうデータを捨てる循環論法で、崖の検証で自ら戒めた形(基準に結論を焼き込む)そのもの。
+// 価格ではなく**物理的属性である幅員**で切る。幅員は house-deals.csv に既に 660/765件ある。
+//
+// 実測(765件・エンジンの正規化後・地区×2年帯を統制・基準=幅員4.0-6.0m):
+//   〜2.0m    n= 21  −40.4%  CI −61.2〜−19.1%  ★判別可能
+//   2.0-2.7m  n= 48  −17.7%  CI −29.9〜 −9.7%  ★判別可能
+//   2.7-4.0m  n=165   −6.3%  CI −10.9〜 −1.1%  ★判別可能
+//   4.0-6.0m  n=281  (基準)
+//   6.0m超    n=122  +14.5%  CI  +8.6〜+25.4%  ★判別可能
+// **全帯が判別可能**で符号も単調。2026-08-13に対象側で測った値(4m未満 −11.0% / 6m超 +21.4%)とも整合し、
+// 事例側だけが素通しだった。採用値は既存の慣行どおり**各層のCIの0に近い側**を採る保守設定で、
+// 結果として対象側の既存係数(4m未満 −5% / 6m超 +10%)と同じ目盛りに乗る。
+// 帯の階段にすると境界で不連続に跳ぶため、徒歩補正(WALK_KNOTS)と同じ折れ線で補間する。
+export const BREADTH_KNOTS = [[2.0, -0.20], [2.7, -0.10], [4.0, -0.05], [5.0, 0], [6.0, 0], [7.0, 0.10]];
+
+// 幅員 → 標準条件(4〜6m)に対する補正。記載なし(null/NaN)は**判定しない**=0(数えられない表記は
+// 判定しないという台帳全体の規律。記載なし事例の件数は shapeBasis と同様に開示する)
+export function breadthAdjOf(breadthM) {
+  // 記載なしを先に弾く。Number(null)===0 / Number("")===0 はいずれも Number.isFinite が true になるため、
+  // 生値を見ずに coerce すると「幅員0m」として最大減点が当たる(2026-08-29に実装直後のテストが検出)
+  if (breadthM === null || breadthM === undefined || breadthM === "") return 0;
+  const b = Number(breadthM);
+  if (!Number.isFinite(b) || b <= 0) return 0;
+  if (b <= BREADTH_KNOTS[0][0]) return BREADTH_KNOTS[0][1];
+  const last = BREADTH_KNOTS[BREADTH_KNOTS.length - 1];
+  if (b >= last[0]) return last[1];
+  for (let i = 1; i < BREADTH_KNOTS.length; i++) {
+    const [x0, y0] = BREADTH_KNOTS[i - 1], [x1, y1] = BREADTH_KNOTS[i];
+    if (b <= x1) return y0 + ((y1 - y0) * (b - x0)) / (x1 - x0);
+  }
+  return last[1];
+}
 
 // 出典の土地形状表記のうち「整形地」とみなすもの(calibrate.SHAPE_NORM_ADJ の 0% 群と同じ語彙)。
 // 空欄(出典に記載なし)は整形と断定できないため**含めない**。
@@ -143,7 +184,10 @@ export function normalizeLandUnit(d, asOf) {
   const time = growthFactor(d.quarter, asOf);  // 土地残差なので土地の年次別レートで時点修正
   const walkComp = walkAdjOf(d.walk_min);
   const denom = clamp(1 + walkComp, RETAIL.WALK_DENOM_CLAMP[0], RETAIL.WALK_DENOM_CLAMP[1]);
-  return unit * time / denom;
+  // 幅員も標準条件(4〜6m)へ戻す(2026-08-29)。徒歩と同じ扱いで、事例側の条件差を先に消してから比較する。
+  // 記載なしの事例は breadthAdjOf が0を返すので、この行は素通し=従来と同じ挙動になる
+  const bDenom = clamp(1 + breadthAdjOf(d.breadth_m), RETAIL.WALK_DENOM_CLAMP[0], RETAIL.WALK_DENOM_CLAMP[1]);
+  return unit * time / denom / bDenom;
 }
 
 // 物件住所(例: 北区赤羽西4)→ 地区名(赤羽西)
@@ -169,13 +213,19 @@ export function buildDistrictIndex(deals, asOf) {
 export function retailEstimate(s, asOf, deals, { subjectDistrict = null } = {}) {
   const landM2 = s.land;
   const isUsed = s.age >= RETAIL.SUBJECT_USED_AGE;
+  const koBreadth = [];   // 接道義務を満たさず外した事例(開示用。黙って減らさない)
   const comps = deals.filter((d) =>
     Math.abs(d.age_y - s.age) <= RETAIL.AGE_BAND_Y &&
     // 対称化: 中古の査定に新築建売を混ぜない / 新築の査定は新築成約に限定(分譲利益込みの市場)
     (isUsed ? d.age_y >= RETAIL.NEWBUILD_AGE : d.age_y < RETAIL.NEWSUBJ_COMP_MAX_AGE) &&
     d.walk_min <= RETAIL.WALK_MAX &&
     d.land_m2 >= landM2 * RETAIL.LAND_RATIO[0] && d.land_m2 <= landM2 * RETAIL.LAND_RATIO[1] &&
-    d.floor_m2 >= s.floor * RETAIL.FLOOR_RATIO[0] && d.floor_m2 <= s.floor * RETAIL.FLOOR_RATIO[1]
+    d.floor_m2 >= s.floor * RETAIL.FLOOR_RATIO[0] && d.floor_m2 <= s.floor * RETAIL.FLOOR_RATIO[1] &&
+    // 接道義務(建築基準法42条)を満たさない事例を外す(2026-08-29)。台帳はKO1(再建築不可)で
+    // 候補から落とすのだから、ものさしの側にも入れない。**記載なしは落とさない**(判定しない規律)
+    (Number.isFinite(d.breadth_m) && d.breadth_m < RETAIL.BREADTH_KO_M
+      ? (koBreadth.push(d), false)
+      : true)
   );
   if (comps.length < RETAIL.MIN_COMPS) return null;
 
@@ -199,6 +249,15 @@ export function retailEstimate(s, asOf, deals, { subjectDistrict = null } = {}) 
   const shapeBasis = shapeControlled
     ? `整形地限定プール${regularPool.length}件(形状補正を満額適用)`
     : `混合プール${mixedPool.length}件(整形地${regularPool.length}件では不足のため形状補正は半減。形状不明${mixedPool.filter((d) => !d.shape).length}件を含む)`;
+
+  // ---- 幅員の開示(2026-08-29)。除外した件数と、幅員が記載されていない件数を必ず出す ----
+  const noBreadth = usable.filter((d) => !Number.isFinite(d.breadth_m)).length;
+  const breadthBasis = [
+    koBreadth.length
+      ? `接道義務未充足(幅員${RETAIL.BREADTH_KO_M}m未満)の${koBreadth.length}件をプールから除外(${koBreadth.map((d) => `${d.district}${d.price_man}万/幅員${d.breadth_m}m`).join("・")})`
+      : null,
+    `幅員は標準条件4〜6mへ正規化済み${noBreadth ? `(うち幅員の記載がない${noBreadth}件は補正なし=判定しない)` : ""}`,
+  ].filter(Boolean).join("。");
 
   const effTsubo = Math.max(0, s.land - s.setback) / COEFFS.TSUBO_M2;
   // 対象物件の個別要因(原価法と同じ係数体系)。複数駅補正は事例側の駅属性が不明なため適用しない
@@ -233,6 +292,8 @@ export function retailEstimate(s, asOf, deals, { subjectDistrict = null } = {}) 
     districtScoped,
     shapeControlled,      // true=整形地限定プール(形状補正は満額) / false=混合プール(半減)
     shapeBasis,
+    breadthBasis,         // 幅員の除外・正規化の開示文(黙って減らさない)
+    koBreadth,            // 接道義務未充足で外した事例(件数と内訳)
     subjectDistrict,
     repairSubj,
     lo: quantile(units, 0.25) * effTsubo + bldgSubj,

@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { evaluate } from "../engine/appraise.js";
-import { loadHouseDeals, loadVerification, retailEstimate, RETAIL, REGULAR_SHAPES } from "../engine/retail.js";
+import { loadHouseDeals, loadVerification, retailEstimate, RETAIL, REGULAR_SHAPES, breadthAdjOf, normalizeLandUnit } from "../engine/retail.js";
 import { growthFactor } from "../engine/timeadjust.js";
 import { calibrate } from "../engine/calibrate.js";
 import { loadAreaConfig, loadProperty, listPropertyIds } from "../engine/io.js";
@@ -265,4 +265,78 @@ test("形状: 一次ソースと再掲サイトで矛盾していない(照合�
   const rate = withShape.length / deals.length;
   // APIでも埋まらない欠測(原データで「地域」区分が空の行)があるため6割前後で頭打ちになる
   assert.ok(rate > 0.55 && rate < 0.7, `形状の記載率が想定外: ${(rate * 100).toFixed(1)}%`);
+});
+
+// ---- 前面道路の幅員(2026-08-29新設) ----
+// 経緯: 上十条3の事例プールに、幅員1.2m・1.7m=接道義務(建築基準法42条)を満たさない成約が
+// 入っていた(台帳ならKO1で落とす条件)。当初は「土地値の50%未満を外す」案を検討したが、
+// 答えを先に決めてそれに逆らうデータを捨てる循環論法なので、物理的属性である幅員で切る形にした。
+
+test("幅員補正: 節点の形と、記載なしを『幅員0m』として減点しないこと", () => {
+  // 折れ線の補間で端数が出るため、節点は許容誤差つきで比較する
+  const near = (a, b, why) => assert.ok(Math.abs(a - b) < 1e-9, `${why}: ${a} != ${b}`);
+  near(breadthAdjOf(1.0), -0.20, "2.0m以下は下限で頭打ち");
+  near(breadthAdjOf(2.0), -0.20, "節点2.0m");
+  near(breadthAdjOf(2.7), -0.10, "節点2.7m");
+  near(breadthAdjOf(4.0), -0.05, "節点4.0m");
+  near(breadthAdjOf(5.0), 0, "節点5.0m");
+  near(breadthAdjOf(6.0), 0, "4〜6mが標準条件=補正なし");
+  near(breadthAdjOf(7.0), 0.10, "節点7.0m");
+  near(breadthAdjOf(12), 0.10, "7m超は上限で頭打ち");
+  // 単調非減少(帯の階段にせず折れ線で補間しているので、途中で反転しないこと)
+  let prev = -Infinity;
+  for (let b = 0.5; b <= 12; b += 0.1) {
+    const v = breadthAdjOf(b);
+    assert.ok(v >= prev - 1e-12, `幅員${b.toFixed(1)}mで反転: ${v} < ${prev}`);
+    prev = v;
+  }
+  // **実装直後に踏んだ罠の回帰ガード**: Number(null)===0 / Number("")===0 はいずれも
+  // Number.isFinite が true になるため、生値を見ずに coerce すると「幅員0m」として
+  // 最大減点(-20%)が当たる。記載なしは必ず「判定しない」=0 でなければならない
+  for (const v of [null, undefined, "", "  ", NaN, "不明", 0, -1]) {
+    assert.equal(breadthAdjOf(v), 0, `記載なし/不正値 ${JSON.stringify(v)} に補正が当たっている`);
+  }
+});
+
+test("幅員: 接道義務を満たさない事例はプールに入らない(台帳のKO1と一貫)", () => {
+  const deals = loadHouseDeals();
+  const withB = deals.filter((d) => Number.isFinite(d.breadth_m));
+  assert.ok(withB.length >= 500, `幅員の記載がある事例が十分にある: ${withB.length}件`);
+  const ko = withB.filter((d) => d.breadth_m < RETAIL.BREADTH_KO_M);
+  assert.ok(ko.length > 0, "そもそも接道義務未充足の事例が原データに存在する(前提)");
+
+  for (const id of listPropertyIds()) {
+    const r = evaluate(loadProperty(id), loadAreaConfig(), { asOf: AS_OF, houseDeals: deals });
+    if (!r.retail) continue;
+    for (const c of r.retail.comps) {
+      assert.ok(!(Number.isFinite(c.breadth_m) && c.breadth_m < RETAIL.BREADTH_KO_M),
+        `${id}: 接道義務未充足の事例がプールに残っている(${c.district}${c.price_man}万・幅員${c.breadth_m}m)`);
+    }
+    // 黙って減らさない: 除外したなら必ず開示文に出る
+    assert.ok(typeof r.retail.breadthBasis === "string" && r.retail.breadthBasis.length > 0,
+      `${id}: 幅員の開示文がない`);
+    if (r.retail.koBreadth.length) {
+      assert.match(r.retail.breadthBasis, /接道義務未充足/, `${id}: 除外したのに開示文に出ていない`);
+      for (const k of r.retail.koBreadth) {
+        assert.ok(r.retail.breadthBasis.includes(String(k.price_man)), `${id}: 除外事例の内訳が開示されていない`);
+      }
+    }
+  }
+});
+
+test("幅員: 事例は標準条件(4〜6m)へ正規化され、対象側の接道補正と二重にならない", () => {
+  const asOf = AS_OF;
+  const base = { quarter: "2025Q1", district: "赤羽西", price_man: 6000, land_m2: 70, floor_m2: 95,
+    age_y: 10, walk_min: 8, shape: "長方形", road_type: "public" };
+  // 同一諸元で幅員だけ違う2件は、正規化後に幅員ぶんの差が消えていること
+  const narrow = normalizeLandUnit({ ...base, breadth_m: 2.7 }, asOf);
+  const std = normalizeLandUnit({ ...base, breadth_m: 5.0 }, asOf);
+  const wide = normalizeLandUnit({ ...base, breadth_m: 8.0 }, asOf);
+  assert.ok(narrow > std, "狭い道路の成約は、標準条件へ戻すと単価が上がる");
+  assert.ok(wide < std, "広い道路の成約は、標準条件へ戻すと単価が下がる");
+  assert.ok(Math.abs(narrow / std - 1 / (1 - 0.10)) < 1e-9, `2.7mの正規化量: ${narrow / std}`);
+  assert.ok(Math.abs(wide / std - 1 / (1 + 0.10)) < 1e-9, `8.0mの正規化量: ${wide / std}`);
+  // 記載なしは素通し(従来の挙動と完全一致)
+  const none = normalizeLandUnit({ ...base, breadth_m: null }, asOf);
+  assert.equal(none, std, "幅員の記載がない事例は補正せず標準条件と同じ扱い");
 });
