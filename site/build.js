@@ -20,6 +20,7 @@ import { renderCliff } from "./templates/cliff.js";
 import { renderSimulate } from "./templates/simulate.js";
 import { renderTradeoff } from "./templates/tradeoff.js";
 import { renderEffort } from "./templates/effort.js";
+import { renderDecision } from "./templates/decision.js";
 import { renderHazardMap } from "./templates/map.js";
 import { loadVerification } from "../engine/retail.js";
 import { loadDeals } from "../engine/calibrate.js";
@@ -89,6 +90,9 @@ console.log("✓ tradeoff.html");
 // 手間の解剖(お金では見えない持ち家の運用。2026-08-17ユーザー要望): 静的リファレンス
 writeFileSync(join(DIST, "effort.html"), renderEffort({ asOf }), "utf8");
 console.log("✓ effort.html(手間の解剖)");
+// 意思決定の地図(検討の一周を1枚で振り返る。2026-08-29ユーザー要望): 静的リファレンス
+writeFileSync(join(DIST, "decision.html"), renderDecision({ asOf }), "utf8");
+console.log("✓ decision.html(意思決定の地図)");
 // 保有年数シミュレーター(2026-08-16ユーザー要望): 任意の2物件の「取得+保有−出口」を年数で比較。
 // 出口の実測カーブは cliff.html と同じ ageCurveCI(帯別中央値と95%CI)を注入する
 const simCurve = ageCurveCI(houseDeals);
