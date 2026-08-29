@@ -4,21 +4,37 @@
 // **230箇所が生の ** として全物件ページに表示されていた**。layout.js の escRich() で解消した。
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { evaluate, defaultAsOf } from "../engine/appraise.js";
+import { loadAreaConfig, loadProperty, listPropertyIds } from "../engine/io.js";
+import { loadHouseDeals } from "../engine/retail.js";
+import { calibrate } from "../engine/calibrate.js";
 import { escRich, esc } from "../site/templates/layout.js";
+import { renderProperty } from "../site/templates/property.js";
+import { renderMarketBasis } from "../site/templates/market-basis.js";
 
-const DIST = new URL("../site/dist", import.meta.url).pathname;
+// **dist/ は読まない**。CIは `npm test` を `npm run build` より先に走らせるので、
+// 生成物に依存すると実行順で結果が変わる(2026-08-29に実際にCIだけ落ちた)。
+// build.js と同じ手順でテンプレートをその場で描画して検査する
+const areaConfig = loadAreaConfig();
+const cal = calibrate();
+const houseDeals = loadHouseDeals();
+const asOf = defaultAsOf(new Date(Date.UTC(2026, 7, 29)));
 
-function htmlFiles(dir, out = []) {
-  let entries;
-  try { entries = readdirSync(dir); } catch { return out; }
-  for (const e of entries) {
-    const p = join(dir, e);
-    if (statSync(p).isDirectory()) htmlFiles(p, out);
-    else if (e.endsWith(".html")) out.push(p);
+function renderAll() {
+  const pages = [];
+  for (const id of listPropertyIds()) {
+    const property = loadProperty(id);
+    const r = evaluate(property, areaConfig, { houseDeals, cal, asOf });
+    const rRef = evaluate(property, areaConfig, { houseDeals, asOf });
+    const chosen = cal.byArea[property.location?.area]?.chosen ?? null;
+    const marketCal = { chosen, rRef, dealsN: cal.byArea[property.location?.area]?.deals.n ?? 0 };
+    pages.push([`property/${id}.html`, renderProperty(r, property, marketCal, houseDeals)]);
+    if (chosen || r.retail) {
+      pages.push([`property/${id}-market.html`,
+        renderMarketBasis(r, property, marketCal, cal.byArea[property.location?.area] ?? null)]);
+    }
   }
-  return out;
+  return pages;
 }
 // <style> と <script> の中は利用者に見えないので除外する(CSSコメントに ** を使っている箇所がある)
 const visibleText = (s) =>
@@ -38,20 +54,20 @@ test("escRich: エスケープを先に通してからマーカーを変換す�
   assert.equal(escRich("**未閉じ"), "**未閉じ");
   assert.equal(escRich("**改行を\n跨ぐ**"), "**改行を\n跨ぐ**");
   // マーカーが無ければ esc() と完全に同じ
-  for (const s of ["ふつうの文", "a<b>&\"'", "", null, undefined]) {
-    assert.equal(escRich(s), esc(s), `マーカー無しで esc() と差が出た: ${JSON.stringify(s)}`);
+  for (const v of ["ふつうの文", "a<b>&\"'", "", null, undefined]) {
+    assert.equal(escRich(v), esc(v), `マーカー無しで esc() と差が出た: ${JSON.stringify(v)}`);
   }
 });
 
-test("生成HTMLの本文に Markdown の ** が生のまま残っていない", () => {
-  const files = htmlFiles(DIST);
-  assert.ok(files.length >= 20, `dist/ が生成されている前提(node site/build.js): ${files.length}件`);
+test("物件ページの本文に Markdown の ** が生のまま残っていない", () => {
+  const pages = renderAll();
+  assert.ok(pages.length >= 17, `全物件を描画できている: ${pages.length}ページ`);
   const leaks = [];
-  for (const f of files) {
-    const body = visibleText(readFileSync(f, "utf8"));
+  for (const [name, html] of pages) {
+    const body = visibleText(html);
     if (body.includes("**")) {
       const at = body.indexOf("**");
-      leaks.push(`${f.replace(DIST, "")}: …${body.slice(Math.max(0, at - 40), at + 40).replace(/\s+/g, " ")}…`);
+      leaks.push(`${name}: …${body.slice(Math.max(0, at - 40), at + 40).replace(/\s+/g, " ")}…`);
     }
   }
   assert.equal(leaks.length, 0, `Markdownの ** が本文に漏れている:\n  ${leaks.join("\n  ")}`);
