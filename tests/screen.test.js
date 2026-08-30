@@ -342,3 +342,33 @@ test("除外済みの掲載が台帳へ戻っていない(excluded.json と prop
   assert.equal(hit?.level, "exact");
   assert.match(hit.reason, /通行料/);
 });
+
+// 除外台帳の面積は**掲載の値と桁までそろっている**こと(2026-08-30の実害を受けた回帰ガード)。
+// 現場照合は面積の絶対差0.02m2で exact を判定するため、記録側が0.79m2ずれているだけで
+// exact に届かず near(=suspect)に落ち、**除外済みの現場が毎日「要判断」として再提案される**。
+// 実例: 赤羽台3 at_1107592414 を land_m2=62.61 と記録していたが、athome・SUUMOとも61.82で
+// 62.61はどちらのページにも存在しない転記誤りだった。別番号 nc_21589893 で再掲載された際に
+// suspect となり、人が毎日確認する羽目になっていた。
+test("除外台帳: 記録した現場は、その諸元でexact一致してブロックされる(near止まりにならない)", () => {
+  const idx = buildExcludedIndex(EXCLUDED);
+  for (const [key, v] of Object.entries(EXCLUDED)) {
+    if (key.startsWith("_")) continue;
+    const site = idx.sites.find((s) => s.key === key);
+    if (!site || site.land_m2 == null || site.floor_m2 == null) continue;  // 面積未記録は対象外
+    const hit = matchExcludedSite(
+      { district: site.district, chome: site.chome, land_m2: site.land_m2, floor_m2: site.floor_m2 }, idx);
+    assert.ok(hit, `${key}: 自分自身の諸元で照合が空振りする`);
+    assert.equal(hit.level, "exact",
+      `${key}: 自分自身の諸元で exact にならない(level=${hit.level}・ref=${hit.ref})。` +
+      `同じ丁目の別戸に near で先に当たっている可能性がある`);
+  }
+});
+
+test("除外台帳: 赤羽台3の現場は掲載の実数値(土地61.82/建物90.25)でブロックされる", () => {
+  const idx = buildExcludedIndex(EXCLUDED);
+  const hit = matchExcludedSite(
+    { nc: "nc_21589893", district: "赤羽台", chome: "3", land_m2: 61.82, floor_m2: 90.25 }, idx);
+  assert.equal(hit?.level, "exact", "SUUMOの別番号掲載が exact でブロックされること");
+  assert.equal(hit.hazard, true, "ハザード起因の除外として伝わること");
+  assert.match(hit.reason, /浸水|ハザード/);
+});
