@@ -128,7 +128,8 @@ test("rent: メモ・検討状況をHTMLへ焼き込まない(localStorageのみ
   // 運用ルール3の賃貸版。台帳YAMLにmemoが無いこと、HTMLに初期値として入らないこと
   for (const id of listRentalIds()) {
     const p = loadRental(id);
-    assert.ok(!("memo" in p), `${id}: YAMLにmemoを持たせてはいけない`);
+    // 2026-08-30ユーザー指示でYAMLへのメモ記録は解禁(運用ルール3の改定)。
+    // 残す検査は「メモ欄の初期値をHTMLに焼き込まない」= 下のtextarea検査のみ
   }
   const memos = indexHtml.match(/<textarea class="memota"[^>]*>([^<]*)<\/textarea>/g) ?? [];
   assert.equal(memos.length, results.length, "メモ欄が全行にある");
