@@ -2,7 +2,7 @@
 # 指値方針・交渉メモ・個人的所感は書かない(publicリポジトリ運用・decisions D4)
 id: kishimachi2-adcast
 status: considering        # 2026-08-29にユーザーが仲介店舗で入手した販売図面から登録
-viewing: none
+viewing: wanted
 unit_label: "アドキャスト赤羽支店 販売図面"
 source: "紙の販売図面((株)アドキャスト赤羽支店・取引態様=媒介)をユーザーが店舗で入手。
   **台帳で初の岸町エリア**。2026年12月完成予定の未完成物件(現況=建築中)。

@@ -2,13 +2,13 @@
 # 指値方針・交渉メモ・個人的所感・写真・紹介文は書かない(publicリポジトリ運用・decisions D4)
 id: akabanenishi3-21474554
 status: considering
-viewing: wanted
+viewing: done
 source: "SUUMO掲載(2026-08-12日次クロールで発見)。台地側・所有権・延床70超・3室・新耐震・再建築可の登録条件を充足"
 source_url: "https://suumo.jp/chukoikkodate/tokyo/sc_kita/nc_21474554/"   # 実在確認済み 2026-08-12
 captured_at: 2026-08-12
 price_history:
   - {date: 2026-08-10, price_man: 7580}   # 媒体の情報提供日時点
-  - {date: 2026-08-29, price_man: 7280}   # -300万。2026-08-29の日次クロールで検出、掲載に「価格更新 7280万円」の明記あり
+  - {date: 2026-08-29, price_man: 7280}   # -300万。2026-08-29の日次クロールで検出、掲載に「価格更新 7280万円」の明記あり(2026-08-30にユーザーからも同報告)
 location: {area: akabane-nishi, address: "北区赤羽西3"}
 layout: "2LDK+S(納戸)"   # 間取り(媒体記載)
 station: {walk_min: 14, multi_station: true}   # 東十条14分/赤羽14分/十条17分
