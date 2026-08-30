@@ -117,6 +117,44 @@ test("再審査: 未審査の既見掲載は価格が動かなくても拾う(�
   assert.equal(needsRescreen(null, 7180), false, "新着は別経路");
 });
 
+// ---- crawl_ids 紐付き掲載の価格変動(2026-08-30) ----
+// 岸町2-4-9(MIRASUMO)は source_url を意図的に空にしてある(掲載=土地単体5,810万と台帳=総額7,480万が
+// 恒常的に食い違い、watch が毎日誤報するため)。だが discover も台帳紐付きIDを matches から除外するので、
+// 土地掲載の値下げは seen.json が静かに更新されるだけで誰にも届かなかった。
+// ledgerLinkedPriceEvents がこの穴を塞ぐ: 一覧の価格を突き合わせ、動いたら一度だけ報告する。
+test("crawl_ids紐付き掲載: 価格変動は一度だけ報告され、watchの担当(source_url物件)は侵さない", async () => {
+  const { ledgerLinkedPriceEvents } = await import("../crawler/daily.mjs");
+  const idx = new Map([["nc_21089174", "kishimachi2-mirasumo-204"]]);
+  const seen = {
+    nc_21089174: { first_seen: "2026-08-29", price_man: 5810, address: "東京都北区岸町２", ko_blocked: true, ko_codes: ["KO4_hazard"] },
+    nc_21485594: { first_seen: "2026-08-13", price_man: 7180, address: "東京都北区岸町２" },
+  };
+  const unit = (nc, price) => ({ nc, price_man: price, address: "東京都北区岸町２", kind: "tochi", media: "suumo" });
+
+  // ①値下げ → 1件のイベント。判定済み(ko_blocked)でも報告する(価格は交渉タイミングの材料)
+  const ev = ledgerLinkedPriceEvents([unit("nc_21089174", 5480)], seen, idx, "2026-08-30");
+  assert.equal(ev.length, 1);
+  assert.equal(ev[0].event, "ledger_linked_price_changed");
+  assert.equal(ev[0].property_id, "kishimachi2-mirasumo-204");
+  assert.equal(ev[0].prev_price_man, 5810);
+  assert.equal(ev[0].price_man, 5480);
+  assert.equal(seen.nc_21089174.price_man, 5480, "seenが更新される");
+  assert.equal(seen.nc_21089174.ko_blocked, true, "判定の印は触らない");
+
+  // ②同じ価格の再走査 → 報告しない(毎日同じ変動を報告しない)
+  assert.equal(ledgerLinkedPriceEvents([unit("nc_21089174", 5480)], seen, idx, "2026-08-31").length, 0);
+
+  // ③crawl_idsに無いID(source_url物件=watchの担当)は無視する(二重報告しない)
+  assert.equal(ledgerLinkedPriceEvents([unit("nc_21485594", 6980)], seen, idx, "2026-08-30").length, 0);
+  assert.equal(seen.nc_21485594.price_man, 7180, "watch担当のseenはここでは触らない");
+
+  // ④seenに無い初見の紐付きIDは基準値を記録するだけ(基準が無い変動は報告できない)
+  const seen2 = {};
+  assert.equal(ledgerLinkedPriceEvents([unit("nc_21089174", 5810)], seen2, idx, "2026-08-30").length, 0);
+  assert.equal(seen2.nc_21089174.price_man, 5810);
+  assert.equal(seen2.nc_21089174.first_seen, "2026-08-30");
+});
+
 // 2026-08-29ユーザー決定「土地カテゴリも考慮したい」。岸町2-4-9(建築条件なし土地)が
 // 土地カテゴリ非巡回のせいで機械探索に一度も乗らなかったことを受けて追加した。
 // 土地の圏外条件(価格2,500〜7,500万・土地45m2以上)と「建物条件を土地に当てない」ことを固定する。

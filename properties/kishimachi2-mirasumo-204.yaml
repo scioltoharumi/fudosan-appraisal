@@ -14,7 +14,9 @@ source: "紙の販売図面((株)アドキャスト赤羽支店・取引態様=�
 source_url: ""   # SUUMO掲載 nc_21089174 を2026-08-29に実在確認済み(下記caveat)。ただし掲載価格が
                  # 土地単体5,810万で price_history の総額7,480万と恒常的に食い違い、source_url に置くと
                  # watch が毎日誤った値下げ報告を出すため**意図的に空にする**。重複報告は crawl_ids で防ぐ
-crawl_ids: ["nc_21089174"]   # クローラが台帳物件と照合するための掲載ID(source_urlに置けない場合の受け皿)
+crawl_ids: ["nc_21089174"]   # クローラが台帳物件と照合するための掲載ID(source_urlに置けない場合の受け皿)。
+                             # 2026-08-30: この紐付きIDの一覧価格の変動は discover が ledger_linked_price_changed
+                             # として報告する(watch監視外の穴を塞いだ。土地5,810万の値下げに気づける)
 captured_at: 2026-08-29
 price_history:
   - {date: 2026-08-29, price_man: 7480}   # リミテッド総額(土地5,810+建物1,670・税込)

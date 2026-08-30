@@ -269,6 +269,32 @@ export function needsRescreen(prev, priceMan) {
   return prev.price_man !== priceMan;
 }
 
+// ---- crawl_ids で台帳物件と紐付いた掲載の価格変動(2026-08-30) ----
+// source_url を意図的に空にしている物件は watch の監視外になる(実例: 岸町2-4-9 MIRASUMO=掲載が
+// 土地単体5,810万で台帳の総額7,480万と恒常的に食い違い、source_url に置くと毎日誤報するため空)。
+// 一方 discover は台帳紐付きIDを matches から除外するので、価格が動いても誰にも届かない
+// (seen が静かに更新されるだけ)。この穴を、一覧の価格を突き合わせる小さな報告で塞ぐ。
+// 判定済み(ko_blocked)でも報告する——判定は現場属性で決まるが、価格の動きは
+// 指値・交渉のタイミング判断の材料になる。seen を更新するので同じ変動は一度しか報告されない
+export function ledgerLinkedPriceEvents(units, seen, crawlIdIndex, today) {
+  const events = [];
+  for (const u of units) {
+    const pid = crawlIdIndex.get(u.nc);
+    if (!pid) continue;
+    const prev = seen[u.nc];
+    if (!prev) {   // 初見なら基準値を記録するだけ(基準が無いので変動は報告できない)
+      seen[u.nc] = { first_seen: today, price_man: u.price_man, address: u.address, kind: u.kind, media: u.media };
+      continue;
+    }
+    if (u.price_man == null || prev.price_man === u.price_man) continue;
+    events.push({ event: "ledger_linked_price_changed", nc: u.nc, property_id: pid,
+      address: u.address, kind: u.kind, media: u.media,
+      prev_price_man: prev.price_man, price_man: u.price_man });
+    prev.price_man = u.price_man;
+  }
+  return events;
+}
+
 // ---- discover: 新着探索(12地区・5000〜9000万・徒歩20分以内) ----
 function parseSuumoUnits(html, kind) {
   const units = [];
@@ -360,7 +386,7 @@ export function siblingHint(u, districtOfFn, ledgerUnits) {
   return null;
 }
 
-async function discover(ledgerNcs, ledgerFps, ledgerUnits) {
+async function discover(ledgerNcs, ledgerFps, ledgerUnits, ledgerCrawlIdIndex = new Map()) {
   const seen = existsSync(SEEN_PATH) ? JSON.parse(readFileSync(SEEN_PATH, "utf8")) : {};
   const found = [];
   let exhausted = false;
@@ -414,6 +440,8 @@ async function discover(ledgerNcs, ledgerFps, ledgerUnits) {
   let koFetches = 0;
   let backlogPending = 0;   // 未審査のまま今回も予算に届かなかった件数(黙って減らさないため返す)
   const report = [];
+  // crawl_ids 紐付き掲載の価格変動(watch監視外の受け皿。matches からは除外されているので byNc 全体を見る)
+  report.push(...ledgerLinkedPriceEvents([...byNc.values()], seen, ledgerCrawlIdIndex, today));
   for (const u of matches) {
     const prev = seen[u.nc];
     const fp = unitFingerprint(u, districtOf);
@@ -544,6 +572,10 @@ const ledgerNcs = new Set(listPropertyIds().flatMap((id) => {
   // 土地単体価格の掲載を source_url にすると watch が毎日誤って値下げ報告する)。discover の重複報告だけ止める
   return [u.match(/nc_[0-9]+/)?.[0], at ? "at_" + at : null, ...(p.crawl_ids ?? [])].filter(Boolean);
 }));
+// crawl_ids だけの索引(掲載ID→物件ID)。source_url に置けない掲載は watch が見ないため、
+// discover 側で価格変動を報告する(ledgerLinkedPriceEvents)。現状は岸町2-4-9 の nc_21089174 のみ
+const ledgerCrawlIdIndex = new Map(listPropertyIds().flatMap((id) =>
+  (loadProperty(id).crawl_ids ?? []).map((nc) => [nc, id])));
 // 台帳物件の指紋(他媒体の同一掲載を新着扱いしないため)
 const ledgerFps = new Set(listPropertyIds().map((id) => {
   const p = loadProperty(id);
@@ -564,7 +596,7 @@ const ledgerUnits = listPropertyIds().map((id) => {
 const out = { crawled_at: new Date().toISOString(), watch: [], discover: [], errors };
 if (mode !== "--discover-only") out.watch = await watch();
 let discovered = null;
-if (mode !== "--watch-only") { discovered = await discover(ledgerNcs, ledgerFps, ledgerUnits); out.discover = discovered.report; }
+if (mode !== "--watch-only") { discovered = await discover(ledgerNcs, ledgerFps, ledgerUnits, ledgerCrawlIdIndex); out.discover = discovered.report; }
 out.summary = {
   price_changes: out.watch.filter((w) => w.status === "price_changed").length,
   delisted_suspects: out.watch.filter((w) => w.status === "delisted_suspect").length,
