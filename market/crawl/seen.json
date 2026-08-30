@@ -1285,10 +1285,7 @@
   "media": "athome",
   "land_m2": 62.61,
   "floor_m2": 90.25,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO2_ownership"
-  ]
+  "ko_screened": true
  },
  "nc_21318372": {
   "first_seen": "2026-08-29",

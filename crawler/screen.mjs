@@ -78,6 +78,13 @@ const NO_REBUILD_RE = /再建築不可|再建築[はが]不可|接道義務を?�
 // SUUMOの権利欄は「借地権」ではなく**「賃借権」**と書くことがあり、下の own 判定の選択肢にも
 // 入っていなかったため ownership=null のまま pass していた。借地の言い回しを網羅する
 const LEASEHOLD_RE = /定期借地|旧法借地|普通借地|借地権付|地上権|賃借権|転借地|借地期間/;
+// 2026-08-30: athomeの概要ヘッダは所有権物件でも「借地期間・地代 （月額） － 権利金 －」と
+// **空値のラベルを常に出す**。アピールポイントの窓(600字)は本文が短いとこのヘッダまで届き、
+// 「借地期間」がLEASEHOLD_REに誤爆する(at_1107592414=土地権利「所有権」明記の新築をKO2で
+// ブロックしていた。冒頭の「ラベル語だけで旗を立てない」の実害例)。値が空(－)のラベル行だけを
+// 判定前に落とす。値が入っている場合(旧法賃借権の at_1127269513「20年 27,000円」)は残す
+const EMPTY_LEASE_LABEL_RE = /借地期間・地代\s*(?:（月額）)?\s*[－ー‐-](?!\s*[0-9０-９])/g;
+export const scrubEmptyLeaseLabel = (t) => String(t).replace(EMPTY_LEASE_LABEL_RE, " ");
 const DISCLOSURE_RE = /告知事項\s*(?:あり|有)|心理的瑕疵|事故物件/;
 // KO6(2026-08-14ユーザー決定): 私道の通行料を取られる物件は登録しない。
 // 「私道負担がある」「私道に接している」だけとは別物で、通行の対価を毎月払う関係=道路が第三者の
@@ -230,8 +237,14 @@ export function scanKO(html, media) {
   // 借地物件を登録してしまうため、ここは媒体を問わず両方のラベルで見る
   const own = (t.match(/(?:土地の権利形態|土地権利|権利形態)\s*(?:ヒント\s*)?(所有権|借地権|定期借地権?|地上権|賃借権|転借地権?)/) ?? [])[1]
     ?? attrs.ownership;
-  if ((own && own !== "所有権") || LEASEHOLD_RE.test(t)) {
-    flags.push({ code: "KO2_ownership", label: "所有権以外(借地権等)", evidence: own ?? eviOf(LEASEHOLD_RE) });
+  // 語彙判定は空値ラベル(「借地期間・地代 （月額） －」)を落としたテキストで行う(2026-08-30の誤爆修正)
+  const tLease = scrubEmptyLeaseLabel(t);
+  if ((own && own !== "所有権") || LEASEHOLD_RE.test(tLease)) {
+    // evidence は実際に旗を立てた根拠を出す(own=所有権のまま語彙で立った場合に「所有権」と
+    // 表示される矛盾があった)
+    const evi = own && own !== "所有権" ? own
+      : (() => { const m = tLease.match(LEASEHOLD_RE); const i = m ? tLease.indexOf(m[0]) : -1; return i < 0 ? own : tLease.slice(Math.max(0, i - 40), i + 60).trim(); })();
+    flags.push({ code: "KO2_ownership", label: "所有権以外(借地権等)", evidence: evi });
   }
   return { flags, notes, attrs, hazard_media: media };
 }
