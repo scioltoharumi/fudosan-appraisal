@@ -490,7 +490,13 @@ async function discover(ledgerNcs, ledgerFps, ledgerUnits, ledgerCrawlIdIndex = 
     } else if (needsRescreen(prev, u.price_man)) {
       // 価格が動いた再判定と、未審査のまま溜まっていた掲載の初回審査を、同じ経路で処理する。
       // 後者は first_seen が古いだけで中身は新着と同じなので、レポートの event も new 系に揃える
-      const priceMoved = prev.price_man !== u.price_man;
+      // **旧価格は代入の前に退避する**(2026-08-31修正)。`prev` は seen[u.nc] への参照なので、
+      // 先に seen[u.nc].price_man を書き換えると prev.price_man も同時に変わり、
+      // このブロックの全レポートが `prev_price_man` に**新価格を入れて**しまう。
+      // 実害: 赤羽台3 nc_21580542 の 4,280万→5,280万(+1,000万)が「5280→5280」と報告され、
+      // 変化なしにしか見えなかった(2026-08-31の日次クロールで発覚)
+      const prevPriceMan = prev.price_man ?? null;
+      const priceMoved = prevPriceMan !== u.price_man;
       seen[u.nc].price_man = u.price_man;
       // 諸元は後から使うので毎回埋め直す(KOスクリーニング導入前の既見エントリは持っていない)
       if (u.land_m2 != null) seen[u.nc].land_m2 = u.land_m2;
@@ -513,7 +519,7 @@ async function discover(ledgerNcs, ledgerFps, ledgerUnits, ledgerCrawlIdIndex = 
       if (blocked) {
         seen[u.nc].ko_blocked = true;
         seen[u.nc].ko_codes = [blocked.code];
-        report.push({ ...cand, event: "ko_blocked_on_recheck", prev_price_man: prev.price_man, first_seen: prev.first_seen,
+        report.push({ ...cand, event: "ko_blocked_on_recheck", prev_price_man: prevPriceMan, first_seen: prev.first_seen,
           ko: { verdict: "block", codes: seen[u.nc].ko_codes, site_match: hit ?? null, reasons: [blocked.reason] } });
         continue;
       }
@@ -528,7 +534,7 @@ async function discover(ledgerNcs, ledgerFps, ledgerUnits, ledgerCrawlIdIndex = 
           const ko = koScreen({ unit: cand, siteHit: hit, scan: scanKO(d.html, u.media), areaHazard: area });
           if (ko.verdict === "block") {
             seen[u.nc].ko_blocked = true; seen[u.nc].ko_codes = ko.codes;
-            report.push({ ...cand, event: "ko_blocked_on_recheck", prev_price_man: prev.price_man, first_seen: prev.first_seen, ko });
+            report.push({ ...cand, event: "ko_blocked_on_recheck", prev_price_man: prevPriceMan, first_seen: prev.first_seen, ko });
             continue;
           }
           // KOを通っても掲載条件(延床70m2超・3室以上・徒歩20分以内)を外れていれば候補にしない
@@ -536,14 +542,14 @@ async function discover(ledgerNcs, ledgerFps, ledgerUnits, ledgerCrawlIdIndex = 
           if (miss) {
             seen[u.nc].out_of_scope = miss;
             report.push({ ...cand, event: "out_of_scope_on_recheck", out_of_scope: miss,
-              prev_price_man: prev.price_man, first_seen: prev.first_seen, ko });
+              prev_price_man: prevPriceMan, first_seen: prev.first_seen, ko });
             continue;
           }
           seen[u.nc].ko_screened = true;
           if (ko.verdict === "suspect") seen[u.nc].ko_suspect = ko.codes;
           const ev = priceMoved ? "price_changed" : (ko.verdict === "suspect" ? "new_ko_suspect" : "new");
           report.push({ ...cand, event: ev, backlog: !priceMoved,
-            prev_price_man: prev.price_man, first_seen: prev.first_seen, ko });
+            prev_price_man: prevPriceMan, first_seen: prev.first_seen, ko });
           continue;
         }
         errors.push({ where: `ko-recheck:${u.nc}`, detail: `詳細取得失敗 http=${d.status} ${d.error ?? ""}` });
@@ -551,7 +557,7 @@ async function discover(ledgerNcs, ledgerFps, ledgerUnits, ledgerCrawlIdIndex = 
       // 予算切れ等で審査できなかった未審査分は **price_changed を騙らない**。
       // 次回以降も needsRescreen が拾うので、件数だけ返して黙って持ち越す
       if (!priceMoved) { backlogPending++; continue; }
-      report.push({ ...u, district: districtOf(u.address), event: "price_changed", prev_price_man: prev.price_man, first_seen: prev.first_seen });
+      report.push({ ...u, district: districtOf(u.address), event: "price_changed", prev_price_man: prevPriceMan, first_seen: prev.first_seen });
     }
   }
   mkdirSync(join(ROOT, "market", "crawl"), { recursive: true });

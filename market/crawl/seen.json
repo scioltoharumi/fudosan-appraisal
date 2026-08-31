@@ -1623,7 +1623,7 @@
  },
  "nc_21580542": {
   "first_seen": "2026-08-29",
-  "price_man": 4280,
+  "price_man": 5280,
   "address": "東京都北区赤羽台３",
   "walk_min": 8,
   "kind": "tochi",
@@ -1919,5 +1919,19 @@
   "land_m2": 76.3,
   "floor_m2": null,
   "ko_screened": true
+ },
+ "nc_21600666": {
+  "first_seen": "2026-08-31",
+  "price_man": 7680,
+  "address": "東京都北区志茂４",
+  "walk_min": 10,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 112.7,
+  "floor_m2": 124.47,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
  }
 }

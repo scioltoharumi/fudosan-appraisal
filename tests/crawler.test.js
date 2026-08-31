@@ -212,3 +212,40 @@ test("salesUnitsOf: 掲載の販売戸数で複数戸を検出する(構造化�
   // タグを跨いでも読めること(SUUMOはラベルと値が別要素)
   assert.equal(salesUnitsOf('<th class="x">販売戸数</th><td class="y">2</td><td>戸</td>'), 2);
 });
+
+// 旧価格は seen の更新より先に退避すること(2026-08-31の実害を受けた回帰ガード)。
+// discover の再判定経路は `const prev = seen[u.nc]` という**参照**を持つため、
+// 先に seen[u.nc].price_man を書き換えると prev.price_man も同時に変わり、
+// その後のレポートが prev_price_man に新価格を入れてしまう。
+// 実害: 赤羽台3 nc_21580542 の 4,280万→5,280万(+1,000万)が「5280→5280」と報告され、
+// 変化なしにしか見えなかった。**値上げ1,000万が人の目に届かなかった**。
+test("価格変動の報告は旧価格を保持する(seenへの参照を先に壊さない)", async () => {
+  const { readFileSync } = await import("node:fs");
+  const src = readFileSync(new URL("../crawler/daily.mjs", import.meta.url), "utf8");
+  // 再判定経路(needsRescreen 〜 discover の終わり)を切り出す
+  const from = src.indexOf("} else if (needsRescreen(prev, u.price_man)) {");
+  assert.ok(from > 0, "再判定経路が見つからない(構造が変わったらこのテストを直すこと)");
+  const block = src.slice(from, src.indexOf("\nfunction ", from) > 0 ? src.indexOf("\nfunction ", from) : src.length);
+  assert.ok(!/prev_price_man:\s*prev\.price_man/.test(block),
+    "再判定経路が prev.price_man を直接報告している。seen[u.nc].price_man の代入で" +
+    "同じオブジェクトが書き換わるため、常に新価格が入る。代入前に退避した値を使うこと");
+  assert.ok(/const prevPriceMan\s*=/.test(block), "旧価格の退避が無い");
+  // 退避が代入より前にあること
+  assert.ok(block.indexOf("const prevPriceMan") < block.indexOf("seen[u.nc].price_man = u.price_man"),
+    "退避が seen の更新より後にある");
+});
+
+// 台帳紐付き掲載の側(ledgerLinkedPriceEvents)は報告してから更新する形。こちらも旧価格を守る
+test("ledgerLinkedPriceEvents: 報告に旧価格が入り、seenは報告後に更新される", async () => {
+  const { ledgerLinkedPriceEvents } = await import("../crawler/daily.mjs");
+  const seen = { nc_X: { first_seen: "2026-08-01", price_man: 4280, address: "東京都北区赤羽台３" } };
+  const idx = new Map([["nc_X", "some-property"]]);
+  const units = [{ nc: "nc_X", price_man: 5280, address: "東京都北区赤羽台３", kind: "tochi", media: "suumo" }];
+  const ev = ledgerLinkedPriceEvents(units, seen, idx, "2026-08-31");
+  assert.equal(ev.length, 1);
+  assert.equal(ev[0].prev_price_man, 4280, "報告の旧価格が新価格に潰れている");
+  assert.equal(ev[0].price_man, 5280);
+  assert.equal(seen.nc_X.price_man, 5280, "報告後に seen が更新される");
+  // 同じ価格で再実行しても二重報告しない
+  assert.equal(ledgerLinkedPriceEvents(units, seen, idx, "2026-09-01").length, 0);
+});
