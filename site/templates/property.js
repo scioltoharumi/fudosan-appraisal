@@ -423,6 +423,7 @@ function rainScenariosHtml(rs, color) {
         </table>
       </div>
       ${rs.conclusion ? `<div style="margin-top:7px;padding:7px 10px;border:1px solid ${color};background:#fff"><b>結論</b>: ${escRich(rs.conclusion)}</div>` : ""}
+      ${rs.climate_note ? `<div style="margin-top:6px;font-size:.78rem;line-height:1.8">${escRich(rs.climate_note)}</div>` : ""}
       ${rs.sources ? `<div class="note" style="margin-top:4px">出典: ${escRich(rs.sources)}</div>` : ""}
     </div>`;
 }
