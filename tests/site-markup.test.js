@@ -72,3 +72,25 @@ test("物件ページの本文に Markdown の ** が生のまま残っていな
   }
   assert.equal(leaks.length, 0, `Markdownの ** が本文に漏れている:\n  ${leaks.join("\n  ")}`);
 });
+
+// ---- 雨のシナリオ対照表(2026-08-31ユーザー要望「人に伝えるために表で」) ----
+// 岸町2-4-9の浸水の整理を共有用の表にしたもの。YAMLの hazard_check.rain_scenarios から描画される。
+// 表の3行(特別警報/計画規模/想定最大)・結論・出典が物件ページに出ることを固定する
+// (YAMLから消えたり、描画が外れたりしたら落ちる)。描画は rainScenariosHtml(property.js)
+test("雨のシナリオ対照表: 岸町2-4-9のページに3シナリオと結論・出典が描画される", () => {
+  const page = renderAll().find(([name]) => name === "property/kishimachi2-mirasumo-204.html");
+  assert.ok(page, "岸町2-4-9の物件ページが描画されている");
+  const body = visibleText(page[1]);
+  assert.ok(body.includes("雨のシナリオ対照表"), "表の見出しが無い");
+  for (const label of ["特別警報クラス", "計画規模(L1)", "想定最大規模(L2)"]) {
+    assert.ok(body.includes(label), `シナリオ行が無い: ${label}`);
+  }
+  // 数値の骨格(公式ソースで裏取りした値)が表に出ていること
+  for (const v of ["3日間548mm", "3日間632mm", "1時間115mm"]) {
+    assert.ok(body.includes(v), `雨量の値が無い: ${v}`);
+  }
+  assert.ok(body.includes("結論"), "結論が無い");
+  assert.ok(body.includes("出典"), "出典の開示が無い");
+  // 「逆算・目安は公式の地点値ではない」の開示(黙って断定しないためのガード)
+  assert.ok(body.includes("公式の地点値ではない"), "逆算・目安の開示が無い");
+});

@@ -402,6 +402,31 @@ function marketCalHtml(r, marketCal) {
 // 重要事項説明は契約直前に来るため、そこで初めてハザード指定が判明すると
 // サンクコストで判断が歪む。台帳側で「どこまで確認できているか」を常時可視化して、
 // 検討を進める前に潰せるようにする(2026-08-12: 西が丘2でSUUMO単独確認が破綻した反省)
+// 雨のシナリオ対照表(2026-08-31ユーザー要望「人に伝えるために表で」)。
+// 「どのクラスの雨で・何が起きる想定か」を1枚で読む表。データはYAMLの hazard_check.rain_scenarios
+// (rows: label/definition/rain/impact/note + conclusion + sources)。持つ物件だけに描画される
+function rainScenariosHtml(rs, color) {
+  if (!rs || !Array.isArray(rs.rows) || rs.rows.length === 0) return "";
+  const rows = rs.rows.map((r) => `<tr>
+      <td style="font-weight:700;min-width:120px">${escRich(r.label)}</td>
+      <td>${escRich(r.definition ?? "")}</td>
+      <td style="min-width:120px">${escRich(r.rain ?? "")}</td>
+      <td>${escRich(r.impact ?? "")}</td>
+      <td>${escRich(r.note ?? "")}</td>
+    </tr>`).join("");
+  return `<div style="margin-top:9px;padding-top:8px;border-top:1px dashed ${color}">
+      <b>雨のシナリオ対照表</b>(${esc(fmtDate(rs.created))}作成 ── どのクラスの雨で・何が起きる想定かを1枚で読む)
+      <div style="overflow-x:auto;margin-top:6px">
+        <table class="list" style="min-width:760px;font-size:.76rem;line-height:1.7">
+          <tr><th>シナリオ</th><th>定義</th><th>雨量</th><th>この区画への影響</th><th>備考</th></tr>
+          ${rows}
+        </table>
+      </div>
+      ${rs.conclusion ? `<div style="margin-top:7px;padding:7px 10px;border:1px solid ${color};background:#fff"><b>結論</b>: ${escRich(rs.conclusion)}</div>` : ""}
+      ${rs.sources ? `<div class="note" style="margin-top:4px">出典: ${escRich(rs.sources)}</div>` : ""}
+    </div>`;
+}
+
 function hazardHtml(property) {
   const h = property.hazard_check;
   if (!h) return "";
@@ -426,6 +451,7 @@ function hazardHtml(property) {
         ${o.reason ? `<div style="margin-top:3px;color:${color}"><b>${bad ? "掲載条件「台地側(荒川低地の浸水想定域外)」から外れている" : "要確認"}</b>: ${esc(o.reason)}</div>` : ""}
         <div class="note" style="margin-top:3px">${escRich(o.limit ?? "")} <a href="../map.html">エリア全体のハザードマップ対照を見る↗</a></div>
       </div>` : ""}
+      ${rainScenariosHtml(h.rain_scenarios, color)}
       ${pending ? `<div class="note" style="margin-top:3px;color:var(--stamp)"><b>掲載の制限事項欄は該当物件でも空欄のことがある</b>(実例: 西が丘2の2棟現場はSUUMOが空欄で、athomeの4業者掲載のみが土砂災害特別警戒区域を明記)。<b>内見・申込より前に</b>、重ねるハザードマップと東京都の土砂災害警戒区域等マップで自分で照合し、仲介には法令上の制限の全項目を書面で出してもらうこと。重要事項説明は契約直前のため、そこまで進めてから判明すると引き返しにくい。</div>` : ""}
     </div>`;
 }
