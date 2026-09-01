@@ -158,7 +158,14 @@ export function parseDetailAttrs(html, media) {
     const w = [...win.matchAll(/線[^線]{0,40}?(?:徒)?歩\s?([0-9]+)分/g)].map((x) => Number(x[1]));
     if (w.length) { walks = w; break; }
   }
+  // 建築条件付土地は**掲載価格が土地だけ**で、建物は「建物価格NNNN万円」として別建てになる。
+  // 総額で予算帯を見ないと、土地7,798万+建物3,300万=1億1,098万の物件が「7,798万」として通る
+  // (2026-09-01に滝野川4 nc_21551661 で実際に起きた)。ラベルは物件概要にも写真キャプションにも
+  // 出るため**最小値**を採る=保守側ではないが、総額の過大評価で取りこぼすより実態に近い
+  const bldgPrices = [...t.matchAll(/建物価格\s*(?:ヒント\s*)?([0-9,]{3,7})\s*万円/g)]
+    .map((m) => Number(m[1].replace(/,/g, ""))).filter((v) => Number.isFinite(v) && v > 0);
   return {
+    building_price_man: bldgPrices.length ? Math.min(...bldgPrices) : null,
     land_m2: fieldNum("land", "([0-9.]+)\\s*m"),
     floor_m2: fieldNum("floor", "([0-9.]+)\\s*m"),
     layout: fieldStr("layout", "([0-9]{1,2}[SLDKR+]{1,10})"),

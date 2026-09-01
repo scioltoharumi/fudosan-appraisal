@@ -3,7 +3,7 @@
 // 事故の型: 新築の複数戸掲載は一覧が開発の代表価格(下限値)を出すため、価格が一致しても別戸でありうる。
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { fingerprint, siblingHint, DISTRICTS, roomsOf, districtOfAddress, needsRescreen, salesUnitsOf } from "../crawler/daily.mjs";
+import { fingerprint, siblingHint, DISTRICTS, roomsOf, districtOfAddress, needsRescreen, salesUnitsOf, scopeMissOf } from "../crawler/daily.mjs";
 
 const districtOf = (addr) => districtOfAddress(addr);
 // 事故当時の台帳(1号棟のみ登録・価格は誤って5980万だった)
@@ -248,4 +248,40 @@ test("ledgerLinkedPriceEvents: 報告に旧価格が入り、seenは報告後に
   assert.equal(seen.nc_X.price_man, 5280, "報告後に seen が更新される");
   // 同じ価格で再実行しても二重報告しない
   assert.equal(ledgerLinkedPriceEvents(units, seen, idx, "2026-09-01").length, 0);
+});
+
+// 建築条件付土地は掲載価格が**土地だけ**で建物が別建て(2026-09-01ユーザー決定で対象に含めた)。
+// 総額で予算帯を見ないと、実際は1億超の物件が土地価格だけで通ってしまう。
+// 実例: 滝野川4 nc_21551661 は土地7,798万+建物3,300万=1億1,098万なのに「7,798万」として通っていた。
+test("土地の圏外判定: 建築条件付は土地+建物の総額で予算帯を見る", () => {
+  const t = (attrs, priceMan) => scopeMissOf(attrs, 9, "tochi", priceMan);
+  // 総額が上限超え → 落とす
+  assert.match(t({ land_m2: 71, building_price_man: 3300 }, 7798), /総額11098万/);
+  // 総額が下限割れ → 落とす
+  assert.match(t({ land_m2: 60, building_price_man: 900 }, 2600), /総額3500万/);
+  // 総額が帯内 → 通す(土地価格だけ見ると7,500万の土地上限を超える例でも、総額で見れば帯内)
+  assert.equal(t({ land_m2: 47.34, building_price_man: 2300 }, 5670), null);
+  assert.equal(t({ land_m2: 80, building_price_man: 1500 }, 7000), null);
+  // **建物価格が読めない掲載は判定しない**(参考プランの無い純粋な土地・古家付き)。
+  // 数えられないものは落とさない規律。土地価格だけの従来判定に戻る
+  assert.equal(t({ land_m2: 76.3, building_price_man: null }, 6560), null);
+  assert.equal(t({ land_m2: 76.3 }, 6560), null);
+  // 価格が読めない場合も判定しない
+  assert.equal(t({ land_m2: 76.3, building_price_man: 2000 }, null), null);
+  // 土地面積の条件は総額判定より先に効く(順序の固定)
+  assert.match(t({ land_m2: 40, building_price_man: 3300 }, 7798), /土地40m2/);
+  // 戸建(kind!=="tochi")には総額判定を持ち込まない
+  assert.equal(scopeMissOf({ floor_m2: 80, layout: "3LDK", building_price_man: 3300 }, 9, "chuko", 7798), null);
+});
+
+test("parseDetailAttrs: 建物価格を拾う(複数表記があれば最小値)", async () => {
+  const { parseDetailAttrs } = await import("../crawler/screen.mjs");
+  // 上十条4 は物件概要2300万・写真キャプション2480万の2つが載っていた
+  const a = parseDetailAttrs("<div>建物価格 2300万円、建物面積81.96m2</div><p>建物価格２４８０万円</p>", "suumo");
+  assert.equal(a.building_price_man, 2300, "複数あるときは最小値を採る");
+  // カンマ区切りも読む
+  assert.equal(parseDetailAttrs("<td>建物価格</td><td>1,670万円</td>", "suumo").building_price_man, 1670);
+  // ラベルが無ければ null(=判定しない)。0や欠測を数値に丸めない
+  assert.equal(parseDetailAttrs("<div>価格 6560万円</div>", "suumo").building_price_man, null);
+  assert.equal(parseDetailAttrs("", "suumo").building_price_man, null);
 });

@@ -37,12 +37,24 @@ const TOCHI_LAND_MIN_M2 = 45;
 const ROOMS_MIN = 3;                // 掲載条件「3室以上」。2LDK=2室 / 2LDK+S=3室 / 4LDK=4室
 // 掲載条件の圏外判定。新着と、値下げ時の再判定の**両方**から呼ぶ
 // (2026-08-25: 再判定側に入れ忘れており、延床65.72m2の滝野川1が候補として上がった)
-export function scopeMissOf(attrs, walkDetail, kind = null) {
+export function scopeMissOf(attrs, walkDetail, kind = null, priceMan = null) {
   if (walkDetail != null && walkDetail > WALK_MAX) return `徒歩${walkDetail}分(上限${WALK_MAX})`;
   if (kind === "tochi") {
     // 土地に建物条件は適用できない。面積が読めない掲載は判定しない(数えられないものは落とさない規律)
     const land = attrs?.land_m2 ?? null;
     if (land != null && land < TOCHI_LAND_MIN_M2) return `土地${land}m2(土地の条件は${TOCHI_LAND_MIN_M2}m2以上)`;
+    // 建築条件付土地(2026-09-01ユーザー決定で対象に含めた)は、**掲載価格が土地だけ**で
+    // 建物が別建てになる。総額で見ないと予算帯を大きく超える物件が通る:
+    // 滝野川4 nc_21551661 は土地7,798万+建物3,300万=**1億1,098万**なのに「7,798万」として通っていた。
+    // 総額は戸建と同じ帯(PRICE_RANGE)で判定する——土地+建物の合計は戸建の総額と同じ意味だから。
+    // 建物価格が読めない掲載(参考プランの無い純粋な土地)は**判定しない**(従来どおり土地価格だけで通す)
+    const bldg = attrs?.building_price_man ?? null;
+    if (priceMan != null && bldg != null) {
+      const total = priceMan + bldg;
+      if (total < PRICE_RANGE[0] || total > PRICE_RANGE[1]) {
+        return `土地建物総額${total}万(土地${priceMan}+建物${bldg}。総額の条件は${PRICE_RANGE[0]}〜${PRICE_RANGE[1]}万)`;
+      }
+    }
     return null;
   }
   const floor = attrs?.floor_m2 ?? null;
@@ -468,7 +480,7 @@ async function discover(ledgerNcs, ledgerFps, ledgerUnits, ledgerCrawlIdIndex = 
       // 掲載条件(CLAUDE.md「登録条件」)のうち掲載から機械判定できるもの。KOではなく「圏外」扱いにして、
       // 報告には出しつつ自動登録の候補から外す。2026-08-13: 滝野川1の2件(延床65.24/65.72)が
       // verdict=pass のまま自動登録候補に上がり、人が延床70m2超の条件で弾く必要があった
-      const scopeMiss = scopeMissOf(ko.attrs, walkDetail, u.kind);
+      const scopeMiss = scopeMissOf(ko.attrs, walkDetail, u.kind, u.price_man ?? null);
       if (scopeMiss) {
         // 以後の再判定が要らないよう seen に記録して落とす(諸元は掲載が変わらない限り動かない)
         seen[u.nc].out_of_scope = scopeMiss;
@@ -538,7 +550,7 @@ async function discover(ledgerNcs, ledgerFps, ledgerUnits, ledgerCrawlIdIndex = 
             continue;
           }
           // KOを通っても掲載条件(延床70m2超・3室以上・徒歩20分以内)を外れていれば候補にしない
-          const miss = scopeMissOf(ko.attrs, ko.attrs?.walk_min ?? null, u.kind);
+          const miss = scopeMissOf(ko.attrs, ko.attrs?.walk_min ?? null, u.kind, u.price_man ?? null);
           if (miss) {
             seen[u.nc].out_of_scope = miss;
             report.push({ ...cand, event: "out_of_scope_on_recheck", out_of_scope: miss,
