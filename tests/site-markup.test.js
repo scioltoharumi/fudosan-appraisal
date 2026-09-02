@@ -8,7 +8,8 @@ import { evaluate, defaultAsOf } from "../engine/appraise.js";
 import { loadAreaConfig, loadProperty, listPropertyIds } from "../engine/io.js";
 import { loadHouseDeals } from "../engine/retail.js";
 import { calibrate } from "../engine/calibrate.js";
-import { escRich, esc } from "../site/templates/layout.js";
+import { escRich, esc, crawlIdUrl, crawlLinksOf } from "../site/templates/layout.js";
+import { readFileSync } from "node:fs";
 import { renderProperty } from "../site/templates/property.js";
 import { renderMarketBasis } from "../site/templates/market-basis.js";
 
@@ -19,11 +20,13 @@ const areaConfig = loadAreaConfig();
 const cal = calibrate();
 const houseDeals = loadHouseDeals();
 const asOf = defaultAsOf(new Date(Date.UTC(2026, 7, 29)));
+const SEEN = JSON.parse(readFileSync(new URL("../market/crawl/seen.json", import.meta.url), "utf8"));
 
 function renderAll() {
   const pages = [];
   for (const id of listPropertyIds()) {
     const property = loadProperty(id);
+    property.crawl_links = crawlLinksOf(property, SEEN);
     const r = evaluate(property, areaConfig, { houseDeals, cal, asOf });
     const rRef = evaluate(property, areaConfig, { houseDeals, asOf });
     const chosen = cal.byArea[property.location?.area]?.chosen ?? null;
@@ -96,4 +99,29 @@ test("雨のシナリオ対照表: 岸町2-4-9のページに3シナリオと結
   assert.ok(body.includes("流域全体"), "地点雨量と流域平均の区別の説明が無い");
   // 「逆算・目安は公式の地点値ではない」の開示(黙って断定しないためのガード)
   assert.ok(body.includes("公式の地点値ではない"), "逆算・目安の開示が無い");
+});
+
+// source_url を意図的に空にしている物件(岸町2 MIRASUMO)でも、人が掲載元へ辿れること。
+// 2026-09-02ユーザー指摘「掲載元はどこにいった？リンク先が台帳になくて」。
+// watch の誤報を避けるために source_url を空にした設計は正しいが、リンクが消えるのは別の実害。
+test("crawlIdUrl: 掲載IDから媒体URLを復元し、種別が分からないnc_は推測しない", () => {
+  assert.equal(crawlIdUrl("at_1195752621"), "https://www.athome.co.jp/kodate/1195752621/");
+  assert.equal(crawlIdUrl("nc_1", { kind: "chuko" }), "https://suumo.jp/chukoikkodate/tokyo/sc_kita/nc_1/");
+  assert.equal(crawlIdUrl("nc_1", { kind: "shinchiku" }), "https://suumo.jp/ikkodate/tokyo/sc_kita/nc_1/");
+  assert.equal(crawlIdUrl("nc_1", { kind: "tochi" }), "https://suumo.jp/tochi/tokyo/sc_kita/nc_1/");
+  assert.equal(crawlIdUrl("nc_1", undefined), null, "seen に無い nc_ は URL を捏造しない");
+  assert.equal(crawlIdUrl("nc_1", { kind: "unknown" }), null);
+  assert.equal(crawlIdUrl("garbage<script>", { kind: "chuko" }), null, "不正なIDはリンクにしない");
+  assert.equal(crawlIdUrl(null), null);
+});
+
+test("source_url が空の物件は crawl_ids から参照掲載リンクが出る(岸町2 MIRASUMO)", () => {
+  const pages = Object.fromEntries(renderAll());
+  const prop = loadProperty("kishimachi2-mirasumo-204");
+  assert.equal(prop.source_url ?? "", "", "前提: この物件は source_url を意図的に空にしている");
+  assert.ok((prop.crawl_ids ?? []).includes("nc_21089174"), "前提: crawl_ids に nc_21089174 がある");
+  const page = pages["property/kishimachi2-mirasumo-204.html"];
+  assert.ok(page, "物件ページが描画されている");
+  assert.match(page, /https:\/\/suumo\.jp\/tochi\/tokyo\/sc_kita\/nc_21089174\//, "参照掲載のリンクがページに出る");
+  assert.match(page, /参照掲載/, "「掲載元」ではなく参照掲載として区別されている(価格の正本ではない)");
 });

@@ -10,6 +10,7 @@ import { renderRentProperty } from "./templates/rent-property.js";
 import { renderRentBasis } from "./templates/rent-basis.js";
 import { renderIndex } from "./templates/index.js";
 import { renderProperty } from "./templates/property.js";
+import { crawlLinksOf } from "./templates/layout.js";
 import { renderGuide } from "./templates/guide.js";
 import { calibrate } from "../engine/calibrate.js";
 import { loadHouseDeals } from "../engine/retail.js";
@@ -32,6 +33,9 @@ const DIST = join(ROOT, "site", "dist");
 mkdirSync(join(DIST, "property"), { recursive: true });
 
 const areaConfig = loadAreaConfig();
+// crawl_ids → 参照リンクの復元に使う(source_url を空にしている物件でも掲載元へ辿れるようにする)
+let seenCrawl = {};
+try { seenCrawl = JSON.parse(readFileSync(join(ROOT, "market", "crawl", "seen.json"), "utf8")); } catch { seenCrawl = {}; }
 const ids = listPropertyIds();
 if (ids.length === 0) {
   console.error("properties/ に物件YAMLがありません");
@@ -47,6 +51,7 @@ const houseDeals = loadHouseDeals();
 const results = [];
 for (const id of ids) {
   const property = loadProperty(id);
+  property.crawl_links = crawlLinksOf(property, seenCrawl);
   if (property.id !== id) {
     throw new Error(`ファイル名とid不一致: ${id}.yaml の id は ${property.id}`);
   }

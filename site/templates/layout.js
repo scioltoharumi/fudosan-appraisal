@@ -44,6 +44,22 @@ export const fmtDate = (d) => {
 };
 
 // 外部リンクはhttpsのみ許可(YAML由来の値をhrefに入れるためのガード)
+// crawl_ids(source_url に置けない掲載ID)からリンクを復元する(2026-09-02)。
+// 岸町2 MIRASUMO は掲載価格(土地単体5,810万)と台帳(総額7,480万)が恒常的に食い違うため
+// source_url を意図的に空にしているが、その結果**人がページから掲載元へ辿れなくなっていた**
+// (ユーザー指摘「掲載元はどこにいった？」)。watch の監視対象にはせず、参照リンクとしてだけ出す。
+// URL は市区固定(北区)。kind が seen.json に無い nc_ は**推測せず**出さない
+export const crawlIdUrl = (id, seenEntry) => {
+  const s = String(id ?? "");
+  const at = s.match(/^at_(\d+)$/);
+  if (at) return `https://www.athome.co.jp/kodate/${at[1]}/`;
+  if (!/^nc_\d+$/.test(s)) return null;
+  const path = { chuko: "chukoikkodate", shinchiku: "ikkodate", tochi: "tochi" }[seenEntry?.kind];
+  return path ? `https://suumo.jp/${path}/tokyo/sc_kita/${s}/` : null;
+};
+export const crawlLinksOf = (property, seen) =>
+  (property?.crawl_ids ?? []).map((id) => ({ id, url: crawlIdUrl(id, seen?.[id]) })).filter((x) => x.url);
+
 export const safeUrl = (u) =>
   typeof u === "string" && /^https:\/\/[^\s"'<>]+$/.test(u) ? u : null;
 

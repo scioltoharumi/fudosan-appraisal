@@ -488,7 +488,8 @@ export function renderProperty(r, property, marketCal = null, houseDeals = null)
   <div class="panel">
     <h2>${esc(property.location?.address ?? r.id)}${property.unit_label ? `<span class="unit-tag">${esc(property.unit_label)}</span>` : ""} <span class="status">${esc(status)}</span></h2>
     <div class="note">ID: ${esc(r.id)} / 出典: ${escRich(property.source ?? "—")} / 取得日: ${esc(fmtDate(property.captured_at))} / 駅徒歩${esc(property.station?.walk_min)}分 / 土地${esc(property.land?.registered_m2)}m² / 延床${esc(property.building?.floor_m2)}m² / 築: ${esc(fmtDate(property.building?.built))}</div>
-    ${safeUrl(property.source_url) ? `<a class="src-link" href="${esc(property.source_url)}" target="_blank" rel="noopener noreferrer">元の掲載ページを見る ↗</a>` : ""}
+    ${safeUrl(property.source_url) ? `<a class="src-link" href="${esc(property.source_url)}" target="_blank" rel="noopener noreferrer">元の掲載ページを見る ↗</a>`
+      : (property.crawl_links ?? []).length ? `<div class="note" style="margin-top:4px">参照掲載: ${property.crawl_links.map((l) => `<a class="src-link" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">${esc(l.id)} ↗</a>`).join(" / ")} <span style="color:#6B7A90">── この掲載の価格は台帳の価格(総額)の正本ではないため、値下げ監視の対象から外している(価格が動けば discover が別途報告する)</span></div>` : ""}
 
     ${specTable(r, property)}
 

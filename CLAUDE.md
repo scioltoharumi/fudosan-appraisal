@@ -609,7 +609,10 @@ KO審査は誤爆修正後に全通過だが、**同日にユーザーが物件�
   選択**した。hazard_check.suumo は hit と正直に記録し、tests/invariants.test.js に
   **HIT_ALLOWED(ユーザー承認済み例外リスト。承認日と理由つき。勝手に足してはならない)**を新設して受けた。
   事実は物件YAMLのcaveatに全記録。source_url は掲載価格(土地単体5,810万)と price_history(総額7,480万)が
-  恒常的に食い違いwatchが誤報するため意図的に空とし、**crawl_ids フィールド**(新設)で重複報告を防ぐ
+  恒常的に食い違いwatchが誤報するため意図的に空とし、**crawl_ids フィールド**(新設)で重複報告を防ぐ。
+  **2026-09-02: source_url が空でも人が掲載元へ辿れるよう、crawl_ids から「参照掲載」リンクを復元して物件ページと
+  一覧に出す**(`layout.js crawlIdUrl/crawlLinksOf`。URLの種別は seen.json の kind から。kind不明の nc_ は推測せず出さない)。
+  ユーザー指摘「掲載元はどこにいった？」で判明した実害。watch の監視対象にはしない(価格の正本ではないため)
 - **ko_screened の付け方に穴が再発していたのを修正**: 詳細未取得(verdict=unknown)の新着に
   審査済み印が付き、needsRescreen が二度と拾わない状態だった(8/13の取りこぼしと同じ穴。
   土地初回クロールのNO_DETAIL 24件で顕在化)。`isScreenedVerdict()`(pass/suspectのみ真)を新設し、
