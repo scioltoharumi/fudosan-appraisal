@@ -7,7 +7,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { ROOT, loadProperty, listPropertyIds } from "../engine/io.js";
-import { buildExcludedIndex, matchExcludedSite, scanKO, koScreen, buildAreaHazardIndex, areaHazardBlock } from "./screen.mjs";
+import { buildExcludedIndex, matchExcludedSite, scanKO, koScreen, buildAreaHazardIndex, areaHazardBlock, parseDetailAttrs } from "./screen.mjs";
 
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36";
 const SLEEP_MS = 2200;              // N1: リクエスト間隔2秒以上
@@ -196,6 +196,19 @@ function parseDetailPriceAthome(html) {
   return hits.every((v) => v === hits[0]) ? hits[0] : null;
 }
 
+// 土地カテゴリ(SUUMO /tochi/)の watch(2026-09-02)。
+// 建築条件付土地は掲載価格が**土地単体**で、建物は「建物価格NNNN万円」と別建て。台帳の price_history は
+// 「掲載に建物価格がある場合は総額で立てる」規約(CLAUDE.md 土地カテゴリのスコープ)なので、
+// 土地単体の代表価格と比べると**毎日 −建物価格 の値下げに見える**。
+// 実害: 上十条4 kamijujo4-21594160(総額7,970万)が「7,970→5,670・−2,300万」と誤報された(登録翌日)。
+// 建物価格が読めるときだけ足す。読めない土地(更地・古家付き)は price_history も土地単体なので素通し
+export function tochiTotalPrice(html, landPrice, sourceUrl) {
+  if (landPrice == null || !/suumo\.jp\/tochi\//.test(String(sourceUrl ?? ""))) return { price: landPrice, added: null };
+  const bldg = parseDetailAttrs(html, "suumo")?.building_price_man ?? null;
+  if (!Number.isFinite(bldg) || bldg <= 0) return { price: landPrice, added: null };
+  return { price: landPrice + bldg, added: bldg };
+}
+
 function parseInfoDate(html) {
   const m = strip(html).match(/(?:情報提供日|情報公開日)[\s:：]*([0-9]{4})年([0-9]{1,2})月([0-9]{1,2})日/);
   return m ? `${m[1]}-${String(m[2]).padStart(2, "0")}-${String(m[3]).padStart(2, "0")}` : null;
@@ -238,6 +251,8 @@ async function watch() {
       }
     } else {
       price = isAthome ? parseDetailPriceAthome(html) : parseDetailPrice(html);
+      const tt = tochiTotalPrice(html, price, p.source_url);
+      if (tt.added != null) { price = tt.price; unitLabel = `土地+建物参考プラン(建物${tt.added}万を加算)`; }
     }
     let infoDate = parseInfoDate(html);
     // 抽出失敗は1回だけ再取得を試す(媒体側の一時的な応答差で毎日エラー通知が出るのを防ぐ)。
@@ -246,6 +261,8 @@ async function watch() {
       const retry = await fetchPage(p.source_url);
       if (retry.status === 200) {
         price = isAthome ? parseDetailPriceAthome(retry.html) : parseDetailPrice(retry.html);
+        const tt = tochiTotalPrice(retry.html, price, p.source_url);
+        if (tt.added != null) { price = tt.price; unitLabel = `土地+建物参考プラン(建物${tt.added}万を加算)`; }
         infoDate = parseInfoDate(retry.html) ?? infoDate;
       }
     }

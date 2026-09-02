@@ -206,7 +206,13 @@
   "price_man": 5555,
   "address": "東京都北区神谷２",
   "walk_min": 11,
-  "kind": "chuko"
+  "kind": "chuko",
+  "land_m2": 32.16,
+  "floor_m2": 78.49,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
  },
  "nc_21015808": {
   "first_seen": "2026-08-12",

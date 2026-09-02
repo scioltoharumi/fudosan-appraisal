@@ -3,7 +3,7 @@
 // 事故の型: 新築の複数戸掲載は一覧が開発の代表価格(下限値)を出すため、価格が一致しても別戸でありうる。
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { fingerprint, siblingHint, DISTRICTS, roomsOf, districtOfAddress, needsRescreen, salesUnitsOf, scopeMissOf } from "../crawler/daily.mjs";
+import { fingerprint, siblingHint, DISTRICTS, roomsOf, districtOfAddress, needsRescreen, salesUnitsOf, scopeMissOf, tochiTotalPrice } from "../crawler/daily.mjs";
 
 const districtOf = (addr) => districtOfAddress(addr);
 // 事故当時の台帳(1号棟のみ登録・価格は誤って5980万だった)
@@ -284,4 +284,21 @@ test("parseDetailAttrs: 建物価格を拾う(複数表記があれば最小値)
   // ラベルが無ければ null(=判定しない)。0や欠測を数値に丸めない
   assert.equal(parseDetailAttrs("<div>価格 6560万円</div>", "suumo").building_price_man, null);
   assert.equal(parseDetailAttrs("", "suumo").building_price_man, null);
+});
+
+// 建築条件付土地の watch は「土地単体の代表価格」を「総額」に直してから台帳と比べる(2026-09-02)。
+// 上十条4 kamijujo4-21594160(price_history=総額7,970万)が登録翌日に「7,970→5,670・−2,300万の値下げ」と
+// 誤報された。掲載の 5,670 は土地単体で、建物参考プラン 2,300 は別建てだった。
+test("tochiTotalPrice: /tochi/ 掲載で建物価格が読めれば土地+建物の総額にする", () => {
+  const html = "<div>価格 5670万円</div><div>建物価格 2300万円、建物面積81.96m2</div><p>建物価格２４８０万円</p>";
+  const tochiUrl = "https://suumo.jp/tochi/tokyo/sc_kita/nc_21594160/";
+  assert.deepEqual(tochiTotalPrice(html, 5670, tochiUrl), { price: 7970, added: 2300 }, "複数表記は最小値を足す");
+  // 建物価格の無い土地(更地・古家付き)は土地単体のまま(price_history も土地単体で立てている)
+  assert.deepEqual(tochiTotalPrice("<div>価格 6560万円</div>", 6560, "https://suumo.jp/tochi/tokyo/sc_kita/nc_21577486/"), { price: 6560, added: null });
+  // 戸建の掲載には触らない(建物価格の語が定型文に出ても足さない)
+  assert.deepEqual(tochiTotalPrice(html, 6690, "https://suumo.jp/chukoikkodate/tokyo/sc_kita/nc_21587170/"), { price: 6690, added: null });
+  assert.deepEqual(tochiTotalPrice(html, 6690, "https://www.athome.co.jp/kodate/1195752621/"), { price: 6690, added: null });
+  // 代表価格が取れていなければ何もしない(null を数値に変えない)
+  assert.deepEqual(tochiTotalPrice(html, null, tochiUrl), { price: null, added: null });
+  assert.deepEqual(tochiTotalPrice(html, 5670, ""), { price: 5670, added: null });
 });
