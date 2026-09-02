@@ -19,6 +19,7 @@ function summary(r, property) {
   L.push(`価格の位置: ${r.position.head}`);
   L.push(`            ${r.position.body}`);
   for (const n of r.position.notes) L.push(`注記      : ${n}`);
+  if (r.landOnly) L.push(`注意      : **土地として査定**(建物を仮定していない)。掲載に建物価格がある場合のみ総額で立て、無ければ土地価格と土地値の比較になる。建築費・つなぎ融資・更地の固定資産税(住宅用地特例1/6が効かない)は査定の外`);
   if (r.isNewBuild) L.push(`注意      : 新築物件。本査定は中古市場での再販価値ベース(新築プレミアム剥落込み)`);
   L.push(`主導ルート: ${r.fairFinal.route === "retail" ? "リテール比較法(戸建成約)" : r.fairFinal.route === "home" ? "原価法(家として売る)" : "土地値(更地換算)"}${r.retail ? `(加重併用: リテール${(r.fairFinal.weights.retail * 100).toFixed(0)}%)` : ""}${r.fairFinal.floorBound ? " ※土地換算値が下限発火" : ""}`);
   if (property.source_url) L.push(`掲載元    : ${property.source_url}`);

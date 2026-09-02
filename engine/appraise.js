@@ -515,7 +515,12 @@ export function evaluate(property, areaConfig, { asOf = defaultAsOf(), seed = CO
   const fairHi = Math.max(blend(hi.fair, retail?.hi), floorEff.hi);
   const floorBound = retail ? fairMid > blend(mid.fair, retail.mid) + 1e-9 : false;
   const finalRoute = floorBound ? "land" : (retail && retail.mid > mid.fair ? "retail" : mid.route);
-  const isNewBuild = s.age < 2;   // リテール比較の新築/中古境界(SUBJECT_USED_AGE)と統一
+  // **土地物件(land_only)は「新築」ではない**(2026-09-02)。更地・古家付き・建築条件付土地を
+  // 建物を仮定せずに査定する(building.floor_m2 = 0)と age が小さくなり、
+  // 「新築物件。本査定は中古市場での再販価値ベース」という的外れな注意書きが出ていた。
+  // 土地として査定していることは landOnly で開示する
+  const landOnly = property.land_only === true;
+  const isNewBuild = !landOnly && s.age < 2;   // リテール比較の新築/中古境界(SUBJECT_USED_AGE)と統一
   const fairFinal = { lo: fairLo, mid: fairMid, hi: fairHi, route: finalRoute, costMid: mid.fair,
     weights: { retail: wR, cost: 1 - wR }, floorBound, floorGuard, floorEff, pptSource, retailApplicable };
 
@@ -555,7 +560,7 @@ export function evaluate(property, areaConfig, { asOf = defaultAsOf(), seed = CO
     area,
     assumptions,
     mid, lo, hi,
-    retail, fairFinal, isNewBuild,
+    retail, fairFinal, isNewBuild, landOnly,
     position: pos, negoBand,
     premium, premiumMarket, overheat, totalCost, instLoss, incomeVal,
     mc, tornado: tor,
