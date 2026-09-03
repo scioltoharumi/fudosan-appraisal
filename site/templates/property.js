@@ -428,6 +428,23 @@ function rainScenariosHtml(rs, color) {
     </div>`;
 }
 
+// 徒歩分による位置絞り込み(siteFromWalk)の精密照合結果(YAML hazard_check.site_scan)。
+// 丁目代表点の照合(official)では崖線の斜面に立つ区画を見落とす(2026-09-04: 岸町2の更地が代表点では
+// 土砂非該当・caution だったが、徒歩3駅で絞ると斜面帯でレッド1・イエロー2に掛かった)。
+// 結果は verdict(suspect/unknown/pass/block)と根拠をそのまま出し、判定はしない
+function siteScanHtml(sc, color) {
+  if (!sc) return "";
+  const V = { suspect: "要確認 ── 土砂災害警戒区域の縁に掛かる位置", unknown: "位置を絞れず(掲載の徒歩分が両立しない)", pass: "該当なし", block: "掲載条件外" };
+  const c = sc.verdict === "block" ? "var(--stamp)" : sc.verdict === "suspect" ? "#B07C10" : color;
+  const row = (k, v) => (v ? `<div><b>${esc(k)}</b>: ${escRich(v)}</div>` : "");
+  return `<div style="margin-top:7px;padding-top:7px;border-top:1px dashed ${c}">
+      <b style="color:${c}">精密照合(徒歩分による位置絞り込み・${esc(fmtDate(sc.checked_at))})</b> ── ${esc(V[sc.verdict] ?? sc.verdict ?? "")}
+      ${row("方法", sc.method)}${row("解集合の中心", sc.center)}${row("広がり", sc.span_m)}${row("標高", sc.elevation_m)}
+      ${row("地形", sc.terrain)}${row("土砂災害区域", sc.dosha)}${row("結果", sc.result)}${row("地形の文脈", sc.terrain_context)}
+      ${sc.note ? `<div class="note" style="margin-top:3px">${escRich(sc.note)}</div>` : ""}
+    </div>`;
+}
+
 function hazardHtml(property) {
   const h = property.hazard_check;
   if (!h) return "";
@@ -452,6 +469,7 @@ function hazardHtml(property) {
         ${o.reason ? `<div style="margin-top:3px;color:${color}"><b>${bad ? "掲載条件「台地側(荒川低地の浸水想定域外)」から外れている" : "要確認"}</b>: ${esc(o.reason)}</div>` : ""}
         <div class="note" style="margin-top:3px">${escRich(o.limit ?? "")} <a href="../map.html">エリア全体のハザードマップ対照を見る↗</a></div>
       </div>` : ""}
+      ${siteScanHtml(h.site_scan, color)}
       ${rainScenariosHtml(h.rain_scenarios, color)}
       ${pending ? `<div class="note" style="margin-top:3px;color:var(--stamp)"><b>掲載の制限事項欄は該当物件でも空欄のことがある</b>(実例: 西が丘2の2棟現場はSUUMOが空欄で、athomeの4業者掲載のみが土砂災害特別警戒区域を明記)。<b>内見・申込より前に</b>、重ねるハザードマップと東京都の土砂災害警戒区域等マップで自分で照合し、仲介には法令上の制限の全項目を書面で出してもらうこと。重要事項説明は契約直前のため、そこまで進めてから判明すると引き返しにくい。</div>` : ""}
     </div>`;

@@ -125,3 +125,19 @@ test("source_url が空の物件は crawl_ids から参照掲載リンクが出�
   assert.match(page, /https:\/\/suumo\.jp\/tochi\/tokyo\/sc_kita\/nc_21089174\//, "参照掲載のリンクがページに出る");
   assert.match(page, /参照掲載/, "「掲載元」ではなく参照掲載として区別されている(価格の正本ではない)");
 });
+
+// 精密照合(site_scan)は代表点の照合(official)とは別に、ページのハザード欄に描かれること(2026-09-04)。
+// 代表点で caution だった岸町2の更地が、徒歩分で絞ると斜面帯・土砂警戒区域の縁に掛かると分かった。
+// official だけ描いて site_scan を落とすと、ページは「代表点で該当なし」としか言わず実態と逆に読める
+test("hazard_check.site_scan があるページには精密照合の結果が描かれる", () => {
+  const pages = Object.fromEntries(renderAll());
+  const p = pages["property/kishimachi2-21624274.html"];
+  assert.ok(p, "岸町2更地のページ");
+  assert.match(p, /精密照合\(徒歩分による位置絞り込み/, "見出しが出る");
+  assert.match(p, /要確認 ── 土砂災害警戒区域の縁に掛かる位置/, "verdict=suspect の文言");
+  assert.match(p, /レッド1点・イエロー2点/, "根拠の数字が出る");
+  const q = pages["property/kishimachi2-21611051.html"];
+  assert.match(q, /位置を絞れず/, "verdict=unknown はその旨を出す(黙って省かない)");
+  // site_scan の無い物件には出ない
+  assert.ok(!/精密照合\(徒歩分/.test(pages["property/takinogawa6-21587170.html"]), "無い物件には出ない");
+});
