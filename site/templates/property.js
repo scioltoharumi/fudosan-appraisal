@@ -465,7 +465,7 @@ function caveatsHtml(property) {
   if (!Array.isArray(cs) || cs.length === 0) return "";
   const items = cs.map((c) => `
     <li style="margin-bottom:10px">
-      <b>${escRich(c.title)}</b>${c.effect ? `<span class="status" style="margin-left:6px">${esc(c.effect)}</span>` : ""}
+      <b>${escRich(c.title)}</b>${c.effect ? `<span class="status" style="margin-left:6px">${escRich(c.effect)}</span>` : ""}
       <div style="font-size:.82rem;line-height:1.8;margin-top:3px">${escRich(c.detail)}</div>
       ${c.check ? `<div class="note" style="margin-top:2px">確認方法: ${escRich(c.check)}</div>` : ""}
     </li>`).join("");
