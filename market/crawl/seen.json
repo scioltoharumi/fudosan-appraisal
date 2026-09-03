@@ -1964,5 +1964,41 @@
   "land_m2": 140,
   "floor_m2": null,
   "ko_screened": true
+ },
+ "nc_21624274": {
+  "first_seen": "2026-09-03",
+  "price_man": 5980,
+  "address": "東京都北区岸町２",
+  "walk_min": 5,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 96.09,
+  "floor_m2": null,
+  "ko_screened": true
+ },
+ "at_6991605040": {
+  "first_seen": "2026-09-03",
+  "price_man": 8790,
+  "address": "東京都北区志茂2",
+  "walk_min": 2,
+  "kind": "chuko",
+  "media": "athome",
+  "land_m2": 75.24,
+  "floor_m2": 99.57,
+  "out_of_scope": "2SLDK=2室(条件は3室以上)"
+ },
+ "at_1198810728": {
+  "first_seen": "2026-09-03",
+  "price_man": 7480,
+  "address": "東京都北区赤羽西3",
+  "walk_min": 12,
+  "kind": "shinchiku",
+  "media": "athome",
+  "land_m2": 151.88,
+  "floor_m2": 100,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO2_ownership"
+  ]
  }
 }
