@@ -163,9 +163,25 @@ test("判定廃止の回帰ガード: 台帳の全物件でスタンプ由来の
 
 test("price_history: 日付ソートが時刻値ベースであること(String(Date)の曜日名辞書順バグの回帰)", () => {
   // 2026-08-09(日)→08-10(月)は String(Date) 辞書順だと "Mon..."<"Sun..." で逆転する。
-  // 実データ(nishigaoka2の値下げ)で顕在化したため、最新価格の採用を回帰テストで固定する
-  const r = evaluate(loadProperty("nishigaoka2-adcast-a"), loadAreaConfig(), { asOf: AS_OF });
-  assert.equal(r.state.ask, 6580);
+  // 実データ(nishigaoka2の値下げ)で顕在化した。
+  // 2026-09-04: 当初は実物件の最新価格 6580 を決め打ちしていたが、本物の値下げ(6480)で落ちた。
+  // **生きている台帳の価格を定数で固定するテストは、価格が動くたびに壊れる**ので、
+  // ①合成データで曜日名逆転の2日を再現し ②実データは「日付が最新の行の価格を採る」という性質で検査する
+  const area = loadAreaConfig();
+  const base = loadProperty("nishigaoka2-adcast-a");
+  // ① 合成: YAML上の並びを逆順(新→旧)にしても、時刻値で最新の 08-10(月) が採られること
+  const synth = { ...base, price_history: [
+    { date: "2026-08-10", price_man: 6580 },   // 月曜 "Mon..." — 辞書順では "Sun..." より小さい
+    { date: "2026-08-09", price_man: 6980 },   // 日曜 "Sun..."
+  ] };
+  assert.equal(evaluate(synth, area, { asOf: AS_OF }).state.ask, 6580, "曜日名の辞書順に負けて旧価格を採っている");
+  // ② 実データ: 全物件で ask が「date が最新の行」の price_man と一致する(値そのものは固定しない)
+  for (const id of listPropertyIds()) {
+    const p = loadProperty(id);
+    const latest = [...p.price_history].sort((a, b) => new Date(a.date) - new Date(b.date)).at(-1);
+    const r = evaluate(p, area, { asOf: AS_OF });
+    assert.equal(r.state.ask, latest.price_man, `${id}: ask が最新日付の価格と一致しない`);
+  }
 });
 
 test("データ規律: 全物件YAMLに必須フィールドが揃っている(編集時の欠落検出)", () => {
