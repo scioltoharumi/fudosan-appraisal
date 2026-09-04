@@ -2000,5 +2000,30 @@
   "ko_codes": [
    "KO2_ownership"
   ]
+ },
+ "nc_21627044": {
+  "first_seen": "2026-09-04",
+  "price_man": 7480,
+  "address": "東京都北区赤羽西３",
+  "walk_min": 12,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 151.88,
+  "floor_m2": 100,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO2_ownership"
+  ]
+ },
+ "nc_21535333": {
+  "first_seen": "2026-09-04",
+  "price_man": 5670,
+  "address": "東京都北区上十条４",
+  "walk_min": 12,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 47.34,
+  "floor_m2": null,
+  "ko_screened": true
  }
 }
