@@ -141,9 +141,15 @@ function parseMan(text) {
 
 // 物件詳細ページ: 本体価格 = 出現頻度が最多の「N万円」(500万未満は諸費用等として除外)。
 // F1: 抽出失敗は null を返す(0や前回値の複写をしない)
-function parseDetailPrice(html) {
+//
+// 2026-09-05: **「建物価格 N万円」は数えない**。土地掲載の建物プラン例は写真キャプションごとに
+// 「建物価格 2200万円」を繰り返す(上十条4 nc_21535333 は8回)ため、土地本体の 5670万円(5回)より
+// 頻度が高くなり、代表価格=2,200万 → tochiTotalPrice で +2,200 → **7,870→4,400万の値下げと誤報**した。
+// 建物価格は parseDetailAttrs が別に読んで足すので、ここでは土地本体の候補から外す
+const BUILDING_PRICE_RE = /建物価格\s*[^0-9０-９]{0,6}[0-9０-９][0-9０-９,，]{1,7}\s*万円/g;
+export function parseDetailPrice(html) {
   const counts = {};
-  for (const m of strip(html).matchAll(/([0-9]+億[0-9,]*万?円|[0-9][0-9,]{1,7}万円)/g)) {
+  for (const m of strip(html).replace(BUILDING_PRICE_RE, " ").matchAll(/([0-9]+億[0-9,]*万?円|[0-9][0-9,]{1,7}万円)/g)) {
     const v = parseMan(m[1]);
     if (v !== null && v >= 500) counts[v] = (counts[v] ?? 0) + 1;
   }

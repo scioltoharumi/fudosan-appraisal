@@ -3,7 +3,7 @@
 // 事故の型: 新築の複数戸掲載は一覧が開発の代表価格(下限値)を出すため、価格が一致しても別戸でありうる。
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { fingerprint, siblingHint, DISTRICTS, roomsOf, districtOfAddress, needsRescreen, salesUnitsOf, scopeMissOf, tochiTotalPrice } from "../crawler/daily.mjs";
+import { fingerprint, siblingHint, DISTRICTS, roomsOf, districtOfAddress, needsRescreen, salesUnitsOf, scopeMissOf, tochiTotalPrice, parseDetailPrice } from "../crawler/daily.mjs";
 
 const districtOf = (addr) => districtOfAddress(addr);
 // 事故当時の台帳(1号棟のみ登録・価格は誤って5980万だった)
@@ -301,4 +301,23 @@ test("tochiTotalPrice: /tochi/ 掲載で建物価格が読めれば土地+建物
   // 代表価格が取れていなければ何もしない(null を数値に変えない)
   assert.deepEqual(tochiTotalPrice(html, null, tochiUrl), { price: null, added: null });
   assert.deepEqual(tochiTotalPrice(html, 5670, ""), { price: 5670, added: null });
+});
+
+// 代表価格の多数決に「建物価格 N万円」を混ぜない(2026-09-05)。
+// 上十条4 nc_21535333 は建物プラン例のキャプションが「建物価格 2200万円」を8回繰り返し、土地本体の
+// 5670万円(5回)を上回った。代表価格=2,200 → tochiTotalPrice が +2,200 → 7,870→4,400万の値下げと誤報。
+// 建物価格は tochiTotalPrice 側が足すので、ここで数えると二重に効く
+test("parseDetailPrice: 建物価格の繰り返しが土地本体の代表価格を乗っ取らない", () => {
+  const cap = "<li>建物プラン例 建物価格 2200万円 建物面積約81.96m2</li>";
+  const html = "<h1>土地 5670万円</h1><td>価格</td><td>5670万円</td><p>土地47.34m2・5670万円の場合</p>"
+    + "<p>頭金0円、借入額5670万円</p><p>5670万円</p>" + cap.repeat(8);
+  assert.equal(parseDetailPrice(html), 5670, "建物価格を除いた多数決で土地本体を取る");
+  assert.deepEqual(tochiTotalPrice(html, parseDetailPrice(html), "https://suumo.jp/tochi/tokyo/sc_kita/nc_21535333/"),
+    { price: 7870, added: 2200 }, "総額は 土地5,670+建物2,200 = 7,870 で不変");
+  // 全角の建物価格表記も除外の対象(写真キャプションは全角で書かれることがある)
+  assert.equal(parseDetailPrice("<p>6560万円</p><p>6560万円</p><p>6560万円</p>" + "<p>建物価格２４８０万円</p>".repeat(5)), 6560);
+  // 建物価格しか無いページは代表価格なし(null)。0 や建物価格を本体に化けさせない
+  assert.equal(parseDetailPrice(cap.repeat(8)), null);
+  // 戸建の通常ページは従来どおり(3回以上出る価格が本体)
+  assert.equal(parseDetailPrice("<p>6690万円</p><p>6690万円</p><p>6690万円</p><p>100万円</p>"), 6690);
 });
