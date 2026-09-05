@@ -475,6 +475,29 @@ function hazardHtml(property) {
     </div>`;
 }
 
+// ---- 状況更新(YAMLの status_updates を描画) ----
+// 登録後に判明した事実(建築確認の取得・販売形態の追加など)を日付・出所つきで積む欄(2026-09-05新設)。
+// 岸町2 MIRASUMO で「建築確認済み・同額の建売プラン」を YAML にだけ書き、ページには出していなかった
+// (ページは登録時のまま『建築確認未取得』と読めた)。事実(facts)と読み(implications)を分けて描き、判定はしない
+function statusUpdatesHtml(property) {
+  const us = property.status_updates;
+  if (!Array.isArray(us) || us.length === 0) return "";
+  const li = (arr) => (Array.isArray(arr) && arr.length
+    ? `<ul style="margin:4px 0 0 18px;padding:0">${arr.map((x) => `<li style="margin-bottom:3px">${escRich(x)}</li>`).join("")}</ul>` : "");
+  const items = [...us].sort((a, b) => fmtDate(b.date).localeCompare(fmtDate(a.date))).map((u) => `
+    <div style="margin-top:8px">
+      <b>${esc(fmtDate(u.date))}</b>${u.source ? `<span class="note" style="margin-left:6px">出所: ${escRich(u.source)}</span>` : ""}
+      ${Array.isArray(u.facts) && u.facts.length ? `<div style="margin-top:4px"><b>事実</b>${li(u.facts)}</div>` : ""}
+      ${Array.isArray(u.implications) && u.implications.length ? `<div style="margin-top:6px"><b>査定の読みへの影響</b>${li(u.implications)}</div>` : ""}
+      ${u.check ? `<div class="note" style="margin-top:4px">確認方法: ${escRich(u.check)}</div>` : ""}
+    </div>`).join("");
+  return `
+    <div style="border:1px solid #2E6E8E;background:#F4F8FA;padding:9px 12px;margin-top:12px;font-size:.8rem;line-height:1.8">
+      <b style="color:#2E6E8E">状況更新</b> ── 登録後に判明した事実(日付・出所つき)。<b>下の査定値はこれを織り込む前の値</b>で、エンジンは判定をしない
+      ${items}
+    </div>`;
+}
+
 // ---- 査定が織り込めていない要確認事項(YAMLの caveats を描画) ----
 // 掲載元の精査で判明したが、エンジンが変数として持たないため査定額に反映できない事実を開示する。
 // 「安く出ている/高く出ている」理由が式の外にある場合、それを隠さないための欄(データ規律)
@@ -508,6 +531,8 @@ export function renderProperty(r, property, marketCal = null, houseDeals = null)
     <div class="note">ID: ${esc(r.id)} / 出典: ${escRich(property.source ?? "—")} / 取得日: ${esc(fmtDate(property.captured_at))} / 駅徒歩${esc(property.station?.walk_min)}分 / 土地${esc(property.land?.registered_m2)}m² / 延床${esc(property.building?.floor_m2)}m² / 築: ${esc(fmtDate(property.building?.built))}</div>
     ${safeUrl(property.source_url) ? `<a class="src-link" href="${esc(property.source_url)}" target="_blank" rel="noopener noreferrer">元の掲載ページを見る ↗</a>`
       : (property.crawl_links ?? []).length ? `<div class="note" style="margin-top:4px">参照掲載: ${property.crawl_links.map((l) => `<a class="src-link" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">${esc(l.id)} ↗</a>`).join(" / ")} <span style="color:#6B7A90">── この掲載の価格は台帳の価格(総額)の正本ではないため、値下げ監視の対象から外している(価格が動けば discover が別途報告する)</span></div>` : ""}
+
+    ${statusUpdatesHtml(property)}
 
     ${specTable(r, property)}
 

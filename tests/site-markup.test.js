@@ -126,6 +126,21 @@ test("source_url が空の物件は crawl_ids から参照掲載リンクが出�
   assert.match(page, /参照掲載/, "「掲載元」ではなく参照掲載として区別されている(価格の正本ではない)");
 });
 
+// 状況更新(status_updates)は YAML に書くだけではページに出ない(2026-09-05に発覚: 岸町2 MIRASUMO の
+// 「建築確認済み・同額の建売プラン」が YAML にだけ入り、ページは登録時のまま『建築確認未取得』と読めた)。
+// 日付・出所・事実(確認済証の番号)がページに出ること、無い物件には欄が出ないことを固定する
+test("status_updates があるページには状況更新の欄が日付・出所・事実つきで描かれる", () => {
+  const pages = Object.fromEntries(renderAll());
+  const body = visibleText(pages["property/kishimachi2-mirasumo-204.html"]);
+  assert.ok(body.includes("状況更新"), "欄の見出しが無い");
+  assert.ok(body.includes("2026-09-05"), "更新日が無い");
+  assert.ok(body.includes("出所:"), "出所の開示が無い");
+  assert.ok(body.includes("第26UDI1S建01787号"), "確認済証の番号が事実として出ていない");
+  assert.ok(body.includes("査定の読みへの影響"), "事実と読みが分けて描かれていない");
+  assert.ok(!body.includes("**"), "状況更新の中で ** が生のまま漏れている");
+  assert.ok(!visibleText(pages["property/takinogawa6-21587170.html"]).includes("状況更新"), "status_updates の無い物件には出ない");
+});
+
 // 精密照合(site_scan)は代表点の照合(official)とは別に、ページのハザード欄に描かれること(2026-09-04)。
 // 代表点で caution だった岸町2の更地が、徒歩分で絞ると斜面帯・土砂警戒区域の縁に掛かると分かった。
 // official だけ描いて site_scan を落とすと、ページは「代表点で該当なし」としか言わず実態と逆に読める
