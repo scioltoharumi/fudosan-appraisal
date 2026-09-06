@@ -63,6 +63,22 @@ test("別丁目・別地区の同面積物件を巻き込まない", () => {
   assert.equal(matchExcludedSite({ ...ACCIDENT, district: "志茂" }, index), null, "地区が違えば別現場");
 });
 
+// 2026-09-07ユーザー決定: 宅地造成工事規制区域は盛土規制法で**北区全域**(令和6年7月31日〜)なので、
+// 掲載にこの語があってもKO4にしない。この語だけでMIRASUMO・滝野川2・上十条4がブロックされていた。
+// がけ条例・土砂災害警戒区域・浸水想定は区画固有の指定なので従来どおりKO4
+test("KO4: 宅地造成工事規制区域だけではブロックしない(北区全域の法令表記)。区画固有のハザード語は従来どおり", () => {
+  const takuzo = scanKO("<div>その他制限事項: 景観法による規制有、航空法による規制有、宅地造成工事規制区域、防火地域、準防火地域、日影制限有</div>", "suumo");
+  assert.ok(!takuzo.flags.some((f) => f.code === "KO4_hazard"), "宅造だけでKO4を立てない");
+  const takuzo2 = scanKO("<div>法令等制限：準防火地域、第二種高度地区、宅地造成及び特定盛土等規制法</div>", "athome");
+  assert.ok(!takuzo2.flags.some((f) => f.code === "KO4_hazard"), "盛土規制法の正式名称でも立てない");
+  // 宅造と一緒に区画固有の語があれば従来どおり立つ(西が丘2レッドゾーン現場のathome全文の形)
+  const both = scanKO("<div>法令等制限：準防火地域、第二種高度地区、宅地造成及び特定盛土等規制法、土砂災害特別警戒区域</div>", "athome");
+  assert.ok(both.flags.some((f) => f.code === "KO4_hazard"), "土砂災害特別警戒区域は立つ");
+  for (const word of ["がけ条例", "東京都建築安全条例第6条", "土砂災害警戒区域", "急傾斜地崩壊危険区域", "洪水浸水想定区域"]) {
+    assert.ok(scanKO(`<div>その他制限事項: ${word}</div>`, "suumo").flags.some((f) => f.code === "KO4_hazard"), `${word} は従来どおりKO4`);
+  }
+});
+
 test("KOスキャン: 掲載に明記された重大ハザード・借地権・再建築不可・告知事項を検出する", () => {
   const hz = scanKO("<div>その他制限事項: 準防火地域、第二種高度地区、土砂災害特別警戒区域内</div>", "suumo");
   assert.ok(hz.flags.some((f) => f.code === "KO4_hazard"));

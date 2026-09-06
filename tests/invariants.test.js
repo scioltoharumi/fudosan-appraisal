@@ -209,9 +209,10 @@ test("データ規律: 全物件に hazard_check があり、該当(hit)物件�
   // 規律どおりなら除外だが、ユーザーが2026-08-29に「例外として残す(開示つき)」を選択した。
   // 宅造区域は切土・盛土・擁壁に許可が要る区域で、それ自体は建築不可ではない(KO4の中では最も軽い区分)。
   // **このリストへの追加は必ずユーザー承認とセット**(勝手に足せば規律が死ぬ)。承認日と理由を残すこと
-  const HIT_ALLOWED = {
-    "kishimachi2-mirasumo-204": "2026-08-29ユーザー承認: 宅地造成工事規制区域(SUUMO nc_21089174)。開示つきで台帳に残す",
-  };
+  // 2026-09-07: 岸町2 MIRASUMO の例外を撤去した。根拠だった「宅地造成工事規制区域」は盛土規制法で北区全域(令和6年7月31日〜)
+  // の法令表記と判明し、ユーザー決定でKO4の語彙から外した(crawler/screen.mjs HAZARD_RE)。YAMLの hazard_check.suumo も none に戻した。
+  // リストは空。**追加は必ずユーザー承認とセット**
+  const HIT_ALLOWED = {};
   const OK = ["none", "hit", "unchecked", "na"];
   for (const id of listPropertyIds()) {
     const h = loadProperty(id).hazard_check;

@@ -855,10 +855,10 @@
   "media": "suumo",
   "land_m2": 41.84,
   "floor_m2": 58.94,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_hazard"
-  ]
+  "ko_codes": [],
+  "ko_screened": true,
+  "out_of_scope": "延床58.94m2(条件は70m2超)",
+  "ko4_takuzo_unblocked": "2026-09-07"
  },
  "nc_78725635": {
   "first_seen": "2026-08-13",
@@ -883,10 +883,9 @@
   "media": "suumo",
   "land_m2": 51.44,
   "floor_m2": 86.71,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_hazard"
-  ]
+  "ko_codes": [],
+  "ko_screened": true,
+  "ko4_takuzo_unblocked": "2026-09-07"
  },
  "nc_20655341": {
   "first_seen": "2026-08-13",
@@ -933,10 +932,10 @@
   "media": "suumo",
   "land_m2": 67.27,
   "floor_m2": 66.61,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_hazard"
-  ]
+  "ko_codes": [],
+  "ko_screened": true,
+  "out_of_scope": "延床66.61m2(条件は70m2超)",
+  "ko4_takuzo_unblocked": "2026-09-07"
  },
  "nc_21106162": {
   "first_seen": "2026-08-13",
@@ -1038,10 +1037,10 @@
   "media": "athome",
   "land_m2": 58.89,
   "floor_m2": 58.94,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_hazard"
-  ]
+  "ko_codes": [],
+  "ko_screened": true,
+  "out_of_scope": "延床58.94m2(条件は70m2超)",
+  "ko4_takuzo_unblocked": "2026-09-07"
  },
  "at_1152286428": {
   "first_seen": "2026-08-13",
@@ -1205,10 +1204,9 @@
   "media": "suumo",
   "land_m2": 51.43,
   "floor_m2": 86.71,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_hazard"
-  ]
+  "ko_codes": [],
+  "ko_screened": true,
+  "ko4_takuzo_unblocked": "2026-09-07"
  },
  "nc_21499286": {
   "first_seen": "2026-08-27",
@@ -1489,10 +1487,9 @@
   "media": "suumo",
   "land_m2": 64.03,
   "floor_m2": null,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_hazard"
-  ]
+  "ko_codes": [],
+  "ko_screened": true,
+  "ko4_takuzo_unblocked": "2026-09-07"
  },
  "nc_21403138": {
   "first_seen": "2026-08-29",
@@ -1503,10 +1500,9 @@
   "media": "suumo",
   "land_m2": 56.92,
   "floor_m2": null,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_hazard"
-  ]
+  "ko_codes": [],
+  "ko_screened": true,
+  "ko4_takuzo_unblocked": "2026-09-07"
  },
  "nc_21525707": {
   "first_seen": "2026-08-29",
@@ -1725,10 +1721,9 @@
   "media": "suumo",
   "land_m2": 65,
   "floor_m2": null,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_hazard"
-  ]
+  "ko_codes": [],
+  "ko_screened": true,
+  "ko4_takuzo_unblocked": "2026-09-07"
  },
  "nc_21057226": {
   "first_seen": "2026-08-29",
@@ -2126,10 +2121,9 @@
   "media": "suumo",
   "land_m2": 49.1,
   "floor_m2": null,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_hazard"
-  ]
+  "ko_codes": [],
+  "ko_screened": true,
+  "ko4_takuzo_unblocked": "2026-09-07"
  },
  "nc_21529853": {
   "first_seen": "2026-09-06",
