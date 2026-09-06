@@ -2069,5 +2069,102 @@
   "land_m2": 71.04,
   "floor_m2": null,
   "ko_screened": true
+ },
+ "nc_21644109": {
+  "first_seen": "2026-09-06",
+  "price_man": 8180,
+  "address": "東京都北区上中里３",
+  "walk_min": 7,
+  "kind": "chuko",
+  "media": "suumo",
+  "land_m2": 60.14,
+  "floor_m2": 98.81,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
+ },
+ "nc_21651277": {
+  "first_seen": "2026-09-06",
+  "price_man": 6480,
+  "address": "東京都北区赤羽３",
+  "walk_min": 6,
+  "kind": "chuko",
+  "media": "suumo",
+  "land_m2": 66.51,
+  "floor_m2": 84.44,
+  "out_of_scope": "2LDK+=2室(条件は3室以上)"
+ },
+ "nc_21650469": {
+  "first_seen": "2026-09-06",
+  "price_man": 6480,
+  "address": "東京都北区赤羽３",
+  "walk_min": 14,
+  "kind": "chuko",
+  "media": "suumo",
+  "land_m2": 66.51,
+  "floor_m2": 84.44,
+  "out_of_scope": "2LDK+=2室(条件は3室以上)"
+ },
+ "nc_21643996": {
+  "first_seen": "2026-09-06",
+  "price_man": 3880,
+  "address": "東京都北区西ケ原１",
+  "walk_min": 8,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 25.79,
+  "floor_m2": 50.76,
+  "out_of_scope": "土地25.79m2(土地の条件は45m2以上)"
+ },
+ "nc_21342883": {
+  "first_seen": "2026-09-06",
+  "price_man": 4480,
+  "address": "東京都北区滝野川２",
+  "walk_min": 6,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 49.1,
+  "floor_m2": null,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_hazard"
+  ]
+ },
+ "nc_21529853": {
+  "first_seen": "2026-09-06",
+  "price_man": 4480,
+  "address": "東京都北区赤羽台４",
+  "walk_min": 9,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 60.03,
+  "floor_m2": null,
+  "ko_screened": true,
+  "ko_suspect": [
+   "AREA_EDGE"
+  ]
+ },
+ "nc_20876739": {
+  "first_seen": "2026-09-06",
+  "price_man": 6980,
+  "address": "東京都北区赤羽台３",
+  "walk_min": 10,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 59.36,
+  "floor_m2": 95.42,
+  "out_of_scope": "土地建物総額9380万(土地6980+建物2400。総額の条件は5000〜9000万)"
+ },
+ "at_6992103379": {
+  "first_seen": "2026-09-06",
+  "price_man": 5200,
+  "address": "東京都北区西ケ原3",
+  "walk_min": 5,
+  "kind": "chuko",
+  "media": "athome",
+  "land_m2": 46.24,
+  "floor_m2": 57,
+  "out_of_scope": "延床57m2(条件は70m2超)"
  }
 }
