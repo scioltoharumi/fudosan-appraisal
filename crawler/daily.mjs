@@ -147,9 +147,18 @@ function parseMan(text) {
 // 頻度が高くなり、代表価格=2,200万 → tochiTotalPrice で +2,200 → **7,870→4,400万の値下げと誤報**した。
 // 建物価格は parseDetailAttrs が別に読んで足すので、ここでは土地本体の候補から外す
 const BUILDING_PRICE_RE = /建物価格\s*[^0-9０-９]{0,6}[0-9０-９][0-9０-９,，]{1,7}\s*万円/g;
+// 2026-09-08: 参考プランの価格表記も同じ穴。上十条4 nc_21403138 は「参考プラン間取図 1500万円・77.62m2」が写真キャプションで
+// 11回出て土地本体の 6280万円(5回)を乗っ取り、**7,780→1,500万の値下げと誤報**した(建物価格ラベルではないので tochiTotalPrice も足せず)。
+// 併せて、SUUMOの物件概要にある構造化ラベル「価格 ヒント NNNN万円」が取れるときは**多数決より優先**する
+// (建物価格・参考価格・土地価格のラベルは除く)。多数決は非構造ページ(athome等)の後詰め
+const REF_PLAN_PRICE_RE = /参考プラン[^。]{0,30}?[0-9０-９][0-9０-９,，]{1,7}\s*万円/g;
+const LABELED_PRICE_RE = /(?<!建物|参考|土地)価格\s*ヒント\s*([0-9]+億[0-9,]*万?円|[0-9][0-9,]{1,7}万円)/g;
 export function parseDetailPrice(html) {
+  const t = strip(html);
+  const labeled = [...t.matchAll(LABELED_PRICE_RE)].map((m) => parseMan(m[1])).filter((v) => v !== null && v >= 500);
+  if (labeled.length && labeled.every((v) => v === labeled[0])) return labeled[0];
   const counts = {};
-  for (const m of strip(html).replace(BUILDING_PRICE_RE, " ").matchAll(/([0-9]+億[0-9,]*万?円|[0-9][0-9,]{1,7}万円)/g)) {
+  for (const m of t.replace(BUILDING_PRICE_RE, " ").replace(REF_PLAN_PRICE_RE, " ").matchAll(/([0-9]+億[0-9,]*万?円|[0-9][0-9,]{1,7}万円)/g)) {
     const v = parseMan(m[1]);
     if (v !== null && v >= 500) counts[v] = (counts[v] ?? 0) + 1;
   }

@@ -321,3 +321,22 @@ test("parseDetailPrice: 建物価格の繰り返しが土地本体の代表価�
   // 戸建の通常ページは従来どおり(3回以上出る価格が本体)
   assert.equal(parseDetailPrice("<p>6690万円</p><p>6690万円</p><p>6690万円</p><p>100万円</p>"), 6690);
 });
+
+// 2026-09-08: 参考プランの価格キャプションが代表価格を乗っ取った(上十条4 nc_21403138: 「参考プラン間取図 1500万円・77.62m2」×11 対 6280万円×5
+// → 7,780→1,500万の値下げと誤報)。①SUUMOの構造化ラベル「価格 ヒント」を多数決より優先 ②参考プランの価格表記を多数決から外す
+// ③parseDetailAttrs が参考プランの価格を建物価格として読み、tochiTotalPrice で総額(6,280+1,500=7,780)に戻る
+test("parseDetailPrice: 「価格 ヒント」ラベルを優先し、参考プランのキャプションに乗っ取られない", async () => {
+  const { parseDetailAttrs } = await import("../crawler/screen.mjs");
+  const cap = "<li>参考プラン間取図 1500万円・77.62m2 ・1区画</li>";
+  const html = "<td>価格</td><td>ヒント</td><td>6280万円</td><p>参考プラン有（77.62m2、1500万円）</p>" + cap.repeat(11);
+  assert.equal(parseDetailPrice(html), 6280, "構造化ラベルの価格を採る");
+  assert.equal(parseDetailAttrs(html, "suumo").building_price_man, 1500, "参考プランの価格を建物価格として読む");
+  assert.deepEqual(tochiTotalPrice(html, parseDetailPrice(html), "https://suumo.jp/tochi/tokyo/sc_kita/nc_21403138/"), { price: 7780, added: 1500 });
+  // ラベルが無いページ(athome等)は従来の多数決。参考プランの表記は数えない
+  assert.equal(parseDetailPrice("<p>6280万円</p><p>6280万円</p><p>6280万円</p>" + cap.repeat(11)), 6280);
+  assert.equal(parseDetailPrice(cap.repeat(11)), null, "参考プランの価格しか無ければ代表価格なし");
+  // 「建物価格 ヒント」「土地価格」のラベルは代表価格のラベルとして採らない
+  assert.equal(parseDetailPrice("<td>建物価格</td><td>ヒント</td><td>2200万円</td><p>5670万円</p><p>5670万円</p><p>5670万円</p>"), 5670);
+  // 2区画・複数戸で「価格 ヒント 5480万円・5880万円」の形は先頭(代表価格=最安)を採る(従来の挙動と同じ)
+  assert.equal(parseDetailPrice("<td>価格</td><td>ヒント</td><td>5480万円・5880万円A区画5880万円・B区画5480万円</td>"), 5480);
+});

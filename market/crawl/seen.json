@@ -876,7 +876,7 @@
  },
  "nc_20708232": {
   "first_seen": "2026-08-13",
-  "price_man": 8080,
+  "price_man": 7980,
   "address": "東京都北区滝野川２",
   "walk_min": 12,
   "kind": "shinchiku",
@@ -2160,5 +2160,16 @@
   "land_m2": 46.24,
   "floor_m2": 57,
   "out_of_scope": "延床57m2(条件は70m2超)"
+ },
+ "nc_21657453": {
+  "first_seen": "2026-09-07",
+  "price_man": 6800,
+  "address": "東京都北区西ケ原３",
+  "walk_min": 7,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 60.05,
+  "floor_m2": null,
+  "ko_screened": true
  }
 }

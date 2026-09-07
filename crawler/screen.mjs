@@ -169,7 +169,9 @@ export function parseDetailAttrs(html, media) {
   // 総額で予算帯を見ないと、土地7,798万+建物3,300万=1億1,098万の物件が「7,798万」として通る
   // (2026-09-01に滝野川4 nc_21551661 で実際に起きた)。ラベルは物件概要にも写真キャプションにも
   // 出るため**最小値**を採る=保守側ではないが、総額の過大評価で取りこぼすより実態に近い
-  const bldgPrices = [...t.matchAll(/建物価格\s*(?:ヒント\s*)?([0-9,]{3,7})\s*万円/g)]
+  // 2026-09-08: 「参考プラン有（77.62m2、1500万円）」「参考プラン間取図 1500万円・77.62m2」の形も建物価格として読む
+  // (上十条4 nc_21403138。建物価格ラベルが無いため総額が立たず、watch が土地単体どころか参考プランの1,500万を代表価格に拾った)
+  const bldgPrices = [...t.matchAll(/建物価格\s*(?:ヒント\s*)?([0-9,]{3,7})\s*万円/g), ...t.matchAll(/参考プラン[^。]{0,40}?([0-9,]{3,7})\s*万円/g)]
     .map((m) => Number(m[1].replace(/,/g, ""))).filter((v) => Number.isFinite(v) && v > 0);
   return {
     building_price_man: bldgPrices.length ? Math.min(...bldgPrices) : null,
