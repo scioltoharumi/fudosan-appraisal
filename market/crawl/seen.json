@@ -2171,5 +2171,42 @@
   "land_m2": 60.05,
   "floor_m2": null,
   "ko_screened": true
+ },
+ "nc_21663766": {
+  "first_seen": "2026-09-08",
+  "price_man": 5500,
+  "address": "東京都北区志茂２",
+  "walk_min": 8,
+  "kind": "chuko",
+  "media": "suumo",
+  "land_m2": 57.52,
+  "floor_m2": 90.82,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
+ },
+ "nc_21660154": {
+  "first_seen": "2026-09-08",
+  "price_man": 7680,
+  "address": "東京都北区西が丘２-19-10",
+  "walk_min": 15,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 60.65,
+  "floor_m2": 106.93,
+  "ko_screened": true,
+  "layout_fix_rescreened": "2026-09-09"
+ },
+ "at_1106273019": {
+  "first_seen": "2026-09-08",
+  "price_man": 8980,
+  "address": "東京都北区滝野川7",
+  "walk_min": 8,
+  "kind": "chuko",
+  "media": "athome",
+  "land_m2": 42.7,
+  "floor_m2": 71.39,
+  "out_of_scope": "2LDK=2室(条件は3室以上)"
  }
 }

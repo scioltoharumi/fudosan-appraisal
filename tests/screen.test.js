@@ -79,6 +79,19 @@ test("KO4: 宅地造成工事規制区域だけではブロックしない(北�
   }
 });
 
+// 2026-09-09: 間取り「2LDK+2S（納戸）」が「2LDK+」で切れ、roomsOf が2室と数えて圏外にしていた
+// (西が丘2 ESPACER の別業者掲載 nc_21660154)。+ の後ろの数字まで読む
+test("parseDetailAttrs: 間取りの「+2S」を切り落とさない", async () => {
+  const { parseDetailAttrs } = await import("../crawler/screen.mjs");
+  const { roomsOf } = await import("../crawler/daily.mjs");
+  const a = parseDetailAttrs("<td>間取り</td><td>ヒント</td><td>2LDK+2S（納戸）・4LDK</td>", "suumo");
+  assert.equal(a.layout, "2LDK+2S");
+  assert.equal(roomsOf(a.layout), 4, "2LDK+2S は4室");
+  assert.equal(parseDetailAttrs("<td>間取り</td><td>ヒント</td><td>3LDK</td><td>建物面積</td>", "suumo").layout, "3LDK");
+  assert.equal(parseDetailAttrs("<td>間取り</td><td>ヒント</td><td>1LDK+S（納戸）・3LDK</td>", "suumo").layout, "1LDK+S");
+  assert.equal(parseDetailAttrs("<td>間取り</td><td>ヒント</td><td>２ＬＤＫ＋Ｓ</td>", "suumo").layout, "2LDK+S", "全角も読む(zen)");
+});
+
 test("KOスキャン: 掲載に明記された重大ハザード・借地権・再建築不可・告知事項を検出する", () => {
   const hz = scanKO("<div>その他制限事項: 準防火地域、第二種高度地区、土砂災害特別警戒区域内</div>", "suumo");
   assert.ok(hz.flags.some((f) => f.code === "KO4_hazard"));

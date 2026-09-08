@@ -7,7 +7,8 @@
 //   KO6 私道の通行料等の金銭負担
 
 // 全角英数字→半角(athomeは「５８.５３」等の全角表記がある)
-export const zen = (s) => String(s ?? "").replace(/[０-９Ａ-Ｚａ-ｚ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+// 全角の英数字を半角へ。2026-09-09: 全角プラス「＋」も半角にする(間取り「２ＬＤＫ＋Ｓ」の +S が切れていた)
+export const zen = (s) => String(s ?? "").replace(/[０-９Ａ-Ｚａ-ｚ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/＋/g, "+");
 const strip = (s) => String(s).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
 const near = (a, b, tol) => a != null && b != null && Math.abs(a - b) <= tol;
 
@@ -177,7 +178,9 @@ export function parseDetailAttrs(html, media) {
     building_price_man: bldgPrices.length ? Math.min(...bldgPrices) : null,
     land_m2: fieldNum("land", "([0-9.]+)\\s*m"),
     floor_m2: fieldNum("floor", "([0-9.]+)\\s*m"),
-    layout: fieldStr("layout", "([0-9]{1,2}[SLDKR+]{1,10})"),
+    // 2026-09-09: 「2LDK+2S（納戸）」の +2S が読めず「2LDK+」で切れて2室=圏外にしていた(西が丘2 ESPACER の別業者掲載
+    // nc_21660154 が new_out_of_scope に落ちた)。+ の後ろの数字を許す。roomsOf は 2LDK+2S を4室と数える
+    layout: fieldStr("layout", "([0-9]{1,2}[SLDKR][SLDKR+0-9]{0,9})"),
     built: builtM ? `${builtM[1]}-${String(builtM[2]).padStart(2, "0")}` : null,
     walk_min: walks.length ? Math.min(...walks) : null,
     ownership: fieldStr("ownership", "(所有権|借地権|定期借地権?|地上権|賃借権|転借地権?)"),
