@@ -12,6 +12,7 @@ import { escRich, esc, crawlIdUrl, crawlLinksOf } from "../site/templates/layout
 import { readFileSync } from "node:fs";
 import { renderProperty } from "../site/templates/property.js";
 import { renderMarketBasis } from "../site/templates/market-basis.js";
+import { renderIndex } from "../site/templates/index.js";
 
 // **dist/ は読まない**。CIは `npm test` を `npm run build` より先に走らせるので、
 // 生成物に依存すると実行順で結果が変わる(2026-08-29に実際にCIだけ落ちた)。
@@ -139,6 +140,29 @@ test("status_updates があるページには状況更新の欄が日付・出�
   assert.ok(body.includes("査定の読みへの影響"), "事実と読みが分けて描かれていない");
   assert.ok(!body.includes("**"), "状況更新の中で ** が生のまま漏れている");
   assert.ok(!visibleText(pages["property/takinogawa6-21587170.html"]).includes("状況更新"), "status_updates の無い物件には出ない");
+});
+
+// 掲載終了の疑い(delisted_observed)はページに出す(2026-09-10)。出ていないと「元の掲載ページを見る」が404へ飛ぶだけで、
+// 読む人はまだ売っていると受け取る。成約とは断定しない文言であること、無い物件には出ないことを固定する
+test("delisted_observed があるページには掲載終了の疑いが日付つきで出る", () => {
+  const pages = Object.fromEntries(renderAll());
+  const body = visibleText(pages["property/takinogawa6-21587170.html"]);
+  assert.ok(body.includes("掲載終了の疑い"), "見出しが無い");
+  assert.ok(body.includes("2026-09-10"), "観測日が無い");
+  assert.ok(body.includes("断定しない"), "成約と断定しない旨が無い");
+  assert.ok(!visibleText(pages["property/nishigahara3-21657453.html"]).includes("掲載終了の疑い"), "無い物件には出ない");
+  // 一覧にも印が出る(build.js と同じ形の results を組んで描画する)
+  const results = listPropertyIds().map((id) => {
+    const property = loadProperty(id);
+    property.crawl_links = crawlLinksOf(property, SEEN);
+    const r = evaluate(property, areaConfig, { houseDeals, cal, asOf });
+    return { r, rRef: r, property, hasMarketPage: !!r.retail };
+  });
+  const idx = visibleText(renderIndex(results, { asOf, cal }));
+  const row = idx.split("<tr class=\"prow\"").find((s) => s.includes('data-id="takinogawa6-21587170"'));
+  assert.ok(row && row.includes("掲載終了疑い(2026-09-10)"), "一覧の当該行に印が無い");
+  const other = idx.split("<tr class=\"prow\"").find((s) => s.includes('data-id="nishigahara3-21657453"'));
+  assert.ok(other && !other.includes("掲載終了疑い"), "無い物件の行に印が出ている");
 });
 
 // 精密照合(site_scan)は代表点の照合(official)とは別に、ページのハザード欄に描かれること(2026-09-04)。

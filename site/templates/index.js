@@ -82,6 +82,15 @@ function calibrationPanel(results, cal) {
   </div>`;
 }
 
+// ---- 掲載終了の疑いのタグ(2026-09-10) ----
+// delisted_observed(掲載元が404になった観測)は物件ページにしか描いていなかった。一覧の「掲載元↗」が404へ飛ぶだけだと、
+// 読む人はまだ売っていると受け取る。成約とは断定しないので「疑い」と書く(番号振り直し・媒体替えでも404になる)
+function delistedTag(property) {
+  const d = property.delisted_observed;
+  if (!d) return "";
+  return `<span class="unit-tag" style="border-color:#666;color:#444;background:#F2F2F2" title="掲載元が ${esc(fmtDate(d.date))} にHTTP ${esc(d.http ?? "")}。成約とは断定しない">掲載終了疑い(${esc(fmtDate(d.date))})</span>`;
+}
+
 // ---- ハザードの見出しタグ ----
 // 公式マップ(国土地理院タイル)で掲載条件を外れたものを最優先で出す。次に掲載欄の未検証。
 // 2026-08-13: 掲載の法令等制限欄には洪水浸水想定が載らないため、志茂1・志茂3が
@@ -152,7 +161,7 @@ export function renderIndex(results, { asOf, cal = null }) {
       data-land="${property.land?.registered_m2 ?? ""}"
       data-walk="${property.station?.walk_min ?? ""}"
       data-captured="${capturedKey(property)}">
-      <td><a href="property/${esc(r.id)}.html">${esc(property.location?.address ?? r.id)}</a>${property.unit_label ? `<span class="unit-tag">${esc(property.unit_label)}</span>` : ""}${hazardTag(property)}<div class="note" style="margin-top:0">${esc(property.layout ?? "—")} / 土地${esc(property.land?.registered_m2)}m²・延床${esc(property.building?.floor_m2)}m² / ${r.isNewBuild ? `完成${esc(fmtDate(property.building?.built)).slice(0, 7)}` : `築${r.state.age.toFixed(1)}年`} / 徒歩${esc(property.station?.walk_min)}分 / 台帳登録${esc(fmtDate(property.captured_at))}${safeUrl(property.source_url) ? ` / <a href="${esc(property.source_url)}" target="_blank" rel="noopener noreferrer">掲載元↗</a>` : (property.crawl_links ?? []).length ? ` / ${property.crawl_links.map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">参照掲載↗</a>`).join(" ")}` : ""}</div></td>
+      <td><a href="property/${esc(r.id)}.html">${esc(property.location?.address ?? r.id)}</a>${property.unit_label ? `<span class="unit-tag">${esc(property.unit_label)}</span>` : ""}${hazardTag(property)}${delistedTag(property)}<div class="note" style="margin-top:0">${esc(property.layout ?? "—")} / 土地${esc(property.land?.registered_m2)}m²・延床${esc(property.building?.floor_m2)}m² / ${r.isNewBuild ? `完成${esc(fmtDate(property.building?.built)).slice(0, 7)}` : `築${r.state.age.toFixed(1)}年`} / 徒歩${esc(property.station?.walk_min)}分 / 台帳登録${esc(fmtDate(property.captured_at))}${safeUrl(property.source_url) ? ` / <a href="${esc(property.source_url)}" target="_blank" rel="noopener noreferrer">掲載元↗</a>` : (property.crawl_links ?? []).length ? ` / ${property.crawl_links.map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">参照掲載↗</a>`).join(" ")}` : ""}</div></td>
       <td><select class="vwsel" aria-label="${esc(property.location?.address ?? r.id)}の内見">${vopts}</select></td>
       <td><select class="stsel" aria-label="${esc(property.location?.address ?? r.id)}の検討状況">${opts}</select><span class="unsync" title="台帳(リポジトリ)の値と違います。書き出して反映してください">未同期</span></td>
       <td class="num">${fmtMan(r.state.ask)}<div class="note" style="margin-top:0">${esc(priceDate)}時点${reviseNote}</div></td>
