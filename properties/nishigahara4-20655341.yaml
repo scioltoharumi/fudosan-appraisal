@@ -11,6 +11,7 @@ source_url: "https://suumo.jp/ikkodate/tokyo/sc_kita/nc_20655341/"   # 実在確
 captured_at: 2026-08-29
 price_history:
   - {date: 2026-08-28, price_man: 7980}   # 媒体の情報提供日時点
+  - {date: 2026-09-10, price_man: 7680}   # 2026-09-10の日次クロールで検出(−300万・初回改定)。媒体の情報提供日=2026-09-10。実ページで「7680万円」8箇所を確認
 location: {area: nishigahara, address: "北区西ケ原4"}
 layout: "2LDK+S(納戸)"   # 居室3室相当(roomsOf=3)
 station: {walk_min: 9, multi_station: true}   # 南北線「西ケ原」9分 / 都電荒川線「西ヶ原四丁目」6分 /「滝野川一丁目」6分
