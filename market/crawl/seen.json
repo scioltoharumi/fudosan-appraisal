@@ -2208,5 +2208,72 @@
   "land_m2": 42.7,
   "floor_m2": 71.39,
   "out_of_scope": "2LDK=2室(条件は3室以上)"
+ },
+ "nc_21262209": {
+  "first_seen": "2026-09-11",
+  "price_man": 5980,
+  "address": "東京都北区西ケ原３",
+  "walk_min": 7,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 31.71,
+  "floor_m2": 59.25,
+  "out_of_scope": "延床59.25m2(条件は70m2超)"
+ },
+ "nc_21684472": {
+  "first_seen": "2026-09-11",
+  "price_man": 6480,
+  "address": "東京都北区赤羽台４",
+  "walk_min": 9,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 60.03,
+  "floor_m2": 89.5,
+  "ko_screened": true,
+  "ko_suspect": [
+   "AREA_EDGE"
+  ]
+ },
+ "nc_21675603": {
+  "first_seen": "2026-09-11",
+  "price_man": 7680,
+  "address": "東京都北区神谷３",
+  "walk_min": 9,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 50.27,
+  "floor_m2": 106.57,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
+ },
+ "nc_21682748": {
+  "first_seen": "2026-09-11",
+  "price_man": 6580,
+  "address": "東京都北区岩淵町",
+  "walk_min": 5,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 68.64,
+  "floor_m2": null,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
+ },
+ "at_1198807128": {
+  "first_seen": "2026-09-11",
+  "price_man": 7680,
+  "address": "東京都北区神谷3",
+  "walk_min": 9,
+  "kind": "shinchiku",
+  "media": "athome",
+  "land_m2": 49.04,
+  "floor_m2": 106.57,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
  }
 }

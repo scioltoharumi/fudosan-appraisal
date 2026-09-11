@@ -14,7 +14,7 @@ source_url: "https://suumo.jp/chukoikkodate/tokyo/sc_kita/nc_20530443/"   # 実�
 # 2026-09-10: 7日目もSUUMOは404のまま。9/4〜9/10の日次クロール(中古一覧)で諸元(上十条3/47.13/96.46/7,950万)の再掲載は一度も出ていない。
 # 売主直販(マーケッターズ)のSUUMO単独掲載だったので媒体替えの余地は小さく、掲載終了(成約または取り下げ)の公算が高い。
 # **台帳に残すか見送りにするかは人の判断**(削除はしない)
-delisted_observed: {date: 2026-09-04, http: 404, relisting_search: "SUUMO中古一覧(2026-09-04〜09-10の日次クロール)に該当なし", last_check: 2026-09-10, days: 7}
+delisted_observed: {date: 2026-09-04, http: 404, relisting_search: "SUUMO中古一覧(2026-09-04〜09-11の日次クロール)に該当なし", last_check: 2026-09-11, days: 8}
 captured_at: 2026-08-29
 price_history:
   - {date: 2026-08-28, price_man: 7950}   # 媒体の情報提供日時点
