@@ -165,6 +165,21 @@ test("delisted_observed があるページには掲載終了の疑いが日付�
   assert.ok(other && !other.includes("掲載終了疑い"), "無い物件の行に印が出ている");
 });
 
+// land_only(土地として査定)の注意書きはCLIにしか出ておらず、物件ページには一度も描かれていなかった(2026-09-12に発見)。
+// 「建物を仮定していない」ことを読む人に伝えないと、適正中央値を戸建の総額と読み違える
+test("land_only の物件ページには「土地として査定(建物を仮定していない)」の注意書きが出る", () => {
+  const pages = Object.fromEntries(renderAll());
+  const landIds = listPropertyIds().filter((id) => loadProperty(id).land_only === true);
+  assert.ok(landIds.length >= 1, "land_only の物件が台帳に無い");
+  for (const id of landIds) {
+    const body = visibleText(pages[`property/${id}.html`]);
+    assert.ok(body.includes("土地として査定"), `${id}: 注意書きが無い`);
+    assert.ok(body.includes("建物を仮定していない"), `${id}: 建物を仮定していない旨が無い`);
+  }
+  const other = visibleText(pages["property/takinogawa6-21587170.html"]);
+  assert.ok(!other.includes("土地として査定"), "戸建のページに土地の注意書きが出ている");
+});
+
 // 精密照合(site_scan)は代表点の照合(official)とは別に、ページのハザード欄に描かれること(2026-09-04)。
 // 代表点で caution だった岸町2の更地が、徒歩分で絞ると斜面帯・土砂警戒区域の縁に掛かると分かった。
 // official だけ描いて site_scan を落とすと、ページは「代表点で該当なし」としか言わず実態と逆に読める

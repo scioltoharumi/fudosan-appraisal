@@ -556,6 +556,7 @@ export function renderProperty(r, property, marketCal = null, houseDeals = null)
       <div class="position-head">${pos.head}</div>
       <div class="position-body">${pos.body}</div>
       ${pos.notes.map((n) => `<div class="caveat" style="margin-top:6px">※ ${esc(n)}</div>`).join("")}
+      ${r.landOnly ? `<div class="caveat" style="margin-top:6px">※ <b>土地として査定</b>(建物を仮定していない)。掲載に建物価格がある場合のみ総額で立て、無ければ土地価格と土地値の比較になる。建築費・つなぎ融資・更地の固定資産税(住宅用地特例1/6が効かない)は査定の外。</div>` : ""}
       ${r.isNewBuild ? `<div class="caveat" style="margin-top:6px">※ 新築物件: 本査定は「中古市場での再販価値」ベース。新築分譲価格には事業者利益・未入居プレミアムが含まれるのが通常で、乖離の一部はその剥落分と解釈すべき(査定がそのまま「ぼったくり」を意味しない)。</div>` : ""}
       ${r.fairFinal.floorBound ? `<div class="caveat" style="margin-top:6px">※ 本査定は土地換算値が下限として発火している(事例比較より土地値が高い)。土地単価が${r.fairFinal.pptSource === "calibrated" ? "成約較正済み" : "未検証(較正未成立)のため下限には×0.9のペナルティを適用済み"}。</div>` : ""}
       <div class="note" style="margin-top:8px">本台帳は<b>買う/見送るの判定を出さない</b>。上は売出価格が各参照水準のどこに立っているかという事実で、そこから先の判断(この価格を払う価値があるか)は住む本人が決めるもの。検討状況は<a href="../index.html">一覧ページ</a>で自分で設定できる。</div>
