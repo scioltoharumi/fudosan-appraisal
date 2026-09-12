@@ -14,7 +14,7 @@ source_url: "https://suumo.jp/chukoikkodate/tokyo/sc_kita/nc_21587170/"   # 実�
 # 2026-09-10の日次クロールでSUUMOが404。同日に athome at_1195752621 も404で**両媒体から同時に消えた**。
 # 専任媒介(1社)なので媒体替えの余地は小さく、成約または取り下げの公算が高いが**断定はしない**(十条仲原2は3度番号を替えて再掲載された)。
 # 同日の中古一覧7頁の走査に諸元(土地62.78/建物70.58/6,690万)の再掲載なし。7日以内に再掲載を確認したらこの項目を外し source_url を張り替える
-delisted_observed: {date: 2026-09-10, http: 404, athome: "at_1195752621 も同日404", relisting_search: "SUUMO中古一覧(2026-09-10〜09-12の日次クロール)に該当なし", last_check: 2026-09-12, days: 3}
+delisted_observed: {date: 2026-09-10, http: 404, athome: "at_1195752621 も同日404", relisting_search: "SUUMO中古一覧(2026-09-10〜09-13の日次クロール)に該当なし", last_check: 2026-09-13, days: 4}
 captured_at: 2026-08-29
 price_history:
   - {date: 2026-08-29, price_man: 6690}   # 媒体の情報提供日時点

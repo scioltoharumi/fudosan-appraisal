@@ -12,7 +12,7 @@ source_url: "https://suumo.jp/ikkodate/tokyo/sc_kita/nc_21639876/"   # 実在確
 # 2026-09-11の日次クロールでSUUMOが404(登録から6日)。**athome at_6992095881 は同日も掲載継続**(公開日2026-09-05・次回更新予定2026-09-19・
 # 価格6,380万・44.19/75.45・3LDK 不変)なので、売れたのではなく**SUUMO側の掲載取り下げ or 番号振り直し**の公算が高い。
 # 同日のSUUMO新築一覧に諸元一致の新着なし。7日以内に再掲載を確認したら source_url を張り替える。athome側は crawl 対象外なので価格の追跡は止まる
-delisted_observed: {date: 2026-09-11, http: 404, athome: "at_6992095881 は掲載継続(2026-09-11・価格6,380万不変)=SUUMO単独の消滅", relisting_search: "SUUMO新築一覧(2026-09-11)に該当なし", last_check: 2026-09-11, days: 1}
+delisted_observed: {date: 2026-09-11, http: 404, athome: "at_6992095881 は掲載継続(2026-09-11・価格6,380万不変)=SUUMO単独の消滅", relisting_search: "SUUMO新築一覧(2026-09-11〜09-12)に該当なし", last_check: 2026-09-12, days: 2}
 captured_at: 2026-09-05
 price_history:
   - {date: 2026-09-05, price_man: 6380}   # 媒体の情報提供日時点。athomeのコメントに「土地建物総額6380万円」の明記あり

@@ -2275,5 +2275,66 @@
   "ko_codes": [
    "KO4_area_hazard"
   ]
+ },
+ "nc_20870088": {
+  "first_seen": "2026-09-12",
+  "price_man": 5480,
+  "address": "東京都北区神谷３",
+  "walk_min": 9,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 49.04,
+  "floor_m2": 103.33,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
+ },
+ "nc_21696682": {
+  "first_seen": "2026-09-12",
+  "price_man": 5498,
+  "address": "東京都北区神谷３",
+  "walk_min": 7,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 63.31,
+  "floor_m2": 108.47,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
+ },
+ "nc_20995601": {
+  "first_seen": "2026-09-12",
+  "price_man": 3880,
+  "address": "東京都北区西ケ原３",
+  "walk_min": 9,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 31.27,
+  "floor_m2": 61.14,
+  "out_of_scope": "土地31.27m2(土地の条件は45m2以上)"
+ },
+ "nc_21587132": {
+  "first_seen": "2026-09-12",
+  "price_man": 3880,
+  "address": "東京都北区西ケ原１",
+  "walk_min": 8,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 26,
+  "floor_m2": null,
+  "out_of_scope": "土地26m2(土地の条件は45m2以上)"
+ },
+ "nc_21258723": {
+  "first_seen": "2026-09-12",
+  "price_man": 4590,
+  "address": "東京都北区上十条５",
+  "walk_min": 14,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 58.01,
+  "floor_m2": null,
+  "ko_screened": true
  }
 }
