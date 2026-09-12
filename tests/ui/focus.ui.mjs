@@ -18,9 +18,9 @@ page.on("console", (m) => { if (m.type() === "error") errors.push("console: " + 
 await page.goto(pathToFileURL("site/dist/focus.html").href);
 const fails = [];
 const ok = (c, m) => { if (!c) fails.push(m); };
-ok((await page.locator('#proplist input[type=checkbox]').count()) === 3, "チェックボックスが3つ");
-ok((await page.locator('#simchart path[stroke-width="2"]').count()) === 3, "実線が3本");
-ok((await page.locator('#simchart path[opacity=".12"]').count()) === 3, "95%CIの帯が既定で3つ描かれる(3≤4)");
+ok((await page.locator('#proplist input[type=checkbox]').count()) === 2, "チェックボックスが2つ");
+ok((await page.locator('#simchart path[stroke-width="2"]').count()) === 2, "実線が2本");
+ok((await page.locator('#simchart path[opacity=".12"]').count()) === 2, "95%CIの帯が既定で2つ描かれる(2≤4)");
 ok((await page.locator('#vRent').textContent()) === "25万/月", "家賃既定25万/月");
 ok((await page.locator('#simcross').textContent()).includes("安い順"), "順位行が出る");
 await page.locator('#inT').fill("30"); await page.locator('#inG').fill("2");

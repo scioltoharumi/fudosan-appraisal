@@ -64,7 +64,7 @@ function figLoop() {
     ["④ 新築(二周目)", { fs: 11, bold: true, y: 26, color: C.ink }],
     ["変えたこと: 許容範囲を1段拡げた", { fs: 9.5, bold: true, y: 47 }],
     ["規制ありも個別に検討(ハザード照合は維持)", { fs: 8.2, y: 65, color: C.soft }],
-    ["予算帯 7,100〜7,700万の本命3件へ", { fs: 8.5, y: 81, color: C.soft }],
+    ["予算帯 7,400〜7,800万の本命2件へ", { fs: 8.5, y: 81, color: C.soft }],
   ], { stroke: C.stop, sw: 2.2, fill: "#FDF6F4" });
   el.push(`<rect x="${LX}" y="${T2 - 12}" width="52" height="22" fill="${C.stop}"/>`);
   el.push(`<text x="${LX + 26}" y="${T2 + 3}" font-size="10" font-weight="700" fill="#fff" text-anchor="middle">今ここ</text>`);
@@ -159,7 +159,7 @@ export function renderDecision({ asOf }) {
     <div class="scale-wrap">${figLoop()}</div>
     <div class="note">「でも…」の赤字が移った理由。④は②と同じ「新築」だが、
     <b>資産性を求める一周目</b>と<b>資産性を捨てた二周目</b>で探す条件が違う(堂々巡りに見えて、実は前提が1つ確定している)。
-    ④の本命3件は<a href="focus.html">本命比較</a>、賃貸の実質月額は<a href="rent.html">戸建賃貸台帳</a>が正本。</div>
+    ④の本命2件(当初3件。岸町2新築は2026-09-13に他の買主へ)は<a href="focus.html">本命比較</a>、賃貸の実質月額は<a href="rent.html">戸建賃貸台帳</a>が正本。</div>
   </section>
 
   <section class="panel">
@@ -210,7 +210,7 @@ export function renderDecision({ asOf }) {
       <div class="logic-step"><div class="t"><span class="no">未</span>いま迷っていること(=次に決めること)</div>
         <div class="why"><b>買う(新築・二周目)か、借り続ける(賃貸)かの2択</b>。
         比べる土俵は資産性ではなく「住みよさ × 月々の負担 × 手間・身軽さ」——
-        数字は<a href="focus.html">本命比較</a>(本命3件+賃貸線)と<a href="simulate.html">シミュレーター</a>、
+        数字は<a href="focus.html">本命比較</a>(本命2件+賃貸線)と<a href="simulate.html">シミュレーター</a>、
         お金以外は<a href="effort.html">手間の解剖</a>で確認できる状態になっている</div></div>
     </div>
   </section>
