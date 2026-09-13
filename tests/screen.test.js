@@ -90,6 +90,13 @@ test("parseDetailAttrs: 間取りの「+2S」を切り落とさない", async ()
   assert.equal(parseDetailAttrs("<td>間取り</td><td>ヒント</td><td>3LDK</td><td>建物面積</td>", "suumo").layout, "3LDK");
   assert.equal(parseDetailAttrs("<td>間取り</td><td>ヒント</td><td>1LDK+S（納戸）・3LDK</td>", "suumo").layout, "1LDK+S");
   assert.equal(parseDetailAttrs("<td>間取り</td><td>ヒント</td><td>２ＬＤＫ＋Ｓ</td>", "suumo").layout, "2LDK+S", "全角も読む(zen)");
+  // 2026-09-13: athome の「２ＳＬＤＫ」(納戸付きをSを前置して書く)を2室と誤読し、上十条5の中古 at_1136670733 を圏外にしていた。
+  // 台帳では 2SLDK = 2LDK+S = 3室(滝野川6・中十条4で人がそう読み替えて登録済み)
+  assert.equal(roomsOf("2SLDK"), 3, "2SLDK は3室");
+  assert.equal(roomsOf("２ＳＬＤＫ（ＬＤＫ１６畳）"), 3, "全角の2SLDKも3室");
+  assert.equal(roomsOf("2LDK"), 2);
+  assert.equal(roomsOf("3SLDK+S"), 5, "前置Sと後置Sは両方数える");
+  assert.equal(roomsOf("ワンルーム"), null, "数えられない表記は判定しない");
 });
 
 test("KOスキャン: 掲載に明記された重大ハザード・借地権・再建築不可・告知事項を検出する", () => {

@@ -2336,5 +2336,17 @@
   "land_m2": 58.01,
   "floor_m2": null,
   "ko_screened": true
+ },
+ "at_1136670733": {
+  "first_seen": "2026-09-13",
+  "price_man": 6180,
+  "address": "東京都北区上十条5",
+  "walk_min": 13,
+  "kind": "chuko",
+  "media": "athome",
+  "land_m2": 49.41,
+  "floor_m2": 73.32,
+  "ko_screened": true,
+  "layout_fix_rescreened": "2026-09-13: roomsOf が 2SLDK を2室と誤読して圏外にしていたのを修正し、3室(2LDK+S)として登録"
  }
 }

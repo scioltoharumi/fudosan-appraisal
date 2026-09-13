@@ -71,6 +71,9 @@ export function roomsOf(layout) {
   const m = t.match(/^([0-9]{1,2})\s*[SLDKR]/);
   if (!m) return null;
   let n = Number(m[1]);
+  // athome は納戸付きを「2SLDK」(Sが先頭の数字の直後)と書く。SUUMO の「2LDK+S」と同じ意味で、納戸を1室と数える
+  // (2026-09-13: 上十条5 at_1136670733 の「２ＳＬＤＫ」を2室と誤読して圏外にしていた。滝野川6・中十条4の登録時は人が読み替えていた)
+  if (/^[0-9]{1,2}\s*S(?=\s*[LDK])/.test(t)) n += 1;
   for (const s of t.slice(m[0].length - 1).matchAll(/\+\s*([0-9]{1,2})?\s*S/g)) n += s[1] ? Number(s[1]) : 1;
   return n;
 }
