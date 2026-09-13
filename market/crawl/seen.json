@@ -1123,7 +1123,8 @@
   "media": "athome",
   "land_m2": 61.53,
   "floor_m2": 107.06,
-  "out_of_scope": "2SLDK=2室(条件は3室以上)"
+  "ko_screened": true,
+  "layout_fix_rescreened": "2026-09-13: roomsOf が 2SLDK を2室と誤読して圏外にしていたのを修正し、KO再審査(全通過)のうえ takinogawa4-1110236618 として登録"
  },
  "nc_21492272": {
   "first_seen": "2026-08-13",
@@ -1284,7 +1285,8 @@
   "media": "athome",
   "land_m2": 62.78,
   "floor_m2": 70.58,
-  "out_of_scope": "2SLDK=2室(条件は3室以上)"
+  "ko_screened": true,
+  "layout_fix_rescreened": "2026-09-13: 2SLDKの誤読で圏外印が付いていたが、台帳 takinogawa6-21587170 の athome 側掲載(人が3室と読み替えて登録済み)。2026-09-10から404"
  },
  "at_1107592414": {
   "first_seen": "2026-08-29",
@@ -1980,7 +1982,12 @@
   "media": "athome",
   "land_m2": 75.24,
   "floor_m2": 99.57,
-  "out_of_scope": "2SLDK=2室(条件は3室以上)"
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ],
+  "ko_screened": true,
+  "layout_fix_rescreened": "2026-09-13: 2SLDKの誤読で圏外印が付いていたが、志茂2丁目は荒川低地(丁目全域が3m超の浸水想定)で丁目ハザード遮断の対象=KO4。掲載自体は 2SLDK=3室・8,790万・築2024-11で生きている(公開日2026-07-25)"
  },
  "at_1198810728": {
   "first_seen": "2026-09-03",
