@@ -484,10 +484,10 @@ export function delistedHtml(property) {
   if (!d) return "";
   return `<div class="caveat" style="margin-top:6px"><b>掲載終了の疑い</b>: ${esc(fmtDate(d.date))} に掲載元がHTTP ${esc(d.http ?? "")}${d.athome ? `(${escRich(d.athome)})` : ""}。
       ${d.relisting_search ? `再掲載の走査: ${escRich(d.relisting_search)}。` : ""}成約とは断定しない(番号振り直し・媒体替えでも404になる)。${
-        Number(d.days) >= 7
-          ? `<b>最終確認 ${esc(fmtDate(d.last_check))} で${esc(d.days)}日間再掲載なし</b>=掲載終了(成約または取り下げ)の公算が高い。台帳に残すか見送りにするかは人の判断`
-          : d.last_check ? `最終確認 ${esc(fmtDate(d.last_check))}(${esc(d.days)}日目)。7日以内に再掲載が無ければ扱いを決める`
-          : "7日以内に再掲載が無ければ扱いを決める"}</div>`;
+        Number(d.days) > 5
+          ? `<b>最終確認 ${esc(fmtDate(d.last_check))} で${esc(d.days)}日間再掲載なし</b>=掲載終了として台帳から外す段階(2026-09-13の規則: 5日超で終了判定)`
+          : d.last_check ? `最終確認 ${esc(fmtDate(d.last_check))}(${esc(d.days)}日目)。5日を超えて再掲載が無ければ掲載終了として台帳から外す(別媒体で掲載が続いていれば掲載元を張り替える)`
+          : "5日を超えて再掲載が無ければ掲載終了として台帳から外す"}</div>`;
 }
 
 // ---- 状況更新(YAMLの status_updates を描画) ----

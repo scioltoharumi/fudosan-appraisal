@@ -16,8 +16,14 @@ description: 台帳物件の値下げ・掲載終了チェックと新着物件�
      同日・同値の行が既にあれば追記しない(冪等)。反映後 `node engine/cli.js {id}` で再査定し、
      参照水準に対する位置(市場実勢中央値との差・上位四分位+交渉幅との差)がどう動いたか確認する。
      **買う/見送るの判定は出さない**(2026-08-13方針)
-   - `delisted_suspect`: YAMLに `delisted_observed: {date: クロール日, http: ステータス}` を追記。
-     **成約とは断定しない**。7日以内に再掲載を確認したらこの項目を外す
+   - `delisted_suspect`: YAMLに `delisted_observed: {date: クロール日, http: ステータス, last_check, days}` を追記し、
+     以後のクロールで `last_check`/`days` を進める。**成約とは断定しない**。
+     **5日を超えたら(days≥6)掲載終了として台帳から外す**(2026-09-13ユーザー決定「5日超えたら終了判定にしてよい」):
+     YAMLを削除し、`market/crawl/excluded.json` に「掲載終了(5日超ルール)」の理由で現場照合キー付きで記録する
+     (同じ諸元が再掲載されたら『除外済み現場と諸元一致』として報告されるので、復帰は人が判断する)。
+     **別媒体(athome等)で掲載が続いているものは終了ではない**——source_url をその媒体へ張り替え、旧番号は crawl_ids に残す
+     (前例: kamijujo5-21639876)。再掲載を確認したら `delisted_observed` を外して source_url を張り替える。
+     tests/invariants.test.js が「days>5 の物件が台帳に残っていたら落ちる」ガードを持つ
    - `parse_error` / `fetch_error`: 台帳は触らず、報告にエラーとして含める
 3. **discover差分**: レポートの `new` / `price_changed` を報告に列挙する(価格/地区/面積/築年/徒歩/URL)。
    報告前に `market/crawl/excluded.json` を確認し、既に除外判断済みの物件は「除外済み(理由)」として
