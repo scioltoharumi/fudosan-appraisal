@@ -139,16 +139,17 @@ test("status_updates があるページには状況更新の欄が日付・出�
   assert.ok(body.includes("第26UDI1S建01787号"), "確認済証の番号が事実として出ていない");
   assert.ok(body.includes("査定の読みへの影響"), "事実と読みが分けて描かれていない");
   assert.ok(!body.includes("**"), "状況更新の中で ** が生のまま漏れている");
-  assert.ok(!visibleText(pages["property/takinogawa6-21587170.html"]).includes("状況更新"), "status_updates の無い物件には出ない");
+  assert.ok(!visibleText(pages["property/nishigahara4-21230921.html"]).includes("状況更新"), "status_updates の無い物件には出ない");
 });
 
 // 掲載終了の疑い(delisted_observed)はページに出す(2026-09-10)。出ていないと「元の掲載ページを見る」が404へ飛ぶだけで、
 // 読む人はまだ売っていると受け取る。成約とは断定しない文言であること、無い物件には出ないことを固定する
 test("delisted_observed があるページには掲載終了の疑いが日付つきで出る", () => {
   const pages = Object.fromEntries(renderAll());
-  const body = visibleText(pages["property/takinogawa6-21587170.html"]);
+  // 対象物件は日次クロールで入れ替わる(5日超ルールで台帳から外れる)。2026-09-14時点は上十条5新築(両媒体404・1日目)
+  const body = visibleText(pages["property/kamijujo5-21639876.html"]);
   assert.ok(body.includes("掲載終了の疑い"), "見出しが無い");
-  assert.ok(body.includes("2026-09-10"), "観測日が無い");
+  assert.ok(body.includes("2026-09-14"), "観測日が無い");
   assert.ok(body.includes("断定しない"), "成約と断定しない旨が無い");
   assert.ok(!visibleText(pages["property/nishigahara3-21657453.html"]).includes("掲載終了の疑い"), "無い物件には出ない");
   // 一覧にも印が出る(build.js と同じ形の results を組んで描画する)
@@ -159,8 +160,8 @@ test("delisted_observed があるページには掲載終了の疑いが日付�
     return { r, rRef: r, property, hasMarketPage: !!r.retail };
   });
   const idx = visibleText(renderIndex(results, { asOf, cal }));
-  const row = idx.split("<tr class=\"prow\"").find((s) => s.includes('data-id="takinogawa6-21587170"'));
-  assert.ok(row && row.includes("掲載終了疑い(2026-09-10)"), "一覧の当該行に印が無い");
+  const row = idx.split("<tr class=\"prow\"").find((s) => s.includes('data-id="kamijujo5-21639876"'));
+  assert.ok(row && row.includes("掲載終了疑い(2026-09-14)"), "一覧の当該行に印が無い");
   const other = idx.split("<tr class=\"prow\"").find((s) => s.includes('data-id="nishigahara3-21657453"'));
   assert.ok(other && !other.includes("掲載終了疑い"), "無い物件の行に印が出ている");
 });
@@ -176,7 +177,7 @@ test("land_only の物件ページには「土地として査定(建物を仮定
     assert.ok(body.includes("土地として査定"), `${id}: 注意書きが無い`);
     assert.ok(body.includes("建物を仮定していない"), `${id}: 建物を仮定していない旨が無い`);
   }
-  const other = visibleText(pages["property/takinogawa6-21587170.html"]);
+  const other = visibleText(pages["property/nishigahara4-21230921.html"]);
   assert.ok(!other.includes("土地として査定"), "戸建のページに土地の注意書きが出ている");
 });
 
@@ -193,5 +194,5 @@ test("hazard_check.site_scan があるページには精密照合の結果が描
   const q = pages["property/kishimachi2-21611051.html"];
   assert.match(q, /位置を絞れず/, "verdict=unknown はその旨を出す(黙って省かない)");
   // site_scan の無い物件には出ない
-  assert.ok(!/精密照合\(徒歩分/.test(pages["property/takinogawa6-21587170.html"]), "無い物件には出ない");
+  assert.ok(!/精密照合\(徒歩分/.test(pages["property/nishigahara4-21230921.html"]), "無い物件には出ない");
 });
