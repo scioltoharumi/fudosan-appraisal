@@ -146,10 +146,10 @@ test("status_updates があるページには状況更新の欄が日付・出�
 // 読む人はまだ売っていると受け取る。成約とは断定しない文言であること、無い物件には出ないことを固定する
 test("delisted_observed があるページには掲載終了の疑いが日付つきで出る", () => {
   const pages = Object.fromEntries(renderAll());
-  // 対象物件は日次クロールで入れ替わる(5日超ルールで台帳から外れる)。2026-09-14時点は上十条5新築(両媒体404・1日目)
-  const body = visibleText(pages["property/kamijujo5-21639876.html"]);
+  // 対象物件は日次クロールで入れ替わる(5日超ルールで台帳から外れる)。2026-09-19時点は滝野川1更地(SUUMO 404・1日目)
+  const body = visibleText(pages["property/takinogawa1-21577486.html"]);
   assert.ok(body.includes("掲載終了の疑い"), "見出しが無い");
-  assert.ok(body.includes("2026-09-14"), "観測日が無い");
+  assert.ok(body.includes("2026-09-19"), "観測日が無い");
   assert.ok(body.includes("断定しない"), "成約と断定しない旨が無い");
   assert.ok(!visibleText(pages["property/nishigahara3-21657453.html"]).includes("掲載終了の疑い"), "無い物件には出ない");
   // 一覧にも印が出る(build.js と同じ形の results を組んで描画する)
@@ -160,8 +160,8 @@ test("delisted_observed があるページには掲載終了の疑いが日付�
     return { r, rRef: r, property, hasMarketPage: !!r.retail };
   });
   const idx = visibleText(renderIndex(results, { asOf, cal }));
-  const row = idx.split("<tr class=\"prow\"").find((s) => s.includes('data-id="kamijujo5-21639876"'));
-  assert.ok(row && row.includes("掲載終了疑い(2026-09-14)"), "一覧の当該行に印が無い");
+  const row = idx.split("<tr class=\"prow\"").find((s) => s.includes('data-id="takinogawa1-21577486"'));
+  assert.ok(row && row.includes("掲載終了疑い(2026-09-19)"), "一覧の当該行に印が無い");
   const other = idx.split("<tr class=\"prow\"").find((s) => s.includes('data-id="nishigahara3-21657453"'));
   assert.ok(other && !other.includes("掲載終了疑い"), "無い物件の行に印が出ている");
 });

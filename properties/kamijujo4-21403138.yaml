@@ -17,6 +17,8 @@ source_url: "https://suumo.jp/tochi/tokyo/sc_kita/nc_21403138/"   # 実在確認
 captured_at: 2026-09-07
 price_history:
   - {date: 2026-08-29, price_man: 7780}   # 土地6,280(クロール初見)+参考プラン建物1,500=総額。土地価格は2026-09-06まで不変
+  - {date: 2026-09-19, price_man: 7480}   # 土地6,280→**5,980**(−300・初回改定)+建物1,500。2026-09-19の日次クロールで検出(情報提供日26/9/19・watch が土地+建物で照合)。
+                                          # 9/15〜9/18はクロール未実行(セッション停止)のため改定日は9/15〜9/19の間
 location: {area: kamijujo, address: "北区上十条4"}
 layout: "3LDK"             # 参考プラン77.62m2の間取りは掲載に無い(3LDK相当と仮置き・assumed)
 station: {walk_min: 10, multi_station: true}   # JR埼京線「十条」10分 / JR京浜東北線「東十条」12分 / 都営三田線「板橋本町」14分(athome: 十条800m・東十条960m)

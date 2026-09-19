@@ -707,13 +707,17 @@
  },
  "at_1106854114": {
   "first_seen": "2026-08-12",
-  "price_man": 5980,
+  "price_man": 5780,
   "address": "東京都北区西が丘2",
   "walk_min": 4,
   "kind": "shinchiku",
   "media": "athome",
   "land_m2": 58.53,
-  "floor_m2": 93.55
+  "floor_m2": 93.55,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_hazard"
+  ]
  },
  "nc_21480100": {
   "first_seen": "2026-08-13",
@@ -1355,7 +1359,8 @@
   "media": "suumo",
   "land_m2": 47.34,
   "floor_m2": 81.96,
-  "ko_screened": true
+  "ko_screened": true,
+  "gone_404": "2026-09-19: 8/29の土地クロールで審査通過したが土地の自動登録対象化(9/1〜9/2)後の棚卸しから漏れ、2026-09-19の再取得で404(登録前に消えた)"
  },
  "nc_20989387": {
   "first_seen": "2026-08-29",
@@ -1521,7 +1526,8 @@
   "media": "suumo",
   "land_m2": 102.3,
   "floor_m2": null,
-  "ko_screened": true
+  "ko_screened": true,
+  "gone_404": "2026-09-19: 8/29の土地クロールで審査通過したが土地の自動登録対象化(9/1〜9/2)後の棚卸しから漏れ、2026-09-19の再取得で404(登録前に消えた)"
  },
  "nc_21000789": {
   "first_seen": "2026-08-29",
@@ -1749,7 +1755,7 @@
  },
  "nc_78442448": {
   "first_seen": "2026-08-29",
-  "price_man": 6290,
+  "price_man": 6240,
   "address": "東京都北区西ケ原２",
   "walk_min": 5,
   "kind": "tochi",
@@ -1789,7 +1795,8 @@
   "media": "suumo",
   "land_m2": 59.13,
   "floor_m2": null,
-  "ko_screened": true
+  "ko_screened": true,
+  "duplicate_suspect": "2026-09-19: 台帳 nishigahara3-21657453(西ケ原3・6,800万・60.05m2・3方角地 西3.6/南3.8/北4.1)と価格・古家・三方路(南3.7/西3.8/北4.1)・用途が一致し、面積差0.92m2。同一区画の別業者((株)TOKYO)掲載の疑いで登録せず"
  },
  "nc_78645873": {
   "first_seen": "2026-08-29",
@@ -1847,7 +1854,8 @@
   "media": "suumo",
   "land_m2": 77.51,
   "floor_m2": null,
-  "ko_screened": true
+  "ko_screened": true,
+  "gone_404": "2026-09-19: 8/29の土地クロールで審査通過したが土地の自動登録対象化(9/1〜9/2)後の棚卸しから漏れ、2026-09-19の再取得で404(登録前に消えた)"
  },
  "nc_21404010": {
   "first_seen": "2026-08-29",
@@ -1858,7 +1866,8 @@
   "media": "suumo",
   "land_m2": 86.51,
   "floor_m2": null,
-  "ko_screened": true
+  "ko_screened": true,
+  "gone_404": "2026-09-19: 8/29の土地クロールで審査通過したが土地の自動登録対象化(9/1〜9/2)後の棚卸しから漏れ、2026-09-19の再取得で404(登録前に消えた)"
  },
  "nc_21434291": {
   "first_seen": "2026-08-29",
@@ -2372,5 +2381,121 @@
   "land_m2": 102.3,
   "floor_m2": 95.57,
   "out_of_scope": "土地建物総額9260万(土地6480+建物2780。総額の条件は5000〜9000万)"
+ },
+ "nc_21738319": {
+  "first_seen": "2026-09-19",
+  "price_man": 7480,
+  "address": "東京都北区滝野川２",
+  "walk_min": 10,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 160.94,
+  "floor_m2": 120.48,
+  "ko_screened": true,
+  "out_of_scope": "土地建物総額9930万(土地7480+建物2450。総額の条件は5000〜9000万)。2026-09-19に人が判定: 一覧由来の kind=shinchiku のため総額判定が素通しになっていた(listingKind で修正)"
+ },
+ "nc_21747418": {
+  "first_seen": "2026-09-19",
+  "price_man": 5980,
+  "address": "東京都北区西ケ原３",
+  "walk_min": 7,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 31.27,
+  "floor_m2": 59.25,
+  "out_of_scope": "延床59.25m2(条件は70m2超)"
+ },
+ "nc_21751782": {
+  "first_seen": "2026-09-19",
+  "price_man": 6280,
+  "address": "東京都北区赤羽３",
+  "walk_min": 5,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 49.64,
+  "floor_m2": 77,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
+ },
+ "nc_21729452": {
+  "first_seen": "2026-09-19",
+  "price_man": 5200,
+  "address": "東京都北区西ケ原３",
+  "walk_min": 5,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 46.24,
+  "floor_m2": null,
+  "ko_screened": true
+ },
+ "nc_21717431": {
+  "first_seen": "2026-09-19",
+  "price_man": 5980,
+  "address": "東京都北区岸町２",
+  "walk_min": 4,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 111.01,
+  "floor_m2": null,
+  "ko_screened": true
+ },
+ "nc_21746309": {
+  "first_seen": "2026-09-19",
+  "price_man": 3199,
+  "address": "東京都北区岸町２",
+  "walk_min": 10,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 40.01,
+  "floor_m2": 58.68,
+  "out_of_scope": "土地40.01m2(土地の条件は45m2以上)"
+ },
+ "nc_21749037": {
+  "first_seen": "2026-09-19",
+  "price_man": 3300,
+  "address": "東京都北区滝野川２",
+  "walk_min": 5,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 35.47,
+  "floor_m2": null,
+  "out_of_scope": "土地35.47m2(土地の条件は45m2以上)"
+ },
+ "nc_21739449": {
+  "first_seen": "2026-09-19",
+  "price_man": 3800,
+  "address": "東京都北区滝野川２",
+  "walk_min": 3,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 43.76,
+  "floor_m2": null,
+  "out_of_scope": "土地43.76m2(土地の条件は45m2以上)"
+ },
+ "nc_21747829": {
+  "first_seen": "2026-09-19",
+  "price_man": 4980,
+  "address": "東京都北区滝野川１",
+  "walk_min": 9,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 57.83,
+  "floor_m2": null,
+  "ko_screened": true,
+  "manual_screened": "2026-09-19: 予算切れ(NO_DETAIL)のため人が詳細を取得して scanKO=旗なし・除外現場照合なし・丁目ハザード非該当を確認して登録"
+ },
+ "nc_21733272": {
+  "first_seen": "2026-09-19",
+  "price_man": 6990,
+  "address": "東京都北区滝野川２",
+  "walk_min": 9,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 72.17,
+  "floor_m2": null,
+  "ko_screened": true,
+  "manual_screened": "2026-09-19: 予算切れ(NO_DETAIL)のため人が詳細を取得して scanKO=旗なし・除外現場照合なし・丁目ハザード非該当を確認して登録"
  }
 }

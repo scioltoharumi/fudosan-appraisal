@@ -283,6 +283,10 @@ test("parseDetailAttrs: 建物価格を拾う(複数表記があれば最小値)
   assert.equal(parseDetailAttrs("<td>建物価格</td><td>1,670万円</td>", "suumo").building_price_man, 1670);
   // ラベルが無ければ null(=判定しない)。0や欠測を数値に丸めない
   assert.equal(parseDetailAttrs("<div>価格 6560万円</div>", "suumo").building_price_man, null);
+  // 2026-09-19: 営業文「参考プランのご相談…お問い合わせください！ 土地価格6990万円」で土地価格を建物価格に読んでいた(滝野川2 nc_21733272)
+  assert.equal(parseDetailAttrs("<p>参考プランのご相談、現地の見学など、お気軽にお問い合わせください！ 土地価格6990万円</p>", "suumo").building_price_man, null,
+    "参考プランの窓が『土地価格』を跨いで土地価格を建物価格にしない");
+  assert.equal(parseDetailAttrs("<p>参考プラン有（77.62m2、1500万円）</p>", "suumo").building_price_man, 1500, "同じ句の中の参考プラン価格は従来どおり読む");
   assert.equal(parseDetailAttrs("", "suumo").building_price_man, null);
 });
 
@@ -339,4 +343,17 @@ test("parseDetailPrice: 「価格 ヒント」ラベルを優先し、参考プ�
   assert.equal(parseDetailPrice("<td>建物価格</td><td>ヒント</td><td>2200万円</td><p>5670万円</p><p>5670万円</p><p>5670万円</p>"), 5670);
   // 2区画・複数戸で「価格 ヒント 5480万円・5880万円」の形は先頭(代表価格=最安)を採る(従来の挙動と同じ)
   assert.equal(parseDetailPrice("<td>価格</td><td>ヒント</td><td>5480万円・5880万円A区画5880万円・B区画5480万円</td>"), 5480);
+});
+
+// 2026-09-19: SUUMOは建築条件付土地を新築一戸建ての一覧にも出すため、一覧由来の kind が shinchiku のまま /tochi/ の掲載が
+// scopeMissOf に渡り、土地+建物の総額判定が素通しになっていた(滝野川2 nc_21738319 総額9,930万・西ケ原4 nc_21576673 総額9,480万)
+test("listingKind は URL が /tochi/ なら一覧の kind に依らず tochi を返す", async () => {
+  const { listingKind } = await import("../crawler/daily.mjs");
+  assert.equal(listingKind({ kind: "shinchiku", url: "https://suumo.jp/tochi/tokyo/sc_kita/nc_21738319/" }), "tochi");
+  assert.equal(listingKind({ kind: "tochi", url: "https://suumo.jp/tochi/tokyo/sc_kita/nc_1/" }), "tochi");
+  assert.equal(listingKind({ kind: "shinchiku", url: "https://suumo.jp/ikkodate/tokyo/sc_kita/nc_2/" }), "shinchiku");
+  assert.equal(listingKind({ kind: "chuko", url: "https://www.athome.co.jp/kodate/1/" }), "chuko");
+  // 総額判定が効くこと(kind を listingKind に通した結果で scopeMissOf を呼ぶ)
+  const k = listingKind({ kind: "shinchiku", url: "https://suumo.jp/tochi/tokyo/sc_kita/nc_21738319/" });
+  assert.match(scopeMissOf({ land_m2: 160.94, building_price_man: 2450 }, 10, k, 7480) ?? "", /総額9930万/);
 });

@@ -64,6 +64,15 @@ export function scopeMissOf(attrs, walkDetail, kind = null, priceMan = null) {
   return null;
 }
 
+// 掲載の種別。SUUMOは建築条件付土地を**新築一戸建ての一覧にも**出すため、一覧の kind(shinchiku)と URL(/tochi/)が食い違う。
+// 種別は URL を正とする——kind=shinchiku のまま scopeMissOf に渡すと土地の総額判定(土地+建物)が素通しになり、
+// 滝野川2 nc_21738319(土地7,480+建物2,450=総額9,930万)と西ケ原4 nc_21576673(6,480+3,000=9,480万)が圏外なのに pass で上がった(2026-09-19)
+export function listingKind(u) {
+  if (u?.kind === "tochi") return "tochi";
+  if (typeof u?.url === "string" && /\/tochi\//.test(u.url)) return "tochi";
+  return u?.kind ?? null;
+}
+
 // 間取り文字列から居室数を数える。「2LDK+2S(納戸)」=4室、「2LDK+S」=3室、「4LDK」=4室。
 // 数えられない表記(「1DKK+」のような媒体側の崩れ)は null を返し、条件判定を行わない(誤って落とさない)
 export function roomsOf(layout) {
@@ -466,7 +475,7 @@ async function discover(ledgerNcs, ledgerFps, ledgerUnits, ledgerCrawlIdIndex = 
     if (fp) fpSeen.add(fp);
     byNc.set(u.nc, u);
   }
-  const rangeOf = (u) => (u.kind === "tochi" ? TOCHI_PRICE_RANGE : PRICE_RANGE);
+  const rangeOf = (u) => (listingKind(u) === "tochi" ? TOCHI_PRICE_RANGE : PRICE_RANGE);
   const matches = [...byNc.values()].filter((u) =>
     u.price_man !== null && u.price_man >= rangeOf(u)[0] && u.price_man <= rangeOf(u)[1] &&
     districtOf(u.address) !== null &&
@@ -515,7 +524,7 @@ async function discover(ledgerNcs, ledgerFps, ledgerUnits, ledgerCrawlIdIndex = 
       // 掲載条件(CLAUDE.md「登録条件」)のうち掲載から機械判定できるもの。KOではなく「圏外」扱いにして、
       // 報告には出しつつ自動登録の候補から外す。2026-08-13: 滝野川1の2件(延床65.24/65.72)が
       // verdict=pass のまま自動登録候補に上がり、人が延床70m2超の条件で弾く必要があった
-      const scopeMiss = scopeMissOf(ko.attrs, walkDetail, u.kind, u.price_man ?? null);
+      const scopeMiss = scopeMissOf(ko.attrs, walkDetail, listingKind(u), u.price_man ?? null);
       if (scopeMiss) {
         // 以後の再判定が要らないよう seen に記録して落とす(諸元は掲載が変わらない限り動かない)
         seen[u.nc].out_of_scope = scopeMiss;
@@ -585,7 +594,7 @@ async function discover(ledgerNcs, ledgerFps, ledgerUnits, ledgerCrawlIdIndex = 
             continue;
           }
           // KOを通っても掲載条件(延床70m2超・3室以上・徒歩20分以内)を外れていれば候補にしない
-          const miss = scopeMissOf(ko.attrs, ko.attrs?.walk_min ?? null, u.kind, u.price_man ?? null);
+          const miss = scopeMissOf(ko.attrs, ko.attrs?.walk_min ?? null, listingKind(u), u.price_man ?? null);
           if (miss) {
             seen[u.nc].out_of_scope = miss;
             report.push({ ...cand, event: "out_of_scope_on_recheck", out_of_scope: miss,
