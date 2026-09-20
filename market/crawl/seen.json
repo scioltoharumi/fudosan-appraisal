@@ -2497,5 +2497,95 @@
   "floor_m2": null,
   "ko_screened": true,
   "manual_screened": "2026-09-19: 予算切れ(NO_DETAIL)のため人が詳細を取得して scanKO=旗なし・除外現場照合なし・丁目ハザード非該当を確認して登録"
+ },
+ "nc_21333964": {
+  "first_seen": "2026-09-20",
+  "price_man": 3480,
+  "address": "東京都北区上十条３",
+  "walk_min": 7,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 49.19,
+  "floor_m2": 77.8,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO2_ownership"
+  ]
+ },
+ "nc_21429968": {
+  "first_seen": "2026-09-20",
+  "price_man": 3980,
+  "address": "東京都北区志茂３",
+  "walk_min": 3,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 53.95,
+  "floor_m2": 69.25,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
+ },
+ "nc_21103656": {
+  "first_seen": "2026-09-20",
+  "price_man": 4680,
+  "address": "東京都北区志茂１",
+  "walk_min": 5,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 48.04,
+  "floor_m2": 75.65,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
+ },
+ "nc_21467265": {
+  "first_seen": "2026-09-20",
+  "price_man": 4280,
+  "address": "東京都北区赤羽台３",
+  "walk_min": 8,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 54.63,
+  "floor_m2": 86.39,
+  "ko_screened": true,
+  "ko_suspect": [
+   "AREA_EDGE"
+  ]
+ },
+ "nc_21759596": {
+  "first_seen": "2026-09-20",
+  "price_man": 7480,
+  "address": "東京都北区西ケ原３",
+  "walk_min": 4,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 92.77,
+  "floor_m2": 139,
+  "out_of_scope": "土地建物総額11260万(土地7480+建物3780。総額の条件は5000〜9000万)"
+ },
+ "nc_21758286": {
+  "first_seen": "2026-09-20",
+  "price_man": 5980,
+  "address": "東京都北区岸町２",
+  "walk_min": 5,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 11.01,
+  "floor_m2": null,
+  "out_of_scope": "土地11.01m2(土地の条件は45m2以上)",
+  "duplicate_suspect": "2026-09-20: 台帳 kishimachi2-21624274(岸町2更地5,980万・有効96.09)の3社目の掲載(LINK(株))として crawl_ids に紐付けた。価格・二方路(南東3m/北西3.1m)・更地・建築条件なしが nc_21717431(モリモト・トラスト・登記111.01)と一致し、掲載の土地面積『11.01m2(実測)』は111.01の誤記の公算。圏外(11.01<45)の印は掲載の表記どおりなので残す"
+ },
+ "nc_21733052": {
+  "first_seen": "2026-09-20",
+  "price_man": 4750,
+  "address": "東京都北区滝野川６",
+  "walk_min": 4,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 39.86,
+  "floor_m2": null,
+  "out_of_scope": "土地39.86m2(土地の条件は45m2以上)"
  }
 }
