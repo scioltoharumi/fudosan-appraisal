@@ -1115,7 +1115,7 @@
  },
  "at_1144148223": {
   "first_seen": "2026-08-13",
-  "price_man": 8080,
+  "price_man": 7980,
   "address": "東京都北区滝野川2",
   "walk_min": 1,
   "kind": "shinchiku",
@@ -2587,5 +2587,27 @@
   "land_m2": 39.86,
   "floor_m2": null,
   "out_of_scope": "土地39.86m2(土地の条件は45m2以上)"
+ },
+ "nc_21764026": {
+  "first_seen": "2026-09-21",
+  "price_man": 8480,
+  "address": "東京都北区滝野川２",
+  "walk_min": 11,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 65.99,
+  "floor_m2": 116.22,
+  "ko_screened": true
+ },
+ "nc_21766815": {
+  "first_seen": "2026-09-21",
+  "price_man": 6780,
+  "address": "東京都北区上十条１",
+  "walk_min": 5,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 77.55,
+  "floor_m2": null,
+  "ko_screened": true
  }
 }
