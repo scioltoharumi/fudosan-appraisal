@@ -13,7 +13,7 @@ source: "アドキャスト赤羽支店チラシ(媒介)。チラシは『A号�
 source_url: "https://suumo.jp/ikkodate/tokyo/sc_kita/nc_21261057/"   # 実在確認済み 2026-08-12。同一確認: 土地50.74実測・建物83.51(車庫8.96)・1LDK+2S(納戸)・完成2026-09・木造3F・北西4m の7項目一致
 # 2026-09-20の日次クロールでSUUMO nc_21261057 が404(9/19は200・**9/17に6,480→5,980へ値下げした直後**)。同日の新築一覧に諸元(西が丘2・50.74/83.51・5,980万)の
 # 再掲載なし。athomeの掲載は台帳に記録が無く照合不能。値下げ直後の消失は成約の公算があるが断定しない。5日超(days>5)で再掲載が無ければ掲載終了として台帳から外す(2026-09-13ユーザー決定)
-delisted_observed: {date: 2026-09-20, http: 404, athome: "unchecked(athome側の掲載IDを台帳に持っていない)", relisting_search: "SUUMO新築一覧(2026-09-20〜09-21の日次クロール)に諸元一致の再掲載なし", last_check: 2026-09-21, days: 2}
+delisted_observed: {date: 2026-09-20, http: 404, athome: "unchecked(athome側の掲載IDを台帳に持っていない)", relisting_search: "SUUMO新築一覧(2026-09-20〜09-22の日次クロール)に諸元一致の再掲載なし", last_check: 2026-09-22, days: 3}
 captured_at: 2026-08-09
 price_history:
   - {date: 2026-08-09, price_man: 6980}   # チラシ取得時点の価格
