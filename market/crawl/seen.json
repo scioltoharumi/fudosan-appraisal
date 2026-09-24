@@ -2609,5 +2609,30 @@
   "land_m2": 77.55,
   "floor_m2": null,
   "ko_screened": true
+ },
+ "nc_21592996": {
+  "first_seen": "2026-09-24",
+  "price_man": 7677,
+  "address": "東京都北区西ケ原４",
+  "walk_min": 6,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 45.25,
+  "floor_m2": 72.03,
+  "ko_screened": true
+ },
+ "nc_21781825": {
+  "first_seen": "2026-09-24",
+  "price_man": 8290,
+  "address": "東京都北区志茂４",
+  "walk_min": 5,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 73.44,
+  "floor_m2": 120.79,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
  }
 }
