@@ -91,7 +91,7 @@ const LEASEHOLD_RE = /定期借地|旧法借地|普通借地|借地権付|地上
 // 「借地期間」がLEASEHOLD_REに誤爆する(at_1107592414=土地権利「所有権」明記の新築をKO2で
 // ブロックしていた。冒頭の「ラベル語だけで旗を立てない」の実害例)。値が空(－)のラベル行だけを
 // 判定前に落とす。値が入っている場合(旧法賃借権の at_1127269513「20年 27,000円」)は残す
-const EMPTY_LEASE_LABEL_RE = /借地期間・地代\s*(?:（月額）)?\s*[－ー‐-](?!\s*[0-9０-９])/g;
+const EMPTY_LEASE_LABEL_RE = /借地期間・地代\s*(?:[（(]月額[）)])?\s*[－ー‐-](?!\s*[0-9０-９])/g;
 export const scrubEmptyLeaseLabel = (t) => String(t).replace(EMPTY_LEASE_LABEL_RE, " ");
 const DISCLOSURE_RE = /告知事項\s*(?:あり|有)|心理的瑕疵|事故物件/;
 // KO6(2026-08-14ユーザー決定): 私道の通行料を取られる物件は登録しない。
@@ -231,7 +231,10 @@ export function subjectText(html, media) {
   if (biko) parts.push(biko[1]);
   // 欄の窓を取るテキストからは script/style を除去する。除去しないと欄の直後に
   // 埋め込みJSON(=他物件の広告文)が続き、窓がそこへ食い込んで誤検出する
-  const t = zen(strip(raw.replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ")));
+  // 空値の「借地期間・地代 （月額） －」は窓を切る**前**に落とす(2026-09-25)。窓(アピールポイント600字)の末尾が
+  // このラベルの途中「借地期間・地」で切れると、後段の scrub が全体形を認識できず LEASEHOLD_RE だけが掛かる
+  // (at_1196096521=土地権利「所有権」の新築を KO2 でブロックしていた。2026-08-30の誤爆の取り残し)
+  const t = scrubEmptyLeaseLabel(zen(strip(raw.replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " "))));
   for (const label of SUBJECT_FIELDS[media] ?? SUBJECT_FIELDS.suumo) {
     // 最初の出現=対象物件の欄(アピールポイントはページ下部の類似物件枠にも同じ見出しが出るため、
     // indexOf で先頭を採るこの性質に依存している)

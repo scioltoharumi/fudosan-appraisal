@@ -168,7 +168,7 @@ test("price_history: 日付ソートが時刻値ベースであること(String(
   // **生きている台帳の価格を定数で固定するテストは、価格が動くたびに壊れる**ので、
   // ①合成データで曜日名逆転の2日を再現し ②実データは「日付が最新の行の価格を採る」という性質で検査する
   const area = loadAreaConfig();
-  const base = loadProperty("nishigaoka2-adcast-a");
+  const base = loadProperty("nishigaoka2-21096431");   // 2026-09-25: 元の nishigaoka2-adcast-a は5日超ルールで台帳から外れた(合成データの土台なのでどの物件でもよい)
   // ① 合成: YAML上の並びを逆順(新→旧)にしても、時刻値で最新の 08-10(月) が採られること
   const synth = { ...base, price_history: [
     { date: "2026-08-10", price_man: 6580 },   // 月曜 "Mon..." — 辞書順では "Sun..." より小さい
