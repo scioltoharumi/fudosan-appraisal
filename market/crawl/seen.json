@@ -2694,5 +2694,19 @@
   "ko_screened": true,
   "ledger_link": "takinogawa2-21764026",
   "ko2_misfire_fixed": "2026-09-25"
+ },
+ "nc_21701945": {
+  "first_seen": "2026-09-27",
+  "price_man": 7280,
+  "address": "東京都北区赤羽台３",
+  "walk_min": 8,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 57.6,
+  "floor_m2": 86.39,
+  "ko_screened": true,
+  "ko_suspect": [
+   "AREA_EDGE"
+  ]
  }
 }
