@@ -2813,5 +2813,27 @@
   "land_m2": 89.49,
   "floor_m2": null,
   "ko_screened": true
+ },
+ "nc_21745780": {
+  "first_seen": "2026-09-30",
+  "price_man": 5970,
+  "address": "東京都北区岸町２",
+  "walk_min": 5,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 96.09,
+  "floor_m2": null,
+  "ko_screened": true
+ },
+ "at_1152347031": {
+  "first_seen": "2026-09-30",
+  "price_man": 7780,
+  "address": "東京都北区西が丘2",
+  "walk_min": 15,
+  "kind": "shinchiku",
+  "media": "athome",
+  "land_m2": 60.65,
+  "floor_m2": 106.93,
+  "ko_screened": true
  }
 }

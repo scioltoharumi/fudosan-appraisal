@@ -17,7 +17,7 @@ source_url: "https://suumo.jp/tochi/tokyo/sc_kita/nc_21258723/"   # 実在確認
 crawl_ids: ["at_1020007991"]
 # 2026-09-29の日次クロールでSUUMO nc_21258723 が404(9/28は200)。athome at_1020007991 も「お探しのページが見つかりません」=全媒体から消えた。
 # 起点9/29(1日目)。5日超(days>5)で再掲載が無ければ台帳から外す
-delisted_observed: {date: 2026-09-29, http: 404, athome: "at_1020007991 も404(ページが見つかりません)", relisting_search: "SUUMO土地一覧(2026-09-29の日次クロール)に諸元一致の再掲載なし", last_check: 2026-09-29, days: 1}
+delisted_observed: {date: 2026-09-29, http: 404, athome: "at_1020007991 も404(ページが見つかりません)", relisting_search: "SUUMO土地一覧(2026-09-29〜09-30の日次クロール)に諸元一致の再掲載なし", last_check: 2026-09-30, days: 2}
 captured_at: 2026-09-12
 price_history:
   - {date: 2026-09-12, price_man: 4590}   # 土地のみの価格(SUUMO明記「土地のみの価格です」)。媒体の情報提供日時点。建物は含まない
