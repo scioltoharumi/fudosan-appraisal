@@ -2835,5 +2835,38 @@
   "land_m2": 60.65,
   "floor_m2": 106.93,
   "ko_screened": true
+ },
+ "nc_21825518": {
+  "first_seen": "2026-10-01",
+  "price_man": 8690,
+  "address": "東京都北区上十条５-44-4",
+  "walk_min": 15,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 66.61,
+  "floor_m2": 91.29,
+  "ko_screened": true
+ },
+ "nc_21829402": {
+  "first_seen": "2026-10-01",
+  "price_man": 8690,
+  "address": "東京都北区上十条５",
+  "walk_min": 16,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 66.61,
+  "floor_m2": 107.02,
+  "ko_screened": true
+ },
+ "at_1117629206": {
+  "first_seen": "2026-10-01",
+  "price_man": 6490,
+  "address": "東京都北区滝野川1",
+  "walk_min": 4,
+  "kind": "chuko",
+  "media": "athome",
+  "land_m2": 64.29,
+  "floor_m2": 65.24,
+  "out_of_scope": "延床65.24m2(条件は70m2超)"
  }
 }

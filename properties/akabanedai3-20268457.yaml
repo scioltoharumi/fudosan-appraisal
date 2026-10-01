@@ -7,7 +7,7 @@ source: "SUUMO nc_20268457 (REDS)"
 source_url: "https://suumo.jp/chukoikkodate/tokyo/sc_kita/nc_20268457/"   # 実在確認済み 2026-07-20。2026-09-27に404
 # 2026-09-27の日次クロールでSUUMO nc_20268457 が404(9/26は200・6,260万)。athomeの掲載IDは台帳に無く照合不能・中古一覧に諸元一致の再掲載なし。
 # 起点9/27(1日目)。5日超(days>5)で再掲載が無ければ台帳から外す(status は declined のまま)
-delisted_observed: {date: 2026-09-27, http: 404, athome: "unchecked(athome側の掲載IDを台帳に持っていない)", relisting_search: "SUUMO中古一覧(2026-09-27〜09-30の日次クロール)に諸元一致の再掲載なし", last_check: 2026-09-30, days: 4}
+delisted_observed: {date: 2026-09-27, http: 404, athome: "unchecked(athome側の掲載IDを台帳に持っていない)", relisting_search: "SUUMO中古一覧(2026-09-27〜10-01の日次クロール)に諸元一致の再掲載なし", last_check: 2026-10-01, days: 5}
 captured_at: 2026-07-19
 price_history:
   - {date: 2026-07-17, price_man: 6560}
