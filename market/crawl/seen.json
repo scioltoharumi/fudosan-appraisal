@@ -2868,5 +2868,47 @@
   "land_m2": 64.29,
   "floor_m2": 65.24,
   "out_of_scope": "延床65.24m2(条件は70m2超)"
+ },
+ "nc_21844562": {
+  "first_seen": "2026-10-02",
+  "price_man": 6180,
+  "address": "東京都北区神谷３",
+  "walk_min": 9,
+  "kind": "chuko",
+  "media": "suumo",
+  "land_m2": 58.45,
+  "floor_m2": 86.53,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
+ },
+ "nc_21840717": {
+  "first_seen": "2026-10-02",
+  "price_man": 5980,
+  "address": "東京都北区赤羽北１",
+  "walk_min": 9,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 281.13,
+  "floor_m2": null,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
+ },
+ "nc_21840165": {
+  "first_seen": "2026-10-02",
+  "price_man": 5980,
+  "address": "東京都北区赤羽北１",
+  "walk_min": 9,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 281.14,
+  "floor_m2": null,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
  }
 }

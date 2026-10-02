@@ -6,7 +6,8 @@ import {
   appraise, appraiseRange, evaluate, position,
   elapsedYears, monteCarlo, mulberry32, walkAdjOf, roadWideAdjOf, ROAD_WIDE_ADJ, ROAD_QUALITY,
 } from "../engine/appraise.js";
-import { loadAreaConfig, loadProperty, listPropertyIds } from "../engine/io.js";
+import { loadAreaConfig, loadProperty, listPropertyIds, loadYaml, ROOT } from "../engine/io.js";
+import { join } from "node:path";
 
 const AS_OF = new Date(Date.UTC(2026, 6, 19));
 const ELAPSED = elapsedYears(AS_OF);
@@ -38,7 +39,8 @@ test("回帰値: 本物件(engineレベル)が受入基準と一致する", () =
 test("回帰値: YAML→evaluate経由の基準値(時点修正の年次別統一後)", () => {
   // v1.2受入基準(5952/6562)は一律年率10%前提。2026-08第2次監査で時点修正を年次別実効レートに
   // 統一したため(実効約12%)、evaluate経由の値は意図的に更新。engineレベルの回帰(rise明示)は不変
-  const r = evaluate(loadProperty("akabanedai3-20268457"), loadAreaConfig(), { asOf: AS_OF });
+  // 2026-10-02: 赤羽台3は5日超ルールで台帳から外れたため、回帰値の題材として tests/fixtures に固定した(台帳の実物件ではない)
+  const r = evaluate(loadYaml(join(ROOT, "tests", "fixtures", "akabanedai3-20268457.yaml")), loadAreaConfig(), { asOf: AS_OF });
   // 2026年の将来外挿を+6%に保守化(R3監査)後の値。v1.2原典(5952/6562)にほぼ回帰している
   // 2026-08-13(2): 徒歩補正の帯別化により 5938→5764 / 6547→6356(徒歩11分の補正が-1.2%→-4.0%)
   assert.equal(Math.round(r.mid.fair), 5764);
