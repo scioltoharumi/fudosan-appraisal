@@ -2946,5 +2946,55 @@
   "land_m2": 66.61,
   "floor_m2": 98.76,
   "ko_screened": true
+ },
+ "nc_21567216": {
+  "first_seen": "2026-10-04",
+  "price_man": 8598,
+  "address": "東京都北区西が丘２",
+  "walk_min": 14,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 60.07,
+  "floor_m2": 104.48,
+  "ko_screened": true
+ },
+ "nc_21847663": {
+  "first_seen": "2026-10-04",
+  "price_man": 4180,
+  "address": "東京都北区岸町２",
+  "walk_min": 10,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 140,
+  "floor_m2": null,
+  "ko_screened": true
+ },
+ "nc_21861894": {
+  "first_seen": "2026-10-04",
+  "price_man": 5680,
+  "address": "東京都北区上中里２",
+  "walk_min": 4,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 61.88,
+  "floor_m2": null,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
+ },
+ "at_1196266221": {
+  "first_seen": "2026-10-04",
+  "price_man": 7680,
+  "address": "東京都北区志茂4",
+  "walk_min": 9,
+  "kind": "shinchiku",
+  "media": "athome",
+  "land_m2": 111.71,
+  "floor_m2": 118.84,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
  }
 }
