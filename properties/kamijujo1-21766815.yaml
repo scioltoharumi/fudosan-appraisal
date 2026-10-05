@@ -13,7 +13,7 @@ source: "SUUMO土地 nc_21766815((株)WALLMATE不動産 高田馬場支店・仲
   その他制限事項『セットバック：要6.86m2、高度地区、**防火地域**』。同丁目の既登録 kamijujo1-21478863(更地6,480万・81.15m2・前面2.0m)とは面積・価格が違う別区画"
 source_url: "https://suumo.jp/tochi/tokyo/sc_kita/nc_21766815/"   # 実在確認済み 2026-09-21(クローラ経路で200・価格6,780・土地77.55)。2026-10-01に404
 # 2026-10-01の日次クロールでSUUMO nc_21766815 が404(9/30は200)。athome側の掲載IDは台帳に無く照合不能・土地一覧に諸元一致の再掲載なし。起点10/1(1日目)
-delisted_observed: {date: 2026-10-01, http: 404, athome: "unchecked(athome側の掲載IDを台帳に持っていない)", relisting_search: "SUUMO土地一覧(2026-10-01〜10-04の日次クロール)に諸元一致の再掲載なし", last_check: 2026-10-04, days: 4}
+delisted_observed: {date: 2026-10-01, http: 404, athome: "unchecked(athome側の掲載IDを台帳に持っていない)", relisting_search: "SUUMO土地一覧(2026-10-01〜10-05の日次クロール)に諸元一致の再掲載なし", last_check: 2026-10-05, days: 5}
 captured_at: 2026-09-21
 price_history:
   - {date: 2026-09-21, price_man: 6780}   # 土地価格(媒体の情報提供日時点・新着初日)。建物は含まない。古家の解体は売主負担(更地渡し)

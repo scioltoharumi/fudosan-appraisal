@@ -87,6 +87,13 @@ test("KO4: SUUMOの「物件の特徴」に書かれた「崖条例」を拾う"
   assert.ok(scanKO("<div>その他制限事項: 崖条例</div>", "suumo").flags.some((f) => f.code === "KO4_hazard"), "崖条例(漢字)は制限欄でもKO4");
 });
 
+// 2026-10-05: 条例名を書かずに効果だけを書く「崖上につき建築制限有」(赤羽西4 nc_21656006)を落としていた
+test("KO4: 「崖上につき建築制限有」「崖下につき建築制限」を拾い、制限語の無い「崖上の眺望」は拾わない", () => {
+  assert.ok(scanKO("<div>その他制限事項  景観法による規制有、安全条例による規制有、高度地区、崖上につき建築制限有、接道と段差有</div>", "suumo").flags.some((f) => f.code === "KO4_hazard"));
+  assert.ok(scanKO("<div>その他制限事項  崖下につき建築制限</div>", "suumo").flags.some((f) => f.code === "KO4_hazard"));
+  assert.ok(!scanKO("<div>物件の特徴 崖上の眺望が自慢の高台立地</div>", "suumo").flags.some((f) => f.code === "KO4_hazard"));
+});
+
 // 2026-09-09: 間取り「2LDK+2S（納戸）」が「2LDK+」で切れ、roomsOf が2室と数えて圏外にしていた
 // (西が丘2 ESPACER の別業者掲載 nc_21660154)。+ の後ろの数字まで読む
 test("parseDetailAttrs: 間取りの「+2S」を切り落とさない", async () => {

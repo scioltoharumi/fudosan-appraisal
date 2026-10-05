@@ -13,6 +13,7 @@ source_url: "https://suumo.jp/tochi/tokyo/sc_kita/nc_21377361/"   # 実在確認
 captured_at: 2026-09-19
 price_history:
   - {date: 2026-08-29, price_man: 6800}   # 土地価格(クロール初見。2026-09-19時点も同額=3週間不変)。建物は含まない。古家の解体は買主負担の公算
+  - {date: 2026-10-05, price_man: 6580}   # −220万(初回改定)。2026-10-05の日次クロールで検出・実ページ「価格更新 6580万円」・情報提供日26/10/5
 location: {area: takinogawa, address: "北区滝野川6"}
 layout: "-"   # 古家付き(建物は評価に入れない)
 station: {walk_min: 4, multi_station: true}   # JR埼京線「板橋」4分 / 都営三田線「新板橋」8分 / 東武東上線「北池袋」11分

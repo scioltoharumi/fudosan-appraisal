@@ -2996,5 +2996,55 @@
   "ko_codes": [
    "KO4_area_hazard"
   ]
+ },
+ "nc_21726389": {
+  "first_seen": "2026-10-05",
+  "price_man": 5960,
+  "address": "東京都北区岸町２",
+  "walk_min": 5,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 96.09,
+  "floor_m2": null,
+  "ko_screened": true
+ },
+ "nc_21870991": {
+  "first_seen": "2026-10-05",
+  "price_man": 3500,
+  "address": "東京都北区志茂５",
+  "walk_min": 9,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 68.68,
+  "floor_m2": null,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
+ },
+ "nc_21867071": {
+  "first_seen": "2026-10-05",
+  "price_man": 6180,
+  "address": "東京都北区赤羽西４",
+  "walk_min": 8,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 61.57,
+  "floor_m2": null,
+  "ko_screened": true
+ },
+ "nc_21656006": {
+  "first_seen": "2026-10-05",
+  "price_man": 6980,
+  "address": "東京都北区赤羽西４",
+  "walk_min": 10,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 86.05,
+  "floor_m2": null,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_hazard"
+  ]
  }
 }
