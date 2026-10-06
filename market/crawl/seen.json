@@ -3046,5 +3046,27 @@
   "ko_codes": [
    "KO4_hazard"
   ]
+ },
+ "nc_21722572": {
+  "first_seen": "2026-10-06",
+  "price_man": 8480,
+  "address": "東京都北区中里３",
+  "walk_min": 10,
+  "kind": "chuko",
+  "media": "suumo",
+  "land_m2": 102.47,
+  "floor_m2": 135.91,
+  "ko_screened": true
+ },
+ "nc_21809261": {
+  "first_seen": "2026-10-06",
+  "price_man": 3190,
+  "address": "東京都北区岸町２",
+  "walk_min": 9,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 34.75,
+  "floor_m2": null,
+  "out_of_scope": "土地34.75m2(土地の条件は45m2以上)"
  }
 }
