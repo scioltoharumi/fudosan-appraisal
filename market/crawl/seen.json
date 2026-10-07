@@ -3068,5 +3068,16 @@
   "land_m2": 34.75,
   "floor_m2": null,
   "out_of_scope": "土地34.75m2(土地の条件は45m2以上)"
+ },
+ "nc_21772399": {
+  "first_seen": "2026-10-07",
+  "price_man": 7480,
+  "address": "東京都北区西ケ原３",
+  "walk_min": 3,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 92.77,
+  "floor_m2": null,
+  "ko_screened": true
  }
 }
