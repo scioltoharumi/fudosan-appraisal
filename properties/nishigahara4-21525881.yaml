@@ -14,6 +14,7 @@ source: "SUUMO土地 nc_21525881((株)総合…・仲介)。2026-09-29の日次�
   1種中高60/160・引渡し相談。建物プラン例の間取図はあるが価格の記載なし"
 source_url: "https://suumo.jp/tochi/tokyo/sc_kita/nc_21525881/"   # 実在確認済み 2026-09-29(クローラ経路で200・6,480万・89.49m2)
 crawl_ids: ["nc_21576673", "nc_21708300"]   # 同一区画の過去の掲載(ともに建物込み総額9,000万超で圏外判定・seen.json に out_of_scope)。価格6,480・西ケ原4・プラン延床95.57が一致
+delisted_observed: {date: 2026-10-08, http: 404, athome: "unchecked(athome側の掲載IDを台帳に持っていない)", relisting_search: "SUUMO土地一覧(2026-10-08の日次クロール)に諸元一致の再掲載なし。同一区画の過去掲載 nc_21576673・nc_21708300 も404", last_check: 2026-10-08, days: 1}
 captured_at: 2026-09-29
 price_history:
   - {date: 2026-08-29, price_man: 7480}   # 同一区画 nc_21576673 のクロール初見の土地価格(建築条件付)。2026-09-14に6,480へ値下げ(discover で観測)

@@ -1,0 +1,72 @@
+# 物件データ(1物件1ファイル)。記載ルール: 事実データと査定パラメータのみ。
+# 書かないのは指値方針・交渉の手の内(価格交渉で実害があるため)と写真・紹介文(著作権・媒体規約)のみ。
+# **内見メモ・所感は書いてよい**(2026-08-30ユーザー指示で2026-08-13の禁止を撤廃。viewing_memo に記録する)
+id: akabanenishi4-21890445
+status: new                # 2026-10-08の日次クロールで新着・KO審査全通過で自動登録。人はまだ見ていない
+viewing: none
+unit_label: "新築・全1棟・完成2027-02"
+source: "SUUMO新築一戸建て nc_21890445(城北不動産(株)氷川台支店・仲介)。2026-10-08の日次クロールで新着。
+  3LDK+S(LDK19.5帖)・木造3階建・完成2027年2月予定・土地69.8m2/建物106.47m2(**備蓄倉庫2.48m2含む**)・
+  私道負担 共有持分80.32m2×1/8・南4m幅(接道幅7.4m)・1種中高60/150・建築確認 第R08SHC111424号・情報提供日26/10/8。
+  その他制限事項『高度地区、準防火地域、建物面積に備蓄倉庫部分含む』。特徴タグに『トイレ2ヶ所』『整形地』『平坦地』『駅まで平坦』『床暖房』"
+source_url: "https://suumo.jp/ikkodate/tokyo/sc_kita/nc_21890445/"   # 実在確認済み 2026-10-08(クローラ経路で200・7,680万・土地69.8/建物106.47)
+captured_at: 2026-10-08
+price_history:
+  - {date: 2026-10-08, price_man: 7680}   # 媒体の情報提供日時点(新着初日)
+location: {area: akabane-nishi, address: "北区赤羽西4"}
+layout: "3LDK+S"           # 居室4室
+station: {walk_min: 10, multi_station: false}   # JR埼京線「赤羽」10分(**単駅表記**。他の2行は王子・成増からのバス便)。徒歩10分=徒歩補正0
+land:
+  registered_m2: 69.8
+  setback_m2: 0            # 掲載にセットバックの記載なし
+  road: {width_m: 4.0, quality: good_4m, direction: S, corner: false, public: false,
+    note: "南4m幅に接道7.4m。私道負担=共有持分80.32m2×1/8=**8戸程度で持ち合う私道**(位置指定道路の公算)。通行料の記載なし(KO6非該当)"}
+  shape: regular           # 掲載『整形地』
+  legal: {zoning: "1種中高", bcr: 60, far: 150, ownership: shoyuken, rebuildable: true,
+    note: "延床106.47/土地69.8=153%で指定容積150%を超えるのは備蓄倉庫2.48m2(容積不算入)を含む表記のため。除くと104.0m2=149%"}
+building:
+  built: 2027-02           # 完成予定
+  floor_m2: 106.47         # 32.2坪。備蓄倉庫2.48m2込み
+  type: wood_3f_narrow     # 木造3階建
+  repair: {status: new_construction, cost_man: 0}
+costs: {fee_rate: 0.05, demolition_man: 195, demolition_assumed: true}   # 木造3F・延床32.2坪×約6万/坪
+income: {rent_man: 26, rent_assumed: true, expense_rate: 0.15, cap_rate: 0.045}
+checklist: {road_type_verified: false, retaining_wall: false, hazard: true, seismic: true}
+hazard_check:
+  checked_at: 2026-10-08
+  suumo: none        # その他制限事項・物件の特徴欄に土砂・がけ・浸水の語なし
+  athome: unchecked  # クロールの athome 新築一覧に同諸元なし
+  note: "掲載の法令等制限欄に洪水浸水想定は原則載らないため、下の official(丁目代表点)と site_scan(徒歩分による位置絞り込み)で照合する"
+  official:
+    checked_at: 2026-10-08
+    query: "東京都北区赤羽西4丁目(台帳の akabanenishi4-21036139 と同じ代表点)"
+    point: "35.77358,139.71567"
+    elevation_m: 21.3
+    flood_l2: "0.5m未満"
+    verdict: caution
+    note: "代表点は洪水浸水想定0.5m未満(浅い区分)。赤羽西4丁目は崖線の丁目(代表点から最寄りレッド283m)"
+    limit: "丁目代表点ベース。個別区画の確定は番地・現地・重要事項説明で行う"
+  site_scan:
+    checked_at: 2026-10-08
+    method: "siteFromWalk(赤羽10の単駅・単一迂回率1.15〜1.40)。標高=国土地理院DEM、土砂・浸水=ハザードマップタイル"
+    center: "35.77510,139.71754(赤羽駅を中心とする環状帯の重心)"
+    span_m: "南北941m×東西1010m(724点)=位置を絞れない"
+    elevation_m: "4.4〜22.1(中央19.9)"
+    terrain: "環状帯は崖線の上下にまたがる(台地と赤羽駅西側の低地)"
+    dosha: "標本31点中 イエロー1点・浸水0.5〜3.0mが5点・0.5m未満4点"
+    verdict: unknown
+    note: "単駅表記で位置を絞れない。掲載の『平坦地』『駅まで平坦』は、赤羽駅(低地)まで坂が無い=崖下の低地側に立つ可能性を示唆する。
+      3m超の浸水点は環状帯に無いが、台地側(登録条件)かは番地で確定する"
+caveats:
+  - title: "単駅表記で位置が絞れず、『駅まで平坦』は崖下の低地側の可能性(登録条件『台地側』の充足が未確定)"
+    effect: "site_scan は unknown。番地で低地側(浸水0.5〜3.0m)と確定すれば台地側の条件に反する"
+    detail: "赤羽10分の環状帯は標高4.4〜22.1mで崖線の上下にまたがる。赤羽西4の台地は赤羽駅より15m以上高く、駅まで平坦に歩ける区画は少ない"
+    check: "番地・区画図。現地で駅までの坂の有無"
+  - title: "前面は8戸程度で持ち合う私道(共有持分1/8)"
+    effect: "エンジンは私道/公道の別を係数化していない(実測で幅員と交絡するため)。持分ありなので掘削・通行の承諾は取りやすい側"
+    detail: "私道負担 共有持分80.32m2×1/8。通行料の記載なし"
+    check: "私道の共有者構成・通行掘削承諾書の有無"
+  - title: "延床106.47m2は備蓄倉庫2.48m2込み"
+    effect: "居住部分で比べると適正はわずかに下がる(約2%)"
+    detail: "備蓄倉庫は容積不算入。居住部分は約104.0m2"
+    check: "間取り図の各階面積"
