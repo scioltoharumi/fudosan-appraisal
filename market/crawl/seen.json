@@ -289,7 +289,7 @@
  },
  "nc_21096431": {
   "first_seen": "2026-08-12",
-  "price_man": 7680,
+  "price_man": 7780,
   "address": "東京都北区西が丘２",
   "walk_min": 15,
   "kind": "shinchiku"
@@ -3159,6 +3159,45 @@
   "ko_blocked": true,
   "ko_codes": [
    "KO4_hazard"
+  ]
+ },
+ "nc_21887712": {
+  "first_seen": "2026-10-09",
+  "price_man": 5350,
+  "address": "東京都北区赤羽台３",
+  "walk_min": 11,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 58.12,
+  "floor_m2": 85.9,
+  "ko_screened": true,
+  "ko_suspect": [
+   "AREA_EDGE"
+  ]
+ },
+ "nc_21580540": {
+  "first_seen": "2026-10-09",
+  "price_man": 4280,
+  "address": "東京都北区赤羽台３",
+  "walk_min": 8,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 42.39,
+  "floor_m2": null,
+  "out_of_scope": "土地42.39m2(土地の条件は45m2以上)"
+ },
+ "nc_21896828": {
+  "first_seen": "2026-10-09",
+  "price_man": 5580,
+  "address": "東京都北区志茂５",
+  "walk_min": 8,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 76.44,
+  "floor_m2": 72.03,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
   ]
  }
 }

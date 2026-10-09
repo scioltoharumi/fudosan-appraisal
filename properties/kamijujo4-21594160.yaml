@@ -43,7 +43,7 @@ relisted_observed:
   # そこへ tochiTotalPrice が +2,200 して 4,400 になった。同日 crawler/daily.mjs parseDetailPrice で建物価格を数えないよう修正し、
   # tests/crawler.test.js に回帰ガードを置いた。price_history は動かしていない
 # 2026-10-06の日次クロールでSUUMO nc_21535333(・旧 nc_21594160)が404。athome掲載IDは台帳に無く照合不能。起点10/6(1日目)
-delisted_observed: {date: 2026-10-06, http: 404, athome: "unchecked(athome側の掲載IDを台帳に持っていない)", relisting_search: "SUUMO土地一覧(2026-10-06〜10-08の日次クロール)に諸元一致の再掲載なし", last_check: 2026-10-08, days: 3}
+delisted_observed: {date: 2026-10-06, http: 404, athome: "unchecked(athome側の掲載IDを台帳に持っていない)", relisting_search: "SUUMO土地一覧(2026-10-06〜10-09の日次クロール)に諸元一致の再掲載なし", last_check: 2026-10-09, days: 4}
 captured_at: 2026-09-01
 price_history:
   - {date: 2026-08-30, price_man: 7970}   # 土地建物総額(媒体の情報提供日時点)。土地5,670+建物2,300
