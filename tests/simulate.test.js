@@ -71,8 +71,9 @@ test("simulate: 判定語を出さない(エンジンv3.0.0の思想の回帰ガ
 // focus.html は simulate と同一テンプレートの絞り込みで、コピーではないこと(モデル修正が両方へ効くこと)を
 // このテストが担保する: 同じ renderSimulate に focus を渡すだけで、注入データが指定3物件に限定される。
 // 2026-09-13: 岸町2 新築(kishimachi2-adcast)は他の買主に売れたため台帳から削除し、本命は2物件になった
-test("focus: 本命比較ページは指定2物件だけを含み、CI帯の表示条件(4件以下)を満たす", () => {
-  const FOCUS_IDS = ["kishimachi2-mirasumo-204", "nishigaoka2-21096431"];
+test("focus: 本命比較ページは指定物件だけを含み、CI帯の表示条件(4件以下)を満たす", () => {
+  // 2026-10-10: 岸町2・ESPACERを見送り、本命は神谷2-24 A区画の1物件に
+  const FOCUS_IDS = ["kamiya2-adcast-a"];
   const fh = renderSimulate(results, curve, { asOf: "2026-08-29", focus: {
     ids: FOCUS_IDS, slug: "focus", title: "本命比較", subtitle: "", rentDefault: 25, preface: "" } });
   const m = fh.match(/<script type="application\/json" id="simdata">(.*?)<\/script>/s);

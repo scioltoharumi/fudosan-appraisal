@@ -247,10 +247,12 @@ test("エリア索引: 台帳エリアと新規拡張エリアの丁目がすべ
 test("同じ町名でも丁目で判定が割れる地区を、丁目単位で止める", () => {
   // 上中里は1丁目が台地、2・3丁目が荒川低地。町名だけで通すと低地を登録してしまう
   assert.equal(AREA_INDEX.get("上中里3").verdict, "exclude");
-  assert.equal(areaHazardBlock({ district: "上中里", chome: "3" }, AREA_INDEX).level, "block");
+  // 2026-10-10: 代表点の浸水想定が5m以下の低地は block ではなく suspect(lowland)=報告して人が決める
+  assert.equal(areaHazardBlock({ district: "上中里", chome: "3" }, AREA_INDEX).level, "suspect");
+  assert.equal(areaHazardBlock({ district: "上中里", chome: "3" }, AREA_INDEX).kind, "lowland");
   assert.equal(areaHazardBlock({ district: "上中里", chome: "1" }, AREA_INDEX), null, "台地側の1丁目まで止めてはいけない");
-  // 既知の除外地区(2026-08-13に台帳から外した志茂)も同じ経路で止まる
-  assert.equal(areaHazardBlock({ district: "志茂", chome: "1" }, AREA_INDEX).level, "block");
+  // 代表点で5m超(志茂2=5.0〜10.0m)は従来どおり止まる
+  assert.equal(areaHazardBlock({ district: "志茂", chome: "2" }, AREA_INDEX).level, "block");
   // 既存台帳の地区は止まらない(拡張で既存物件が巻き込まれないことの確認)
   for (const [d, c] of [["赤羽西", "4"], ["西が丘", "2"], ["中十条", "4"], ["十条仲原", "2"]]) {
     const hit = areaHazardBlock({ district: d, chome: c }, AREA_INDEX);
@@ -259,7 +261,7 @@ test("同じ町名でも丁目で判定が割れる地区を、丁目単位で�
 });
 
 test("丁目ハザードは詳細ページの有無に依らずKO4で止め、edgeはsuspectに落とす", () => {
-  const unit = { price_man: 6500, district: "上中里", chome: "3" };
+  const unit = { price_man: 6500, district: "志茂", chome: "2" };
   const ko = koScreen({ unit, siteHit: null, scan: null, areaHazard: areaHazardBlock(unit, AREA_INDEX) });
   assert.equal(ko.verdict, "block", "詳細未取得でもエリアで止まる");
   assert.ok(ko.codes.includes("KO4_area_hazard"));
@@ -430,4 +432,26 @@ test("除外台帳: 赤羽台3の現場は掲載の実数値(土地61.82/建物9
   assert.equal(hit?.level, "exact", "SUUMOの別番号掲載が exact でブロックされること");
   assert.equal(hit.hazard, true, "ハザード起因の除外として伝わること");
   assert.match(hit.reason, /浸水|ハザード/);
+});
+
+// 2026-10-10ユーザー決定「ハザードマップ上5m未満のところは許容」(神谷2-24の登録に伴う)。
+// 浸水想定が代表点で5m以下の低地丁目は block せず suspect(AREA_LOWLAND_LT5)で報告する。5m超は従来どおり block
+test("低地の許容: 代表点の浸水想定5m以下は AREA_LOWLAND_LT5 の suspect、5m超は block のまま", () => {
+  for (const [d, c] of [["神谷", "2"], ["志茂", "1"], ["東十条", "3"], ["岩淵町", null]]) {
+    const unit = { price_man: 6500, district: d, chome: c };
+    const area = areaHazardBlock(unit, AREA_INDEX);
+    assert.equal(area?.kind, "lowland", `${d}${c ?? ""}`);
+    const ko = koScreen({ unit, siteHit: null, areaHazard: area,
+      scan: { flags: [], attrs: { land_m2: 50, floor_m2: 90 }, hazard_media: "suumo" } });
+    assert.equal(ko.verdict, "suspect", `${d}${c ?? ""} は自動登録せず人の判断へ`);
+    assert.deepEqual(ko.codes, ["AREA_LOWLAND_LT5"]);
+  }
+  for (const [d, c] of [["志茂", "2"], ["志茂", "3"], ["志茂", "4"], ["赤羽", "3"], ["赤羽北", "1"], ["豊島", "4"]]) {
+    assert.equal(areaHazardBlock({ district: d, chome: c }, AREA_INDEX)?.level, "block", `${d}${c}`);
+  }
+  // 掲載固有のKO(借地等)は低地の許容より優先して block
+  const ko = koScreen({ unit: { price_man: 6500, district: "神谷", chome: "2" }, siteHit: null,
+    areaHazard: areaHazardBlock({ district: "神谷", chome: "2" }, AREA_INDEX),
+    scan: { flags: [{ code: "KO2_ownership", label: "所有権以外" }], attrs: { land_m2: 50, floor_m2: 90 } } });
+  assert.equal(ko.verdict, "block");
 });

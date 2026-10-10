@@ -289,17 +289,33 @@ export function buildAreaHazardIndex(areaScan) {
   const map = new Map();
   for (const r of areaScan?.rows ?? []) {
     if (r.error || r.ward !== "北区") continue;
-    map.set(`${r.town}${r.chome ?? ""}`, { verdict: r.verdict, notes: r.notes ?? [] });
+    map.set(`${r.town}${r.chome ?? ""}`, { verdict: r.verdict, notes: r.notes ?? [], flood_center: r.flood_center ?? null,
+      dosha_red_pts: r.dosha_red_pts ?? 0 });
   }
   return map;
 }
 
 // exclude=丁目のほぼ全域が深い浸水想定 → block / edge=丁目の縁に掛かる → suspect(人の判断)
+// 2026-10-10ユーザー決定「ハザードマップ上5m未満のところは許容」(神谷2-24を本命にしたのに合わせて):
+// exclude の丁目のうち、**代表点の洪水浸水想定が5m以下の区分(0.5m未満/0.5〜3.0m/3.0〜5.0m)で土砂レッドが無い**ものは
+// block ではなく suspect(kind=lowland)にし、新着として人の判断へ回す(自動登録はしない=区画の点で照合してから)。
+// 代表点で5.0〜10.0m以上の丁目(志茂2〜4・赤羽3・赤羽北1 等)は従来どおり block
+export const LOWLAND_TOLERATED_MAX_M = 5;
+export function floodUpperM(label) {
+  const m = String(label ?? "").match(/〜\s*([\d.]+)m|([\d.]+)m未満/);
+  return m ? Number(m[1] ?? m[2]) : null;
+}
 export function areaHazardBlock(unit, index) {
   if (!index || !unit?.district) return null;
   const hit = index.get(`${unit.district}${unit.chome ?? ""}`) ?? (unit.chome ? null : index.get(unit.district));
   if (!hit) return null;
-  if (hit.verdict === "exclude") return { level: "block", verdict: hit.verdict, notes: hit.notes };
+  if (hit.verdict === "exclude") {
+    const up = floodUpperM(hit.flood_center);
+    if (up != null && up <= LOWLAND_TOLERATED_MAX_M && !(hit.dosha_red_pts > 0)) {
+      return { level: "suspect", kind: "lowland", verdict: hit.verdict, notes: hit.notes, flood_center: hit.flood_center };
+    }
+    return { level: "block", verdict: hit.verdict, notes: hit.notes };
+  }
   if (hit.verdict === "edge") return { level: "suspect", verdict: hit.verdict, notes: hit.notes };
   return null;
 }
@@ -330,6 +346,11 @@ export function koScreen({ unit, siteHit, scan, areaHazard = null }) {
     reasons.push(`詳細ページから必須項目を確定できず(土地${a.land_m2 ?? "?"}/建物${needFloor ? (a.floor_m2 ?? "?") : "土地につき不要"}/価格${unit.price_man ?? "?"})`);
   }
   if (codes.length) return { verdict: "block", codes, reasons, site_match: siteHit ?? null, attrs: scan?.attrs ?? null };
+  if (areaHazard?.level === "suspect" && areaHazard.kind === "lowland") {
+    return { verdict: "suspect", codes: ["AREA_LOWLAND_LT5"], site_match: siteHit ?? null, attrs: scan?.attrs ?? null,
+      reasons: [`${unit.district}${unit.chome ?? ""}丁目は荒川低地(代表点の浸水想定${areaHazard.flood_center})。` +
+        "2026-10-10ユーザー決定で浸水5m未満は許容=ブロックせず報告する。区画の点で5m以上・家屋倒壊等氾濫想定に掛からないかを照合してから登録"] };
+  }
   if (areaHazard?.level === "suspect") {
     return { verdict: "suspect", codes: ["AREA_EDGE"], site_match: siteHit ?? null, attrs: scan?.attrs ?? null,
       reasons: [`${unit.district}${unit.chome ?? ""}丁目は丁目の縁がハザードに掛かる(${areaHazard.notes.join(" / ")})。` +

@@ -28,9 +28,10 @@
   "kind": "chuko",
   "land_m2": 81.18,
   "floor_m2": 92.58,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
+  "lowland_unblocked": "2026-10-10",
+  "ko_screened": true,
+  "ko_suspect": [
+   "AREA_LOWLAND_LT5"
   ]
  },
  "nc_21333273": {
@@ -65,9 +66,10 @@
   "kind": "shinchiku",
   "land_m2": 156.18,
   "floor_m2": 115.68,
+  "lowland_unblocked": "2026-10-10",
   "ko_blocked": true,
   "ko_codes": [
-   "KO4_area_hazard"
+   "KO2_ownership"
   ]
  },
  "nc_20767290": {
@@ -105,10 +107,7 @@
   "kind": "shinchiku",
   "land_m2": 90.87,
   "floor_m2": 102.24,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
-  ]
+  "lowland_unblocked": "2026-10-10"
  },
  "nc_21261057": {
   "first_seen": "2026-08-12",
@@ -125,10 +124,7 @@
   "kind": "shinchiku",
   "land_m2": 44.47,
   "floor_m2": 81.24,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
-  ]
+  "lowland_unblocked": "2026-10-10"
  },
  "nc_21075314": {
   "first_seen": "2026-08-12",
@@ -170,10 +166,7 @@
   "kind": "chuko",
   "land_m2": 32.16,
   "floor_m2": 78.49,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
-  ]
+  "lowland_unblocked": "2026-10-10"
  },
  "nc_21027821": {
   "first_seen": "2026-08-12",
@@ -183,10 +176,7 @@
   "kind": "chuko",
   "land_m2": 32.16,
   "floor_m2": 78.49,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
-  ]
+  "lowland_unblocked": "2026-10-10"
  },
  "nc_21004497": {
   "first_seen": "2026-08-12",
@@ -196,10 +186,7 @@
   "kind": "chuko",
   "land_m2": 32.16,
   "floor_m2": 78.49,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
-  ]
+  "lowland_unblocked": "2026-10-10"
  },
  "nc_21019474": {
   "first_seen": "2026-08-12",
@@ -209,10 +196,7 @@
   "kind": "chuko",
   "land_m2": 32.16,
   "floor_m2": 78.49,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
-  ]
+  "lowland_unblocked": "2026-10-10"
  },
  "nc_21015808": {
   "first_seen": "2026-08-12",
@@ -282,9 +266,10 @@
   "kind": "shinchiku",
   "land_m2": 50.16,
   "floor_m2": 95.2,
+  "lowland_unblocked": "2026-10-10",
   "ko_blocked": true,
   "ko_codes": [
-   "KO4_area_hazard"
+   "KO2_ownership"
   ]
  },
  "nc_21096431": {
@@ -309,10 +294,7 @@
   "kind": "shinchiku",
   "land_m2": 66.2,
   "floor_m2": 101.84,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
-  ]
+  "lowland_unblocked": "2026-10-10"
  },
  "nc_21169953": {
   "first_seen": "2026-08-12",
@@ -322,17 +304,20 @@
   "kind": "shinchiku",
   "land_m2": 39.48,
   "floor_m2": 63.44,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
-  ]
+  "lowland_unblocked": "2026-10-10"
  },
  "nc_20577176": {
   "first_seen": "2026-08-12",
-  "price_man": 5980,
+  "price_man": 5780,
   "address": "東京都北区西が丘２",
   "walk_min": 17,
-  "kind": "shinchiku"
+  "kind": "shinchiku",
+  "land_m2": 57.65,
+  "floor_m2": 92.34,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_hazard"
+  ]
  },
  "nc_20593134": {
   "first_seen": "2026-08-12",
@@ -433,9 +418,10 @@
   "kind": "shinchiku",
   "land_m2": 63.51,
   "floor_m2": 111.37,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
+  "lowland_unblocked": "2026-10-10",
+  "ko_screened": true,
+  "ko_suspect": [
+   "AREA_LOWLAND_LT5"
   ]
  },
  "nc_20701868": {
@@ -493,10 +479,7 @@
   "kind": "shinchiku",
   "land_m2": 69.9,
   "floor_m2": 112.45,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
-  ]
+  "lowland_unblocked": "2026-10-10"
  },
  "nc_20504895": {
   "first_seen": "2026-08-12",
@@ -542,10 +525,7 @@
   "media": "athome",
   "land_m2": 37.69,
   "floor_m2": 58.24,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
-  ]
+  "lowland_unblocked": "2026-10-10"
  },
  "at_6988985269": {
   "first_seen": "2026-08-12",
@@ -758,23 +738,21 @@
   "media": "suumo",
   "land_m2": 60.14,
   "floor_m2": 98.81,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
-  ]
+  "lowland_unblocked": "2026-10-10"
  },
  "nc_21186616": {
   "first_seen": "2026-08-13",
-  "price_man": 5680,
+  "price_man": 5480,
   "address": "東京都北区志茂１",
   "walk_min": 10,
   "kind": "chuko",
   "media": "suumo",
   "land_m2": 47.09,
   "floor_m2": 76.87,
+  "lowland_unblocked": "2026-10-10",
   "ko_blocked": true,
   "ko_codes": [
-   "KO4_area_hazard"
+   "KO4_hazard"
   ]
  },
  "nc_20706806": {
@@ -856,10 +834,7 @@
   "media": "suumo",
   "land_m2": 46.52,
   "floor_m2": 81.41,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
-  ]
+  "lowland_unblocked": "2026-10-10"
  },
  "nc_21127648": {
   "first_seen": "2026-08-13",
@@ -922,10 +897,7 @@
   "media": "suumo",
   "land_m2": 53.52,
   "floor_m2": 85.91,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
-  ]
+  "lowland_unblocked": "2026-10-10"
  },
  "nc_21133135": {
   "first_seen": "2026-08-13",
@@ -972,10 +944,7 @@
   "media": "suumo",
   "land_m2": 46.53,
   "floor_m2": 81.41,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
-  ]
+  "lowland_unblocked": "2026-10-10"
  },
  "nc_21485594": {
   "first_seen": "2026-08-13",
@@ -1010,10 +979,7 @@
   "media": "suumo",
   "land_m2": 49.11,
   "floor_m2": 94.44,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
-  ]
+  "lowland_unblocked": "2026-10-10"
  },
  "at_6991731596": {
   "first_seen": "2026-08-13",
@@ -1090,10 +1056,7 @@
   "media": "athome",
   "land_m2": 53.52,
   "floor_m2": 85.91,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
-  ]
+  "lowland_unblocked": "2026-10-10"
  },
  "at_1182375728": {
   "first_seen": "2026-08-13",
@@ -1150,10 +1113,7 @@
   "media": "suumo",
   "land_m2": 89.03,
   "floor_m2": 102.03,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
-  ]
+  "lowland_unblocked": "2026-10-10"
  },
  "at_1110074518": {
   "first_seen": "2026-08-13",
@@ -1164,10 +1124,7 @@
   "media": "athome",
   "land_m2": 54.3,
   "floor_m2": 85.25,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
-  ]
+  "lowland_unblocked": "2026-10-10"
  },
  "nc_21492442": {
   "first_seen": "2026-08-15",
@@ -1192,10 +1149,7 @@
   "media": "athome",
   "land_m2": 89.03,
   "floor_m2": 116.91,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
-  ]
+  "lowland_unblocked": "2026-10-10"
  },
  "at_1193462819": {
   "first_seen": "2026-08-20",
@@ -1247,10 +1201,7 @@
   "media": "athome",
   "land_m2": 44.47,
   "floor_m2": 81.24,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
-  ]
+  "lowland_unblocked": "2026-10-10"
  },
  "at_1182482228": {
   "first_seen": "2026-08-27",
@@ -1261,10 +1212,7 @@
   "media": "athome",
   "land_m2": 66.2,
   "floor_m2": 101.84,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
-  ]
+  "lowland_unblocked": "2026-10-10"
  },
  "nc_20530443": {
   "first_seen": "2026-08-28",
@@ -1323,10 +1271,7 @@
   "media": "suumo",
   "land_m2": 49.04,
   "floor_m2": 103.33,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
-  ]
+  "lowland_unblocked": "2026-10-10"
  },
  "nc_20998734": {
   "first_seen": "2026-08-29",
@@ -1351,10 +1296,8 @@
   "media": "suumo",
   "land_m2": 37.82,
   "floor_m2": 75.95,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
-  ]
+  "lowland_unblocked": "2026-10-10",
+  "out_of_scope": "土地37.82m2(土地の条件は45m2以上)"
  },
  "nc_21517505": {
   "first_seen": "2026-08-29",
@@ -1492,10 +1435,7 @@
   "media": "suumo",
   "land_m2": 60.16,
   "floor_m2": null,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
-  ]
+  "lowland_unblocked": "2026-10-10"
  },
  "nc_21089174": {
   "first_seen": "2026-08-29",
@@ -1544,10 +1484,8 @@
   "media": "suumo",
   "land_m2": 71.36,
   "floor_m2": null,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
-  ]
+  "lowland_unblocked": "2026-10-10",
+  "out_of_scope": "土地建物総額10354万(土地7499+建物2855。総額の条件は5000〜9000万)"
  },
  "nc_21345761": {
   "first_seen": "2026-08-29",
@@ -1569,9 +1507,10 @@
   "media": "suumo",
   "land_m2": 46.82,
   "floor_m2": null,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
+  "lowland_unblocked": "2026-10-10",
+  "ko_screened": true,
+  "ko_suspect": [
+   "AREA_LOWLAND_LT5"
   ]
  },
  "nc_21478863": {
@@ -1594,10 +1533,7 @@
   "media": "suumo",
   "land_m2": 65.99,
   "floor_m2": null,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
-  ]
+  "lowland_unblocked": "2026-10-10"
  },
  "nc_77141812": {
   "first_seen": "2026-08-29",
@@ -1727,9 +1663,10 @@
   "media": "suumo",
   "land_m2": null,
   "floor_m2": null,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
+  "lowland_unblocked": "2026-10-10",
+  "ko_screened": true,
+  "ko_suspect": [
+   "AREA_LOWLAND_LT5"
   ]
  },
  "nc_21417888": {
@@ -1813,10 +1750,7 @@
   "media": "suumo",
   "land_m2": 101.35,
   "floor_m2": null,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
-  ]
+  "lowland_unblocked": "2026-10-10"
  },
  "nc_21056385": {
   "first_seen": "2026-08-29",
@@ -2102,9 +2036,10 @@
   "media": "suumo",
   "land_m2": 60.14,
   "floor_m2": 98.81,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
+  "lowland_unblocked": "2026-10-10",
+  "ko_screened": true,
+  "ko_suspect": [
+   "AREA_LOWLAND_LT5"
   ]
  },
  "nc_21651277": {
@@ -2271,10 +2206,7 @@
   "media": "suumo",
   "land_m2": 50.27,
   "floor_m2": 106.57,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
-  ]
+  "lowland_unblocked": "2026-10-10"
  },
  "nc_21682748": {
   "first_seen": "2026-09-11",
@@ -2285,9 +2217,10 @@
   "media": "suumo",
   "land_m2": 68.64,
   "floor_m2": null,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
+  "lowland_unblocked": "2026-10-10",
+  "ko_screened": true,
+  "ko_suspect": [
+   "AREA_LOWLAND_LT5"
   ]
  },
  "at_1198807128": {
@@ -2299,10 +2232,7 @@
   "media": "athome",
   "land_m2": 49.04,
   "floor_m2": 106.57,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
-  ]
+  "lowland_unblocked": "2026-10-10"
  },
  "nc_20870088": {
   "first_seen": "2026-09-12",
@@ -2313,10 +2243,7 @@
   "media": "suumo",
   "land_m2": 49.04,
   "floor_m2": 103.33,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
-  ]
+  "lowland_unblocked": "2026-10-10"
  },
  "nc_21696682": {
   "first_seen": "2026-09-12",
@@ -2327,9 +2254,10 @@
   "media": "suumo",
   "land_m2": 63.31,
   "floor_m2": 108.47,
+  "lowland_unblocked": "2026-10-10",
   "ko_blocked": true,
   "ko_codes": [
-   "KO4_area_hazard"
+   "KO2_ownership"
   ]
  },
  "nc_20995601": {
@@ -2541,9 +2469,10 @@
   "media": "suumo",
   "land_m2": 48.04,
   "floor_m2": 75.65,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
+  "lowland_unblocked": "2026-10-10",
+  "ko_screened": true,
+  "ko_suspect": [
+   "AREA_LOWLAND_LT5"
   ]
  },
  "nc_21467265": {
@@ -2650,9 +2579,10 @@
   "media": "suumo",
   "land_m2": 55.9,
   "floor_m2": 82.9,
+  "lowland_unblocked": "2026-10-10",
   "ko_blocked": true,
   "ko_codes": [
-   "KO4_area_hazard"
+   "KO2_ownership"
   ]
  },
  "nc_21786312": {
@@ -2804,9 +2734,10 @@
   "media": "suumo",
   "land_m2": 94.86,
   "floor_m2": null,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
+  "lowland_unblocked": "2026-10-10",
+  "ko_screened": true,
+  "ko_suspect": [
+   "AREA_LOWLAND_LT5"
   ]
  },
  "nc_21525881": {
@@ -2884,9 +2815,10 @@
   "media": "suumo",
   "land_m2": 58.45,
   "floor_m2": 86.53,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
+  "lowland_unblocked": "2026-10-10",
+  "ko_screened": true,
+  "ko_suspect": [
+   "AREA_LOWLAND_LT5"
   ]
  },
  "nc_21840717": {
@@ -2984,9 +2916,10 @@
   "media": "suumo",
   "land_m2": 61.88,
   "floor_m2": null,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
+  "lowland_unblocked": "2026-10-10",
+  "ko_screened": true,
+  "ko_suspect": [
+   "AREA_LOWLAND_LT5"
   ]
  },
  "at_1196266221": {
@@ -3023,9 +2956,10 @@
   "media": "suumo",
   "land_m2": 68.68,
   "floor_m2": null,
-  "ko_blocked": true,
-  "ko_codes": [
-   "KO4_area_hazard"
+  "lowland_unblocked": "2026-10-10",
+  "ko_screened": true,
+  "ko_suspect": [
+   "AREA_LOWLAND_LT5"
   ]
  },
  "nc_21867071": {
@@ -3195,9 +3129,431 @@
   "media": "suumo",
   "land_m2": 76.44,
   "floor_m2": 72.03,
+  "lowland_unblocked": "2026-10-10",
+  "ko_screened": true,
+  "ko_suspect": [
+   "AREA_LOWLAND_LT5"
+  ]
+ },
+ "nc_21669713": {
+  "first_seen": "2026-10-10",
+  "price_man": 5280,
+  "address": "東京都北区王子４",
+  "walk_min": 10,
+  "kind": "chuko",
+  "media": "suumo",
+  "land_m2": 34.89,
+  "floor_m2": 66.39,
+  "out_of_scope": "延床66.39m2(条件は70m2超)"
+ },
+ "nc_20797958": {
+  "first_seen": "2026-10-10",
+  "price_man": 8880,
+  "address": "東京都北区豊島７",
+  "walk_min": 8,
+  "kind": "chuko",
+  "media": "suumo",
+  "land_m2": 126.04,
+  "floor_m2": 111.78,
   "ko_blocked": true,
   "ko_codes": [
    "KO4_area_hazard"
+  ]
+ },
+ "nc_21221764": {
+  "first_seen": "2026-10-10",
+  "price_man": 6450,
+  "address": "東京都北区豊島２",
+  "walk_min": 12,
+  "kind": "chuko",
+  "media": "suumo",
+  "land_m2": 64.53,
+  "floor_m2": 86.39,
+  "ko_screened": true,
+  "ko_suspect": [
+   "AREA_LOWLAND_LT5"
+  ]
+ },
+ "nc_21893013": {
+  "first_seen": "2026-10-10",
+  "price_man": 6150,
+  "address": "東京都北区堀船３",
+  "walk_min": 5,
+  "kind": "chuko",
+  "media": "suumo",
+  "land_m2": 45.49,
+  "floor_m2": 80.04,
+  "ko_screened": true,
+  "ko_suspect": [
+   "AREA_LOWLAND_LT5"
+  ]
+ },
+ "nc_21691669": {
+  "first_seen": "2026-10-10",
+  "price_man": 6790,
+  "address": "東京都北区堀船３",
+  "walk_min": 5,
+  "kind": "chuko",
+  "media": "suumo",
+  "land_m2": 48.73,
+  "floor_m2": 72.24,
+  "ko_screened": true,
+  "ko_suspect": [
+   "AREA_LOWLAND_LT5"
+  ]
+ },
+ "nc_20352901": {
+  "first_seen": "2026-10-10",
+  "price_man": 6980,
+  "address": "東京都北区東十条５",
+  "walk_min": 6,
+  "kind": "chuko",
+  "media": "suumo",
+  "land_m2": 62.51,
+  "floor_m2": 91.96,
+  "ko_screened": true,
+  "ko_suspect": [
+   "AREA_LOWLAND_LT5"
+  ]
+ },
+ "nc_21817994": {
+  "first_seen": "2026-10-10",
+  "price_man": 7300,
+  "address": "東京都北区東十条６",
+  "walk_min": 9,
+  "kind": "chuko",
+  "media": "suumo",
+  "land_m2": 60.88,
+  "floor_m2": 98.73,
+  "ko_screened": true,
+  "ko_suspect": [
+   "AREA_LOWLAND_LT5"
+  ]
+ },
+ "nc_21711925": {
+  "first_seen": "2026-10-10",
+  "price_man": 7680,
+  "address": "東京都北区東十条６",
+  "walk_min": 11,
+  "kind": "chuko",
+  "media": "suumo",
+  "land_m2": 84.09,
+  "floor_m2": 99.4,
+  "ko_screened": true,
+  "ko_suspect": [
+   "AREA_LOWLAND_LT5"
+  ]
+ },
+ "nc_20913286": {
+  "first_seen": "2026-10-10",
+  "price_man": 5180,
+  "address": "東京都北区豊島６",
+  "walk_min": 15,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 84.01,
+  "floor_m2": 86.63,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO2_ownership"
+  ]
+ },
+ "nc_21174717": {
+  "first_seen": "2026-10-10",
+  "price_man": 5480,
+  "address": "東京都北区王子５",
+  "walk_min": 4,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 56.06,
+  "floor_m2": 59.88,
+  "out_of_scope": "延床59.88m2(条件は70m2超)"
+ },
+ "nc_21821255": {
+  "first_seen": "2026-10-10",
+  "price_man": 5780,
+  "address": "東京都北区王子５",
+  "walk_min": 4,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 37.74,
+  "floor_m2": 60.1,
+  "out_of_scope": "延床60.1m2(条件は70m2超)"
+ },
+ "nc_21332292": {
+  "first_seen": "2026-10-10",
+  "price_man": 4680,
+  "address": "東京都北区東十条５",
+  "walk_min": 5,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 37.71,
+  "floor_m2": 76.53,
+  "out_of_scope": "土地37.71m2(土地の条件は45m2以上)"
+ },
+ "nc_21711773": {
+  "first_seen": "2026-10-10",
+  "price_man": 5980,
+  "address": "東京都北区豊島８",
+  "walk_min": 8,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 60.69,
+  "floor_m2": 109.33,
+  "ko_screened": true,
+  "ko_suspect": [
+   "AREA_LOWLAND_LT5"
+  ]
+ },
+ "nc_21858958": {
+  "first_seen": "2026-10-10",
+  "price_man": 6780,
+  "address": "東京都北区豊島４",
+  "walk_min": 16,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 61.2,
+  "floor_m2": 104.79,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
+ },
+ "nc_21860151": {
+  "first_seen": "2026-10-10",
+  "price_man": 3093,
+  "address": "東京都北区豊島７",
+  "walk_min": 14,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 45.62,
+  "floor_m2": 80.53,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
+ },
+ "nc_21839168": {
+  "first_seen": "2026-10-10",
+  "price_man": 4715,
+  "address": "東京都北区堀船１",
+  "walk_min": 5,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 57.94,
+  "floor_m2": 106.19,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO2_ownership"
+  ]
+ },
+ "nc_21870987": {
+  "first_seen": "2026-10-10",
+  "price_man": 6080,
+  "address": "東京都北区豊島２",
+  "walk_min": 12,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 52.4,
+  "floor_m2": 77.81,
+  "ko_screened": true,
+  "ko_suspect": [
+   "AREA_LOWLAND_LT5"
+  ]
+ },
+ "nc_21860353": {
+  "first_seen": "2026-10-10",
+  "price_man": 3458,
+  "address": "東京都北区豊島２",
+  "walk_min": 13,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 41.26,
+  "floor_m2": 70.63,
+  "out_of_scope": "土地41.26m2(土地の条件は45m2以上)"
+ },
+ "nc_21547922": {
+  "first_seen": "2026-10-10",
+  "price_man": 5980,
+  "address": "東京都北区堀船３-36‐13",
+  "walk_min": 4,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 72.22,
+  "floor_m2": 78.34,
+  "ko_screened": true,
+  "ko_suspect": [
+   "AREA_LOWLAND_LT5"
+  ]
+ },
+ "nc_21736936": {
+  "first_seen": "2026-10-10",
+  "price_man": 7380,
+  "address": "東京都北区豊島３",
+  "walk_min": 5,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 68.58,
+  "floor_m2": 93.56,
+  "ko_screened": true,
+  "ko_suspect": [
+   "AREA_LOWLAND_LT5"
+  ]
+ },
+ "nc_21737079": {
+  "first_seen": "2026-10-10",
+  "price_man": 7380,
+  "address": "東京都北区豊島３",
+  "walk_min": 5,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 68.43,
+  "floor_m2": 93.56,
+  "ko_screened": true,
+  "ko_suspect": [
+   "AREA_LOWLAND_LT5"
+  ]
+ },
+ "nc_21863830": {
+  "first_seen": "2026-10-10",
+  "price_man": 8580,
+  "address": "東京都北区堀船２",
+  "walk_min": 4,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 88.72,
+  "floor_m2": 99.02,
+  "ko_screened": true,
+  "ko_suspect": [
+   "AREA_LOWLAND_LT5"
+  ]
+ },
+ "nc_21886343": {
+  "first_seen": "2026-10-10",
+  "price_man": 6180,
+  "address": "東京都北区豊島７",
+  "walk_min": 9,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 68.19,
+  "floor_m2": null,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
+ },
+ "nc_21845729": {
+  "first_seen": "2026-10-10",
+  "price_man": 2980,
+  "address": "東京都北区豊島２",
+  "walk_min": 13,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 62.34,
+  "floor_m2": null,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO2_ownership"
+  ]
+ },
+ "nc_21620569": {
+  "first_seen": "2026-10-10",
+  "price_man": 5690,
+  "address": "東京都北区王子４",
+  "walk_min": 5,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 43.93,
+  "floor_m2": 77.66,
+  "out_of_scope": "土地43.93m2(土地の条件は45m2以上)"
+ },
+ "nc_20934048": {
+  "first_seen": "2026-10-10",
+  "price_man": 3000,
+  "address": "東京都北区東十条４",
+  "walk_min": 3,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 19.66,
+  "floor_m2": null,
+  "out_of_scope": "土地19.66m2(土地の条件は45m2以上)"
+ },
+ "nc_21468635": {
+  "first_seen": "2026-10-10",
+  "price_man": 3540,
+  "address": "東京都北区豊島２",
+  "walk_min": 12,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 41.36,
+  "floor_m2": null,
+  "out_of_scope": "土地41.36m2(土地の条件は45m2以上)"
+ },
+ "nc_21468632": {
+  "first_seen": "2026-10-10",
+  "price_man": 3750,
+  "address": "東京都北区豊島２",
+  "walk_min": 12,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 41.26,
+  "floor_m2": null,
+  "out_of_scope": "土地41.26m2(土地の条件は45m2以上)"
+ },
+ "nc_21811773": {
+  "first_seen": "2026-10-10",
+  "price_man": 4000,
+  "address": "東京都北区豊島２",
+  "walk_min": 11,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 49.04,
+  "floor_m2": null,
+  "ko_screened": true,
+  "ko_suspect": [
+   "AREA_LOWLAND_LT5"
+  ]
+ },
+ "nc_21300667": {
+  "first_seen": "2026-10-10",
+  "price_man": 4280,
+  "address": "東京都北区豊島４",
+  "walk_min": 16,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 46.09,
+  "floor_m2": null,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
+ },
+ "nc_21392264": {
+  "first_seen": "2026-10-10",
+  "price_man": 7180,
+  "address": "東京都北区豊島４",
+  "walk_min": 1,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 105.23,
+  "floor_m2": null,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
+ },
+ "at_1136753333": {
+  "first_seen": "2026-10-10",
+  "price_man": 6790,
+  "address": "東京都北区堀船3",
+  "walk_min": 5,
+  "kind": "chuko",
+  "media": "athome",
+  "land_m2": 47.76,
+  "floor_m2": 72.24,
+  "ko_screened": true,
+  "ko_suspect": [
+   "AREA_LOWLAND_LT5"
   ]
  }
 }
