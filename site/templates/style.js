@@ -130,6 +130,8 @@ table.list th.sortable .arw{opacity:.45;font-size:.65rem}
 .logic-step .t .no{font-family:var(--mono);font-size:.7rem;color:#fff;background:var(--band);padding:1px 6px;margin-right:6px}
 .logic-step .formula{font-family:var(--mono);font-size:.74rem;background:#fff;border:1px solid var(--grid);padding:4px 8px;margin:6px 0;overflow-x:auto;white-space:nowrap}
 .logic-step .why{color:var(--ink-soft);font-size:.75rem}
+/* compact(物件YAMLの compact:true): 共通の説明文・長い注記を折りたたみにする。中身は消さない */
+details.cmp{margin-top:3px}details.cmp>summary{cursor:pointer;color:#8A94A0;font-size:.72rem;list-style:none}details.cmp>summary::before{content:"▸ "}details.cmp[open]>summary::before{content:"▾ "}
 .logic-step b{font-family:var(--mono)}
 
 /* 仮定・出典 */

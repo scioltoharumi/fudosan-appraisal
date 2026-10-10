@@ -538,7 +538,7 @@ function caveatsHtml(property) {
   if (!Array.isArray(cs) || cs.length === 0) return "";
   const items = cs.map((c) => `
     <li style="margin-bottom:10px">
-      <b>${escRich(c.title)}</b>${c.effect ? `<span class="status" style="margin-left:6px">${escRich(c.effect)}</span>` : ""}
+      <b>${escRich(c.title)}</b>${c.effect ? `<span class="status" style="margin-left:6px;white-space:normal">${escRich(c.effect)}</span>` : ""}
       <div style="font-size:.82rem;line-height:1.8;margin-top:3px">${escRich(c.detail)}</div>
       ${c.check ? `<div class="note" style="margin-top:2px">確認方法: ${escRich(c.check)}</div>` : ""}
     </li>`).join("");
@@ -550,6 +550,20 @@ function caveatsHtml(property) {
         <ul style="margin:10px 0 0 18px;padding:0">${items}</ul>
       </div>
     </section>`;
+}
+
+// ---- compact: 共通の説明文(STEPのwhy・長い注記)を折りたたむ(2026-10-10 神谷2-24のユーザー指示「限界まで文字量圧縮・内容は落とさない」) ----
+// 物件固有の事実(YAML由来)はそのまま出し、エンジン共通の解説(.why)と100字超の .note・免責だけを <details> に入れる。中身は一字も削らない
+const textLen = (h) => h.replace(/<[^>]+>/g, "").replace(/\s+/g, "").length;
+function compactify(html) {
+  const wrap = (cls, inner) => `<details class="cmp ${cls}"><summary>${/^\s*ID:/.test(inner) ? "出典・諸元" : "説明"}</summary>${inner}</details>`;
+  html = html.replace(/<div class="why">([\s\S]*?)<\/div>/g, (m, inner) => wrap("why", inner));
+  html = html.replace(/<p class="why">([\s\S]*?)<\/p>/g, (m, inner) => wrap("why", inner));
+  html = html.replace(/<div class="note"((?: style="[^"]*")?)>((?:(?!<div)[\s\S])*?)<\/div>/g, (m, style, inner) =>
+    textLen(inner) > 100 ? `<div class="note"${style}>${wrap("note", inner)}</div>` : m);
+  html = html.replace(/<p class="note">([\s\S]*?)<\/p>/g, (m, inner) => textLen(inner) > 100 ? `<p class="note">${wrap("note", inner)}</p>` : m);
+  html = html.replace(/<div class="disclaimer">([\s\S]*?)<\/div>/g, (m, inner) => `<div class="disclaimer">${wrap("note", inner)}</div>`);
+  return html;
 }
 
 // ---- ページ全体 ----
@@ -628,6 +642,6 @@ export function renderProperty(r, property, marketCal = null, houseDeals = null)
     title: "中古戸建 査定台帳",
     subtitle: esc(property.location?.address ?? r.id) + " ── 売出価格を土地値・解体費・建物残価・繰延修繕に分解する",
     docNo: `査定基準日 ${r.asOf}<br>engine ${esc(r.engineVersion)}`,
-    body,
+    body: property.compact === true ? compactify(body) : body,
   });
 }

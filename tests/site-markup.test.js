@@ -195,6 +195,18 @@ test("questions を持つ物件ページには『プレゼン前に聞くこと�
   assert.ok(!other.includes("プレゼン前に聞くこと"));
 });
 
+// compact:true の物件ページは共通の説明文を <details> に畳むが、文は一字も消さない(2026-10-10 神谷2-24)。compact でない物件には details が出ない
+test("compact の物件ページは説明文を details に畳み、畳んでも本文は残る", () => {
+  const pages = Object.fromEntries(renderAll());
+  const k = pages["property/kamiya2-adcast-a.html"];
+  assert.ok(loadProperty("kamiya2-adcast-a").compact === true);
+  assert.ok((k.match(/<details class="cmp/g) ?? []).length >= 10, "畳まれた説明文が少なすぎる");
+  const kt = visibleText(k);
+  for (const must of ["公示地価は鑑定士が更地として評価", "不動産鑑定評価・投資助言ではありません", "プレゼン前に聞くこと", "今の間取りのままでは成立しない"]) assert.ok(kt.includes(must), `畳んだことで本文が消えた: ${must}`);
+  const other = pages["property/nishigahara4-21230921.html"];
+  assert.ok(!other.includes('<details class="cmp'), "compact でない物件に details が出ている");
+});
+
 // 精密照合(site_scan)は代表点の照合(official)とは別に、ページのハザード欄に描かれること(2026-09-04)。
 // 代表点で caution だった岸町2の更地が、徒歩分で絞ると斜面帯・土砂警戒区域の縁に掛かると分かった。
 // official だけ描いて site_scan を落とすと、ページは「代表点で該当なし」としか言わず実態と逆に読める
