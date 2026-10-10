@@ -54,8 +54,8 @@ test("compare: 同じ価格帯の一覧は本命を先頭に帯内の全物件�
     if (r.newish) assert.ok(r.floor < k.floor, `${r.label}: 帯内の新築が本命より広い`);
     if (r.floor > k.floor) assert.ok(Number(r.built.slice(0, 4)) <= 2016, `${r.label}: 本命より広いのに築10年以内`);
   }
-  assert.ok(html.includes("新築9件は全て70〜80m²"));
-  assert.equal(rs.slice(1).filter((r) => r.newish).length, 9);
+  assert.ok(html.includes("他の8件は全て70〜80m²"));
+  assert.equal(rs.slice(1).filter((r) => r.newish).length, 8);
   assert.equal((html.match(/<th>査定との差<\/th>/g) ?? []).length, 2, "条件表と価格帯の表の2つ");
 });
 
