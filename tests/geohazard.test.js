@@ -90,12 +90,22 @@ test("徒歩分からの位置絞り込み: 複数駅の制約が交わると丁
 
 test("台帳: 全物件に公式マップ照合の記録があり、blockが残っていない場合はそれを検知できる", () => {
   const blocked = [];
+  // **ユーザー承認済みの例外**(承認日・理由つき。勝手に足してはならない)。
+  // 2026-10-10: 神谷2-24 アドキャスト建築条件付売地(未公開図面)。住居表示の点で浸水想定3.0〜5.0m=block だが、
+  // ユーザー指示「ハザードマップ上5m未満のところですが許容しています」で登録。YAMLの hazard_check.user_exception と caveat 先頭が開示を担う
+  const BLOCK_ALLOWED = { "kamiya2-adcast-a": "2026-10-10 ユーザー承認(浸水3.0〜5.0mを許容)" };
   for (const id of listPropertyIds()) {
     const o = loadProperty(id).hazard_check?.official;
     assert.ok(o, id + ": hazard_check.official が無い(公式マップ照合の未実施)");
     assert.ok(["block", "caution", "pass", "unknown"].includes(o.verdict), id + ": verdict=" + o.verdict);
     assert.ok(typeof o.elevation_m === "number", id + ": 標高が記録されていない");
-    if (o.verdict === "block") blocked.push(`${id}(${o.reason})`);
+    if (o.verdict === "block") {
+      if (BLOCK_ALLOWED[id]) {
+        assert.ok(loadProperty(id).hazard_check?.user_exception?.date, id + ": 例外物件は hazard_check.user_exception(承認日)を持つこと");
+        continue;
+      }
+      blocked.push(`${id}(${o.reason})`);
+    }
   }
   // 掲載条件「台地側(荒川低地の浸水想定域外)」に反する物件が台帳に残っていないこと。
   // 志茂1・志茂3は2026-08-13に除外済み(market/crawl/excluded.json)。許容リストは空のまま維持し、
