@@ -3,7 +3,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { renderCompare, KEY_IDS } from "../site/templates/compare.js";
+import { renderCompare, KEY_IDS, bandRows } from "../site/templates/compare.js";
 
 const snapshot = JSON.parse(readFileSync(new URL("../market/compare-snapshot-2026-10-10.json", import.meta.url), "utf8"));
 const html = renderCompare({ snapshot });
@@ -39,6 +39,16 @@ test("compare: 神谷2-24の確認事項(風呂1616・ロフト・別途費用)�
   assert.ok(html.includes('href="property/kamiya2-adcast-a.html"'));   // 聞くこと15項目の全文への導線   // ロフトを収納に使ったときの体感(延床には入れない)
   assert.ok(html.includes("居住部分"));
   assert.ok(html.includes("<th>間取り</th>"));
+});
+
+test("compare: 同じ価格帯の一覧は本命を先頭に帯内の全物件を条件表と同じ列で並べる", () => {
+  const rs = bandRows(snapshot.rows);
+  assert.equal(rs[0].id, "kamiya2-adcast-a");
+  const inBand = snapshot.rows.filter((r) => r.price >= 5900 && r.price <= 7100);
+  assert.equal(rs.length, inBand.length);
+  for (let i = 2; i < rs.length; i++) assert.ok(rs[i - 1].gap <= rs[i].gap, "査定との差の小さい順");
+  assert.ok(html.includes("同じ価格帯の一覧"));
+  assert.equal((html.match(/<th>査定との差<\/th>/g) ?? []).length, 2, "条件表と価格帯の表の2つ");
 });
 
 test("compare: SVGは2枚で role/aria-label を持ち、rotate(-90) を使わない", () => {

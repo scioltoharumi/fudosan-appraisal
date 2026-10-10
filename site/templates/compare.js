@@ -111,9 +111,7 @@ function figGapBars(rows) {
 }
 
 // ---- 図2: 条件が似ている物件の比較表(神谷を基準にした相対の色) ----
-function condTable(rows) {
-  const ids = KEY_IDS.slice(0, 6);
-  const rs = ids.map((id) => rows.find((r) => r.id === id)).filter(Boolean);
+function condRows(rs) {
   const k = rs[0];
   const tone = (d) => (d > 0 ? "background:#E6F0F5" : d < 0 ? "background:#FBEBDD" : "");
   const floodRank = { upland: 3, shallow: 2, deep: 1, unknown: 0 };
@@ -129,7 +127,7 @@ function condTable(rows) {
       <td style="${t(Math.sign(r.land - k.land))}">${r.land}m²</td>
       <td style="${t(r.lot === "旗竿?" ? -1 : 0)}">${esc(r.lot ?? "—")}</td>
       <td style="${t(k.walk - r.walk)}">徒歩${r.walk}分</td>
-      <td style="${t(Math.sign((/接道幅3m/.test(r.note) ? 3 : (r.road ?? 4)) - k.road))}">${r.road ?? "-"}m</td>
+      <td style="${t(Math.sign((/接道幅3m/.test(r.note ?? "") ? 3 : (r.road ?? 4)) - k.road))}">${r.road ?? "-"}m</td>
       <td style="${t(floodRank[r.flood] - floodRank[k.flood])}">${FLOOD[r.flood].label}</td>
       <td style="${t(k.gap - r.gap)}">${r.gap >= 0 ? "+" : ""}${man(r.gap)}万</td>`;
   };
@@ -138,6 +136,21 @@ function condTable(rows) {
     ${rs.map((r, i) => `<tr${r === k ? ' style="font-weight:700"' : ""}><td>${i === 0 ? "" : `<b>${i}</b> `}${r.url ? `<a href="${esc(r.url)}">${esc(nameOf(r))}</a>` : esc(nameOf(r))}${r.src === "listing" ? "*" : ""}</td>${cells(r)}</tr>`).join("")}
   </table></div>`;
 }
+
+// 図2: 条件が似ている物件(KEY_IDS の先頭6件・番号は散布図と同じ)
+function condTable(rows) {
+  const ids = KEY_IDS.slice(0, 6);
+  return condRows(ids.map((id) => rows.find((r) => r.id === id)).filter(Boolean));
+}
+
+// 図3の表: 同じ価格帯(5,900〜7,100万)の全物件を、条件表と同じ項目で(査定との差の小さい順。番号は発散棒の並び)
+// 2026-10-10ユーザー要望「同じ価格帯での表形式での比較もして。項目は条件が近い物件と一緒で」
+export function bandRows(rows) {
+  const k = rows.find((r) => r.id === KAMIYA);
+  const band = rows.filter((r) => r.id !== KAMIYA && r.price >= 5900 && r.price <= 7100).sort((a, b) => a.gap - b.gap);
+  return [k, ...band];
+}
+function bandTable(rows) { return condRows(bandRows(rows)); }
 
 // ---- 神谷2-24の確認事項(2026-10-10の参考プラン図から。ユーザー要望「ロフトや風呂1616の注意点を簡潔に比較ページへ」) ----
 // 金額は見積前の目安。確定は設備負担金60万のみ
@@ -200,6 +213,12 @@ export function renderCompare({ snapshot }) {
   <section class="panel">
     <h2>同じ価格帯で、査定と比べて</h2>
     <div class="scale-wrap">${bars.svg}</div>
+  </section>
+
+  <section class="panel">
+    <h2>同じ価格帯の一覧</h2>
+    ${bandTable(rows)}
+    <div class="note"><span style="background:#E6F0F5;padding:0 4px">青=神谷より有利</span> <span style="background:#FBEBDD;padding:0 4px">橙=不利</span>　査定との差の小さい順</div>
   </section>
 
   <section class="panel">
