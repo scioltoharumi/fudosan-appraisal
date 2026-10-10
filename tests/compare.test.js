@@ -18,12 +18,12 @@ test("compare: スナップショットに本命と主要点が揃い、各行�
   assert.throws(() => renderCompare({ snapshot: { ...snapshot, rows: snapshot.rows.filter((r) => r.id !== "kamiya2-adcast-a") } }), /本命/);
 });
 
-test("compare: 判定しない旨・相対比較・参考値・時点の開示がある", () => {
-  assert.ok(html.includes("このページは判定をしません"));
-  assert.ok(html.includes("相対比較"));
-  assert.ok(html.includes("台帳外(*印)の数値は参考値"));
-  assert.ok(html.includes(snapshot.as_of));
-  assert.ok(html.includes("丁目の代表点"), "浸水が代表点の値である限界");
+test("compare: 時点・台帳外の参考値・代表点・判定ではない旨を1行で開示している", () => {
+  // 2026-10-10ユーザー指示「注釈は全部取って、書くなら※10/10時点とか。極限まで文字削って」で開示は脚注1行に集約した
+  assert.ok(html.includes("※10/10時点"));
+  assert.ok(html.includes("台帳外(参考値)"));
+  assert.ok(html.includes("丁目の代表点"));
+  assert.ok(html.includes("判定ではない"));
 });
 
 test("compare: SVGは2枚で role/aria-label を持ち、rotate(-90) を使わない", () => {
