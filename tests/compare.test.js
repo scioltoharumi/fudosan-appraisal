@@ -34,7 +34,9 @@ test("compare: 神谷2-24の確認事項(風呂1616・ロフト・別途費用)�
   assert.ok(html.includes("決める前に"));
   assert.ok(html.includes("1316→1616"));
   assert.ok(html.includes("ロフト5.1帖"));
-  assert.ok(html.includes("約91m²相当"));   // ロフトを収納に使ったときの体感(延床には入れない)
+  assert.ok(html.includes("約91m²相当"));
+  assert.ok(html.includes("7.9帖の2室化"));
+  assert.ok(html.includes('href="property/kamiya2-adcast-a.html"'));   // 聞くこと15項目の全文への導線   // ロフトを収納に使ったときの体感(延床には入れない)
   assert.ok(html.includes("居住部分"));
   assert.ok(html.includes("<th>間取り</th>"));
 });
