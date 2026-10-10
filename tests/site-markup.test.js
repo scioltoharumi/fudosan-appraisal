@@ -187,6 +187,7 @@ test("questions を持つ物件ページには『プレゼン前に聞くこと�
   const k = visibleText(pages["property/kamiya2-adcast-a.html"]);
   assert.ok(k.includes("プレゼン前に聞くこと"));
   assert.ok(k.includes("7.9帖を将来2室"), "7.9帖の分割の項目が無い");
+  assert.ok(k.includes("今の間取りのままでは成立しない"), "分割の実現可能性(不成立の理由)が無い");
   assert.ok(k.includes("UB1316→1616"));
   const qtext = JSON.stringify(loadProperty("kamiya2-adcast-a").questions);   // ページ全体にはエンジン共通文言の「指値」が出るので、リスト本文だけを見る
   assert.ok(!/指値|値引き交渉/.test(qtext), "チェックリストに交渉の手の内が書かれている");
