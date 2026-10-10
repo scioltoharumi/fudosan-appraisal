@@ -26,6 +26,18 @@ test("compare: 時点・台帳外の参考値・代表点・判定ではない�
   assert.ok(html.includes("判定ではない"));
 });
 
+test("compare: 神谷2-24の確認事項(風呂1616・ロフト・別途費用)と、延床が居住部分である旨を出す", () => {
+  // 2026-10-10 参考プラン図で延床を住宅部分83.10に置き換えた。他物件は掲載の延床のままなので、その非対称を脚注と表に出す
+  const k = snapshot.rows.find((r) => r.id === "kamiya2-adcast-a");
+  assert.equal(k.floor, 83.1);
+  assert.equal(k.layout, "2LDK+S");
+  assert.ok(html.includes("決める前に"));
+  assert.ok(html.includes("1316→1616"));
+  assert.ok(html.includes("ロフト5.1帖"));
+  assert.ok(html.includes("居住部分"));
+  assert.ok(html.includes("<th>間取り</th>"));
+});
+
 test("compare: SVGは2枚で role/aria-label を持ち、rotate(-90) を使わない", () => {
   const svgs = html.match(/<svg [^>]*>/g) ?? [];
   assert.equal(svgs.length, 2);

@@ -65,7 +65,7 @@ function figScatter(rows) {
     if (k > 0) el.push(`<text x="${cx + 8}" y="${cy - 7}" font-size="10" font-weight="700" fill="${C.ink}">${k}</text>`);
   }
   const k = rows.find((r) => r.id === KAMIYA);
-  el.push(`<text x="${sx(k.price) - 14}" y="${sy(k.floor) - 15}" font-size="11.5" font-weight="700" fill="${C.focus}" text-anchor="end">神谷2-24(本命)</text>`);
+  el.push(`<text x="${sx(k.price)}" y="${sy(k.floor) + 27}" font-size="11.5" font-weight="700" fill="${C.focus}" text-anchor="middle">神谷2-24(本命)</text>`);
   // 凡例(上部・水平)
   let lx = L + 120;
   for (const key of ["upland", "shallow", "deep", "unknown"]) {
@@ -77,7 +77,7 @@ function figScatter(rows) {
   el.push(`<text x="${L + 129}" y="${T - 10.5}" font-size="9.5" fill="${C.soft}">塗り=築5年以内</text>`);
   el.push(`<circle cx="${L + 230}" cy="${T - 14}" r="5" fill="#fff" stroke="${C.shallow}" stroke-width="2.2"/>`);
   el.push(`<text x="${L + 239}" y="${T - 10.5}" font-size="9.5" fill="${C.soft}">白抜き=それ以前</text>`);
-  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="売出価格と延床面積の散布図。同じ価格帯で延床90m²超かつ新しい点は神谷2-24だけ" style="max-width:${W}px;font-family:inherit">${el.join("")}</svg>`;
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="売出価格と延床面積の散布図。神谷2-24は同じ価格帯の中で新しい点(延床は居住部分のみ)" style="max-width:${W}px;font-family:inherit">${el.join("")}</svg>`;
 }
 
 // ---- 図3: 同じ価格帯の「査定の中央値との差」(発散棒) ----
@@ -125,6 +125,7 @@ function condTable(rows) {
       <td style="${t(Number(r.built.slice(0, 4)) - Number(k.built.slice(0, 4)) >= 0 ? 0 : -1)}">${r.built.slice(0, 4)}年</td>
       <td style="${t(Math.sign(Math.round(r.floor - k.floor) / 5 | 0))}">${r.floor}m²</td>
       <td>${esc(r.incl ?? "—")}</td>
+      <td>${esc(r.layout && r.layout !== "-" ? r.layout : "—")}</td>
       <td style="${t(Math.sign(r.land - k.land))}">${r.land}m²</td>
       <td style="${t(r.lot === "旗竿?" ? -1 : 0)}">${esc(r.lot ?? "—")}</td>
       <td style="${t(k.walk - r.walk)}">徒歩${r.walk}分</td>
@@ -133,8 +134,28 @@ function condTable(rows) {
       <td style="${t(k.gap - r.gap)}">${r.gap >= 0 ? "+" : ""}${man(r.gap)}万</td>`;
   };
   return `<div style="overflow-x:auto"><table class="kv" style="min-width:720px;font-size:.78rem">
-    <tr><th></th><th>価格</th><th>築年</th><th>延床</th><th>うち</th><th>土地</th><th>敷地</th><th>徒歩</th><th>道路</th><th>浸水</th><th>査定との差</th></tr>
+    <tr><th></th><th>価格</th><th>築年</th><th>延床</th><th>うち</th><th>間取り</th><th>土地</th><th>敷地</th><th>徒歩</th><th>道路</th><th>浸水</th><th>査定との差</th></tr>
     ${rs.map((r, i) => `<tr${r === k ? ' style="font-weight:700"' : ""}><td>${i === 0 ? "" : `<b>${i}</b> `}${r.url ? `<a href="${esc(r.url)}">${esc(nameOf(r))}</a>` : esc(nameOf(r))}${r.src === "listing" ? "*" : ""}</td>${cells(r)}</tr>`).join("")}
+  </table></div>`;
+}
+
+// ---- 神谷2-24の確認事項(2026-10-10の参考プラン図から。ユーザー要望「ロフトや風呂1616の注意点を簡潔に比較ページへ」) ----
+// 金額は見積前の目安。確定は設備負担金60万のみ
+const CHECKS = [
+  ["風呂 1316→1616", "納戸4.3帖→約3.5帖", "+10〜25万・構造計算で可否"],
+  ["ロフト5.1帖", "図面にあるが価格外", "+50〜150万・無しの場合の天井は?"],
+  ["設備負担金", "60万(確定)", "内訳"],
+  ["地盤改良", "荒川低地の軟弱地盤", "+100〜200万(想定)"],
+  ["実総額", "6,580 → 6,800〜6,950万", "査定6,396万より+400〜550"],
+  ["間取り", "2LDK+S(1F納戸4.3帖・3F 7.9+7.3帖)", "子供2人だと不足"],
+  ["車庫", "幅2.2m(芯々)・奥行き約5.9m", "ドア全開は不可"],
+  ["プラン", "天空率・真北・構造計算で変更の可能性", "確定ではない"],
+  ["浸水", "3〜5m(想定最大規模)・2階床に届く", "水災補償・避難先"],
+];
+function checkTable() {
+  return `<div style="overflow-x:auto"><table class="kv" style="min-width:560px;font-size:.78rem">
+    <tr><th>項目</th><th>いま</th><th style="text-align:left">見るところ</th></tr>
+    ${CHECKS.map(([a, b, c]) => `<tr><td><b>${esc(a)}</b></td><td>${esc(b)}</td><td style="text-align:left">${esc(c)}</td></tr>`).join("")}
   </table></div>`;
 }
 
@@ -152,9 +173,10 @@ export function renderCompare({ snapshot }) {
   <section class="panel">
     <h2>結論</h2>
     <div class="logic-body" style="font-size:.95rem;line-height:2">
-      <div>① この価格帯で <b>新しい・広い・駅近</b> がそろうのは <b>神谷2-24だけ</b></div>
-      <div>② 条件が並ぶ物件は <b>+1,000万以上</b></div>
-      <div>③ 神谷の弱点は <b>浸水3〜5m</b></div>
+      <div>① この価格帯で <b>新築・JR徒歩11分・6m公道・車庫</b> がそろうのは <b>神谷2-24だけ</b></div>
+      <div>② 広さは <b>2LDK+S・83m²</b>。同じ帯の中古より1部屋小さい</div>
+      <div>③ 値段は <b>査定どおり(+184万)</b>。別途込みで+250〜550万。同じ帯の他は+400〜2,500万</div>
+      <div>④ 弱点は <b>浸水3〜5m・小さい土地・広さ</b></div>
     </div>
   </section>
 
@@ -167,7 +189,7 @@ export function renderCompare({ snapshot }) {
   <section class="panel">
     <h2>条件が近い物件</h2>
     ${condTable(rows)}
-    <div class="note"><span style="background:#E6F0F5;padding:0 4px">青=神谷より有利</span> <span style="background:#FBEBDD;padding:0 4px">橙=不利</span>　旗竿?=接道3mから推定</div>
+    <div class="note"><span style="background:#E6F0F5;padding:0 4px">青=神谷より有利</span> <span style="background:#FBEBDD;padding:0 4px">橙=不利</span>　旗竿?=接道3mから推定　車庫別=神谷の延床は居住部分のみ</div>
   </section>
 
   <section class="panel">
@@ -175,7 +197,12 @@ export function renderCompare({ snapshot }) {
     <div class="scale-wrap">${bars.svg}</div>
   </section>
 
-  <p class="note">※${esc(snapshot.as_of.slice(5).replace("-", "/").replace(/^0/, ""))}時点 / *=台帳外(参考値) / 浸水=丁目の代表点 / 相対比較で判定ではない</p>
+  <section class="panel">
+    <h2>神谷2-24 決める前に</h2>
+    ${checkTable()}
+  </section>
+
+  <p class="note">※${esc(snapshot.as_of.slice(5).replace("-", "/").replace(/^0/, ""))}時点 / *=台帳外(参考値) / 浸水=丁目の代表点 / 神谷の延床=居住部分(車庫・ポーチ除く) / 相対比較で判定ではない</p>
   <p style="margin-top:14px"><a class="src-link" href="index.html">← 物件一覧へ戻る</a></p>`;
   return layout({ title: "本命の立ち位置", subtitle: "神谷2-24を2つの軸で比べる", docNo: "COMPARE", body });
 }
