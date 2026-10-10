@@ -16,6 +16,7 @@ source_url: "https://suumo.jp/ikkodate/tokyo/sc_kita/nc_21133135/"   # 実在確
 captured_at: 2026-08-29
 price_history:
   - {date: 2026-08-29, price_man: 6380}   # A号棟の価格(媒体の情報提供日時点)
+  - {date: 2026-10-10, price_man: 6180}   # −200万(情報提供日26/10/10)。watch は2戸レンジで unit_unresolved のため人が写真キャプションで確認: A号棟 6,180万(72.78m²)/ B号棟 5,980万(68.48m²・圏外)=両棟−200。ページ代表価格は「5980万円・6180万円」
 location: {area: takinogawa, address: "北区滝野川3"}
 layout: "3LDK"
 station: {walk_min: 7, multi_station: true}   # 都営三田線「西巣鴨」6〜7分(号棟別の内訳が読めないため保守側の7分) / JR埼京線「板橋」15〜16分 / JR京浜東北線「王子」17〜18分

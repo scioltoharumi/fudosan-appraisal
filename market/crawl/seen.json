@@ -3555,5 +3555,19 @@
   "ko_suspect": [
    "AREA_LOWLAND_LT5"
   ]
+ },
+ "nc_21910528": {
+  "first_seen": "2026-10-10",
+  "price_man": 5480,
+  "address": "東京都北区志茂５",
+  "walk_min": 7,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 74.88,
+  "floor_m2": null,
+  "ko_screened": true,
+  "ko_suspect": [
+   "AREA_LOWLAND_LT5"
+  ]
  }
 }

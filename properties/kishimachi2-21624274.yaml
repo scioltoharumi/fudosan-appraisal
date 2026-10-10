@@ -29,6 +29,7 @@ crawl_ids: ["nc_21717431", "nc_21758286", "nc_21745780", "nc_21726389"]   # nc_2
 captured_at: 2026-09-03
 price_history:
   - {date: 2026-09-03, price_man: 5980}   # 土地価格(媒体の情報提供日時点)。建物は含まない
+  - {date: 2026-10-10, price_man: 5950}   # −30万(情報提供日26/10/10・2026-10-10クロールで検知)。他業者掲載は9/30〜10/5に5,960〜5,970で出ており、掲載元もその下へ揃えた形
 location: {area: kishimachi, address: "北区岸町2"}
 layout: "-"                # 更地
 station: {walk_min: 5, multi_station: true}   # JR京浜東北線「東十条」5分 / JR埼京線「十条」10分 / 東京メトロ南北線「王子神谷」14分
