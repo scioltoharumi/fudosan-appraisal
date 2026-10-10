@@ -513,6 +513,23 @@ function statusUpdatesHtml(property) {
     </div>`;
 }
 
+// ---- 聞くことリスト(YAMLの questions を描画。2026-10-10 神谷2-24のプレゼン前チェックリストで新設) ----
+// 判定はしない。答えが出たら status_updates に事実として移す。指値・交渉の手の内は YAML に書かない(運用ルール3)
+function questionsHtml(property) {
+  const q = property.questions;
+  if (!q || !Array.isArray(q.groups) || q.groups.length === 0) return "";
+  let n = 0;
+  const groups = q.groups.map((g) => `
+    <div style="margin-top:8px"><b>${escRich(g.head)}</b>
+      <ol start="${n + 1}" style="margin:4px 0 0 22px;padding:0">${(g.items ?? []).map((it) => { n += 1; return `<li style="margin-bottom:3px">${escRich(it)}</li>`; }).join("")}</ol>
+    </div>`).join("");
+  return `
+    <div style="border:1px solid #8A6D3B;background:#FBF7EE;padding:9px 12px;margin-top:12px;font-size:.8rem;line-height:1.8">
+      <b style="color:#8A6D3B">${escRich(q.title ?? "聞くこと")}</b>${q.note ? `<div class="note" style="margin-top:2px">${escRich(q.note)}</div>` : ""}
+      ${groups}
+    </div>`;
+}
+
 // ---- 査定が織り込めていない要確認事項(YAMLの caveats を描画) ----
 // 掲載元の精査で判明したが、エンジンが変数として持たないため査定額に反映できない事実を開示する。
 // 「安く出ている/高く出ている」理由が式の外にある場合、それを隠さないための欄(データ規律)
@@ -549,6 +566,8 @@ export function renderProperty(r, property, marketCal = null, houseDeals = null)
     ${delistedHtml(property)}
 
     ${statusUpdatesHtml(property)}
+
+    ${questionsHtml(property)}
 
     ${specTable(r, property)}
 

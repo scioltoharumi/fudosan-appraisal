@@ -181,6 +181,19 @@ test("land_only の物件ページには「土地として査定(建物を仮定
   assert.ok(!other.includes("土地として査定"), "戸建のページに土地の注意書きが出ている");
 });
 
+// 聞くことリスト(questions)は YAML にだけ書いてページに出ない型の穴を作らないためのガード(2026-10-10 神谷2-24で新設)
+test("questions を持つ物件ページには『プレゼン前に聞くこと』が番号つきで出る・持たない物件には出ない", () => {
+  const pages = Object.fromEntries(renderAll());
+  const k = visibleText(pages["property/kamiya2-adcast-a.html"]);
+  assert.ok(k.includes("プレゼン前に聞くこと"));
+  assert.ok(k.includes("7.9帖を将来2室"), "7.9帖の分割の項目が無い");
+  assert.ok(k.includes("UB1316→1616"));
+  const qtext = JSON.stringify(loadProperty("kamiya2-adcast-a").questions);   // ページ全体にはエンジン共通文言の「指値」が出るので、リスト本文だけを見る
+  assert.ok(!/指値|値引き交渉/.test(qtext), "チェックリストに交渉の手の内が書かれている");
+  const other = visibleText(pages["property/nishigahara4-21230921.html"]);
+  assert.ok(!other.includes("プレゼン前に聞くこと"));
+});
+
 // 精密照合(site_scan)は代表点の照合(official)とは別に、ページのハザード欄に描かれること(2026-09-04)。
 // 代表点で caution だった岸町2の更地が、徒歩分で絞ると斜面帯・土砂警戒区域の縁に掛かると分かった。
 // official だけ描いて site_scan を落とすと、ページは「代表点で該当なし」としか言わず実態と逆に読める
