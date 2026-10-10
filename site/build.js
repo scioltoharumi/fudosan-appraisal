@@ -22,6 +22,7 @@ import { renderSimulate } from "./templates/simulate.js";
 import { renderTradeoff } from "./templates/tradeoff.js";
 import { renderEffort } from "./templates/effort.js";
 import { renderDecision } from "./templates/decision.js";
+import { renderCompare } from "./templates/compare.js";
 import { renderHazardMap } from "./templates/map.js";
 import { loadVerification } from "../engine/retail.js";
 import { loadDeals } from "../engine/calibrate.js";
@@ -98,6 +99,13 @@ console.log("✓ effort.html(手間の解剖)");
 // 意思決定の地図(検討の一周を1枚で振り返る。2026-08-29ユーザー要望): 静的リファレンス
 writeFileSync(join(DIST, "decision.html"), renderDecision({ asOf }), "utf8");
 console.log("✓ decision.html(意思決定の地図)");
+// 本命の立ち位置(2026-10-10ユーザー要望「条件が似た物件と価格帯の2軸で比べ、グラフィカルに説明するページ」)。
+// 台帳外の掲載を含むためビルド時に再計算せず、日付つきスナップショットを正本にする
+{
+  const snapshot = JSON.parse(readFileSync(join(ROOT, "market", "compare-snapshot-2026-10-10.json"), "utf8"));
+  writeFileSync(join(DIST, "compare.html"), renderCompare({ snapshot }), "utf8");
+  console.log(`✓ compare.html(本命の立ち位置・${snapshot.rows.length}物件・${snapshot.as_of}時点)`);
+}
 // 保有年数シミュレーター(2026-08-16ユーザー要望): 任意の2物件の「取得+保有−出口」を年数で比較。
 // 出口の実測カーブは cliff.html と同じ ageCurveCI(帯別中央値と95%CI)を注入する
 const simCurve = ageCurveCI(houseDeals);
