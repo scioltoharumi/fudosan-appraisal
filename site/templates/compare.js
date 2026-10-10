@@ -124,14 +124,16 @@ function condTable(rows) {
       <td style="${t(k.price - r.price)}"><b>${man(r.price)}万</b></td>
       <td style="${t(Number(r.built.slice(0, 4)) - Number(k.built.slice(0, 4)) >= 0 ? 0 : -1)}">${r.built.slice(0, 4)}年</td>
       <td style="${t(Math.sign(Math.round(r.floor - k.floor) / 5 | 0))}">${r.floor}m²</td>
+      <td>${esc(r.incl ?? "—")}</td>
       <td style="${t(Math.sign(r.land - k.land))}">${r.land}m²</td>
+      <td style="${t(r.lot === "旗竿?" ? -1 : 0)}">${esc(r.lot ?? "—")}</td>
       <td style="${t(k.walk - r.walk)}">徒歩${r.walk}分</td>
       <td style="${t(Math.sign((/接道幅3m/.test(r.note) ? 3 : (r.road ?? 4)) - k.road))}">${r.road ?? "-"}m</td>
       <td style="${t(floodRank[r.flood] - floodRank[k.flood])}">${FLOOD[r.flood].label}</td>
       <td style="${t(k.gap - r.gap)}">${r.gap >= 0 ? "+" : ""}${man(r.gap)}万</td>`;
   };
   return `<div style="overflow-x:auto"><table class="kv" style="min-width:720px;font-size:.78rem">
-    <tr><th></th><th>価格</th><th>築年</th><th>延床</th><th>土地</th><th>徒歩</th><th>道路</th><th>浸水</th><th>査定との差</th></tr>
+    <tr><th></th><th>価格</th><th>築年</th><th>延床</th><th>うち</th><th>土地</th><th>敷地</th><th>徒歩</th><th>道路</th><th>浸水</th><th>査定との差</th></tr>
     ${rs.map((r, i) => `<tr${r === k ? ' style="font-weight:700"' : ""}><td>${i === 0 ? "" : `<b>${i}</b> `}${r.url ? `<a href="${esc(r.url)}">${esc(nameOf(r))}</a>` : esc(nameOf(r))}${r.src === "listing" ? "*" : ""}</td>${cells(r)}</tr>`).join("")}
   </table></div>`;
 }
@@ -165,7 +167,7 @@ export function renderCompare({ snapshot }) {
   <section class="panel">
     <h2>条件が近い物件</h2>
     ${condTable(rows)}
-    <div class="note"><span style="background:#E6F0F5;padding:0 4px">青=神谷より有利</span> <span style="background:#FBEBDD;padding:0 4px">橙=不利</span></div>
+    <div class="note"><span style="background:#E6F0F5;padding:0 4px">青=神谷より有利</span> <span style="background:#FBEBDD;padding:0 4px">橙=不利</span>　旗竿?=接道3mから推定</div>
   </section>
 
   <section class="panel">

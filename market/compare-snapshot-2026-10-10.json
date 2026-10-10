@@ -185,7 +185,9 @@
     "min": 60,
     "max": 260,
     "note": "設備負担金60万+地盤改良費(低地の相場100〜200万・想定)"
-   }
+   },
+   "lot": "整形",
+   "incl": "車庫込"
   },
   {
    "id": "堀船3-21691669",
@@ -423,7 +425,9 @@
    "fairRange": [
     6943,
     7457
-   ]
+   ],
+   "lot": "旗竿?",
+   "incl": "—"
   },
   {
    "id": "akabanenishi4-21890445",
@@ -441,7 +445,9 @@
    "fair": 9048,
    "gap": -1368,
    "url": "property/akabanenishi4-21890445.html",
-   "note": "新築・全1棟・完成2027-02"
+   "note": "新築・全1棟・完成2027-02",
+   "lot": "整形",
+   "incl": "倉庫込"
   },
   {
    "id": "岩淵町-78266571",
@@ -459,7 +465,9 @@
    "fair": 7497,
    "gap": 283,
    "url": "https://suumo.jp/chukoikkodate/tokyo/sc_kita/nc_78266571/",
-   "note": ""
+   "note": "",
+   "lot": "—",
+   "incl": "—"
   },
   {
    "id": "kamijujo4-21594160",
@@ -495,7 +503,9 @@
    "fair": 7448,
    "gap": 732,
    "url": "https://suumo.jp/chukoikkodate/tokyo/sc_kita/nc_21644109/",
-   "note": ""
+   "note": "",
+   "lot": "—",
+   "incl": "—"
   },
   {
    "id": "nakazato3-21162708",
@@ -531,7 +541,9 @@
    "fair": 7552,
    "gap": 928,
    "url": "https://suumo.jp/ikkodate/tokyo/sc_kita/nc_20184908/",
-   "note": "延床に車庫11.37含む"
+   "note": "延床に車庫11.37含む",
+   "lot": "—",
+   "incl": "車庫込"
   },
   {
    "id": "nakazato3-21722572",
