@@ -3569,5 +3569,27 @@
   "ko_suspect": [
    "AREA_LOWLAND_LT5"
   ]
+ },
+ "nc_21668888": {
+  "first_seen": "2026-10-11",
+  "price_man": 8480,
+  "address": "東京都北区滝野川７",
+  "walk_min": 8,
+  "kind": "chuko",
+  "media": "suumo",
+  "land_m2": 42.7,
+  "floor_m2": 71.39,
+  "out_of_scope": "2LDK=2室(条件は3室以上)"
+ },
+ "nc_21535413": {
+  "first_seen": "2026-10-11",
+  "price_man": 8298,
+  "address": "東京都北区西が丘２",
+  "walk_min": 14,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 66.14,
+  "floor_m2": 111.93,
+  "ko_screened": true
  }
 }
