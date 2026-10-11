@@ -23,6 +23,7 @@ import { renderTradeoff } from "./templates/tradeoff.js";
 import { renderEffort } from "./templates/effort.js";
 import { renderDecision } from "./templates/decision.js";
 import { renderCompare } from "./templates/compare.js";
+import { renderFlood } from "./templates/flood.js";
 import { renderHazardMap } from "./templates/map.js";
 import { loadVerification } from "../engine/retail.js";
 import { loadDeals } from "../engine/calibrate.js";
@@ -105,6 +106,14 @@ console.log("✓ decision.html(意思決定の地図)");
   const snapshot = JSON.parse(readFileSync(join(ROOT, "market", "compare-snapshot-2026-10-10.json"), "utf8"));
   writeFileSync(join(DIST, "compare.html"), renderCompare({ snapshot }), "utf8");
   console.log(`✓ compare.html(本命の立ち位置・${snapshot.rows.length}物件・${snapshot.as_of}時点)`);
+}
+{
+  // 水の確率(2026-10-11ユーザー要望): 神谷2-24-11 の深さ別30年確率を図で読む共有用ページ。数値はモデル+スナップショットから注入
+  const FLOOD_ID = "kamiya2-adcast-a";
+  const prop = loadProperty(FLOOD_ID);
+  const snap = JSON.parse(readFileSync(join(ROOT, prop.hazard_check.flood_fermi.snapshot), "utf8"));
+  writeFileSync(join(DIST, "flood.html"), renderFlood({ asOf, snapshot: snap, property: prop }), "utf8");
+  console.log(`✓ flood.html(水の確率・${FLOOD_ID})`);
 }
 // 保有年数シミュレーター(2026-08-16ユーザー要望): 任意の2物件の「取得+保有−出口」を年数で比較。
 // 出口の実測カーブは cliff.html と同じ ageCurveCI(帯別中央値と95%CI)を注入する

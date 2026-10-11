@@ -470,7 +470,7 @@ function floodFermiHtml(ff, color) {
   const fromLabel = (b) => (typeof b.depthFrom === "string" ? [{ group: b.depthFrom, weight: 1 }] : b.depthFrom).map((f) => `${f.group === "l1" ? "計画規模図" : "想定最大図"}${f.weight !== 1 ? `×${f.weight}` : ""}`).join("+");
   const bandLis = bands.map((b) => `<li><b>${esc(b.label)}</b>: 年確率 ${esc(pc(b.annual[0]))}〜${esc(pc(b.annual[2]))}(中 ${esc(pc(b.annual[1]))}) × 破堤確率 ${esc(b.breach[0])}〜${esc(b.breach[2])}(中 ${esc(b.breach[1])}) × 届く破堤点の割合(${esc(fromLabel(b))}の破堤点別深さ${(b.depthScale ?? 1) !== 1 ? `×${esc(b.depthScale)}` : ""}。3m以上 ${esc(Math.round(bandReachFraction(groups, b, 3) * 1000) / 10)}%)${b.basis ? ` <span class="why">── ${escRich(b.basis)}</span>` : ""}</li>`).join("");
   return `<div style="margin-top:9px;padding-top:8px;border-top:1px dashed ${color}">
-      <b>深さ別の確率(フェルミ推定・${esc(fmtDate(ff.created))})</b> ── ハザードマップの「3.0〜5.0m」は全破堤点の最大包絡で、確率ではない。
+      <b>深さ別の確率(フェルミ推定・${esc(fmtDate(ff.created))})</b>(<a href="../flood.html">図で読む版 ↗</a>) ── ハザードマップの「3.0〜5.0m」は全破堤点の最大包絡で、確率ではない。
       破堤点ごとの到達深(国交省 浸水ナビ)を数え、「どのくらいの雨で・堤防が切れて・その場所の水がここに届くか」の3因子の積で桁を出す
       <div style="margin-top:6px;overflow-x:auto"><table class="list" style="min-width:680px;font-size:.76rem;line-height:1.7">
         <tr><th>出所</th><th>この地点の公式値</th><th>出典</th></tr>
