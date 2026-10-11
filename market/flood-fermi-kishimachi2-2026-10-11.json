@@ -1,0 +1,167 @@
+{
+ "created": "2026-10-11",
+ "point": {
+  "lat": 35.75933,
+  "lon": 139.73103,
+  "address": "東京都北区岸町2丁目4-9(kishimachi2-mirasumo-204・見送り)"
+ },
+ "suibou_nav": {
+  "source": "国交省 浸水ナビ(地点別浸水シミュレーション検索システム) api/search/SearchBreakPointByPosition + SearchBreakPointByCsv",
+  "fetched": "2026-10-11",
+  "depth_max_m": 0.45,
+  "unclassified": 0,
+  "groups": {
+   "ara_up_l1": {
+    "name": "荒川上流河川事務所・荒川・計画規模",
+    "breakpoints_total": 151,
+    "reaching_site": 0,
+    "rows": []
+   },
+   "ara_up_l2": {
+    "name": "荒川上流河川事務所・荒川・想定最大規模",
+    "breakpoints_total": 120,
+    "reaching_site": 0,
+    "rows": []
+   },
+   "l2": {
+    "name": "荒川下流河川事務所・荒川・想定最大規模",
+    "breakpoints_total": 211,
+    "reaching_site": 11,
+    "rows": [
+     {
+      "id": "c1996bd0-fff7-4e4e-8326-66a1b93a908f",
+      "location": "荒川右岸 21.00k",
+      "lat": 35.786771,
+      "lon": 139.727969,
+      "dist_km": 3.1,
+      "depth_m": 0.45
+     },
+     {
+      "id": "c0b08787-43cb-405e-942e-60576eb6987d",
+      "location": "荒川右岸 20.00k",
+      "lat": 35.783438,
+      "lon": 139.737344,
+      "dist_km": 2.7,
+      "depth_m": 0.4
+     },
+     {
+      "id": "2144b8c5-fa21-4d16-b308-92ad07eec235",
+      "location": "荒川右岸 20.25k",
+      "lat": 35.785104,
+      "lon": 139.736094,
+      "dist_km": 2.9,
+      "depth_m": 0.39
+     },
+     {
+      "id": "39890334-386d-4253-9d0f-44d2ebfe3f4e",
+      "location": "荒川右岸 19.75k",
+      "lat": 35.780938,
+      "lon": 139.738906,
+      "dist_km": 2.5,
+      "depth_m": 0.38
+     },
+     {
+      "id": "03a2b720-082a-43ad-8a1b-be71a417c110",
+      "location": "荒川右岸 20.75k",
+      "lat": 35.786146,
+      "lon": 139.730469,
+      "dist_km": 3,
+      "depth_m": 0.37
+     },
+     {
+      "id": "abbd8c22-620f-480f-93d4-023a16379a09",
+      "location": "荒川右岸 21.50k",
+      "lat": 35.788229,
+      "lon": 139.722969,
+      "dist_km": 3.3,
+      "depth_m": 0.26
+     },
+     {
+      "id": "aefbcc54-485b-4f3f-967d-093f21b854eb",
+      "location": "荒川右岸 19.25k",
+      "lat": 35.777188,
+      "lon": 139.741406,
+      "dist_km": 2.2,
+      "depth_m": 0.24
+     },
+     {
+      "id": "4923ec18-88bf-4c2b-b95f-bb2a7d2a1a9c",
+      "location": "荒川右岸 21.25k",
+      "lat": 35.787396,
+      "lon": 139.725469,
+      "dist_km": 3.2,
+      "depth_m": 0.24
+     },
+     {
+      "id": "6f1e5427-f94e-4d72-b926-0613d8397453",
+      "location": "荒川右岸 19.00k",
+      "lat": 35.775521,
+      "lon": 139.742969,
+      "dist_km": 2.1,
+      "depth_m": 0.22
+     },
+     {
+      "id": "3f360d98-b8f3-4a8f-9084-328eeeeec4eb",
+      "location": "荒川右岸 19.50k",
+      "lat": 35.779271,
+      "lon": 139.740156,
+      "dist_km": 2.4,
+      "depth_m": 0.22
+     },
+     {
+      "id": "b9b4761a-40d0-4c32-8549-b99781c83670",
+      "location": "荒川右岸 18.75k",
+      "lat": 35.773854,
+      "lon": 139.744844,
+      "dist_km": 2,
+      "depth_m": 0.08
+     }
+    ]
+   },
+   "l1": {
+    "name": "荒川下流河川事務所・荒川・計画規模",
+    "breakpoints_total": 182,
+    "reaching_site": 0,
+    "rows": []
+   },
+   "sai_ara_l2": {
+    "name": "埼玉県・荒川・想定最大規模",
+    "breakpoints_total": 1,
+    "reaching_site": 0,
+    "rows": []
+   },
+   "sai_ara_l1": {
+    "name": "埼玉県・荒川・計画規模",
+    "breakpoints_total": 1,
+    "reaching_site": 0,
+    "rows": []
+   },
+   "shingashi_l1": {
+    "name": "埼玉県・新河岸川・計画規模",
+    "breakpoints_total": 82,
+    "reaching_site": 0,
+    "rows": []
+   },
+   "shingashi_l2": {
+    "name": "埼玉県・新河岸川・想定最大規模",
+    "breakpoints_total": 134,
+    "reaching_site": 0,
+    "rows": []
+   },
+   "shingashi_hosui_l1": {
+    "name": "埼玉県・新河岸川放水路・計画規模",
+    "breakpoints_total": 3,
+    "reaching_site": 0,
+    "rows": []
+   },
+   "shingashi_hosui_l2": {
+    "name": "埼玉県・新河岸川放水路・想定最大規模",
+    "breakpoints_total": 9,
+    "reaching_site": 0,
+    "rows": []
+   }
+  }
+ },
+ "property": "kishimachi2-mirasumo-204",
+ "note": "flood.html の物差し(同じ計算での対照)に使う。crawler/suibou-nav.mjs で取得"
+}

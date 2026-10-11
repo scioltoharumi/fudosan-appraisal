@@ -28,12 +28,21 @@ test("flood page: 結論の数値がモデルの計算値と一致し、手書�
   assert.ok(text.includes(`内水 ${snapshot.tokyo_naisui.nearest.depth_m}m`), "内水の地点値が注入されている");
 });
 
-test("flood page: 4枚の図の構成と開示(桁の目安・公式の確率ではない・最悪の絵)", () => {
+test("flood page: 6枚の図の構成と開示(桁の目安・公式の確率ではない・最悪の絵)", () => {
   const svgs = html.match(/<svg [^>]*>/g) ?? [];
-  assert.equal(svgs.length, 4, "SVGが4枚(3因子・ドット図・横棒・家の断面)");
+  assert.equal(svgs.length, 6, "SVGが6枚(3因子・ドット図・横棒・家の断面・内水・物差し)");
   for (const s of svgs) assert.ok(s.includes('role="img"') && s.includes("aria-label"), "role/aria-label");
   assert.ok(!html.includes("rotate(-90"), "rotate(-90) を使っていない(運用ルール5)");
-  for (const k of ["図1", "図2", "図3", "図4", "よくある誤解 3つ", "出典・限界"]) assert.ok(text.includes(k), `構成: ${k}`);
+  for (const k of ["図1", "図2", "図3", "図4", "図5", "図6", "よくある誤解 3つ", "出典・限界"]) assert.ok(text.includes(k), `構成: ${k}`);
+  // 図5 内水: 公式値は153mmだけ、他は比例の目安、設計で防げる種類の水、の開示
+  assert.ok(text.includes("公式の地点値は153mmだけ"), "内水の目安の限界の開示");
+  assert.ok(text.includes("基礎高・車庫の床高・止水板で防げる"), "内水は設計で防げる、の説明");
+  assert.ok(text.includes("75mmの雨は30年で68%"), "内水の頻度(75mm→68%)が計算値で出ている");
+  // 図6 物差し: この地点の地震(J-SHIS)・全国平均の火災/交通事故・台帳の対照物件・期待損失、と「全国平均はこの家の確率ではない」の開示
+  for (const k of ["震度6強以上の揺れ", "住宅火災(全国平均・1戸あたり)", "交通事故でけが", "岸町2-4-9", "上十条5-44-4", "期待損失", "この家・この人の確率ではない"]) {
+    assert.ok(text.includes(k), `物差し: ${k}`);
+  }
+  assert.ok(text.includes("12.8%"), "J-SHIS の震度6強以上の30年確率が注入されている");
   assert.ok(text.includes("フェルミ推定=桁の目安"), "桁の目安の開示");
   assert.ok(text.includes("公式の確率ではない"), "公式の確率ではない、の開示");
   assert.ok(text.includes("最悪の絵"), "包絡=最悪の絵の説明");

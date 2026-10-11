@@ -52,8 +52,15 @@ export function summarize(depthList, lists, site) {
   return { groups, unclassified: unclassified.length, depth_max_m: Math.max(0, ...dep.values()) };
 }
 
-function groupKey(r) {
+// グループ鍵は engine/flood.js(帯の depthFrom)が参照する正規名に揃える: 荒川下流=l1/l2・荒川上流=ara_up_*・
+// 埼玉県の荒川=sai_ara_*・新河岸川=shingashi_*・新河岸川放水路=shingashi_hosui_*。該当しない河川は事務所|河川|規模
+export function groupKey(r) {
   const scale = r.scode === "1" ? "l1" : "l2";
+  if (r.rname === "荒川" && /下流/.test(r.oname)) return scale;
+  if (r.rname === "荒川" && /上流/.test(r.oname)) return `ara_up_${scale}`;
+  if (r.rname === "荒川") return `sai_ara_${scale}`;
+  if (r.rname === "新河岸川放水路") return `shingashi_hosui_${scale}`;
+  if (r.rname === "新河岸川") return `shingashi_${scale}`;
   return `${r.oname}|${r.rname}|${scale}`;
 }
 
