@@ -150,7 +150,7 @@ function figBars(rows, multi, naisui) {
 }
 
 // ---- 図4: 家の断面と水位 ----
-function figHouse(levels, duration) {
+function figHouse(levels, duration, floorH) {
   const W = 760, H = 300, el = [];
   const gx = 120, gy = 250, scale = 24;        // 1m = 24px、地面 y=250
   const hx = gx + 60, hw = 170;
@@ -174,6 +174,11 @@ function figHouse(levels, duration) {
     text(el, wx + 6, y - 3, `${L.m}m ${L.label}${L.sub ? ` ── ${L.sub}` : ""}`, { fs: 9.5, bold: true, color: L.color });
   });
   text(el, 20, 20, "深さは何を意味するか ── 木造3階建(各階約3m)に重ねる", { fs: 11, bold: true });
+  if (Number.isFinite(floorH)) {
+    const fy = gy - floorH * scale;
+    el.push(`<line x1="${hx}" y1="${fy}" x2="${hx + hw}" y2="${fy}" stroke="${C.ok}" stroke-width="2"/>`);
+    text(el, hx - 6, fy + 3, `1階床 +${Math.round(floorH * 100)}cm`, { fs: 9, bold: true, color: C.ok, anchor: "end" });
+  }
   text(el, 20, H - 8, `荒川が切れた水は「${duration}」引かない(国の想定)。深さ1mでも3mでも、1〜2階の全損と長期の退去はほぼ同じ`, { fs: 9.5, color: C.stop, bold: true });
   return svg(W, H, "木造3階建の断面に、内水・計画規模・想定最大の水位を重ねた図", el);
 }
@@ -202,7 +207,14 @@ function figNaisui(naisui) {
   text(el, 20, H - 8, "水は半日で引く(継続時間 12時間未満)。基礎高・車庫の床高・止水板など設計で防げる種類の水", { fs: 9.5, color: C.ok, bold: true });
   return svg(W, H, "内水(短時間豪雨)の30年のうちに来る確率と深さの横棒グラフ", el);
 }
-const meaningOf = (hi) => (hi <= 0.2 ? "車庫・玄関に水(床下)" : hi <= 0.5 ? "床上の縁(基礎高0.5mなら床下に収まる)" : hi < 1 ? "床上に数十cm" : "1階が水没");
+// 深さ(地面から)を1階床高(floorH・図面の値)と比べて意味に翻訳する。車庫・玄関ポーチは地面の高さなので別
+const meaningOf = (hi, floorH) => {
+  if (!Number.isFinite(floorH)) return hi <= 0.2 ? "車庫・玄関に水(床下)" : hi <= 0.5 ? "床上の縁" : hi < 1 ? "床上に数十cm" : "1階が水没";
+  const cm = Math.round((hi - floorH) * 100);
+  if (hi <= floorH - 0.05) return `床下(1階床+${Math.round(floorH * 100)}cmより低い。車庫・玄関は水)`;
+  if (hi <= floorH + 0.05) return `床の縁(1階床+${Math.round(floorH * 100)}cmに対し上限${Math.round(hi * 100)}cm)`;
+  return hi < 1.5 ? `床上約${cm}cm` : "1階が水没";
+};
 
 // ---- 図6: 2.2%の物差し ── 同じ「30年のうちに起きる確率」で並べる(対数軸のドットプロット) ----
 // 全国平均の統計(火災・交通事故)は「1戸/1人あたりの平均」で、この家・この人の確率ではない。地震はこの地点の公式値(J-SHIS)
@@ -241,11 +253,12 @@ export function renderFlood({ asOf, snapshot, property }) {
   const multi = exceedance(snapshot, { bands: ff.bands ?? DEFAULT_BANDS, multiBreach: true });
   const at = (d) => rows.find((r) => r.depth_m === d);
   const naisuiDepth = snapshot.tokyo_naisui.nearest.depth_m;
+  const floorH = Number.isFinite(Number(ff.floor_height_m)) ? Number(ff.floor_height_m) : null;   // 1階床高(GL+m・図面)
   const naisui = (ff.naisui?.rows ?? []).filter((r) => Number.isFinite(r.period_years) && !/ほぼ0/.test(r.depth)).map((r) => ({
     rain: r.rain.replace(/\(.*$/, ""), period: `${r.period_years.toLocaleString("ja-JP")}年に1回`, depth: r.depth.replace(/\*\*/g, "").replace(/\(.*$/, ""),
     depthText: r.depth_lo === r.depth_hi ? `${r.depth_lo}m` : `${r.depth_lo}〜${r.depth_hi}m`,
     cum: 1 - (1 - 1 / r.period_years) ** 30, cum30: `${Math.round((1 - (1 - 1 / r.period_years) ** 30) * 100)}%`,
-    official: !!r.official, meaning: meaningOf(Number(r.depth_hi)), depth_lo: Number(r.depth_lo), depth_hi: Number(r.depth_hi),
+    official: !!r.official, meaning: meaningOf(Number(r.depth_hi), floorH), depth_lo: Number(r.depth_lo), depth_hi: Number(r.depth_hi),
   }));
   // 物差し(同じ30年累積)。対照物件は同じ計算(浸水ナビ+engine/flood.js)で、snapshot.comparators に渡されたものを使う
   const comps = (property.hazard_check.flood_fermi.comparators ?? []).map((c) => {
@@ -260,7 +273,7 @@ export function renderFlood({ asOf, snapshot, property }) {
     { label: "この家: 外水 1m以上", p: at(1).cum.mid, color: C.deep, mine: true },
     { label: "この家: 外水 3m以上", p: at(3).cum.mid, color: C.deep, mine: true },
     naisuiGarage && { label: `この家: 内水 車庫・玄関に水(${naisuiGarage.rain}の雨)`, p: naisuiGarage.cum, color: C.warn, mine: true },
-    naisuiFloor && { label: `この家: 内水 床上の縁(${naisuiFloor.rain}の雨)`, p: naisuiFloor.cum, color: C.warn, mine: true },
+    naisuiFloor && { label: `この家: 内水 床の縁(${naisuiFloor.rain}の雨)`, p: naisuiFloor.cum, color: C.warn, mine: true },
     Number.isFinite(jshis.T30_I60_PS) && { label: "この地点: 震度6強以上の揺れ", p: jshis.T30_I60_PS, color: C.stop, mine: false },
     Number.isFinite(jshis.T30_I55_PS) && { label: "この地点: 震度6弱以上の揺れ", p: jshis.T30_I55_PS, color: C.stop, mine: false },
     { label: "住宅火災(全国平均・1戸あたり)", p: p30(FIRES_HOME / HOUSES_JP), color: C.soft, mine: false },
@@ -274,7 +287,7 @@ export function renderFlood({ asOf, snapshot, property }) {
   // 見出しの住所は番地まで(hazard_check.official.query の括弧の前=「東京都北区神谷2丁目24-11」)
   const address = String(property.hazard_check?.official?.query ?? property.location?.address ?? property.id).replace(/[(（].*$/, "");
   const levels = [
-    { m: naisuiDepth, label: "内水の想定最大(都の図)", sub: "床上の縁。半日で引く", color: C.warn },
+    { m: naisuiDepth, label: "内水の想定最大(都の図)", sub: Number.isFinite(floorH) ? `床上約${Math.round((naisuiDepth - floorH) * 100)}cm。半日で引く` : "床上の縁。半日で引く", color: C.warn },
     { m: l1.median, label: "荒川・計画規模で届くときの中央値", sub: "1階が水没", color: C.mid, dash: "4 3" },
     { m: l2.median, label: "荒川・想定最大で届くときの中央値", sub: "2階の床上", color: C.deep, dash: "4 3" },
     { m: l2.max, label: "荒川・最も深い破堤点(右岸21km)", sub: "2階の天井近く。これが公式計算の最大", color: C.stop },
@@ -310,14 +323,15 @@ export function renderFlood({ asOf, snapshot, property }) {
 
   <section class="panel">
     <h2>図4 ── その深さは何を意味するか</h2>
-    ${figHouse(levels, "2週間以上")}
+    ${figHouse(levels, "2週間以上", floorH)}
     <div class="note">決め手は確率の数字より、<b>起きたときに1〜2階の全損と長期の退去を保険(水災)と資金で受けられるか</b>、<b>3階へ逃げれば命が守れる設計か</b>(氾濫流=建物が流される区域の外・木造3階)。</div>
   </section>
 
   <section class="panel">
     <h2>図5 ── 内水(ゲリラ豪雨)は別の確率: 頻度は高く、深さは浅い</h2>
     ${figNaisui(naisui)}
-    <div class="note"><b>${esc(naisuiGarage?.rain ?? "")}の雨は30年で${esc(naisuiGarage?.cum30 ?? "")}=ほぼ一度は来る</b>。車庫・玄関に水が入る高さで、床上には届かない。<b>${esc(naisuiFloor?.rain ?? "")}の雨(${esc(naisuiFloor?.cum30 ?? "")})で床上の縁</b>。
+    <div class="note"><b>${esc(naisuiGarage?.rain ?? "")}の雨は30年で${esc(naisuiGarage?.cum30 ?? "")}=ほぼ一度は来る</b>。${Number.isFinite(floorH) ? `<b>この家の1階床は地面+${esc(Math.round(floorH * 100))}cm(図面)</b>なので、最もよく来るこの帯(0.1〜0.2m)は<b>床下に収まり、居室への影響は限定的</b>。車庫・玄関ポーチは地面の高さなので水は入る。` : "車庫・玄関に水が入る高さで、床上には届かない。"}<b>${esc(naisuiFloor?.rain ?? "")}の雨(${esc(naisuiFloor?.cum30 ?? "")})で床の縁</b>${Number.isFinite(floorH) ? `、想定最大153mm(${esc(naisuiDepth)}m)で床上約${esc(Math.round((naisuiDepth - floorH) * 100))}cm` : ""}。
+    床下浸水も無傷ではない(泥・消毒・断熱材の乾燥で10〜30万円級)。基礎の換気口・配管貫通部の高さと止水で床下への浸入量が変わる。
     外水と違い、内水は<b>基礎高・車庫の床高・止水板で防げる</b>(=建物のプレゼンで聞くこと)。75mm・100mmの深さは153mmの公式値(${esc(naisuiDepth)}m)から雨量に比例させた目安で、公式の地点値は153mmだけ。</div>
   </section>
 

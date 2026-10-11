@@ -886,6 +886,9 @@ KO審査は誤爆修正後に全通過だが、**同日にユーザーが物件�
   **台帳の対照物件を同じ計算で**: 岸町2-4-9(見送り)は浸水ナビで届く破堤点11/211・最大0.45m=外水0.5m以上は0、上十条5-44-4(台地)は0。
   スナップショット `market/flood-fermi-kishimachi2-2026-10-11.json` / `-kamijujo5-` を YAML `flood_fermi.comparators` で参照。
   期待損失(仮定: 1〜3m 1,000万 / 3m以上 2,000万)=30年36万円・年1.2万円、「平均額ではなく一度に受けられるかで判断」と明記。
+  **1階床高 GL+461mm(同日ユーザー提供「建物の底が461mm」・YAML `flood_fermi.floor_height_m`)で内水を読み直した**: 最頻の75mm/h(0.1〜0.2m)は床下に収まり
+  居室への影響は限定的・100mm/h(0.3〜0.5m)は床の縁・想定最大153mm(0.83m)で床上約37cm。車庫・玄関ポーチは地面高さなので別、床下浸水も10〜30万円級、
+  基礎天端の値なら床はさらに+10〜15cm、と開示(図4に床の線・図5の注記・物件ページの naisui.note)。
   全国平均は1戸・1人あたりでこの家の確率ではない、と開示) → よくある誤解3つ → 出典・限界。判定はしない。
   `crawler/suibou-nav.mjs` の groupKey を engine/flood.js の正規名(l1/l2/ara_up_*/sai_ara_*/shingashi_*)に揃えた(同日)
 - **数値は全てビルド時注入**(`renderFlood({asOf, snapshot, property})`。`site/build.js` が神谷YAMLの `flood_fermi.snapshot` を読む)。内水の30年累積は YAML `naisui.rows[].period_years`
