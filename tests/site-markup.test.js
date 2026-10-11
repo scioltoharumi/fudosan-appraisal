@@ -102,6 +102,33 @@ test("雨のシナリオ対照表: 岸町2-4-9のページに3シナリオと結
   assert.ok(body.includes("公式の地点値ではない"), "逆算・目安の開示が無い");
 });
 
+// ---- 深さ別の確率(フェルミ推定)。2026-10-11ユーザー要望(神谷2-24-11) ----
+// YAMLの hazard_check.flood_fermi + market/flood-fermi-*.json から property.js floodFermiHtml が計算して描く。
+// 「包絡と確率の違い」「5mは0」「フェルミ=桁の目安で公式の確率ではない」「内水は別系統」の開示が消えたら落ちる
+test("深さ別の確率(フェルミ推定): 神谷2-24-11のページに外水の確率表・内水の目安・前提・開示が描画される", () => {
+  const page = renderAll().find(([name]) => name === "property/kamiya2-adcast-a.html");
+  assert.ok(page, "神谷2-24-11の物件ページが描画されている");
+  const body = visibleText(page[1]);
+  assert.ok(body.includes("深さ別の確率(フェルミ推定"), "表の見出しが無い");
+  assert.ok(body.includes("最大包絡"), "包絡と確率の違いの説明が無い");
+  for (const v of ["182件", "51件", "3.56m", "211件", "63件", "4.4m", "5m以上は0件"]) {
+    assert.ok(body.includes(v), `浸水ナビ由来の値が無い: ${v}`);
+  }
+  for (const v of ["1m 以上", "3m 以上", "5m 以上", "2.8%", "0.9%", "公式シミュレーション全393件の最大は4.4m"]) {
+    assert.ok(body.includes(v), `確率表の値が無い: ${v}`);
+  }
+  assert.ok(body.includes("0.83m"), "内水(都の浸水予想区域図)の地点値が無い");
+  assert.ok(body.includes("2週間以上"), "浸水継続時間が無い");
+  assert.ok(body.includes("置いた前提"), "前提の開示が無い");
+  assert.ok(body.includes("フェルミ推定=桁の目安であり、公式の確率ではない"), "公式の確率ではない、の開示が無い");
+  assert.ok(body.includes("気候変動"), "気候変動の扱いが無い");
+  // L1(計画規模)でも3m超、の訂正が本文に残っていること(10/10の「L1は区域外」誤記の再発防止)
+  assert.ok(!body.includes("計画規模(L1・1/200)は区域外"), "誤った『L1は区域外』が残っている");
+  // flood_fermi を持たない物件には出ない
+  const other = renderAll().find(([name]) => name === "property/nishigahara4-21230921.html");
+  assert.ok(!visibleText(other[1]).includes("深さ別の確率(フェルミ推定"));
+});
+
 // source_url を意図的に空にしている物件(岸町2 MIRASUMO)でも、人が掲載元へ辿れること。
 // 2026-09-02ユーザー指摘「掲載元はどこにいった？リンク先が台帳になくて」。
 // watch の誤報を避けるために source_url を空にした設計は正しいが、リンクが消えるのは別の実害。
