@@ -466,7 +466,8 @@ function floodFermiHtml(ff, color) {
         <tr><th>雨(1時間)</th><th>再現期間</th><th>この地点の深さ</th><th>根拠</th></tr>
         ${ff.naisui.rows.map((r) => `<tr><td style="white-space:nowrap;font-weight:700">${escRich(r.rain)}</td><td>${escRich(r.period)}</td><td>${escRich(r.depth)}</td><td class="note">${escRich(r.basis ?? "")}</td></tr>`).join("")}
       </table></div>
-      ${ff.naisui.note ? `<div class="note" style="margin-top:3px">${escRich(ff.naisui.note)}</div>` : ""}` : "";
+      ${ff.naisui.note ? `<div class="note" style="margin-top:3px">${escRich(ff.naisui.note)}</div>` : ""}
+      ${ff.floor_raise?.note ? `<div class="note" style="margin-top:6px"><b>1階を上げるか(ロフトとの取り合い)</b>: ${escRich(ff.floor_raise.note)}(<a href="../flood.html">図で読む版 図6</a>)</div>` : ""}` : "";
   const fromLabel = (b) => (typeof b.depthFrom === "string" ? [{ group: b.depthFrom, weight: 1 }] : b.depthFrom).map((f) => `${f.group === "l1" ? "計画規模図" : "想定最大図"}${f.weight !== 1 ? `×${f.weight}` : ""}`).join("+");
   const bandLis = bands.map((b) => `<li><b>${esc(b.label)}</b>: 年確率 ${esc(pc(b.annual[0]))}〜${esc(pc(b.annual[2]))}(中 ${esc(pc(b.annual[1]))}) × 破堤確率 ${esc(b.breach[0])}〜${esc(b.breach[2])}(中 ${esc(b.breach[1])}) × 届く破堤点の割合(${esc(fromLabel(b))}の破堤点別深さ${(b.depthScale ?? 1) !== 1 ? `×${esc(b.depthScale)}` : ""}。3m以上 ${esc(Math.round(bandReachFraction(groups, b, 3) * 1000) / 10)}%)${b.basis ? ` <span class="why">── ${escRich(b.basis)}</span>` : ""}</li>`).join("");
   return `<div style="margin-top:9px;padding-top:8px;border-top:1px dashed ${color}">

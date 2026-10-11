@@ -12,7 +12,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { ROOT } from "../../engine/io.js";
-import { layout, esc } from "./layout.js";
+import { layout, esc, escRich } from "./layout.js";
 import { exceedance, groupStats, oneInN, DEFAULT_BANDS } from "../../engine/flood.js";
 
 const C = { ink: "#16232E", soft: "#43566B", deep: "#1F4E79", mid: "#2E6E8E", light: "#8FBBD3", pale: "#D6E6EF", none: "#D9DEE3", warn: "#B07C10", stop: "#C93A2B", ok: "#2C6E49" };
@@ -216,7 +216,80 @@ const meaningOf = (hi, floorH) => {
   return hi < 1.5 ? `床上約${cm}cm` : "1階が水没";
 };
 
-// ---- 図6: 2.2%の物差し ── 同じ「30年のうちに起きる確率」で並べる(対数軸のドットプロット) ----
+// ---- 図6: 1階を上げるか(ロフトとの取り合い)。2026-10-11ユーザー論点「ロフト分をやめて1階を高くするかどうか」 ----
+// 左: 床高を変えたとき、内水の各帯と外水(計画規模の中央値)が床のどこに来るか。右: 高さ10mの枠(1種住居は10m超で日影規制)を
+// 床高とロフト(小屋裏)が取り合う図。数値は YAML flood_fermi.floor_raise と naisui.rows・浸水ナビの中央値から注入(手書きなし)
+const posOf = (hi, f) => (hi <= f - 0.05 ? { t: "床下", c: C.ok } : hi <= f + 0.05 ? { t: "縁", c: C.warn } : hi >= f + 1.0 ? { t: "1階水没", c: C.stop } : { t: `床上${Math.round((hi - f) * 100)}cm`, c: C.stop });
+function figRaise(naisui, l1Median, floorH, fr) {
+  const W = 760, H = 430, el = [];
+  const steps = [0, ...(fr.steps_m ?? [0.3, 0.5])];
+  text(el, 20, 20, "1階を上げるか ── 効くのは内水だけ。高さ10mの枠はロフトと取り合い", { fs: 11, bold: true });
+  // 左: 床高 × 水の帯
+  const gy = 300, sc = 80, hx0 = 150, hw = 92, gap = 8;      // 1m = 80px・地面 y=300
+  el.push(`<line x1="20" y1="${gy}" x2="${hx0 + steps.length * (hw + gap)}" y2="${gy}" stroke="${C.ink}" stroke-width="1.5"/>`);
+  text(el, 20, gy + 13, "地面", { fs: 9, color: C.soft });
+  const waters = [
+    ...naisui.map((n) => ({ m: n.depth_hi, label: `内水 ${n.rain}`, sub: `30年${n.cum30}`, color: n.official ? C.warn : C.light })),
+    { m: l1Median, label: "外水 計画規模", sub: "届くときの中央値", color: C.mid, dash: "4 3" },
+  ].filter((w) => Number.isFinite(w.m)).sort((a, b) => a.m - b.m);
+  const top = gy - 2.6 * sc;
+  waters.forEach((w) => {
+    const y = Math.max(top + 4, gy - w.m * sc);
+    el.push(`<line x1="20" y1="${y}" x2="${hx0 + steps.length * (hw + gap)}" y2="${y}" stroke="${w.color}" stroke-width="1.6" stroke-dasharray="${w.dash ?? ""}"/>`);
+    text(el, 22, y - 3, `${w.label} ${w.m}m`, { fs: 9, bold: true, color: w.color === C.light ? C.mid : w.color });
+    text(el, 22, y + 10, w.sub, { fs: 8, color: C.soft });
+  });
+  steps.forEach((d, i) => {
+    const f = floorH + d, x = hx0 + i * (hw + gap), fy = gy - f * sc;
+    el.push(`<rect x="${x}" y="${top}" width="${hw}" height="${gy - top}" fill="#fff" fill-opacity="0.75" stroke="${C.ink}" stroke-width="1.2"/>`);
+    el.push(`<rect x="${x}" y="${fy}" width="${hw}" height="${gy - fy}" fill="${C.none}" opacity="0.5"/>`);
+    el.push(`<line x1="${x}" y1="${fy}" x2="${x + hw}" y2="${fy}" stroke="${C.ok}" stroke-width="2.4"/>`);
+    text(el, x + hw / 2, top - 16, d === 0 ? "今" : `+${Math.round(d * 100)}cm`, { fs: 10.5, bold: true, anchor: "middle" });
+    text(el, x + hw / 2, top - 5, `床 +${Math.round(f * 100)}cm`, { fs: 8.5, anchor: "middle", color: C.ok });
+    waters.forEach((w) => {
+      const y = Math.max(top + 4, gy - w.m * sc), p = posOf(w.m, f);
+      el.push(`<rect x="${x + 6}" y="${y - 7}" width="${hw - 12}" height="13" rx="3" fill="${p.c}"/>`);
+      text(el, x + hw / 2, y + 3, p.t, { fs: 8.5, bold: true, color: "#fff", anchor: "middle" });
+    });
+  });
+  // 右: 高さ10mの枠。床高+3層+ロフト(小屋裏)で枠いっぱい、と置く(階高・屋根は仮定)
+  const bx0 = 520, bw = 54, by = 300, bsc = 17, lim = fr.height_limit_m ?? 10, story = fr.story_m ?? 2.9;
+  const loft = Math.max(0.5, lim - floorH - story * 3);
+  text(el, 470, top - 16, "高さの枠(日影規制の境 10m)", { fs: 10.5, bold: true });
+  text(el, 470, top - 5, "床高 + 3層 + ロフト(小屋裏)。階高2.9mは仮定", { fs: 8.5, color: C.soft });
+  const ly = by - lim * bsc;
+  el.push(`<line x1="470" y1="${ly}" x2="${W - 20}" y2="${ly}" stroke="${C.stop}" stroke-width="1.6" stroke-dasharray="5 3"/>`);
+  text(el, W - 20, ly - 4, `${lim}m`, { fs: 9, bold: true, color: C.stop, anchor: "end" });
+  el.push(`<line x1="470" y1="${by}" x2="${W - 20}" y2="${by}" stroke="${C.ink}" stroke-width="1.5"/>`);
+  steps.forEach((d, i) => {
+    const f = floorH + d, x = bx0 + i * (bw + 16);
+    const segs = [[f, C.ok], [story * 3, C.none], [loft, C.mid]];
+    let h = 0;
+    segs.forEach(([v, c]) => {
+      el.push(`<rect x="${x}" y="${by - (h + v) * bsc}" width="${bw}" height="${v * bsc}" fill="${c}" stroke="#fff" stroke-width="0.8"/>`);
+      h += v;
+    });
+    const over = h - lim;
+    if (over > 0.01) {
+      el.push(`<rect x="${x}" y="${by - h * bsc}" width="${bw}" height="${over * bsc}" fill="${C.stop}"/>`);
+      text(el, x + bw / 2, by - h * bsc - 4, `${Math.round(over * 100)}cm超過`, { fs: 8.5, bold: true, color: C.stop, anchor: "middle" });
+    } else text(el, x + bw / 2, by - h * bsc - 4, "枠内", { fs: 8.5, bold: true, color: C.ok, anchor: "middle" });
+    text(el, x + bw / 2, by + 12, d === 0 ? "今" : `+${Math.round(d * 100)}cm`, { fs: 9.5, bold: true, anchor: "middle" });
+  });
+  const lg = [[C.ok, "床高"], [C.none, "3層"], [C.mid, "ロフト"], [C.stop, "超過=ロフトを削る"]];
+  lg.forEach(([c, t], i) => { const x = 470 + i * 68; el.push(`<rect x="${x}" y="${by + 22}" width="10" height="10" fill="${c}"/>`); text(el, x + 13, by + 31, t, { fs: 8 }); });
+  // 下: 床を上げずに効く対策
+  const ay = 348;
+  text(el, 20, ay, "床を上げずに内水の被害を止めるもの(概算)", { fs: 10, bold: true });
+  (fr.alternatives ?? []).slice(0, 4).forEach((a, i) => {
+    const x = 20 + i * 184;
+    box(el, x, ay + 8, 172, 44, [a.name, `${a.cost_man}万円 ── ${a.stops}`], { stroke: C.ok });
+  });
+  text(el, 20, H - 8, `上げて消えるのは内水の床上(30年で十数%・数百万円級・水災保険の対象)。外水${l1Median}mには効かない。ロフト${fr.loft_cost_man?.[0] ?? ""}〜${fr.loft_cost_man?.[1] ?? ""}万円と釣り合うかは建築会社の見積り次第`, { fs: 9, color: C.stop, bold: true });
+  return svg(W, H, "1階床を上げたときに内水・外水が床のどこに来るかと、高さ10mの枠をロフトと取り合う図", el);
+}
+
+// ---- 図7: 2.2%の物差し ── 同じ「30年のうちに起きる確率」で並べる(対数軸のドットプロット) ----
 // 全国平均の統計(火災・交通事故)は「1戸/1人あたりの平均」で、この家・この人の確率ではない。地震はこの地点の公式値(J-SHIS)
 const POP_JP = 123_800_000;          // 人口(2024年・総務省推計 約1億2,380万)
 const HOUSES_JP = 65_047_000;        // 総住宅数(令和5年住宅・土地統計調査 6,504万7千戸)
@@ -254,6 +327,7 @@ export function renderFlood({ asOf, snapshot, property }) {
   const at = (d) => rows.find((r) => r.depth_m === d);
   const naisuiDepth = snapshot.tokyo_naisui.nearest.depth_m;
   const floorH = Number.isFinite(Number(ff.floor_height_m)) ? Number(ff.floor_height_m) : null;   // 1階床高(GL+m・図面)
+  const fr = ff.floor_raise ?? {};   // 図6: 1階を上げるか(YAML flood_fermi.floor_raise)
   const naisui = (ff.naisui?.rows ?? []).filter((r) => Number.isFinite(r.period_years) && !/ほぼ0/.test(r.depth)).map((r) => ({
     rain: r.rain.replace(/\(.*$/, ""), period: `${r.period_years.toLocaleString("ja-JP")}年に1回`, depth: r.depth.replace(/\*\*/g, "").replace(/\(.*$/, ""),
     depthText: r.depth_lo === r.depth_hi ? `${r.depth_lo}m` : `${r.depth_lo}〜${r.depth_hi}m`,
@@ -335,8 +409,15 @@ export function renderFlood({ asOf, snapshot, property }) {
     外水と違い、内水は<b>基礎高・車庫の床高・止水板で防げる</b>(=建物のプレゼンで聞くこと)。75mm・100mmの深さは153mmの公式値(${esc(naisuiDepth)}m)から雨量に比例させた目安で、公式の地点値は153mmだけ。</div>
   </section>
 
+
   <section class="panel">
-    <h2>図6 ── ${esc(pct1(at(1).cum.mid))}はどのくらいか: 同じ30年の物差しに並べる</h2>
+    <h2>図6 ── 1階を上げるか: ロフトとの取り合い</h2>
+    ${figRaise(naisui, l1.median, floorH, fr)}
+    <div class="note">${escRich(fr.note ?? "")}</div>
+  </section>
+
+  <section class="panel">
+    <h2>図7 ── ${esc(pct1(at(1).cum.mid))}はどのくらいか: 同じ30年の物差しに並べる</h2>
     ${figYardstick(yard)}
     <div class="logic-body" style="font-size:.88rem;line-height:1.9">
       <p><b>読み方</b>: 外水3m以上(${esc(pct1(at(3).cum.mid))})は、全国平均の住宅火災(${esc(pct1(p30(FIRES_HOME / HOUSES_JP)))})の2〜3倍、この地点で震度6強以上の揺れが来る確率(${esc(pct1(jshis.T30_I60_PS ?? 0))})の約1/10。
