@@ -441,7 +441,7 @@ export function renderFlood({ asOf, snapshot, property }) {
   <section class="panel">
     <h2>出典・限界</h2>
     <div class="note" style="line-height:1.9">
-      国交省 浸水ナビ(破堤点別の最大浸水深・${esc(snapshot.suibou_nav.fetched)}取得) / 東京都 隅田川及び新河岸川流域浸水予想区域図(内水 ${esc(naisuiDepth)}m) / 国土地理院 重ねるハザードマップ(継続時間)/ 防災科研 J-SHIS 2024年版(震度の30年確率・この地点のメッシュ)/ 消防白書 令和6年版(住宅火災12,112件)・令和5年住宅・土地統計調査(総住宅数6,504.7万戸)/ 警察庁 令和6年交通事故統計(負傷者344,395人・死者2,663人)・人口約1億2,380万人。
+      国交省 浸水ナビ(破堤点別の最大浸水深・${esc(snapshot.suibou_nav.fetched)}取得) / 東京都 隅田川及び新河岸川流域浸水予想区域図(内水 ${esc(naisuiDepth)}m・<a href="https://www.opendata.metro.tokyo.lg.jp/kensetsu/R3/shinsui_sumidagawa.csv">都オープンデータCSV</a>・<a href="https://catalog.data.metro.tokyo.lg.jp/dataset/t000014d0000000029">カタログ</a>) / <a href="https://www.data.jma.go.jp/cpdinfo/himr/csv/rr1max/rr1max_tk.csv">気象庁 東京 年最大1時間降水量</a>(雨の再現期間) / 国土地理院 重ねるハザードマップ(継続時間)/ 防災科研 J-SHIS 2024年版(震度の30年確率・この地点のメッシュ)/ 消防白書 令和6年版(住宅火災12,112件)・令和5年住宅・土地統計調査(総住宅数6,504.7万戸)/ 警察庁 令和6年交通事故統計(負傷者344,395人・死者2,663人)・人口約1億2,380万人。
       堤防の弱点の偏り・632mmを超える雨・荒川第二・第三調節池(2030年頃)の効果は入っていない。計算は <code>engine/flood.js</code>、入力の正本は <code>market/flood-fermi-kamiya2-2026-10-11.json</code>。
       ${esc(asOf)}時点。判定はしない。
     </div>
