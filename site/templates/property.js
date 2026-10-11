@@ -6,7 +6,7 @@ import { layout, esc, escRich, STATUS_LABEL, fmtDate, safeUrl } from "./layout.j
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { ROOT } from "../../engine/io.js";
-import { exceedance, groupStats, oneInN, DEFAULT_BANDS } from "../../engine/flood.js";
+import { exceedance, groupStats, oneInN, DEFAULT_BANDS, bandReachFraction } from "../../engine/flood.js";
 import { anatomySvg, rawResidualStats } from "./anatomy.js";
 
 const DIR_LABEL = { "0.05": "南", "0.02": "東・南西・南東", "0": "西", "-0.03": "北" };
@@ -443,6 +443,7 @@ function floodFermiHtml(ff, color) {
   const l1 = groupStats(groups.l1), l2 = groupStats(groups.l2);
   const bands = ff.bands ?? DEFAULT_BANDS;
   const rows = exceedance(snap, { bands });
+  const multi = exceedance(snap, { bands, multiBreach: true });   // 複数破堤(ポアソン)を許した場合=開示用
   const pc = (p) => (p <= 0 ? "0" : p < 0.0005 ? "0.1%未満" : `${(p * 100).toFixed(1)}%`);
   const inN = (p) => (p > 0 ? `1/${oneInN(p).toLocaleString("ja-JP")}年` : "0");
   const frac = (st, t) => (st.total ? `${st.ge[t]}/${st.total}(${Math.round((st.ge[t] / st.total) * 100)}%)` : "-");
@@ -452,9 +453,10 @@ function floodFermiHtml(ff, color) {
     return `<tr>
       <td style="font-weight:700;white-space:nowrap">${esc(r.depth_m)}m 以上</td>
       <td>${esc(frac(l1, r.depth_m))} ／ ${esc(frac(l2, r.depth_m))}</td>
-      <td>${none ? `<b>0</b> ── 公式シミュレーション全${esc(l1.total + l2.total)}件の最大は${esc(maxAll)}m` : `${esc(inN(r.annual.mid))}<span class="note">(${esc(inN(r.annual.high))}〜${esc(inN(r.annual.low))})</span>`}</td>
+      <td>${none ? `<b>0</b> ── 公式の単一破堤・632mm以下の計算(全${esc(l1.total + l2.total)}件)の最大は${esc(maxAll)}m。上限は未計算` : `${esc(inN(r.annual.mid))}<span class="note">(${esc(inN(r.annual.high))}〜${esc(inN(r.annual.low))})</span>`}</td>
       <td>${none ? "0" : `<b>${esc(pc(r.cum.mid))}</b><span class="note">(${esc(pc(r.cum.low))}〜${esc(pc(r.cum.high))})</span>`}</td>
-      <td>${none ? "0" : `${esc(pc(r.climateCum.mid))}<span class="note">(${esc(pc(r.climateCum.low))}〜${esc(pc(r.climateCum.high))})</span>`}</td>
+      <td>${none ? "0" : `${esc(pc(r.rampCum.mid))} ／ ${esc(pc(r.climateCum.mid))}<span class="note">(上限の幅 ${esc(pc(r.climateCum.low))}〜${esc(pc(r.climateCum.high))})</span>`}</td>
+      <td>${none ? "0" : esc(pc(multi.find((m) => m.depth_m === r.depth_m).cum.mid))}</td>
     </tr>`;
   }).join("");
   const off = (ff.official ?? []).map((o) => `<tr><td style="font-weight:700;white-space:nowrap">${escRich(o.label)}</td><td>${escRich(o.value)}</td><td class="note">${escRich(o.source ?? "")}</td></tr>`).join("");
@@ -465,7 +467,8 @@ function floodFermiHtml(ff, color) {
         ${ff.naisui.rows.map((r) => `<tr><td style="white-space:nowrap;font-weight:700">${escRich(r.rain)}</td><td>${escRich(r.period)}</td><td>${escRich(r.depth)}</td><td class="note">${escRich(r.basis ?? "")}</td></tr>`).join("")}
       </table></div>
       ${ff.naisui.note ? `<div class="note" style="margin-top:3px">${escRich(ff.naisui.note)}</div>` : ""}` : "";
-  const bandLis = bands.map((b) => `<li><b>${esc(b.label)}</b>: 年確率 ${esc(pc(b.annual[0]))}〜${esc(pc(b.annual[2]))}(中 ${esc(pc(b.annual[1]))}) × 破堤確率 ${esc(b.breach[0])}〜${esc(b.breach[2])}(中 ${esc(b.breach[1])}) × 届く破堤点の割合(${esc(b.depthFrom === "l1" ? "計画規模" : "想定最大規模")}の破堤点別深さ${b.depthScale !== 1 ? `×${esc(b.depthScale)}` : ""})${b.basis ? ` <span class="why">── ${escRich(b.basis)}</span>` : ""}</li>`).join("");
+  const fromLabel = (b) => (typeof b.depthFrom === "string" ? [{ group: b.depthFrom, weight: 1 }] : b.depthFrom).map((f) => `${f.group === "l1" ? "計画規模図" : "想定最大図"}${f.weight !== 1 ? `×${f.weight}` : ""}`).join("+");
+  const bandLis = bands.map((b) => `<li><b>${esc(b.label)}</b>: 年確率 ${esc(pc(b.annual[0]))}〜${esc(pc(b.annual[2]))}(中 ${esc(pc(b.annual[1]))}) × 破堤確率 ${esc(b.breach[0])}〜${esc(b.breach[2])}(中 ${esc(b.breach[1])}) × 届く破堤点の割合(${esc(fromLabel(b))}の破堤点別深さ${(b.depthScale ?? 1) !== 1 ? `×${esc(b.depthScale)}` : ""}。3m以上 ${esc(Math.round(bandReachFraction(groups, b, 3) * 1000) / 10)}%)${b.basis ? ` <span class="why">── ${escRich(b.basis)}</span>` : ""}</li>`).join("");
   return `<div style="margin-top:9px;padding-top:8px;border-top:1px dashed ${color}">
       <b>深さ別の確率(フェルミ推定・${esc(fmtDate(ff.created))})</b> ── ハザードマップの「3.0〜5.0m」は全破堤点の最大包絡で、確率ではない。
       破堤点ごとの到達深(国交省 浸水ナビ)を数え、「どのくらいの雨で・堤防が切れて・その場所の水がここに届くか」の3因子の積で桁を出す
@@ -475,16 +478,16 @@ function floodFermiHtml(ff, color) {
         <tr><td style="font-weight:700;white-space:nowrap">外水・荒川 想定最大規模(L2・1/1000程度)</td><td>破堤点${esc(l2.total)}件のうち<b>${esc(l2.reaching)}件</b>が届く。中央値<b>${esc(l2.median)}m</b>・最大<b>${esc(l2.max)}m</b>(3m以上は${esc(l2.ge[3])}件・4m以上は${esc(l2.ge[4])}件・<b>5m以上は${esc(l2.ge[5])}件</b>)</td><td class="note">浸水ナビ 荒川下流河川事務所・想定最大規模</td></tr>
         ${off}
       </table></div>
-      <div style="margin-top:8px"><b>外水(荒川の破堤)で深さd以上になる確率</b> ── 年あたりは「1/N年」、30年は居住30年の累積。気候変動は国の見積り(2℃上昇で洪水の頻度×2)で年確率を2倍にした場合</div>
-      <div style="overflow-x:auto;margin-top:4px"><table class="list" style="min-width:760px;font-size:.76rem;line-height:1.7">
-        <tr><th>深さ</th><th>届く破堤点の割合(計画規模 ／ 想定最大)</th><th>年あたり(中・幅)</th><th>30年累積(中・幅)</th><th>気候変動×2・30年</th></tr>
+      <div style="margin-top:8px"><b>外水(荒川の破堤)で深さd以上になる確率</b> ── 年あたりは「1/N年」、30年は居住30年の累積。気候変動は国の見積り(2℃上昇で洪水の頻度約2倍)を年確率に掛けた30年累積で、×1.3=今から今世紀末へ線形に上がるランプの平均 ／ ×2=末期の頻度を初年から当てた上限。右端は「1洪水1破堤」の単純化を外し複数破堤(ポアソン)を許した場合(高めに出る側の目安)</div>
+      <div style="overflow-x:auto;margin-top:4px"><table class="list" style="min-width:860px;font-size:.76rem;line-height:1.7">
+        <tr><th>深さ</th><th>届く破堤点の割合(計画規模図 ／ 想定最大図)</th><th>年あたり(中・幅)</th><th>30年累積(中・幅)</th><th>気候変動 ×1.3 ／ ×2</th><th>複数破堤なら(30年・中)</th></tr>
         ${extRows}
       </table></div>
       ${nai}
       <div style="margin-top:8px"><b>置いた前提</b>(幅=低〜高はこの前提の幅。公式データは「届く破堤点の割合」だけ)</div>
       <ul style="margin:3px 0 0 1.1em;font-size:.76rem;line-height:1.75">${bandLis}${(ff.assumptions ?? []).map((a) => `<li>${escRich(a)}</li>`).join("")}</ul>
       ${ff.conclusion ? `<div style="margin-top:7px;padding:7px 10px;border:1px solid ${color};background:#fff"><b>結論</b>: ${escRich(ff.conclusion)}</div>` : ""}
-      <div class="note" style="margin-top:5px"><b>フェルミ推定=桁の目安であり、公式の確率ではない</b>。帯の年確率と破堤確率は置いた仮定で、破堤は「1洪水に1か所・どの地点でも同じ確率」と単純化している(複数箇所の破堤や堤防の弱点の偏りは入っていない)。公式の地点値は浸水ナビ・北区の水害ハザードマップ・重要事項説明で確認すること。${ff.sources ? `<br>出典: ${escRich(ff.sources)}` : ""}</div>
+      <div class="note" style="margin-top:5px"><b>フェルミ推定=桁の目安であり、公式の確率ではない</b>。帯の年確率と破堤確率は置いた仮定で、破堤は「1洪水に1か所・どの地点でも同じ確率」と単純化している(堤防の弱点の偏りは入っていない。複数破堤の列は上側の目安)。荒川上流(治水橋付近)の破堤点を帯に入れていない扱いで1m以上は−35%〜+20%動く。2026-10-11に別コンテキストの検算(データの独立再取得・モデルの敵対的レビュー)を受けて構造と文言を改訂済み。公式の地点値は浸水ナビ・北区の水害ハザードマップ・重要事項説明で確認すること。${ff.sources ? `<br>出典: ${escRich(ff.sources)}` : ""}</div>
     </div>`;
 }
 
