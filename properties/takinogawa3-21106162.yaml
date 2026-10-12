@@ -9,7 +9,7 @@ source: "SUUMO新築一戸建て(仲介=(株)マトリックスホーム)。**20
   建築確認番号 第SJK-KX265106450号"
 source_url: "https://suumo.jp/ikkodate/tokyo/sc_kita/nc_21106162/"   # 実在確認済み 2026-08-29(200)。住所・価格・土地・建物・間取り・構造の6項目一致
 # 2026-10-10: SUUMO nc_21106162 が404(10/9は200・6,280万)。クローラ経路で再取得しても404。新築一覧(同日)に諸元一致の再掲載なし。athome側のIDは台帳に無い。成約とは断定しない(5日超で終了判定)
-delisted_observed: {date: 2026-10-10, http: 404, athome: "unchecked(athome側の掲載IDを台帳に持っていない)", relisting_search: "SUUMO新築一覧(2026-10-10〜10-11の日次クロール)に諸元一致の再掲載なし", last_check: 2026-10-11, days: 2}
+delisted_observed: {date: 2026-10-10, http: 404, athome: "unchecked(athome側の掲載IDを台帳に持っていない)", relisting_search: "SUUMO新築一覧(2026-10-10〜10-12の日次クロール)に諸元一致の再掲載なし", last_check: 2026-10-12, days: 3}
 captured_at: 2026-08-29
 price_history:
   - {date: 2026-08-29, price_man: 6280}   # 媒体の情報提供日時点
