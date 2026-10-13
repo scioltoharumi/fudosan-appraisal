@@ -3633,5 +3633,38 @@
   "ko_suspect": [
    "AREA_LOWLAND_LT5"
   ]
+ },
+ "nc_21878313": {
+  "first_seen": "2026-10-13",
+  "price_man": 5955,
+  "address": "東京都北区岸町２",
+  "walk_min": 5,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 96.09,
+  "floor_m2": null,
+  "ko_screened": true
+ },
+ "at_1134466227": {
+  "first_seen": "2026-10-13",
+  "price_man": 8598,
+  "address": "東京都北区西が丘2",
+  "walk_min": 14,
+  "kind": "shinchiku",
+  "media": "athome",
+  "land_m2": 66.14,
+  "floor_m2": 111.93,
+  "ko_screened": true
+ },
+ "at_1168338631": {
+  "first_seen": "2026-10-13",
+  "price_man": 8998,
+  "address": "東京都北区西が丘2",
+  "walk_min": 13,
+  "kind": "shinchiku",
+  "media": "athome",
+  "land_m2": 66.14,
+  "floor_m2": 111.93,
+  "ko_screened": true
  }
 }
