@@ -643,6 +643,7 @@ export function renderProperty(r, property, marketCal = null, houseDeals = null)
     ${safeUrl(property.source_url) ? `<a class="src-link" href="${esc(property.source_url)}" target="_blank" rel="noopener noreferrer">元の掲載ページを見る ↗</a>`
       : (property.crawl_links ?? []).length ? `<div class="note" style="margin-top:4px">参照掲載: ${property.crawl_links.map((l) => `<a class="src-link" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">${esc(l.id)} ↗</a>`).join(" / ")} <span style="color:#6B7A90">── この掲載の価格は台帳の価格(総額)の正本ではないため、値下げ監視の対象から外している(価格が動けば discover が別途報告する)</span></div>` : ""}
     ${delistedHtml(property)}
+    ${property.plan3d_page ? `<div class="note" style="margin-top:4px"><b>間取りシミュレーター(3D)</b>: 参考プラン図の寸法から再構成した模型で、トイレ・洗面台・UB・家具を動かして寸法と隙間を測れる → <a href="../${esc(property.plan3d_page)}">${esc(property.plan3d_page)}</a></div>` : ""}
 
     ${statusUpdatesHtml(property)}
 

@@ -24,6 +24,8 @@ import { renderEffort } from "./templates/effort.js";
 import { renderDecision } from "./templates/decision.js";
 import { renderCompare } from "./templates/compare.js";
 import { renderFlood } from "./templates/flood.js";
+import { renderPlan3d } from "./templates/plan3d.js";
+import { cpSync } from "node:fs";
 import { renderHazardMap } from "./templates/map.js";
 import { loadVerification } from "../engine/retail.js";
 import { loadDeals } from "../engine/calibrate.js";
@@ -118,6 +120,14 @@ console.log("✓ decision.html(意思決定の地図)");
 // 保有年数シミュレーター(2026-08-16ユーザー要望): 任意の2物件の「取得+保有−出口」を年数で比較。
 // 出口の実測カーブは cliff.html と同じ ageCurveCI(帯別中央値と95%CI)を注入する
 const simCurve = ageCurveCI(houseDeals);
+// 間取りシミュレーター(3D)。神谷2-24 A区画の参考プラン図を寸法から再構成(2026-10-14)。three.js は site/vendor/ を dist/vendor/ へ同梱コピー
+cpSync(join(ROOT, "site", "vendor"), join(DIST, "vendor"), { recursive: true });
+{
+  const PLAN3D_ID = "kamiya2-adcast-a";
+  const target = results.find(({ r }) => r.id === PLAN3D_ID);
+  writeFileSync(join(DIST, "plan3d.html"), renderPlan3d({ asOf, property: target?.property }), "utf8");
+  console.log("✓ plan3d.html(間取りシミュレーター・" + PLAN3D_ID + ")");
+}
 writeFileSync(join(DIST, "simulate.html"), renderSimulate(results, simCurve, { asOf }), "utf8");
 console.log(`✓ simulate.html(保有年数シミュレーター・出口実測${simCurve.total}件${simCurve.districts}地区)`);
 // 本命比較(2026-08-29ユーザー要望「この2つの物件とESPACERのC号棟と賃貸で専用に比較するサイトを」):
