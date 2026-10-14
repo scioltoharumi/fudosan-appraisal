@@ -355,13 +355,13 @@ export function renderPlan3d({ asOf, property } = {}) {
   <div class="toolbar" id="floorTabs"><span class="lbl">階</span>
     ${Object.entries(FLOORS).map(([fid, f], i) => `<button class="btn${i === 0 ? " on" : ""}" data-floor="${fid}">${esc(f.label)}</button>`).join("")}
     <span class="lbl" style="margin-left:10px">画面</span>
-    <button class="btn" data-mode="2d">平面図</button><button class="btn" data-mode="3d">3D</button><button class="btn" data-mode="both">並べる</button>
+    <button class="btn" data-mode="2d">平面図</button><button class="btn on" data-mode="3d">3D</button><button class="btn" data-mode="both">並べる</button>
     <span class="lbl" style="margin-left:10px">3D表示</span>
-    <button class="btn on" data-view="floor">この階だけ</button><button class="btn" data-view="all">全階(重ねる)</button><button class="btn" data-view="explode">全階(ばらす)</button>
+    <button class="btn" data-view="floor">この階だけ</button><button class="btn on" data-view="all">全階(重ねる)</button><button class="btn" data-view="explode">全階(ばらす)</button>
     <span class="lbl" style="margin-left:10px">壁の高さ</span>
-    <button class="btn" data-wallh="0.3">30cm</button><button class="btn on" data-wallh="1.2">1.2m</button><button class="btn" data-wallh="full">天井まで</button>
+    <button class="btn on" data-wallh="0.3">30cm</button><button class="btn" data-wallh="1.2">1.2m</button><button class="btn" data-wallh="full">天井まで</button>
   </div>
-  <div class="plan-app" id="planApp" data-mode="both">
+  <div class="plan-app" id="planApp" data-mode="3d">
     <div class="col col2d">
       <canvas id="plan2d" width="440" height="1000" aria-label="平面図(編集可)"></canvas>
       <div class="toolbar"><span class="lbl">平面図の拡大</span><button class="btn" id="btnZoomIn">＋</button><button class="btn" id="btnZoomOut">－</button><button class="btn" id="btnZoomFit">全体</button><span class="hint">2本指でピンチ/移動・ホイールでも拡大</span></div>

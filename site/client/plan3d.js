@@ -53,8 +53,8 @@ function save() {
 
 let cur = FLOOR_IDS[0];
 let tool = "select";
-let viewMode = "floor";      // floor | all | explode
-let wallH = "1.2";
+let viewMode = "all";        // floor | all | explode(既定は全階。2026-10-14ユーザー指示「デフォルトを3D・全階・30cm」)
+let wallH = "0.3";
 let selected = null;         // {kind:"item"|"wall", id}
 let measure = { a: null, b: null };
 let areaResult = null;       // {cells:Set, area, bbox}
@@ -761,7 +761,7 @@ function setCam(mode) {
 document.querySelectorAll("[data-cam]").forEach((b) => b.onclick = () => setCam(b.dataset.cam));
 $("#chkDims").onchange = () => request3d();
 // 画面の切替(平面図/3D/並べる)。初期値は保存値 → 無ければ画面幅で決める(狭い画面は平面図だけ)
-const MODE_KEY = LS_KEY + ":mode";
+const MODE_KEY = LS_KEY + ":mode2";   // 既定を3Dに変えた際にキーを更新(保存済みの旧既定「並べる」を引きずらない)
 function setMode(mode, persist = true) {
   $("#planApp").dataset.mode = mode;
   document.querySelectorAll("[data-mode]").forEach((x) => x.classList.toggle("on", x.dataset.mode === mode));
@@ -790,7 +790,7 @@ function loop() { requestAnimationFrame(loop); if (need3d) { need3d = false; bui
 // ---------- 起動 ----------
 function init() {
   let mode = null; try { mode = localStorage.getItem(MODE_KEY); } catch { /* noop */ }
-  if (!["2d", "3d", "both"].includes(mode)) mode = window.innerWidth <= 900 ? "2d" : "both";
+  if (!["2d", "3d", "both"].includes(mode)) mode = "3d";
   setMode(mode, false);
   fit2d(); draw2d(); renderProps(); resize3d(); build3d(); setCam("bird"); loop();
   const el = document.getElementById("saveState"); el.textContent = saved ? "このブラウザに保存した配置を復元しました" : "図面の初期配置(変更すると自動保存)";

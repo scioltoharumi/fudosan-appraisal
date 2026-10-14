@@ -23,6 +23,8 @@ if (!exe) { const roots = readdirSync("/opt/pw-browsers").filter((d) => d.starts
 const b = await chromium.launch({ executablePath: exe, args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
 const ctx = await b.newContext({ viewport: { width: 1280, height: 1000 } });
 const page = await ctx.newPage();
+const checks = [];
+const ok = (name, cond, extra = "") => { checks.push([name, !!cond, extra]); if (!cond) console.error("✗", name, extra); else console.log("✓", name); };
 const errors = [];
 page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
 page.on("console", (m) => { if (m.type() === "error" && !/favicon|404/.test(m.text())) errors.push("console: " + m.text()); });
@@ -30,9 +32,9 @@ page.on("requestfailed", (r) => errors.push("requestfailed: " + r.url()));
 page.on("response", (r) => { if (r.status() >= 400 && !/favicon/.test(r.url())) errors.push(`http ${r.status()}: ${r.url()}`); });
 await page.goto(url, { waitUntil: "load" });
 await page.waitForTimeout(1500);
+ok("既定が 3D・全階・30cm", await page.evaluate(() => document.getElementById("planApp").dataset.mode === "3d" && document.querySelector('[data-view="all"]').classList.contains("on") && document.querySelector('[data-wallh="0.3"]').classList.contains("on")));
+await page.click('[data-mode="both"]'); await page.click('[data-view="floor"]'); await page.waitForTimeout(400);
 
-const checks = [];
-const ok = (name, cond, extra = "") => { checks.push([name, !!cond, extra]); if (!cond) console.error("✗", name, extra); else console.log("✓", name); };
 
 ok("JSエラーなし", errors.length === 0, errors.join(" | "));
 ok("3Dキャンバスに WebGL コンテキスト", await page.evaluate(() => { const c = document.getElementById("view3d"); return !!(c.getContext("webgl2") || c.getContext("webgl")); }));
@@ -98,7 +100,7 @@ ok("再読込後もJSエラーなし・保存状態の表示", errors.length ===
 
 // --- 画面切替(平面図/3D/並べる)・3Dでのクリック選択・3Dの寸法線・引っ張り計測・ピンチ拡大(2026-10-14追加) ---
 await page.click('[data-mode="3d"]'); await page.waitForTimeout(300);
-ok("画面=3D で平面図が隠れ3Dが残る", await page.evaluate(() => document.getElementById("plan2d").clientWidth === 0 && document.getElementById("view3d").clientWidth > 600 && localStorage.getItem("fudosan-plan3d-kamiya2-v1:mode") === "3d"));
+ok("画面=3D で平面図が隠れ3Dが残る", await page.evaluate(() => document.getElementById("plan2d").clientWidth === 0 && document.getElementById("view3d").clientWidth > 600 && localStorage.getItem("fudosan-plan3d-kamiya2-v1:mode2") === "3d"));
 ok("3Dだけの画面でもツールとプロパティ欄が見える", await page.evaluate(() => document.getElementById("props").clientHeight > 0 && document.querySelector('[data-tool="select"]').clientHeight > 0));
 await page.click('[data-cam="top"]'); await page.waitForTimeout(500);
 const tp = await page.evaluate(() => window.plan3dProject(2.92, 5.0, "1F", 0.4));
