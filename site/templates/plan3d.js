@@ -320,6 +320,8 @@ ul.compact{padding-left:1.2em;font-size:.8rem;line-height:1.6}
 .rooms-list{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
 .rooms-list .btn{font-size:.72rem;padding:2px 7px}
 kbd{font-family:var(--mono);font-size:.7rem;border:1px solid var(--ink-soft);padding:0 4px;border-radius:3px}
+@media(max-width:600px){table.dims td.n{white-space:normal}table.dims{font-size:.72rem}.props .v{word-break:break-all}}
+.props .v{overflow-wrap:anywhere}
 `;
 
 // 内法面積(芯々から壁厚を引いた概算。外壁に接する辺は 75mm、内壁は 45mm)

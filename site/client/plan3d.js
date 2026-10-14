@@ -39,9 +39,10 @@ function loadState() {
     return s;
   } catch { return null; }
 }
-let state = loadState() ?? initialState();
+const loaded = loadState();
+let state = loaded ?? initialState();
 window.plan3dState = () => JSON.parse(JSON.stringify(state));   // 検査用(tests/ui/plan3d.ui.mjs)
-let saved = !!loadState();
+let saved = !!loaded;
 const undoStack = [];
 function pushUndo() { undoStack.push(JSON.stringify(state)); if (undoStack.length > 40) undoStack.shift(); }
 function save() {
@@ -73,17 +74,15 @@ const wallRect = (w) => {
   const t = (w.kind === "ext" ? P.WALL_T.ext : w.kind === "void" ? 0.02 : P.WALL_T.int) / 2;
   return { x0: Math.min(w.x1, w.x2) - t, x1: Math.max(w.x1, w.x2) + t, y0: Math.min(w.y1, w.y2) - t, y1: Math.max(w.y1, w.y2) + t, t };
 };
-const frontVec = (r) => [[0, -1], [1, 0], [0, 1], [-1, 0]][(r / 90) % 4];
+const frontVec = (r) => [[0, -1], [1, 0], [0, 1], [-1, 0]][((Math.round((r ?? 0) / 90) % 4) + 4) % 4];
 // 推奨スペース(目安)の矩形。背面を設備の背面に揃えて前方へ伸ばす
 function spaceRect(it) {
   const c = CAT[it.type]; if (!c?.space) return null;
   const m = itemDims(it); const [fx, fy] = frontVec(m.r);
   const sw = c.space.w, sd = c.space.d;
-  const along = m.r % 180 === 0 ? sd : sw, across = m.r % 180 === 0 ? sw : sd; // x方向/y方向の寸法
   // 中心: 背面(前方向の逆)に m.d/2 戻った点から前方へ sd/2
   const cx = it.x + fx * (sd / 2 - m.d / 2), cy = it.y + fy * (sd / 2 - m.d / 2);
   const hx = (m.r % 180 === 0 ? sw : sd) / 2, hy = (m.r % 180 === 0 ? sd : sw) / 2;
-  void along; void across;
   return { x0: cx - hx, x1: cx + hx, y0: cy - hy, y1: cy + hy };
 }
 
@@ -100,11 +99,13 @@ function gapInDir(box, dir, fid, exceptId) {
     if (dir === "N" || dir === "S") {
       if (o.x1 <= box.x0 + eps || o.x0 >= box.x1 - eps) continue;
       const g = dir === "N" ? box.y0 - o.y1 : o.y0 - box.y1;
-      if (g >= -eps && g < best) { best = g; hit = o; }
+      const ov = dir === "N" ? o.y0 < box.y0 : o.y1 > box.y1;   // 障害物が設備の内側まで食い込んでいる
+      if ((g >= -eps || ov) && g < best) { best = g; hit = o; }
     } else {
       if (o.y1 <= box.y0 + eps || o.y0 >= box.y1 - eps) continue;
       const g = dir === "W" ? box.x0 - o.x1 : o.x0 - box.x1;
-      if (g >= -eps && g < best) { best = g; hit = o; }
+      const ov = dir === "W" ? o.x0 < box.x0 : o.x1 > box.x1;
+      if ((g >= -eps || ov) && g < best) { best = g; hit = o; }
     }
   }
   return { gap: best, hit };
@@ -151,7 +152,7 @@ function draw2d() {
   poly(ctx, P.LOT.b); ctx.stroke(); ctx.setLineDash([]);
   ctx.fillStyle = "#D9DEE3"; rect(ctx, -2.5, -1.15 - 6, 9, 6); ctx.fill();
   txt(ctx, "道路 幅員6.0m(北)", 0.4, -1.55, 10, "#43566B");
-  txt(ctx, "B区画(建物未定)", -3.9, 4.2, 10, "#8A9AA6");
+  txt(ctx, "B区画", -1.25, 2.0, 10, "#8A9AA6");
   txt(ctx, "敷地 A区画 47.52m²", -0.4, 9.65, 10, "#43566B");
   // 床
   const slab = fl.floorRect ?? { x0: 0, y0: 0, x1: P.W, y1: P.L };
@@ -194,7 +195,7 @@ function draw2d() {
   for (const o of fl.openings) if (o.type === "window") drawWindow(ctx, o);
   for (const it of f.items) if (it.type === "door") drawDoor(ctx, it, selected?.kind === "item" && selected.id === it.id);
   // 部屋名
-  if ($("#chkLabels").checked) for (const r of fl.rooms) if (r.kind !== "outside" || r.name === "バルコニー") txt(ctx, r.name, (r.x0 + r.x1) / 2, (r.y0 + r.y1) / 2 + 0.04, 10, "#43566B", "center");
+  if ($("#chkLabels").checked) for (const r of fl.rooms) if (r.kind !== "outside" || r.name === "バルコニー") roomLabel(ctx, r);
   // 寸法の目盛(壁芯の位置・mm)
   dims(ctx, f);
   // 寸法ツール
@@ -216,6 +217,13 @@ function draw2d() {
 function poly(ctx, pts) { ctx.beginPath(); pts.forEach(([x, y], i) => { const [px, py] = toPx(x, y); i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }); ctx.closePath(); }
 function rect(ctx, x, y, w, h) { const [px, py] = toPx(x, y); ctx.beginPath(); ctx.rect(px, py, w * scale, h * scale); }
 function txt(ctx, s, x, y, size, color, align = "left") { const [px, py] = toPx(x, y); ctx.font = `${size}px "Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif`; ctx.fillStyle = color; ctx.textAlign = align; ctx.textBaseline = "middle"; ctx.fillText(s, px, py); }
+function roomLabel(ctx, r) { // 部屋名: 左上に白地で。部屋幅に入らなければ短縮(「洋室 7.9帖(上部吹抜)」→「洋室 7.9帖」→「洋室」)
+  const wpx = (r.x1 - r.x0) * scale - 6; const [px, py] = toPx(r.x0 + 0.06, r.y0 + 0.14);
+  ctx.font = `9px "Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif`;
+  let s = r.name; while (ctx.measureText(s).width > wpx && s.length > 2) s = s.includes("(") ? s.replace(/\s*\([^)]*\)$/, "") : s.includes(" ") ? s.replace(/\s\S*$/, "") : s.slice(0, -1);
+  const w = ctx.measureText(s).width + 4; ctx.fillStyle = "rgba(255,255,255,.75)"; ctx.fillRect(px - 2, py - 6, w, 12);
+  ctx.fillStyle = "#43566B"; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillText(s, px, py);
+}
 function txtBox(ctx, s, px, py) { ctx.font = `11px Consolas,Menlo,monospace`; const w = ctx.measureText(s).width + 8; ctx.fillStyle = "rgba(255,255,255,.92)"; ctx.fillRect(px - w / 2, py - 8, w, 16); ctx.strokeStyle = "#C93A2B"; ctx.lineWidth = 1; ctx.strokeRect(px - w / 2, py - 8, w, 16); ctx.fillStyle = "#C93A2B"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(s, px, py); }
 function cross(ctx, r) { const [a, b] = toPx(r.x0, r.y0), [c, d] = toPx(r.x1, r.y1); ctx.strokeStyle = "#C8CED4"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(a, b); ctx.lineTo(c, d); ctx.moveTo(c, b); ctx.lineTo(a, d); ctx.stroke(); }
 function stairTreads(ctx, r) {
@@ -238,7 +246,10 @@ function drawItem(ctx, it, sel) {
   const [fx, fy] = frontVec(m.r); const [px, py] = toPx(it.x + fx * (m.r % 180 === 0 ? m.hy : m.hx) * 0.8, it.y + fy * (m.r % 180 === 0 ? m.hy : m.hx) * 0.8);
   ctx.fillStyle = "#4A5560"; ctx.beginPath(); ctx.arc(px, py, 2, 0, 7); ctx.fill();
   const label = it.label ?? c.name.replace(/\(.*$/, "").replace(/ .*$/, "");
-  if ((b.x1 - b.x0) * scale > 26) txt(ctx, label, it.x, it.y, 9, "#16232E", "center");
+  ctx.font = `9px "Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif`;
+  const tw = ctx.measureText(label).width;
+  if (tw <= (b.x1 - b.x0) * scale - 4 && (b.y1 - b.y0) * scale >= 12) txt(ctx, label, it.x, it.y, 9, "#16232E", "center");
+  else if (sel) txtBox(ctx, label, ...toPx(it.x, b.y0 - 0.12));
 }
 function drawWindow(ctx, o) {
   ctx.strokeStyle = "#6FB1C9"; ctx.lineWidth = 2;
@@ -250,7 +261,8 @@ function drawWindow(ctx, o) {
 }
 function drawDoor(ctx, d, sel) {
   const horiz = d.dir === "N" || d.dir === "S";
-  const t = P.WALL_T.int / 2 + 0.01;
+  const onExt = (horiz ? [0, P.L] : [0, P.W]).some((v) => Math.abs((horiz ? d.y : d.x) - v) < 0.02);
+  const t = (onExt ? P.WALL_T.ext : P.WALL_T.int) / 2 + 0.01;
   // 開口(壁を白で抜く)
   ctx.fillStyle = "#FFFFFF";
   if (horiz) rect(ctx, d.x - d.w / 2, d.y - t, d.w, 2 * t); else rect(ctx, d.x - t, d.y - d.w / 2, 2 * t, d.w);
@@ -280,7 +292,8 @@ function dims(ctx, f) {
   const yTop = -1.0, xLeft = -0.72;
   let prevX = -9, alt = false;
   for (const x of [...xs].sort((a, b) => a - b)) { const [px, py] = toPx(x, yTop); ctx.beginPath(); ctx.moveTo(px, py - 4); ctx.lineTo(px, py + 4); ctx.stroke(); alt = (x - prevX) * scale < 30 ? !alt : false; txt(ctx, mm(x), x, yTop - (alt ? 0.30 : 0.14), 8, "#43566B", "center"); prevX = x; }
-  for (const y of [...ys].sort((a, b) => a - b)) { const [px, py] = toPx(xLeft, y); ctx.beginPath(); ctx.moveTo(px - 4, py); ctx.lineTo(px + 4, py); ctx.stroke(); txt(ctx, mm(y), xLeft - 0.08, y, 8, "#43566B", "right"); }
+  let prevY = -9, altY = false;
+  for (const y of [...ys].sort((a, b) => a - b)) { const [px, py] = toPx(xLeft, y); ctx.beginPath(); ctx.moveTo(px - 4, py); ctx.lineTo(px + 4, py); ctx.stroke(); altY = (y - prevY) * scale < 11 ? !altY : false; txt(ctx, mm(y), xLeft - (altY ? 0.42 : 0.08), y, 8, "#43566B", "right"); prevY = y; }
   { const [a, b] = toPx(0, yTop), [c] = toPx(P.W, yTop); ctx.beginPath(); ctx.moveTo(a, b); ctx.lineTo(c, b); ctx.stroke(); }
   { const [a, b] = toPx(xLeft, 0), [, d] = toPx(xLeft, P.L); ctx.beginPath(); ctx.moveTo(a, b); ctx.lineTo(a, d); ctx.stroke(); }
 }
@@ -313,6 +326,7 @@ function nearestWallPoint(wx, wy) {
   return best;
 }
 c2.addEventListener("pointerdown", (e) => {
+  if (e.button !== 0 || !e.isPrimary) return;
   const r = c2.getBoundingClientRect(); const [wx, wy] = toW(e.clientX - r.left, e.clientY - r.top);
   lastClickWorld = [wx, wy];
   c2.setPointerCapture(e.pointerId);
@@ -358,15 +372,17 @@ c2.addEventListener("pointermove", (e) => {
     if (horiz) { const ny = snapTo(drag.orig.y1 + (wy - drag.sy), s); w.y1 = ny; w.y2 = ny; }
     else { const nx = snapTo(drag.orig.x1 + (wx - drag.sx), s); w.x1 = nx; w.x2 = nx; }
   }
-  draw2d(); renderProps(); request3d();
+  sched();
 });
+let rafId = 0;
+function sched() { if (rafId) return; rafId = requestAnimationFrame(() => { rafId = 0; draw2d(); renderProps(); request3d(); }); }
 function endDrag() {
   if (wallDraft) {
     const len = Math.hypot(wallDraft.x2 - wallDraft.x1, wallDraft.y2 - wallDraft.y1);
     if (len >= SNAP_WALL - 1e-6) { pushUndo(); const w = { ...wallDraft, kind: "int", id: nid() }; F().walls.push(w); selected = { kind: "wall", id: w.id }; }
     wallDraft = null; save(); draw2d(); renderProps(); request3d(); return;
   }
-  if (drag?.moved) { save(); areaResult = null; request3d(); }
+  if (drag?.moved) { save(); areaResult = null; draw2d(); request3d(); }
   drag = null;
 }
 c2.addEventListener("pointerup", endDrag); c2.addEventListener("pointercancel", endDrag);
@@ -445,12 +461,11 @@ function renderProps() {
   const dName = (v) => (v[0] === 1 ? "E" : v[0] === -1 ? "W" : v[1] === 1 ? "S" : "N");
   const gaps = Object.fromEntries(Object.entries(dirs).map(([k, v]) => [k, gapInDir(b, dName(v), cur, it.id)]));
   const need = c.space ? Math.max(0, c.space.d - m.d) : null; // 前方に要る余地(目安)
-  const cell = (k) => { const g = gaps[k].gap; const cls = k === "前" && need != null ? (g >= need - 1e-6 ? "ok" : "ng") : ""; return `<div class="${cls}">${k}(${dName(dirs[k])})<b>${Number.isFinite(g) ? mm(g) + "mm" : "開放"}</b></div>`; };
-  let head = "";
+  const cell = (k) => { const g = gaps[k].gap; const cls = k === "前" && need != null ? (g >= need - 1e-6 ? "ok" : "ng") : ""; return `<div class="${g < -0.005 ? "ng" : cls}">${k}(${dName(dirs[k])})<b>${g < -0.005 ? "重なり" : Number.isFinite(g) ? mm(g) + "mm" : "開放"}</b></div>`; };
   const hu0 = stairUnderside(cur, b.y0), hu1 = stairUnderside(cur, b.y1);
-  if ((hu0 != null || hu1 != null) && b.x1 > P.STAIR.x0 && b.x0 < P.STAIR.x1) {
-    head = `<div class="hint" style="color:var(--stamp)">階段の下: 頭上の高さ 北端 ${hu0 != null ? hu0.toFixed(2) : "—"}m / 南端 ${hu1 != null ? hu1.toFixed(2) : "—"}m(床から階段裏まで。段割りの仮定に依存)</div>`;
-  }
+  const under = (hu0 != null || hu1 != null) && b.x1 > P.STAIR.x0 && b.x0 < P.STAIR.x1;
+  const head = under ? `<div class="hint" style="color:var(--stamp)">階段の下: 頭上の高さ 北端 ${hu0 != null ? hu0.toFixed(2) : "—"}m / 南端 ${hu1 != null ? hu1.toFixed(2) : "—"}m(床から階段裏まで。段割りの仮定に依存)</div>`
+    : `<div class="hint">階段の下ではない(頭上は天井高 ${P.LEVELS[cur].ceil}m)</div>`;
   el.innerHTML = `<div><span class="k">${c.cat}</span> <b>${it.label ?? c.name}</b></div>
     <div class="v">中心 x${mm(it.x)} y${mm(it.y)} / 向き ${["北", "東", "南", "西"][m.r / 90]} / 外形 ${mm(b.x1 - b.x0)}×${mm(b.y1 - b.y0)}mm</div>
     <div class="toolbar"><span class="lbl">寸法 mm</span> 幅<input class="inp" id="iw" value="${mm(m.w).replace(/,/g, "")}"> 奥行<input class="inp" id="id" value="${mm(m.d).replace(/,/g, "")}"> 高さ<input class="inp" id="ih" value="${mm(m.h).replace(/,/g, "")}"> <button class="btn" id="iapply">反映</button></div>
@@ -474,18 +489,18 @@ document.querySelectorAll("#floorTabs [data-floor]").forEach((b) => b.onclick = 
 document.querySelectorAll("[data-view]").forEach((b) => b.onclick = () => { const prevZ = floorZ(cur); viewMode = b.dataset.view; followFloor(prevZ); document.querySelectorAll("[data-view]").forEach((x) => x.classList.toggle("on", x === b)); request3d(); });
 document.querySelectorAll("[data-wallh]").forEach((b) => b.onclick = () => { wallH = b.dataset.wallh; document.querySelectorAll("[data-wallh]").forEach((x) => x.classList.toggle("on", x === b)); request3d(); });
 document.querySelectorAll("[data-tool]").forEach((b) => b.onclick = () => { tool = b.dataset.tool; document.querySelectorAll("[data-tool]").forEach((x) => x.classList.toggle("on", x === b)); if (tool !== "measure") measure = { a: null, b: null }; if (tool !== "area") areaResult = null; c2.style.cursor = tool === "select" ? "default" : "crosshair"; draw2d(); renderProps(); });
-$("#btnUndo").onclick = () => { const s = undoStack.pop(); if (!s) return; state = JSON.parse(s); selected = null; save(); draw2d(); renderProps(); request3d(); };
+$("#btnUndo").onclick = () => { const s = undoStack.pop(); if (!s) return; state = JSON.parse(s); selected = null; areaResult = null; save(); draw2d(); renderProps(); request3d(); };
 $("#btnAdd").onclick = () => { pushUndo(); const type = $("#addSel").value; const [x, y] = lastClickWorld && lastClickWorld[0] > 0 && lastClickWorld[0] < P.W ? lastClickWorld : [P.W / 2, cur === "LOFT" ? 4.7 : 4.5]; const it = { id: nid(), type, x: snapTo(x, SNAP_ITEM), y: snapTo(y, SNAP_ITEM), rot: 0 }; F().items.push(it); selected = { kind: "item", id: it.id }; save(); draw2d(); renderProps(); request3d(); };
 $("#btnDoor").onclick = () => { const np = nearestWallPoint(...(lastClickWorld ?? [P.W / 2, 4.5])); if (!np) return; pushUndo(); const d = { id: nid(), type: "door", x: np.x, y: np.y, w: 0.73, dir: np.horiz ? "S" : "E", hinge: np.horiz ? "W" : "N" }; F().items.push(d); selected = { kind: "item", id: d.id }; save(); draw2d(); renderProps(); request3d(); };
 $("#btnExport").onclick = () => { const blob = new Blob([JSON.stringify(state, null, 1)], { type: "application/json" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `plan3d-kamiya2-${new Date().toISOString().slice(0, 10)}.json`; a.click(); };
 $("#fileImport").onchange = async (e) => { const file = e.target.files[0]; if (!file) return; try { const s = JSON.parse(await file.text()); if (s.version !== 1 || !s.floors) throw new Error("形式が違う"); pushUndo(); state = s; for (const f of Object.values(s.floors)) for (const o of [...f.walls, ...f.items]) { const n = Number(String(o.id).slice(1)); if (n >= uid) uid = n + 1; } selected = null; save(); draw2d(); renderProps(); request3d(); } catch (err) { alert("読み込めませんでした: " + err.message); } e.target.value = ""; };
 $("#btnReset").onclick = () => { if (!confirm("この階だけでなく全階を図面の初期配置に戻します。よいですか?")) return; pushUndo(); state = initialState(); selected = null; areaResult = null; save(); draw2d(); renderProps(); request3d(); };
-$("#chkLot").onchange = () => request3d(); $("#chkLabels").onchange = () => { draw2d(); request3d(); }; $("#chkSpace").onchange = () => { draw2d(); request3d(); };
+$("#chkLot").onchange = () => { staticDirty = true; request3d(); }; $("#chkLabels").onchange = () => { draw2d(); request3d(); }; $("#chkSpace").onchange = () => { draw2d(); request3d(); };
 document.addEventListener("keydown", (e) => {
   if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement?.tagName)) return;
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { e.preventDefault(); $("#btnUndo").click(); return; }
   if (e.key === "Delete" || e.key === "Backspace") { e.preventDefault(); deleteSel(); return; }
-  if (e.key.toLowerCase() === "r") { rotateSel(); return; }
+  if (e.key.toLowerCase() === "r" && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); rotateSel(); return; }
   if (selected?.kind === "item" && e.key.startsWith("Arrow")) {
     const it = F().items.find((o) => o.id === selected.id); if (!it || it.type === "door") return;
     e.preventDefault(); pushUndo(); const s = e.shiftKey ? SNAP_WALL : SNAP_ITEM;
@@ -508,14 +523,17 @@ const GL = -P.floorHeightGL;
 const MAT = {
   lot: new THREE.MeshLambertMaterial({ color: 0xDDE4D6, side: THREE.DoubleSide }), road: new THREE.MeshLambertMaterial({ color: 0xB9C0C7 }), b: new THREE.MeshLambertMaterial({ color: 0xE6E9E3, side: THREE.DoubleSide }),
   slab: new THREE.MeshLambertMaterial({ color: 0xF4F2EC }), slabOut: new THREE.MeshLambertMaterial({ color: 0xDADDD6 }), found: new THREE.MeshLambertMaterial({ color: 0xA8ACB0 }),
-  wallExt: new THREE.MeshLambertMaterial({ color: 0xC9CDD1, transparent: true, opacity: 0.92 }), wallInt: new THREE.MeshLambertMaterial({ color: 0xE3E0D6, transparent: true, opacity: 0.92 }),
+  wallExt: new THREE.MeshLambertMaterial({ color: 0xC9CDD1 }), wallInt: new THREE.MeshLambertMaterial({ color: 0xE3E0D6 }),
   stair: new THREE.MeshLambertMaterial({ color: 0xB69A72 }), stairUnder: new THREE.MeshLambertMaterial({ color: 0x8E7A5E, side: THREE.DoubleSide }),
   glass: new THREE.MeshLambertMaterial({ color: 0x9FD2E8, transparent: true, opacity: 0.55 }), door: new THREE.MeshLambertMaterial({ color: 0x9C7B52 }),
-  space: new THREE.MeshBasicMaterial({ color: 0xC93A2B, transparent: true, opacity: 0.16, depthWrite: false }),
-  sel: new THREE.LineBasicMaterial({ color: 0xC93A2B }), ghost: new THREE.MeshLambertMaterial({ color: 0xC9CDD1, transparent: true, opacity: 0.25 }), ladder: new THREE.MeshLambertMaterial({ color: 0x8E7A5E }),
+  space: new THREE.MeshBasicMaterial({ color: 0xC93A2B, transparent: true, opacity: 0.16, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
+  sel: new THREE.LineBasicMaterial({ color: 0xC93A2B }), ghost: new THREE.MeshLambertMaterial({ color: 0xC9CDD1, transparent: true, opacity: 0.25, depthWrite: false }), ladder: new THREE.MeshLambertMaterial({ color: 0x8E7A5E }),
 };
 const itemMats = {};
 const matFor = (color) => itemMats[color] ??= new THREE.MeshLambertMaterial({ color: new THREE.Color(color) });
+const matGlassy = (color) => itemMats["t" + color] ??= new THREE.MeshLambertMaterial({ color: new THREE.Color(color), transparent: true, opacity: 0.45, depthWrite: false });
+// 再構築のたびに geometry と非共有 material を捨てる(three の Group.clear() は remove するだけ=GPUバッファが溜まる)
+function disposeGroup(g) { g.traverse((o) => { o.geometry?.dispose?.(); const m = o.material; if (m && !Object.values(MAT).includes(m) && !Object.values(itemMats).includes(m)) m.dispose?.(); }); g.clear(); }
 function box(w, h, d, mat, x, y, z) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); return m; }
 function flatPoly(pts, mat, y, holes = []) { const sh = new THREE.Shape(pts.map(([x, z]) => new THREE.Vector2(x, z))); for (const h of holes) sh.holes.push(new THREE.Path(h.map(([x, z]) => new THREE.Vector2(x, z)))); const g = new THREE.ShapeGeometry(sh); const m = new THREE.Mesh(g, mat); m.rotation.x = Math.PI / 2; m.position.y = y; m.scale.y = 1; return m; }
 function slabMesh(x0, z0, x1, z1, y, t, mat, holes = []) {
@@ -530,10 +548,11 @@ function prism(tri, y0, y1, mat) { // 三角柱(回り段)
 const labelCache = {};
 function label(text, size = 0.32) {
   if (!labelCache[text]) { const cv = document.createElement("canvas"); const ctx = cv.getContext("2d"); ctx.font = "28px 'Hiragino Kaku Gothic ProN','Yu Gothic',Meiryo,sans-serif"; const w = Math.ceil(ctx.measureText(text).width) + 16; cv.width = w; cv.height = 40; ctx.font = "28px 'Hiragino Kaku Gothic ProN','Yu Gothic',Meiryo,sans-serif"; ctx.fillStyle = "rgba(255,255,255,.85)"; ctx.fillRect(0, 0, w, 40); ctx.fillStyle = "#16232E"; ctx.textBaseline = "middle"; ctx.fillText(text, 8, 20); const tex = new THREE.CanvasTexture(cv); tex.minFilter = THREE.LinearFilter; labelCache[text] = { tex, ratio: w / 40 }; }
-  const { tex, ratio } = labelCache[text]; const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false, transparent: true })); sp.scale.set(size * ratio, size, 1); sp.renderOrder = 10; return sp;
+  const lc = labelCache[text]; lc.mat ??= new THREE.SpriteMaterial({ map: lc.tex, depthTest: false, transparent: true }); const sp = new THREE.Sprite(lc.mat); sp.scale.set(size * lc.ratio, size, 1); sp.renderOrder = 10; return sp;
 }
+let staticDirty = true;
 function buildStatic() {
-  staticG.clear();
+  staticDirty = false; disposeGroup(staticG);
   if (!$("#chkLot").checked) return;
   staticG.add(flatPoly(P.LOT.polygon, MAT.lot, GL - 0.002));
   staticG.add(flatPoly(P.LOT.b, MAT.b, GL - 0.004));
@@ -544,9 +563,9 @@ function buildStatic() {
   const l2 = label("B区画"); l2.position.set(-2.6, GL + 0.6, 4); staticG.add(l2);
   // 10mの高さ制限の枠(GLから)
   const eg = new THREE.EdgesGeometry(new THREE.BoxGeometry(P.W, 10, P.L)); const ln = new THREE.LineSegments(eg, new THREE.LineDashedMaterial({ color: 0x8A9AA6, dashSize: 0.3, gapSize: 0.2 })); ln.computeLineDistances(); ln.position.set(P.W / 2, GL + 5, P.L / 2); staticG.add(ln);
-  const l3 = label("高さ10m(日影規制の線)", 0.28); l3.position.set(P.W / 2, GL + 10.2, P.L / 2); staticG.add(l3);
-  // 基礎(GL→1F床)
-  staticG.add(box(P.W + 0.15, P.floorHeightGL, P.L + 0.15, MAT.found, P.W / 2, GL + P.floorHeightGL / 2, P.L / 2));
+  const l3 = label("高さ10m", 0.22); l3.position.set(0, GL + 10.15, 0); staticG.add(l3);
+  // 基礎(GL→1F床の1cm下。床板と同一平面にするとちらつく)
+  const fh = P.floorHeightGL - 0.01; staticG.add(box(P.W + 0.15, fh, P.L + 0.15, MAT.found, P.W / 2, GL + fh / 2, P.L / 2));
 }
 function stairMeshes(g, fid, zOff) {
   const s = P.STAIR; const story = P.LEVELS[fid].story; const riser = story / (s.winders + s.straight); const hTurn = riser * s.winders;
@@ -562,7 +581,7 @@ function stairMeshes(g, fid, zOff) {
   for (let k = 0; k < s.straight; k++) {
     const yA = s.yTurn - (k + 1) * TREAD; const top = hTurn + riser * (k + 1);
     g.add(box(s.x1 - s.x0 - 0.02, 0.04, TREAD, MAT.stair, (s.x0 + s.x1) / 2, zOff + top - 0.02, yA + TREAD / 2));
-    g.add(box(s.x1 - s.x0 - 0.02, riser, 0.03, MAT.stair, (s.x0 + s.x1) / 2, zOff + top - riser / 2, yA + TREAD - 0.015)); // 蹴込み
+    g.add(box(s.x1 - s.x0 - 0.02, riser - 0.04, 0.03, MAT.stair, (s.x0 + s.x1) / 2, zOff + top - 0.04 - (riser - 0.04) / 2, yA + TREAD - 0.015)); // 蹴込み(段板の下まで)
   }
   const run = s.yTurn - s.yTop, rise = story - hTurn; const len = Math.hypot(run, rise);
   const under = box(s.x1 - s.x0 - 0.02, s.thickness, len, MAT.stairUnder, (s.x0 + s.x1) / 2, zOff + hTurn + rise / 2 - s.thickness / 2 - 0.02, (s.yTop + s.yTurn) / 2);
@@ -583,11 +602,11 @@ function buildFloor(fid, zOff, showLabels) {
     if (it.type === "door") { const horiz = it.dir === "N" || it.dir === "S"; const swing = { N: [0, -1], S: [0, 1], E: [1, 0], W: [-1, 0] }[it.dir]; let hx, hy; if (horiz) { hx = it.x + (it.hinge === "E" ? it.w / 2 : -it.w / 2); hy = it.y; } else { hx = it.x; hy = it.y + (it.hinge === "S" ? it.w / 2 : -it.w / 2); } const leaf = it.fold ? it.w / 2 : it.w; const dh = Math.min(2.0, Math.max(wh, 0.9)); g.add(box(horiz ? 0.04 : leaf, dh, horiz ? leaf : 0.04, MAT.door, hx + swing[0] * leaf / 2, zOff + dh / 2, hy + swing[1] * leaf / 2)); const arc = new THREE.Line(new THREE.BufferGeometry().setFromPoints(Array.from({ length: 13 }, (_, i) => { const a = Math.atan2(swing[1], swing[0]); const toward = horiz ? (it.hinge === "E" ? Math.PI : 0) : (it.hinge === "S" ? -Math.PI / 2 : Math.PI / 2); const cw = ((toward - a + 3 * Math.PI) % (2 * Math.PI)) - Math.PI; const t = a + (cw > 0 ? 1 : -1) * (Math.PI / 2) * i / 12; return new THREE.Vector3(hx + Math.cos(t) * leaf, zOff + 0.012, hy + Math.sin(t) * leaf); })), MAT.sel); g.add(arc); continue; }
     const c = CAT[it.type] ?? CAT.box; const m = itemDims(it); const b = aabb(it);
     const mesh = box(b.x1 - b.x0, m.h, b.y1 - b.y0, matFor(c.color), it.x, zOff + m.h / 2, it.y);
-    if (it.type === "ub1316" || it.type === "ub1616" || it.type === "ub1216") { mesh.material = new THREE.MeshLambertMaterial({ color: new THREE.Color(c.color), transparent: true, opacity: 0.45 }); }
+    if (it.type === "ub1316" || it.type === "ub1616" || it.type === "ub1216") mesh.material = matGlassy(c.color);
     g.add(mesh);
     if (selected?.kind === "item" && selected.id === it.id && fid === cur) { const e = new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry), MAT.sel); e.position.copy(mesh.position); g.add(e); }
     if ($("#chkSpace").checked) { const sr = spaceRect(it); if (sr) g.add(slabMesh(sr.x0, sr.y0, sr.x1, sr.y1, zOff + 0.008, 0.004, MAT.space)); }
-    if (showLabels) { const l = label(it.label ?? c.name.replace(/\(.*$/, ""), 0.22); l.position.set(it.x, zOff + m.h + 0.15, it.y); g.add(l); }
+    if (showLabels && selected?.kind === "item" && selected.id === it.id) { const l = label(it.label ?? c.name.replace(/\(.*$/, ""), 0.22); l.position.set(it.x, zOff + m.h + 0.15, it.y); g.add(l); }
   }
   if (fid === "1F" || fid === "2F") stairMeshes(g, fid, zOff);
   if (showLabels) for (const r of fl.rooms) if (r.kind !== "outside" && r.kind !== "stair" && r.kind !== "closet") { const l = label(r.name, 0.26); l.position.set((r.x0 + r.x1) / 2, zOff + 0.9, (r.y0 + r.y1) / 2); g.add(l); }
@@ -596,11 +615,11 @@ function buildFloor(fid, zOff, showLabels) {
 let need3d = false;
 function request3d() { need3d = true; }
 function build3d() {
-  bldG.clear(); buildStatic();
+  disposeGroup(bldG); if (staticDirty) buildStatic();
   const labels = $("#chkLabels").checked;
   const list = viewMode === "floor" ? [cur] : FLOOR_IDS;
   for (const fid of list) { const z = floorZ(fid); bldG.add(buildFloor(fid, z, labels && (viewMode === "floor" || fid === cur))); }
-  if (viewMode === "floor") for (const fid of FLOOR_IDS) { if (fid === cur) break; const lv = P.LEVELS[fid]; bldG.add(box(P.W + 0.15, lv.story, P.L + 0.15, MAT.ghost, P.W / 2, lv.z + lv.story / 2, P.L / 2)); }
+  if (viewMode === "floor") for (const fid of FLOOR_IDS) { if (fid === cur) break; const lv = P.LEVELS[fid]; bldG.add(box(P.W + 0.15, lv.story - 0.03, P.L + 0.15, MAT.ghost, P.W / 2, lv.z + (lv.story - 0.03) / 2, P.L / 2)); }
   // 1F床=0・GLは −0.461。表示は常に建物座標(1F床=0)
   $("#info3d").textContent = `${P.FLOORS[cur].label}: 床 GL+${(P.floorHeightGL + P.LEVELS[cur].z).toFixed(2)}m・天井高 ${P.LEVELS[cur].ceil}m(仮定)。` +
     (viewMode === "floor" ? "この階だけ表示中(上の階は非表示)。" : viewMode === "explode" ? "全階を1.2m離して表示。" : "全階を実際の高さで重ねて表示。") +
@@ -609,7 +628,8 @@ function build3d() {
 // 表示中の階の床高(ばらす表示では階ごとに1.2m上乗せ)。階を切り替えたらカメラと注視点を同じ分だけ持ち上げる
 const floorZ = (fid) => P.LEVELS[fid].z + (viewMode === "explode" ? FLOOR_IDS.indexOf(fid) * 1.2 : 0);
 function followFloor(prevZ) { const dz = floorZ(cur) - prevZ; if (!dz) return; camera.position.y += dz; controls.target.y += dz; controls.update(); }
-function resize3d() { const w = c3.clientWidth || 600, h = c3.clientHeight || 560; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+let last3d = "";
+function resize3d() { const w = c3.clientWidth || 600, h = c3.clientHeight || 560; const k = w + "x" + h; if (k === last3d) return; last3d = k; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
 function setCam(mode) {
   const z0 = floorZ(cur);
   const cx = P.W / 2, cz = P.L / 2;
