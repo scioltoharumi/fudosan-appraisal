@@ -201,6 +201,7 @@ export const FLOORS = {
       { type: "counter_desk", x: 2.92, y: 6.37, rot: 0 },
       { type: "desk", x: 0.45, y: 8.3, rot: 90 },
       { type: "chair", x: 0.95, y: 8.3, rot: 270 },
+      { type: "ladder", x: 0.45, y: 3.25, rot: 180, h: 2.5 },   // ロフトへのはしご(3Fの北洋室側から吹抜の縁へ掛ける想定・図面に無い)
     ],
   },
   "LOFT": {
@@ -211,7 +212,7 @@ export const FLOORS = {
       room("ロフト 5.1帖", 0, C.y11, W, C.y8, { note: "2,470×3,375・天井1.4m以下・オプション" }),
     ],
     openings: [],
-    items: [{ type: "ladder", x: 0.45, y: C.y11, rot: 0 }, { type: "futon", x: 1.9, y: 4.7, rot: 90 }],
+    items: [{ type: "futon", x: 1.9, y: 4.7, rot: 90 }],
     floorRect: { x0: 0, y0: C.y11, x1: W, y1: C.y8 },
   },
 };

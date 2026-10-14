@@ -555,11 +555,13 @@ document.addEventListener("keydown", (e) => {
 const c3 = $("#view3d");
 const renderer = new THREE.WebGLRenderer({ canvas: c3, antialias: true });
 renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
-const scene = new THREE.Scene(); scene.background = new THREE.Color(0xE9EEF2);
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0xDCE7F0);
 const camera = new THREE.PerspectiveCamera(42, 1, 0.05, 200);
 const controls = new OrbitControls(camera, c3); controls.enableDamping = true; controls.dampingFactor = 0.12; controls.maxPolarAngle = Math.PI / 2 + 0.3;
 scene.add(new THREE.HemisphereLight(0xffffff, 0x8899AA, 0.95));
-const sun = new THREE.DirectionalLight(0xffffff, 0.9); sun.position.set(-4, 12, -6); scene.add(sun);
+const sun = new THREE.DirectionalLight(0xFFF6E8, 1.0); sun.position.set(-5, 14, -7); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -9, right: 9, top: 12, bottom: -12, near: 1, far: 50 }); sun.shadow.bias = -0.0005; sun.target.position.set(1.7, 0, 4.5); scene.add(sun, sun.target);
 const staticG = new THREE.Group(); const bldG = new THREE.Group(); scene.add(staticG, bldG);
 const GL = -P.floorHeightGL;
 const MAT = {
@@ -572,12 +574,26 @@ const MAT = {
   dim: new THREE.LineBasicMaterial({ color: 0x2E6E8E }), dimSel: new THREE.LineBasicMaterial({ color: 0xC93A2B }),
   sel: new THREE.LineBasicMaterial({ color: 0xC93A2B }), ghost: new THREE.MeshLambertMaterial({ color: 0xC9CDD1, transparent: true, opacity: 0.25, depthWrite: false }), ladder: new THREE.MeshLambertMaterial({ color: 0x8E7A5E }),
 };
+// 床材(手続きテクスチャ。画像ファイルを持たない): フローリング・タイル・土間
+function floorTex(kind) {
+  const cv = document.createElement("canvas"); cv.width = cv.height = 256; const x = cv.getContext("2d");
+  if (kind === "wood") { x.fillStyle = "#D9BE94"; x.fillRect(0, 0, 256, 256); for (let i = 0; i < 4; i++) { const off = (i % 2) * 128; for (let j = -1; j < 3; j++) { x.fillStyle = `hsl(33,${38 + (i * 7 + j * 11) % 12}%,${64 + ((i * 5 + j * 3) % 9)}%)`; x.fillRect(off + j * 128 + 1, i * 64 + 1, 126, 62); } } }
+  else if (kind === "tile") { x.fillStyle = "#E9ECEE"; x.fillRect(0, 0, 256, 256); x.strokeStyle = "#C9CFD4"; x.lineWidth = 2; for (let i = 0; i <= 256; i += 64) { x.beginPath(); x.moveTo(i, 0); x.lineTo(i, 256); x.moveTo(0, i); x.lineTo(256, i); x.stroke(); } }
+  else { x.fillStyle = "#B9BDC0"; x.fillRect(0, 0, 256, 256); for (let i = 0; i < 400; i++) { x.fillStyle = `rgba(0,0,0,${Math.random() * 0.08})`; x.fillRect(Math.random() * 256, Math.random() * 256, 3, 3); } }
+  const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(kind === "wood" ? 0.55 : 1.6, kind === "wood" ? 0.55 : 1.6); return t;
+}
+MAT.slab = new THREE.MeshLambertMaterial({ map: floorTex("wood") });
+MAT.tile = new THREE.MeshLambertMaterial({ map: floorTex("tile") });
+MAT.concrete = new THREE.MeshLambertMaterial({ map: floorTex("concrete") });
+MAT.frame = new THREE.MeshLambertMaterial({ color: 0x5E4B3A });
+MAT.sash = new THREE.MeshLambertMaterial({ color: 0xF2F2F2 });
+MAT.wallInt.color.set(0xF1EDE4); MAT.wallExt.color.set(0xD6D2C9);
 const itemMats = {};
 const matFor = (color) => itemMats[color] ??= new THREE.MeshLambertMaterial({ color: new THREE.Color(color) });
 const matGlassy = (color) => itemMats["t" + color] ??= new THREE.MeshLambertMaterial({ color: new THREE.Color(color), transparent: true, opacity: 0.45, depthWrite: false });
 // 再構築のたびに geometry と非共有 material を捨てる(three の Group.clear() は remove するだけ=GPUバッファが溜まる)
 function disposeGroup(g) { g.traverse((o) => { o.geometry?.dispose?.(); const m = o.material; if (m && !Object.values(MAT).includes(m) && !Object.values(itemMats).includes(m)) m.dispose?.(); }); g.clear(); }
-function box(w, h, d, mat, x, y, z) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); return m; }
+function box(w, h, d, mat, x, y, z) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; return m; }
 function flatPoly(pts, mat, y, holes = []) { const sh = new THREE.Shape(pts.map(([x, z]) => new THREE.Vector2(x, z))); for (const h of holes) sh.holes.push(new THREE.Path(h.map(([x, z]) => new THREE.Vector2(x, z)))); const g = new THREE.ShapeGeometry(sh); const m = new THREE.Mesh(g, mat); m.rotation.x = Math.PI / 2; m.position.y = y; m.scale.y = 1; return m; }
 function slabMesh(x0, z0, x1, z1, y, t, mat, holes = []) {
   const sh = new THREE.Shape([new THREE.Vector2(x0, z0), new THREE.Vector2(x1, z0), new THREE.Vector2(x1, z1), new THREE.Vector2(x0, z1)]);
@@ -592,7 +608,7 @@ const labelCache = {};
 function label(text, size = 0.32, color = "#16232E") {
   const key = color + "|" + text;
   if (!labelCache[key]) { const cv = document.createElement("canvas"); const ctx = cv.getContext("2d"); ctx.font = "28px 'Hiragino Kaku Gothic ProN','Yu Gothic',Meiryo,sans-serif"; const w = Math.ceil(ctx.measureText(text).width) + 16; cv.width = w; cv.height = 40; ctx.font = "28px 'Hiragino Kaku Gothic ProN','Yu Gothic',Meiryo,sans-serif"; ctx.fillStyle = "rgba(255,255,255,.85)"; ctx.fillRect(0, 0, w, 40); ctx.fillStyle = color; ctx.textBaseline = "middle"; ctx.fillText(text, 8, 20); const tex = new THREE.CanvasTexture(cv); tex.minFilter = THREE.LinearFilter; labelCache[key] = { tex, ratio: w / 40 }; }
-  const lc = labelCache[key]; lc.mat ??= new THREE.SpriteMaterial({ map: lc.tex, depthTest: false, transparent: true }); const sp = new THREE.Sprite(lc.mat); sp.scale.set(size * lc.ratio, size, 1); sp.renderOrder = 10; return sp;
+  const lc = labelCache[key]; lc.mat ??= new THREE.SpriteMaterial({ map: lc.tex, depthTest: true, depthWrite: false, transparent: true }); /* depthTest 有り=壁の向こうのラベルは隠す(内観で外の文字が透けない) */ const sp = new THREE.Sprite(lc.mat); sp.scale.set(size * lc.ratio, size, 1); sp.renderOrder = 10; return sp;
 }
 let staticDirty = true;
 function buildStatic() {
@@ -631,6 +647,41 @@ function stairMeshes(g, fid, zOff) {
   const under = box(s.x1 - s.x0 - 0.02, s.thickness, len, MAT.stairUnder, (s.x0 + s.x1) / 2, zOff + hTurn + rise / 2 - s.thickness / 2 - 0.02, (s.yTop + s.yTurn) / 2);
   under.rotation.x = Math.atan2(rise, run); g.add(under);
 }
+// 設備・家具の形(箱の寄せ集め。ローカル座標: x=幅方向・z=奥行方向・前面が −z。寸法はカタログ/編集値に追従)
+function itemGroup(it, c, m) {
+  const g = new THREE.Group(); const { w, d, h } = m; const col = (hex) => matFor(hex);
+  const part = (pw, ph, pd, mat, x = 0, y = ph / 2, z = 0) => { const b = box(pw, ph, pd, mat, x, y, z); g.add(b); return b; };
+  const cyl = (r, ph, mat, x, y, z, rotX = 0, seg = 20) => { const mm_ = new THREE.Mesh(new THREE.CylinderGeometry(r, r, ph, seg), mat); mm_.position.set(x, y, z); mm_.rotation.x = rotX; g.add(mm_); return mm_; };
+  const white = col("#F4F4F4"), dark = col("#3A3A3A"), wood = col("#B98C5A"), steel = col("#B9BEC4"), fabric = col(c.color);
+  switch (it.type) {
+    case "toilet": case "toilet_tankless": {
+      const bowlD = it.type === "toilet" ? d - 0.18 : d; cyl(w / 2, 0.38, white, 0, 0.19, -d / 2 + bowlD / 2, 0, 24); part(w, 0.04, bowlD, col("#E8E8E8"), 0, 0.40, -d / 2 + bowlD / 2);
+      if (it.type === "toilet") part(w, 0.42, 0.18, white, 0, 0.38 + 0.21, d / 2 - 0.09); break; }
+    case "handwash": part(w, 0.12, d, white, 0, h - 0.06, 0); part(0.04, h - 0.12, 0.04, steel, 0, (h - 0.12) / 2, d / 2 - 0.02); break;
+    case "washstand600": case "washstand750": case "washstand900": part(w, 0.78, d, col("#E9E4DA")); part(w, 0.06, d, white, 0, 0.81, 0); part(w - 0.08, 0.7, 0.02, col("#BFD8E8"), 0, 1.35, d / 2 - 0.01); break;
+    case "washer": part(w, h - 0.05, d, white); cyl(Math.min(w, h) * 0.32, 0.02, col("#8FA3B5"), 0, h * 0.5, -d / 2 - 0.005, Math.PI / 2, 28); break;
+    case "washer_pan900": part(w, h, d, col("#D5DDE3")); break;
+    case "ub1316": case "ub1616": case "ub1216": { const tub = Math.min(d, 1.6) - 0.05; part(w, h, d, matGlassy(c.color)); part(0.7, 0.55, tub, white, -w / 2 + 0.37, 0.275, 0); part(0.56, 0.02, tub - 0.14, col("#9FD2E8"), -w / 2 + 0.37, 0.5, 0); break; }
+    case "kitchen2400": case "kitchen2550": { part(w, 0.85, d, fabric); part(w, 0.03, d, col("#EDEDE6"), 0, 0.865, 0); part(0.7, 0.02, 0.42, col("#8FA3B5"), -w / 2 + 0.6, 0.875, 0.02); for (let i = 0; i < 3; i++) cyl(0.09, 0.015, dark, w / 2 - 0.45 - (i % 2) * 0.28, 0.885, (i < 2 ? -0.12 : 0.12), 0, 18); part(0.6, 0.35, 0.5, steel, w / 2 - 0.5, 1.75, d / 2 - 0.25); break; }
+    case "fridge": part(w, h, d, steel); part(0.02, h * 0.6, 0.03, dark, w / 2 - 0.08, h * 0.55, -d / 2 - 0.015); break;
+    case "cupboard": case "cupboard1200": case "wardrobe": part(w, h, d, fabric); for (let i = 1; i < 3; i++) part(w - 0.04, 0.01, 0.01, dark, 0, h * i / 3, -d / 2 - 0.005); break;
+    case "dining": case "desk": case "desk1200": case "counter_desk": case "table_low": { part(w, 0.04, d, wood, 0, h - 0.02, 0); for (const sx of [-1, 1]) for (const sz of [-1, 1]) part(0.05, h - 0.04, 0.05, wood, sx * (w / 2 - 0.06), (h - 0.04) / 2, sz * (d / 2 - 0.06)); break; }
+    case "chair": { part(w, 0.04, d, wood, 0, 0.44, 0); for (const sx of [-1, 1]) for (const sz of [-1, 1]) part(0.03, 0.42, 0.03, wood, sx * (w / 2 - 0.03), 0.21, sz * (d / 2 - 0.03)); part(w, h - 0.46, 0.03, wood, 0, 0.46 + (h - 0.46) / 2, d / 2 - 0.015); break; }
+    case "sofa3": case "sofa2": part(w, 0.42, d, fabric); part(w, h - 0.42, 0.22, fabric, 0, 0.42 + (h - 0.42) / 2, d / 2 - 0.11); for (const sx of [-1, 1]) part(0.12, 0.2, d, fabric, sx * (w / 2 - 0.06), 0.52, 0); break;
+    case "tvboard": part(w, h, d, col("#6B5B4B")); part(Math.min(w - 0.3, 1.25), 0.72, 0.03, dark, 0, h + 0.4, d / 2 - 0.1); break;
+    case "bed_s": case "bed_sd": case "bed_d": part(w, 0.25, d, wood); part(w - 0.04, 0.22, d - 0.04, col("#EDE7F3"), 0, 0.36, 0); part(w - 0.3, 0.1, 0.32, white, 0, 0.52, d / 2 - 0.3); part(w, 0.45, 0.04, wood, 0, 0.6, d / 2 - 0.02); break;
+    case "bed_bunk": for (const y of [0.35, 1.3]) part(w, 0.12, d, wood, 0, y, 0), part(w - 0.04, 0.18, d - 0.04, col("#EDE7F3"), 0, y + 0.15, 0); for (const sx of [-1, 1]) for (const sz of [-1, 1]) part(0.06, h, 0.06, wood, sx * (w / 2 - 0.03), h / 2, sz * (d / 2 - 0.03)); break;
+    case "futon": part(w, h, d, col("#EDE7F3")); part(0.5, 0.08, 0.3, white, 0, h + 0.04, d / 2 - 0.25); break;
+    case "car_compact": case "car_kei": case "car_wagon": case "car_minivan": { part(w, h * 0.4, d, col("#5F6E7D"), 0, 0.3 + h * 0.2, 0); part(w - 0.12, h - 0.3 - h * 0.4, d * 0.55, col("#8FA7BC"), 0, 0.3 + h * 0.4 + (h - 0.3 - h * 0.4) / 2, d * 0.03); for (const sx of [-1, 1]) for (const sz of [-1, 1]) cyl(0.3, 0.2, dark, sx * (w / 2 - 0.08), 0.3, sz * (d / 2 - 0.75), 0, 20).rotation.z = Math.PI / 2; break; }
+    case "bicycle": for (const sz of [-1, 1]) cyl(0.33, 0.03, dark, 0, 0.33, sz * 0.52, 0, 24).rotation.y = Math.PI / 2; part(0.04, 0.5, 1.0, col("#C93A2B"), 0, 0.6, 0); break;
+    case "stroller": part(w, 0.5, d, fabric, 0, 0.55, 0); for (const sx of [-1, 1]) for (const sz of [-1, 1]) cyl(0.1, 0.03, dark, sx * (w / 2 - 0.05), 0.1, sz * (d / 2 - 0.1), 0, 16).rotation.y = Math.PI / 2; break;
+    case "person": cyl(0.19, 0.9, fabric, 0, 0.95, 0, 0, 16); for (const sx of [-1, 1]) cyl(0.07, 0.5, col("#5B6B7C"), sx * 0.1, 0.25, 0, 0, 10); cyl(0.11, 0.22, col("#E8C4A0"), 0, 1.55, 0, 0, 16); break;
+    case "person_wheel": cyl(w / 2, 0.02, fabric, 0, 0.01, 0, 0, 36); cyl(0.19, 0.9, col("#E8A070"), 0, 0.7, 0, 0, 16); cyl(0.11, 0.22, col("#E8C4A0"), 0, 1.3, 0, 0, 16); break;
+    case "ladder": for (const sx of [-1, 1]) part(0.04, h, 0.04, wood, sx * (w / 2 - 0.02), h / 2, 0); for (let y = 0.3; y < h; y += 0.3) part(w - 0.04, 0.03, 0.03, wood, 0, y, 0); break;
+    default: part(w, h, d, fabric);
+  }
+  return g;
+}
 function buildFloor(fid, zOff, showLabels) {
   const g = new THREE.Group(); const f = state.floors[fid]; const fl = P.FLOORS[fid]; const lv = P.LEVELS[fid];
   const wh = wallH === "full" ? lv.ceil : Number(wallH);
@@ -638,17 +689,49 @@ function buildFloor(fid, zOff, showLabels) {
   const holes = [];
   if (fid === "2F") holes.push({ x0: P.STAIR.x0, y0: P.STAIR.yTop, x1: P.STAIR.x1, y1: P.STAIR.yBottom });
   if (fid === "3F") holes.push({ x0: P.STAIR.x0, y0: P.STAIR.yTop, x1: P.STAIR.x1, y1: P.STAIR.yTurn });
-  g.add(slabMesh(slab.x0, slab.y0, slab.x1, slab.y1, zOff, 0.12, MAT.slab, holes));
+  const slabM = slabMesh(slab.x0, slab.y0, slab.x1, slab.y1, zOff, 0.12, MAT.slab, holes); slabM.receiveShadow = true; g.add(slabM);
+  for (const r of fl.rooms) { // 水回りはタイル・車庫は土間(床板の6mm上。polygonOffset で同一平面のちらつきを避ける)
+    const fin = r.kind === "bath" || /トイレ|洗面/.test(r.name) ? MAT.tile : r.kind === "garage" ? MAT.concrete : null; if (!fin) continue;
+    const m = slabMesh(r.x0, r.y0, r.x1, r.y1, zOff + 0.006, 0.004, fin); m.receiveShadow = true; g.add(m);
+  }
   for (const r of fl.rooms) if (r.kind === "outside") { g.add(slabMesh(r.x0, r.y0, r.x1, r.y1, zOff - (fid === "1F" ? 0.3 : 0), 0.1, MAT.slabOut)); if (fid !== "1F") { g.add(box(r.x1 - r.x0, 1.1, 0.05, MAT.wallExt, (r.x0 + r.x1) / 2, zOff + 0.55, r.y0 + 0.025)); g.add(box(0.05, 1.1, r.y1 - r.y0, MAT.wallExt, r.x0 + 0.025, zOff + 0.55, (r.y0 + r.y1) / 2)); g.add(box(0.05, 1.1, r.y1 - r.y0, MAT.wallExt, r.x1 - 0.025, zOff + 0.55, (r.y0 + r.y1) / 2)); } }
-  for (const w of f.walls) { if (w.kind === "void") continue; const r = wallRect(w); const h = wh; g.add(box(r.x1 - r.x0, h, r.y1 - r.y0, w.kind === "ext" ? MAT.wallExt : MAT.wallInt, (r.x0 + r.x1) / 2, zOff + h / 2, (r.y0 + r.y1) / 2)); }
-  for (const o of fl.openings) if (o.type === "window" && wh > 0.9) { const horiz = o.dir === "N" || o.dir === "S"; const wy = Math.min(wh, 2.0); g.add(box(horiz ? o.w : 0.18, wy - 0.9, horiz ? 0.18 : o.w, MAT.glass, o.x, zOff + 0.9 + (wy - 0.9) / 2, o.y)); }
+  // 壁はドア・窓の開口を実際に抜いて立てる(2026-10-14ユーザー要望「窓や扉を開けたら壁ではなく空間が見えるように」)
+  const openings = [
+    ...f.items.filter((o) => o.type === "door").map((o) => ({ x: o.x, y: o.y, w: o.w, horiz: o.dir === "N" || o.dir === "S", b: 0, t: 2.0, door: true })),
+    ...fl.openings.filter((o) => o.type === "window").map((o) => { const sill = o.sill ?? (/掃出し/.test(o.label ?? "") ? 0 : 0.9); return { x: o.x, y: o.y, w: o.w, horiz: o.dir === "N" || o.dir === "S", b: sill, t: sill + (o.h ?? (sill === 0 ? 2.0 : 1.1)), window: true }; }),
+  ];
+  for (const w of f.walls) {
+    if (w.kind === "void") continue; const r = wallRect(w); const horiz = Math.abs(w.y1 - w.y2) < 1e-6; const mat = w.kind === "ext" ? MAT.wallExt : MAT.wallInt;
+    const a0 = horiz ? Math.min(w.x1, w.x2) : Math.min(w.y1, w.y2), a1 = horiz ? Math.max(w.x1, w.x2) : Math.max(w.y1, w.y2); const t = r.t * 2;
+    const piece = (s0, s1, b, tp) => { if (s1 - s0 < 0.005 || tp - b < 0.005) return; const len = s1 - s0, mid = (s0 + s1) / 2; const m = horiz ? box(len, tp - b, t, mat, mid, zOff + (b + tp) / 2, w.y1) : box(t, tp - b, len, mat, w.x1, zOff + (b + tp) / 2, mid); m.castShadow = m.receiveShadow = true; g.add(m); };
+    const ops = openings.filter((o) => o.horiz === horiz && Math.abs((horiz ? o.y : o.x) - (horiz ? w.y1 : w.x1)) < 0.03 && (horiz ? o.x : o.y) > a0 - 0.01 && (horiz ? o.x : o.y) < a1 + 0.01)
+      .map((o) => ({ ...o, s0: Math.max(a0, (horiz ? o.x : o.y) - o.w / 2), s1: Math.min(a1, (horiz ? o.x : o.y) + o.w / 2) })).sort((p, q) => p.s0 - q.s0);
+    let cur0 = a0 - r.t;   // 端部は半厚ぶん延ばして角を埋める
+    for (const o of ops) {
+      piece(cur0, o.s0, 0, wh);
+      if (o.b > 0) piece(o.s0, o.s1, 0, Math.min(o.b, wh));          // 窓台(腰壁)
+      if (wh > o.t) piece(o.s0, o.s1, o.t, wh);                         // 垂れ壁
+      if (o.window && wh > o.b) { // ガラス+枠(壁の高さまで)
+        const top = Math.min(o.t, wh); const gh = top - o.b; const mid = (o.s0 + o.s1) / 2, len = o.s1 - o.s0;
+        const gl = horiz ? box(len, gh, 0.02, MAT.glass, mid, zOff + o.b + gh / 2, w.y1) : box(0.02, gh, len, MAT.glass, w.x1, zOff + o.b + gh / 2, mid); g.add(gl);
+        for (const sPos of [o.s0 + 0.02, o.s1 - 0.02, mid]) g.add(horiz ? box(0.04, gh, t + 0.02, MAT.sash, sPos, zOff + o.b + gh / 2, w.y1) : box(t + 0.02, gh, 0.04, MAT.sash, w.x1, zOff + o.b + gh / 2, sPos));
+        for (const yy of [o.b, top]) g.add(horiz ? box(len, 0.04, t + 0.02, MAT.sash, mid, zOff + yy, w.y1) : box(t + 0.02, 0.04, len, MAT.sash, w.x1, zOff + yy, mid));
+      }
+      if (o.door) { // ドア枠(縦枠2本+上枠)
+        const dh = Math.min(o.t, wh);
+        for (const sPos of [o.s0 + 0.02, o.s1 - 0.02]) g.add(horiz ? box(0.04, dh, t + 0.02, MAT.frame, sPos, zOff + dh / 2, w.y1) : box(t + 0.02, dh, 0.04, MAT.frame, w.x1, zOff + dh / 2, sPos));
+        if (wh >= o.t) g.add(horiz ? box(o.s1 - o.s0, 0.04, t + 0.02, MAT.frame, (o.s0 + o.s1) / 2, zOff + o.t, w.y1) : box(t + 0.02, 0.04, o.s1 - o.s0, MAT.frame, w.x1, zOff + o.t, (o.s0 + o.s1) / 2));
+      }
+      cur0 = o.s1;
+    }
+    piece(cur0, a1 + r.t, 0, wh);
+  }
   for (const it of f.items) {
     if (it.type === "door") { const horiz = it.dir === "N" || it.dir === "S"; const swing = { N: [0, -1], S: [0, 1], E: [1, 0], W: [-1, 0] }[it.dir]; let hx, hy; if (horiz) { hx = it.x + (it.hinge === "E" ? it.w / 2 : -it.w / 2); hy = it.y; } else { hx = it.x; hy = it.y + (it.hinge === "S" ? it.w / 2 : -it.w / 2); } const leaf = it.fold ? it.w / 2 : it.w; const dh = Math.min(2.0, Math.max(wh, 0.9)); g.add(box(horiz ? 0.04 : leaf, dh, horiz ? leaf : 0.04, MAT.door, hx + swing[0] * leaf / 2, zOff + dh / 2, hy + swing[1] * leaf / 2)); const arc = new THREE.Line(new THREE.BufferGeometry().setFromPoints(Array.from({ length: 13 }, (_, i) => { const a = Math.atan2(swing[1], swing[0]); const toward = horiz ? (it.hinge === "E" ? Math.PI : 0) : (it.hinge === "S" ? -Math.PI / 2 : Math.PI / 2); const cw = ((toward - a + 3 * Math.PI) % (2 * Math.PI)) - Math.PI; const t = a + (cw > 0 ? 1 : -1) * (Math.PI / 2) * i / 12; return new THREE.Vector3(hx + Math.cos(t) * leaf, zOff + 0.012, hy + Math.sin(t) * leaf); })), MAT.sel); g.add(arc); continue; }
     const c = CAT[it.type] ?? CAT.box; const m = itemDims(it); const b = aabb(it);
-    const mesh = box(b.x1 - b.x0, m.h, b.y1 - b.y0, matFor(c.color), it.x, zOff + m.h / 2, it.y);
-    if (it.type === "ub1316" || it.type === "ub1616" || it.type === "ub1216") mesh.material = matGlassy(c.color);
-    mesh.userData.itemId = it.id; mesh.userData.fid = fid; g.add(mesh);
-    if (selected?.kind === "item" && selected.id === it.id && fid === cur) { const e = new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry), MAT.sel); e.position.copy(mesh.position); g.add(e); }
+    const grp = itemGroup(it, c, m); grp.position.set(it.x, zOff, it.y); grp.rotation.y = -(m.r * Math.PI / 180);
+    grp.traverse((o) => { if (o.isMesh) { o.userData.itemId = it.id; o.userData.fid = fid; o.castShadow = true; o.receiveShadow = true; } }); g.add(grp);
+    if (selected?.kind === "item" && selected.id === it.id && fid === cur) { const e = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(b.x1 - b.x0, m.h, b.y1 - b.y0)), MAT.sel); e.position.set(it.x, zOff + m.h / 2, it.y); g.add(e); }
     if ($("#chkSpace").checked) { const sr = spaceRect(it); if (sr) g.add(slabMesh(sr.x0, sr.y0, sr.x1, sr.y1, zOff + 0.008, 0.004, MAT.space)); }
     if (showLabels && selected?.kind === "item" && selected.id === it.id) { const l = label(`${it.label ?? c.name.replace(/\(.*$/, "")} ${mm(b.x1 - b.x0)}×${mm(b.y1 - b.y0)}`, 0.22); l.position.set(it.x, zOff + m.h + 0.15, it.y); g.add(l); }
   }
@@ -747,7 +830,7 @@ function resize3d() { const w = c3.clientWidth || 600, h = c3.clientHeight || 56
 function setCam(mode) {
   const z0 = floorZ(cur);
   const cx = P.W / 2, cz = P.L / 2;
-  if (mode === "bird") { camera.position.set(cx + 9, z0 + 9, cz + 9); controls.target.set(cx, z0 + 0.8, cz); }
+  if (mode === "bird") { if (viewMode === "floor") { camera.position.set(cx + 9, z0 + 8, cz + 10); controls.target.set(cx, z0 + 0.8, cz); } else { camera.position.set(cx + 11, 11, cz + 14); controls.target.set(cx, 4.2, cz); } }   // 全階表示は建物全体が入るよう引いて見る
   if (mode === "top") { camera.position.set(cx + 0.001, z0 + 16, cz); controls.target.set(cx, z0, cz); }
   if (mode === "north") { camera.position.set(cx + 1.5, z0 + 3.5, -10); controls.target.set(cx, z0 + 1.2, cz); }
   if (mode === "eye") {

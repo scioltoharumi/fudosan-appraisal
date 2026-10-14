@@ -133,6 +133,13 @@ await page.click("#btnZoomFit"); await page.waitForTimeout(100);
 ok("拡大・ピンチ・全体の操作でJSエラーなし", errors.length === 0, errors.join(" | "));
 void zoomed;
 
+// 外観(壁を天井まで・全階)と内観(2F LDK・目線)のスクリーンショット(目視確認用。検査は JS エラーのみ)
+await page.click('[data-mode="3d"]'); await page.click('[data-wallh="full"]'); await page.click('[data-view="all"]'); await page.click('[data-cam="bird"]'); await page.waitForTimeout(600);
+if (shotDir) await page.locator("#view3d").screenshot({ path: join(shotDir, "plan3d-full-bird.png") });
+await page.click('[data-floor="2F"]'); await page.click('[data-view="floor"]'); await page.click('[data-cam="eye"]'); await page.waitForTimeout(600);
+if (shotDir) await page.locator("#view3d").screenshot({ path: join(shotDir, "plan3d-eye-ldk.png") });
+ok("外観・内観の描画でJSエラーなし", errors.length === 0, errors.join(" | "));
+
 await b.close(); srv.close();
 const fails = checks.filter((c) => !c[1]);
 console.log(`\n${checks.length - fails.length}/${checks.length} 項目 OK`);
