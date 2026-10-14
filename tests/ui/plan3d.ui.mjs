@@ -177,6 +177,30 @@ ok("屋根の表示切替・妻壁の塗り(天井まで)でJSエラーなし", 
 const info3d = await page.textContent("#info3d");
 ok("3Dの説明にロフトの頭上(棟直下1.245)が出る", info3d.includes("棟直下1.245"), info3d.slice(0, 120));
 if (shotDir) { await page.click('[data-mode="2d"]'); await page.waitForTimeout(200); await page.locator("#plan2d").screenshot({ path: join(shotDir, "plan3d-loft-2d.png") }); }
+// --- 改案B(2026-10-14「バルコニー無し・3階三部屋・風呂2階」) ---
+await page.click('[data-variant="B"]'); await page.waitForLoadState("load"); await page.waitForTimeout(1500);
+ok("案Bに切り替わり再読込後もJSエラーなし", errors.length === 0 && await page.evaluate(() => document.querySelector('[data-variant="B"]').classList.contains("on") && localStorage.getItem("fudosan-plan3d-kamiya2-v1:variant") === "B"), errors.join(" | "));
+const bState = await page.evaluate(() => window.plan3dState());
+ok("案Bの2Fに UB と洗濯機・3Fにベッド3台(三部屋)", bState.floors["2F"].items.some((i) => i.type === "ub1316") && bState.floors["2F"].items.some((i) => i.type === "washer") && bState.floors["3F"].items.filter((i) => /^bed_/.test(i.type)).length === 3);
+ok("案Bの2F北外壁が y=-0.455(張り出し)", bState.floors["2F"].walls.some((w) => w.kind === "ext" && Math.abs(w.y1 + 0.455) < 1e-9 && Math.abs(w.y2 + 0.455) < 1e-9));
+await page.click('[data-mode="both"]'); await page.click('[data-floor="3F"]'); await page.click('[data-view="floor"]'); await page.click('[data-cam="top"]'); await page.waitForTimeout(500);
+if (shotDir) { await page.locator("#plan2d").screenshot({ path: join(shotDir, "plan3d-B-3F-2d.png") }); await page.locator("#view3d").screenshot({ path: join(shotDir, "plan3d-B-3F-3d.png") }); }
+await page.click('[data-floor="2F"]'); await page.waitForTimeout(400);
+if (shotDir) { await page.locator("#plan2d").screenshot({ path: join(shotDir, "plan3d-B-2F-2d.png") }); }
+await page.click('[data-floor="1F"]'); await page.waitForTimeout(400);
+if (shotDir) { await page.locator("#plan2d").screenshot({ path: join(shotDir, "plan3d-B-1F-2d.png") }); }
+await page.click('[data-view="all"]'); await page.click('[data-cam="bird"]'); await page.click('[data-wallh="full"]'); await page.waitForTimeout(600);
+if (shotDir) await page.locator("#view3d").screenshot({ path: join(shotDir, "plan3d-B-full.png") });
+// 案Bの部屋の広さ(3F 洋室M)が 5〜6.5m²
+await page.click('[data-floor="3F"]'); await page.click('[data-view="floor"]'); await page.click('[data-tool="area"]'); await page.waitForTimeout(200);
+const mPx = await page.evaluate(() => { const c = document.getElementById("plan2d"); const r = c.getBoundingClientRect(); const V = { x0: -1.3, y0: -1.9, x1: 4.7 }; const s = r.width / (V.x1 - V.x0); return { x: r.left + (0.7 - V.x0) * s, y: r.top + (4.6 - V.y0) * s }; });
+await page.mouse.click(mPx.x, mPx.y); await page.waitForTimeout(300);
+const mArea = await page.textContent("#props");
+ok("案B 3F洋室Mの広さが 5〜6.5m²(内法≈5.7)", /([\d.]+) ?m²/.test(mArea) && (() => { const v = Number(mArea.match(/([\d.]+) ?m²/)[1]); return v >= 5.0 && v <= 6.5; })(), mArea.slice(0, 120));
+ok("案Bの操作でJSエラーなし", errors.length === 0, errors.join(" | "));
+// 案Aへ戻す(以後の検査・既定に影響しない)
+await page.click('[data-variant="A"]'); await page.waitForLoadState("load"); await page.waitForTimeout(800);
+ok("案Aへ戻る(1Fに洗面台)", await page.evaluate(() => window.plan3dState().floors["1F"].items.some((i) => i.type === "washstand750")));
 
 await b.close(); srv.close();
 const fails = checks.filter((c) => !c[1]);

@@ -25,8 +25,14 @@ function resizeTo(it, corner, wx, wy, orig) {
   it.x = Math.round((corner.includes("E") ? fx + m.hx : fx - m.hx) * 1000) / 1000; it.y = Math.round((corner.includes("S") ? fy + m.hy : fy - m.hy) * 1000) / 1000;
 }
 const cornersOf = (it) => { const b = aabb(it); return [["NW", b.x0, b.y0], ["NE", b.x1, b.y0], ["SW", b.x0, b.y1], ["SE", b.x1, b.y1]]; };
+// 案(A=参考プラン / B=改案)。配置は案ごとに別キーで保存し、切替は再読込で初期化する(2026-10-14)
+const LS_BASE = "fudosan-plan3d-kamiya2-v1";
+const VAR_KEY = LS_BASE + ":variant";
+let variant = "A"; try { const v = localStorage.getItem(VAR_KEY); if (v && P.VARIANTS[v]) variant = v; } catch { /* noop */ }
+P.FLOORS = P.VARIANTS[variant].floors; P.northExt = P.VARIANTS[variant].north_ext;
+document.querySelectorAll("[data-variant]").forEach((b) => { b.classList.toggle("on", b.dataset.variant === variant); b.onclick = () => { if (b.dataset.variant === variant) return; try { localStorage.setItem(VAR_KEY, b.dataset.variant); } catch { /* noop */ } location.reload(); }; });
 const FLOOR_IDS = Object.keys(P.FLOORS);
-const LS_KEY = "fudosan-plan3d-kamiya2-v1";
+const LS_KEY = variant === "A" ? LS_BASE : LS_BASE + ":" + variant;
 const SNAP_ITEM = 0.01, SNAP_WALL = P.GRID / 10;   // 設備1cm・壁45.5mm
 const RISER = P.LEVELS["1F"].story / (P.STAIR.winders + P.STAIR.straight);
 // 屋根(断面スケッチ): 棟は東西方向・y=ROOF.ridgeY、軒はロフト床レベルで北面・南面へ下りる切妻。ロフト床からの屋根下端の高さ
@@ -303,7 +309,7 @@ function drawWindow(ctx, o) {
 }
 function drawDoor(ctx, d, sel) {
   const horiz = d.dir === "N" || d.dir === "S";
-  const onExt = (horiz ? [0, P.L] : [0, P.W]).some((v) => Math.abs((horiz ? d.y : d.x) - v) < 0.02);
+  const onExt = (horiz ? [0, -P.northExt, P.L] : [0, P.W]).some((v) => Math.abs((horiz ? d.y : d.x) - v) < 0.02);
   const t = (onExt ? P.WALL_T.ext : P.WALL_T.int) / 2 + 0.01;
   // 開口(壁を白で抜く)
   ctx.fillStyle = "#FFFFFF";
@@ -328,7 +334,8 @@ function drawDoor(ctx, d, sel) {
   }
 }
 function dims(ctx, f) {
-  const xs = new Set([0, P.W]), ys = new Set([0, P.L]);
+  const yTopLine = P.FLOORS[cur].floorRect?.y0 ?? 0;
+  const xs = new Set([0, P.W]), ys = new Set([yTopLine, P.L]);
   for (const w of f.walls) { if (Math.abs(w.x1 - w.x2) < 1e-6) xs.add(round3(w.x1)); if (Math.abs(w.y1 - w.y2) < 1e-6) ys.add(round3(w.y1)); }
   ctx.strokeStyle = "#8A9AA6"; ctx.lineWidth = 1;
   const yTop = -1.0, xLeft = -0.72;
@@ -337,7 +344,7 @@ function dims(ctx, f) {
   let prevY = -9, altY = false;
   for (const y of [...ys].sort((a, b) => a - b)) { const [px, py] = toPx(xLeft, y); ctx.beginPath(); ctx.moveTo(px - 4, py); ctx.lineTo(px + 4, py); ctx.stroke(); altY = (y - prevY) * scale < 11 ? !altY : false; txt(ctx, mm(y), xLeft - (altY ? 0.42 : 0.08), y, 8, "#43566B", "right"); prevY = y; }
   { const [a, b] = toPx(0, yTop), [c] = toPx(P.W, yTop); ctx.beginPath(); ctx.moveTo(a, b); ctx.lineTo(c, b); ctx.stroke(); }
-  { const [a, b] = toPx(xLeft, 0), [, d] = toPx(xLeft, P.L); ctx.beginPath(); ctx.moveTo(a, b); ctx.lineTo(a, d); ctx.stroke(); }
+  { const [a, b] = toPx(xLeft, yTopLine), [, d] = toPx(xLeft, P.L); ctx.beginPath(); ctx.moveTo(a, b); ctx.lineTo(a, d); ctx.stroke(); }
 }
 const round3 = (v) => Math.round(v * 1000) / 1000;
 
@@ -794,7 +801,7 @@ function buildFloor(fid, zOff, showLabels) {
 function netDims(r, fid) {
   const ext = (v, lim) => Math.abs(v - lim) < 1e-6;
   const hx = (ext(r.x0, 0) ? P.WALL_T.ext : P.WALL_T.int) / 2 + (ext(r.x1, P.W) ? P.WALL_T.ext : P.WALL_T.int) / 2;
-  const hy = (ext(r.y0, 0) && fid !== "1F" ? P.WALL_T.ext : P.WALL_T.int) / 2 + (ext(r.y1, P.L) ? P.WALL_T.ext : P.WALL_T.int) / 2;
+  const hy = ((ext(r.y0, 0) || ext(r.y0, -P.northExt)) && fid !== "1F" ? P.WALL_T.ext : P.WALL_T.int) / 2 + (ext(r.y1, P.L) ? P.WALL_T.ext : P.WALL_T.int) / 2;
   return { w: Math.max(0, r.x1 - r.x0 - hx), d: Math.max(0, r.y1 - r.y0 - hy) };
 }
 // 寸法線(3D): 床面に線+目盛+mmのラベル。2026-10-14ユーザー要望「3Dの方にも詳細寸法は極力書いてほしい」
@@ -846,12 +853,13 @@ function roofMeshes(z0) {
   const g = new THREE.Group(); const R = P.ROOF; const half = P.L / 2, ov = R.overhang; const ang = Math.atan2(R.rise, half); const tv = R.thickness / Math.cos(ang);
   const hAt = (y) => R.rise * (1 - Math.abs(y - R.ridgeY) / half);   // 軒の出の先は負になる(壁芯より外)
   // 断面(y, 高さ)を x 方向へ押し出す: 下面を北→南、上面を南→北
-  const sec = [[-ov, hAt(-ov)], [R.ridgeY, R.rise], [P.L + ov, hAt(P.L + ov)], [P.L + ov, hAt(P.L + ov) + tv], [R.ridgeY, R.rise + tv], [-ov, hAt(-ov) + tv]];
+  const yn = -P.northExt - ov;
+  const sec = [[yn, hAt(yn)], [R.ridgeY, R.rise], [P.L + ov, hAt(P.L + ov)], [P.L + ov, hAt(P.L + ov) + tv], [R.ridgeY, R.rise + tv], [yn, hAt(yn) + tv]];
   const sh = new THREE.Shape(sec.map(([y, h]) => new THREE.Vector2(y, h)));
   const geo = new THREE.ExtrudeGeometry(sh, { depth: P.W + 2 * ov, bevelEnabled: false });
   const m = new THREE.Mesh(geo, MAT.roof); m.rotation.y = -Math.PI / 2; m.position.set(P.W + ov, z0, 0); m.castShadow = false; g.add(m);   // 局所x→世界z・局所z→世界−x
   // 妻壁(東西): 壁を天井までにしたときだけ面で塗る。それ以外は輪郭線(ロフトの中が見えるように)
-  const tri = [[0, 0], [R.ridgeY, R.rise], [P.L, 0]];
+  const tri = [[-P.northExt, hAt(-P.northExt)], [R.ridgeY, R.rise], [P.L, 0]];
   for (const x of [0, P.W]) {
     const pts = tri.map(([y, h]) => new THREE.Vector3(x, z0 + h, y)); pts.push(pts[0].clone());
     g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), MAT.roofLine));
@@ -859,6 +867,7 @@ function roofMeshes(z0) {
   }
   // 棟の線
   g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-ov, z0 + R.rise + tv, R.ridgeY), new THREE.Vector3(P.W + ov, z0 + R.rise + tv, R.ridgeY)]), MAT.roofLine));
+  if (P.northExt > 0) { const l = label(`北へ${mm(P.northExt)}mm張り出し(改案B)`, 0.16, "#43566B"); l.position.set(P.W / 2, z0 + 0.3, -P.northExt - 0.1); g.add(l); }
   if ($("#chkDims").checked) { // ロフトの頭上高さ: 北端・棟直下・南端に縦の寸法線
     const fr = P.FLOORS.LOFT.floorRect; const xm = P.W / 2;
     for (const [y, nm] of [[fr.y0 + 0.02, "ロフト北端"], [R.ridgeY, "棟直下"], [fr.y1 - 0.02, "ロフト南端"]]) {

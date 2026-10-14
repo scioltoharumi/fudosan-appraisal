@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { ROOT, loadProperty } from "../engine/io.js";
-import { PLAN, FLOORS, LOT, ITEM_CATALOG, ASSUMPTIONS, STAIR, ROOF, roofHeightAt, roomArea, polygonArea, renderPlan3d } from "../site/templates/plan3d.js";
+import { PLAN, FLOORS, FLOORS_B, VARIANTS, CHECK_A, CHECK_B, EXT_N, B_CHANGES, B_CAVEATS, LOT, ITEM_CATALOG, ASSUMPTIONS, STAIR, ROOF, roofHeightAt, roomArea, polygonArea, netArea, renderPlan3d } from "../site/templates/plan3d.js";
 
 const near = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b} (許容${tol})`);
 
@@ -81,4 +81,56 @@ test("plan3d: ページの開示(判定しない・前提・出典)と three.js 
   assert.equal(property.plan3d_page, "plan3d.html", "物件YAMLから物件ページへ導線が出る");
   // 床高は YAML(ユーザー提供 0.461)と一致
   assert.equal(PLAN.floorHeightGL, property.hazard_check.flood_fermi.floor_height_m);
+});
+
+test("plan3d: 改案B(バルコニー無し・3F三部屋・風呂2F)の整合と法規の机上計算", () => {
+  const near = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b}`);
+  assert.equal(VARIANTS.A.floors, FLOORS); assert.equal(VARIANTS.B.floors, FLOORS_B); assert.equal(VARIANTS.B.north_ext, EXT_N);
+  // データの形(A案と同じ検査)
+  for (const [fid, f] of Object.entries(FLOORS_B)) {
+    assert.ok(f.walls.length > 0 && f.rooms.length > 0, `${fid} 壁と部屋`);
+    for (const w of f.walls) assert.ok(Math.abs(w.x1 - w.x2) < 1e-9 || Math.abs(w.y1 - w.y2) < 1e-9, `${fid} 壁は水平か垂直`);
+    for (const it of f.items) { assert.ok(ITEM_CATALOG[it.type], `${fid} ${it.type} はカタログにある`); assert.ok(it.y > -1.2 && it.y < PLAN.L + 0.5 && it.x > -0.5 && it.x < PLAN.W + 0.5, `${fid} ${it.type} の位置`); }
+    for (const o of f.openings) assert.ok(["door", "window"].includes(o.type) && o.w > 0.3, `${fid} 開口 ${o.type}`);
+    for (const r of f.rooms) assert.ok(r.x1 > r.x0 && r.y1 > r.y0, `${fid} ${r.name} の矩形`);
+  }
+  // バルコニー無し・2F/3Fは北へ455
+  for (const fid of ["2F", "3F"]) { assert.ok(!FLOORS_B[fid].rooms.some((r) => /バルコニー/.test(r.name)), `${fid} バルコニー無し`); near(FLOORS_B[fid].floorRect.y0, -EXT_N, 1e-9, `${fid} 北の張り出し`); assert.ok(FLOORS_B[fid].walls.some((w) => w.kind === "ext" && Math.abs(w.y1 + EXT_N) < 1e-9 && Math.abs(w.y2 + EXT_N) < 1e-9), `${fid} 北の外壁は y=-${EXT_N}`); }
+  // 3Fは洋室が3つ+廊下、トイレ無し
+  const r3 = FLOORS_B["3F"].rooms.map((r) => r.name);
+  assert.equal(r3.filter((n) => /^洋室[NMS] /.test(n) && !/アルコーブ|カウンター/.test(n)).length, 3, `3Fに洋室3つ: ${r3}`);
+  assert.ok(r3.some((n) => n === "廊下") && !r3.some((n) => /トイレ/.test(n)), "3Fは廊下あり・トイレ無し");
+  assert.equal(FLOORS_B["3F"].openings.filter((o) => o.type === "door" && /^洋室/.test(o.label)).length, 3, "三室それぞれに廊下からのドア");
+  for (const nm of ["洋室N 6", "洋室M 3", "洋室S 4"]) { const r = FLOORS_B["3F"].rooms.find((q) => q.name.startsWith(nm)); assert.ok(netArea(r, "3F", -EXT_N) / 1.62 >= 3.0, `${nm} は内法3帖以上`); }
+  // 2Fに UB・脱衣所・トイレ、1Fには無い
+  const r2 = FLOORS_B["2F"].rooms.map((r) => r.name), r1 = FLOORS_B["1F"].rooms.map((r) => r.name);
+  assert.ok(r2.some((n) => /^UB/.test(n)) && r2.some((n) => /脱衣/.test(n)) && r2.some((n) => /トイレ/.test(n)), `2Fに風呂・脱衣所・トイレ: ${r2}`);
+  assert.ok(!r1.some((n) => /^UB|洗面脱衣/.test(n)) && r1.some((n) => /トイレ/.test(n)), `1Fは風呂無し・トイレあり: ${r1}`);
+  assert.ok(FLOORS_B["2F"].items.some((i) => i.type === "ub1316") && FLOORS_B["2F"].items.some((i) => i.type === "washer"), "2FにUBと洗濯機");
+  // 水回りの位置が壁と整合(UB は 1,555×1,820 モジュール)
+  const ub = FLOORS_B["2F"].rooms.find((r) => /^UB/.test(r.name)); near(ub.x1 - ub.x0, 1.555, 1e-9, "UB 幅"); near(ub.y1 - ub.y0, 1.82, 1e-9, "UB 奥行");
+  // 法規の机上計算: 建ぺい率70%・容積率200%・道路斜線・高度地区・10m に収まる(A案との対照つき)
+  assert.ok(CHECK_B.building_area <= CHECK_B.coverage_cap_m2, `建築面積 ${CHECK_B.building_area} ≤ ${CHECK_B.coverage_cap_m2}`);
+  assert.ok(CHECK_B.volume <= CHECK_B.far_cap_m2, `容積 ${CHECK_B.volume} ≤ ${CHECK_B.far_cap_m2}`);
+  assert.ok(CHECK_B.north_face_top <= CHECK_B.road_slope_allowed && CHECK_B.north_eave_top <= CHECK_B.road_slope_allowed, "道路斜線(北面)");
+  assert.ok(CHECK_B.north_face_top <= CHECK_B.kodo2_allowed, "第2種高度地区(北面)");
+  assert.ok(CHECK_B.ridge_top <= 10, "10m以下");
+  assert.ok(CHECK_A.coverage > 0.6 && CHECK_A.coverage <= 0.7, "A案も建ぺい率60%超=準耐火の緩和前提(64.6%)");
+  near(CHECK_B.building_area - CHECK_A.building_area, PLAN.W * EXT_N, 1e-9, "張り出し分の増加");
+  // 採光: N(道路)は満額、S は1/10で可(1/7には届かない=開示どおり)、M は天窓で1/7
+  const d = CHECK_B.daylight;
+  assert.equal(d.N3.k, 3); assert.ok(d.N3.eff >= d.N3.floor / 7, "洋室N 採光 1/7");
+  assert.ok(d.S3.eff >= d.S3.floor / 10 && d.S3.eff < d.S3.floor / 7, `洋室S は1/10で可・1/7未満 (${d.S3.eff.toFixed(2)} / ${(d.S3.floor / 7).toFixed(2)})`);
+  assert.equal(d.M3.k, 0); assert.ok(d.M3.eff >= d.M3.floor / 7, "洋室M は天窓で1/7");
+  assert.ok(d.N2.eff >= d.N2.floor / 7, "2F LDK 採光");
+  // ページの開示
+  const html = renderPlan3d({ asOf: "2026-10-14", property: loadProperty("kamiya2-adcast-a") });
+  const text = html.replace(/<script[\s\S]*?<\/script>/g, " ").replace(/<[^>]+>/g, " ");
+  assert.ok(html.includes('data-variant="A"') && html.includes('data-variant="B"'), "案の切替ボタン");
+  assert.ok(text.includes("改案B: バルコニー無し・3階三部屋・風呂2階") && text.includes("面積と法規の机上計算"), "改案Bの節と法規表");
+  assert.ok(text.includes("確認申請の設計者") && text.includes("判定はしない"), "設計者の検証が要る・判定しない、の開示");
+  const flat = text.replace(/\s+/g, "");
+  for (const a of [...B_CHANGES, ...B_CAVEATS]) assert.ok(flat.includes(a.replace(/\*\*/g, "").replace(/\s+/g, "").slice(0, 16)), `改案Bの開示: ${a.slice(0, 16)}`);
+  assert.ok(text.includes("照明設備つきの1/10") && text.includes("天窓"), "採光の条件(1/10・天窓)の開示");
+  assert.ok(html.includes("VARIANTS") && html.includes('"north_ext":' + EXT_N), "VARIANTS がページに注入される");
 });
