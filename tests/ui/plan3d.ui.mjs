@@ -133,6 +133,25 @@ await page.click("#btnZoomFit"); await page.waitForTimeout(100);
 ok("拡大・ピンチ・全体の操作でJSエラーなし", errors.length === 0, errors.join(" | "));
 void zoomed;
 
+// --- 規定サイズ・角ハンドル・長押し移動(2026-10-14追加) ---
+await page.click('[data-mode="both"]'); await page.click('[data-floor="1F"]'); await page.click('[data-view="floor"]'); await page.click('[data-tool="select"]'); await page.waitForTimeout(300);
+const bedPx = await page.evaluate(() => { const c = document.getElementById("plan2d"); const r = c.getBoundingClientRect(); const V = { x0: -1.3, y0: -1.9, x1: 4.7 }; const s = r.width / (V.x1 - V.x0); const it = window.plan3dState().floors["1F"].items.find((i) => i.type === "bed_s"); return { x: r.left + (it.x - V.x0) * s, y: r.top + (it.y - V.y0) * s, se: { x: r.left + (it.x + 0.485 - V.x0) * s, y: r.top + (it.y + 0.975 - V.y0) * s }, s }; });
+await page.mouse.click(bedPx.x, bedPx.y); await page.waitForTimeout(200);
+ok("ベッド選択で規定サイズのボタン(シングル〜キング)が出る", (await page.textContent("#props")).includes("セミダブル") && (await page.textContent("#props")).includes("キング"));
+// 2D: 南東の角を +23cm 東へ引っ張る → セミダブル(1,200)に吸着
+await page.mouse.move(bedPx.se.x, bedPx.se.y); await page.mouse.down(); await page.mouse.move(bedPx.se.x + 0.23 * bedPx.s, bedPx.se.y, { steps: 6 }); await page.mouse.up(); await page.waitForTimeout(200);
+const bed = await page.evaluate(() => window.plan3dState().floors["1F"].items.find((i) => /^bed_/.test(i.type)));
+ok("角のハンドルを引っ張るとセミダブル(bed_sd)に吸着する", bed?.type === "bed_sd", JSON.stringify(bed));
+await page.click('[data-preset="2"]'); await page.waitForTimeout(150);
+ok("規定サイズボタンでダブルに切り替わる", await page.evaluate(() => window.plan3dState().floors["1F"].items.some((i) => i.type === "bed_d")));
+// 3D: 便器を長押し→引っ張って移動
+await page.click('[data-cam="top"]'); await page.locator("#view3d").scrollIntoViewIfNeeded(); await page.waitForTimeout(400);
+const t0 = await page.evaluate(() => { const it = window.plan3dState().floors["1F"].items.find((i) => i.type === "toilet"); return [it.x, it.y, ...window.plan3dProject(it.x, it.y, "1F", 0.4)]; });
+await page.mouse.move(t0[2], t0[3]); await page.mouse.down(); await page.waitForTimeout(600); await page.mouse.move(t0[2] - 40, t0[3], { steps: 8 }); await page.mouse.up(); await page.waitForTimeout(300);
+const t1 = await page.evaluate(() => { const it = window.plan3dState().floors["1F"].items.find((i) => i.type === "toilet"); return [it.x, it.y]; });
+ok("3Dで長押し→引っ張ると便器が動く", Math.abs(t1[0] - t0[0]) > 0.1 || Math.abs(t1[1] - t0[1]) > 0.1, JSON.stringify({ t0: t0.slice(0, 2), t1 }));
+ok("長押し移動後にカメラ操作が戻る・JSエラーなし", errors.length === 0, errors.join(" | "));
+
 // 外観(壁を天井まで・全階)と内観(2F LDK・目線)のスクリーンショット(目視確認用。検査は JS エラーのみ)
 await page.click('[data-mode="3d"]'); await page.click('[data-wallh="full"]'); await page.click('[data-view="all"]'); await page.click('[data-cam="bird"]'); await page.waitForTimeout(600);
 if (shotDir) await page.locator("#view3d").screenshot({ path: join(shotDir, "plan3d-full-bird.png") });

@@ -6,6 +6,23 @@ import { OrbitControls } from "./vendor/OrbitControls.js";
 
 const P = window.PLAN;
 const CAT = P.ITEM_CATALOG;
+const presetGroupOf = (type) => /^bed_(?!bunk)/.test(type) ? "bed" : /^sofa/.test(type) ? "sofa" : /^kitchen/.test(type) ? "kitchen" : /^washstand/.test(type) ? "washstand" : /^ub/.test(type) ? "ub" : type === "dining" ? "dining" : /^desk/.test(type) ? "desk" : type === "fridge" ? "fridge" : /^cupboard/.test(type) ? "cupboard" : type === "washer" ? "washer" : /^car_/.test(type) ? "car" : /^toilet/.test(type) ? "toilet" : null;
+const presetsOf = (it) => P.SIZE_PRESETS[presetGroupOf(it.type)] ?? [];
+// 規定サイズの適用(type があれば種類ごと切替)
+function applyPreset(it, pr) { if (pr.type) { it.type = pr.type; delete it.w; delete it.d; delete it.h; delete it.sizeName; } else { it.w = pr.w; it.d = pr.d; it.sizeName = pr.name; } }
+const presetNameOf = (it) => { const m = itemDims(it); const pr = presetsOf(it).find((q) => Math.abs(q.w - m.w) < 0.006 && Math.abs(q.d - m.d) < 0.006); return pr?.name ?? it.sizeName ?? null; };
+// 角のドラッグで大きさを変える: 向かいの角を固定し、新しい外形から幅・奥行を出す。規定サイズに8cm以内なら吸着、それ以外は1cm刻み
+function resizeTo(it, corner, wx, wy, orig) {
+  const b = aabb(orig); const fx = corner.includes("E") ? b.x0 : b.x1, fy = corner.includes("S") ? b.y0 : b.y1;   // 固定する角
+  let x0 = Math.min(fx, wx), x1 = Math.max(fx, wx), y0 = Math.min(fy, wy), y1 = Math.max(fy, wy);
+  let ww = Math.max(0.2, x1 - x0), dd = Math.max(0.2, y1 - y0); const r = itemDims(orig).r;
+  let w = r % 180 === 0 ? ww : dd, d = r % 180 === 0 ? dd : ww;
+  const pr = presetsOf(it).map((q) => ({ q, e: Math.max(Math.abs(q.w - w), Math.abs(q.d - d)) })).sort((a, b2) => a.e - b2.e)[0];
+  if (pr && pr.e < 0.08) { applyPreset(it, pr.q); } else { it.w = Math.round(w * 100) / 100; it.d = Math.round(d * 100) / 100; delete it.sizeName; if (orig.type !== it.type) it.type = orig.type; }
+  const m = itemDims(it); // 固定した角を基準に中心を置き直す
+  it.x = Math.round((corner.includes("E") ? fx + m.hx : fx - m.hx) * 1000) / 1000; it.y = Math.round((corner.includes("S") ? fy + m.hy : fy - m.hy) * 1000) / 1000;
+}
+const cornersOf = (it) => { const b = aabb(it); return [["NW", b.x0, b.y0], ["NE", b.x1, b.y0], ["SW", b.x0, b.y1], ["SE", b.x1, b.y1]]; };
 const FLOOR_IDS = Object.keys(P.FLOORS);
 const LS_KEY = "fudosan-plan3d-kamiya2-v1";
 const SNAP_ITEM = 0.01, SNAP_WALL = P.GRID / 10;   // 設備1cm・壁45.5mm
@@ -196,6 +213,7 @@ function draw2d() {
   if ($("#chkSpace").checked) for (const it of f.items) { const sr = spaceRect(it); if (!sr) continue; ctx.fillStyle = "rgba(201,58,43,.10)"; ctx.strokeStyle = "rgba(201,58,43,.55)"; ctx.setLineDash([3, 2]); rect(ctx, sr.x0, sr.y0, sr.x1 - sr.x0, sr.y1 - sr.y0); ctx.fill(); ctx.stroke(); ctx.setLineDash([]); }
   // 設備
   for (const it of f.items) if (it.type !== "door") drawItem(ctx, it, selected?.kind === "item" && selected.id === it.id);
+  if (selected?.kind === "item") { const it = f.items.find((o) => o.id === selected.id); if (it && it.type !== "door") for (const [, cx, cy] of cornersOf(it)) { const [px, py] = toPx(cx, cy); ctx.fillStyle = "#FFFFFF"; ctx.strokeStyle = "#C93A2B"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(px, py, 7, 0, 7); ctx.fill(); ctx.stroke(); } }
   // 壁
   for (const w of f.walls) {
     const r = wallRect(w); const sel = selected?.kind === "wall" && selected.id === w.id;
@@ -363,6 +381,10 @@ c2.addEventListener("pointerdown", (e) => {
   }
   if (tool === "area") { selected = null; areaResult = floodArea(wx, wy); draw2d(); renderProps(); request3d(); return; }
   if (tool === "wall") { wallDraft = { x1: snapTo(wx, SNAP_WALL), y1: snapTo(wy, SNAP_WALL), x2: snapTo(wx, SNAP_WALL), y2: snapTo(wy, SNAP_WALL) }; draw2d(); return; }
+  if (selected?.kind === "item") { // 四隅のハンドル(選択中のみ・14px以内)
+    const it = F().items.find((o) => o.id === selected.id);
+    if (it && it.type !== "door") { const tol = 14 / scale; const c = cornersOf(it).find(([, cx, cy]) => Math.hypot(cx - wx, cy - wy) < tol); if (c) { drag = { kind: "resize", obj: it, corner: c[0], orig: JSON.parse(JSON.stringify(it)), moved: false }; return; } }
+  }
   const h = hitTest(wx, wy);
   selected = h;
   if (h) {
@@ -391,6 +413,7 @@ c2.addEventListener("pointermove", (e) => {
   if (!drag) return;
   if (!drag.moved) { pushUndo(); drag.moved = true; }
   const noSnap = e.altKey;
+  if (drag.kind === "resize") { resizeTo(drag.obj, drag.corner, wx, wy, drag.orig); sched(); return; }
   if (drag.kind === "item") {
     const it = drag.obj;
     if (it.type === "door") {
@@ -509,8 +532,9 @@ function renderProps() {
   const head = under ? `<div class="hint" style="color:var(--stamp)">階段の下: 頭上の高さ 北端 ${hu0 != null ? hu0.toFixed(2) : "—"}m / 南端 ${hu1 != null ? hu1.toFixed(2) : "—"}m(床から階段裏まで。段割りの仮定に依存)</div>`
     : `<div class="hint">階段の下ではない(頭上は天井高 ${P.LEVELS[cur].ceil}m)</div>`;
   el.innerHTML = `<div><span class="k">${c.cat}</span> <b>${it.label ?? c.name}</b></div>
-    <div class="v">中心 x${mm(it.x)} y${mm(it.y)} / 向き ${["北", "東", "南", "西"][m.r / 90]} / 外形 ${mm(b.x1 - b.x0)}×${mm(b.y1 - b.y0)}mm</div>
+    <div class="v">中心 x${mm(it.x)} y${mm(it.y)} / 向き ${["北", "東", "南", "西"][m.r / 90]} / 外形 ${mm(b.x1 - b.x0)}×${mm(b.y1 - b.y0)}mm${presetNameOf(it) ? ` / サイズ: ${presetNameOf(it)}` : ""}</div>
     <div class="toolbar"><span class="lbl">寸法 mm</span> 幅<input class="inp" id="iw" value="${mm(m.w).replace(/,/g, "")}"> 奥行<input class="inp" id="id" value="${mm(m.d).replace(/,/g, "")}"> 高さ<input class="inp" id="ih" value="${mm(m.h).replace(/,/g, "")}"> <button class="btn" id="iapply">反映</button></div>
+    ${presetsOf(it).length ? `<div class="toolbar"><span class="lbl">規定サイズ</span>${presetsOf(it).map((q, i) => `<button class="btn${presetNameOf(it) === q.name ? " on" : ""}" data-preset="${i}">${q.name} <span style="font-family:var(--mono);font-size:.68rem">${mm(q.w)}×${mm(q.d)}</span></button>`).join("")}</div>` : ""}
     <div class="toolbar"><select class="sel" id="itype">${Object.entries(CAT).map(([k, v]) => `<option value="${k}"${k === it.type ? " selected" : ""}>${v.cat}: ${v.name}</option>`).join("")}</select>
       <button class="btn" id="irot">回転 R</button><button class="btn" id="idup">複製</button><button class="btn warn" id="idel">消す</button></div>
     <div class="k">周囲の隙間(設備の面から最寄りの壁面・設備まで)</div>
@@ -519,6 +543,7 @@ function renderProps() {
     ${c.note ? `<div class="hint">${c.note}</div>` : ""}${head}`;
   $("#iapply").onclick = () => { pushUndo(); const v = (id) => Number($(id).value) / 1000; if (v("#iw") > 0.05) it.w = v("#iw"); if (v("#id") > 0.05) it.d = v("#id"); if (v("#ih") > 0.01) it.h = v("#ih"); save(); draw2d(); request3d(); renderProps(); };
   $("#itype").onchange = (e) => { pushUndo(); it.type = e.target.value; delete it.w; delete it.d; delete it.h; delete it.label; save(); draw2d(); request3d(); renderProps(); };
+  el.querySelectorAll("[data-preset]").forEach((bt) => bt.onclick = () => { pushUndo(); applyPreset(it, presetsOf(it)[Number(bt.dataset.preset)]); save(); draw2d(); request3d(); renderProps(); });
   $("#irot").onclick = () => rotateSel();
   $("#idup").onclick = () => { pushUndo(); const n = { ...it, id: nid(), x: it.x + 0.3, y: it.y + 0.3 }; f.items.push(n); selected = { kind: "item", id: n.id }; save(); draw2d(); request3d(); renderProps(); };
   $("#idel").onclick = () => deleteSel();
@@ -571,6 +596,7 @@ const MAT = {
   stair: new THREE.MeshLambertMaterial({ color: 0xB69A72 }), stairUnder: new THREE.MeshLambertMaterial({ color: 0x8E7A5E, side: THREE.DoubleSide }),
   glass: new THREE.MeshLambertMaterial({ color: 0x9FD2E8, transparent: true, opacity: 0.55 }), door: new THREE.MeshLambertMaterial({ color: 0x9C7B52 }),
   space: new THREE.MeshBasicMaterial({ color: 0xC93A2B, transparent: true, opacity: 0.16, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
+  handle: new THREE.MeshBasicMaterial({ color: 0xC93A2B, depthTest: false }),
   dim: new THREE.LineBasicMaterial({ color: 0x2E6E8E }), dimSel: new THREE.LineBasicMaterial({ color: 0xC93A2B }),
   sel: new THREE.LineBasicMaterial({ color: 0xC93A2B }), ghost: new THREE.MeshLambertMaterial({ color: 0xC9CDD1, transparent: true, opacity: 0.25, depthWrite: false }), ladder: new THREE.MeshLambertMaterial({ color: 0x8E7A5E }),
 };
@@ -731,7 +757,10 @@ function buildFloor(fid, zOff, showLabels) {
     const c = CAT[it.type] ?? CAT.box; const m = itemDims(it); const b = aabb(it);
     const grp = itemGroup(it, c, m); grp.position.set(it.x, zOff, it.y); grp.rotation.y = -(m.r * Math.PI / 180);
     grp.traverse((o) => { if (o.isMesh) { o.userData.itemId = it.id; o.userData.fid = fid; o.castShadow = true; o.receiveShadow = true; } }); g.add(grp);
-    if (selected?.kind === "item" && selected.id === it.id && fid === cur) { const e = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(b.x1 - b.x0, m.h, b.y1 - b.y0)), MAT.sel); e.position.set(it.x, zOff + m.h / 2, it.y); g.add(e); }
+    if (selected?.kind === "item" && selected.id === it.id && fid === cur) {
+      const e = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(b.x1 - b.x0, m.h, b.y1 - b.y0)), MAT.sel); e.position.set(it.x, zOff + m.h / 2, it.y); g.add(e);
+      for (const [corner, cx, cy] of cornersOf(it)) { const hm = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.05, 18), MAT.handle); hm.position.set(cx, zOff + 0.03, cy); hm.userData.handle = corner; hm.userData.itemId = it.id; hm.userData.fid = fid; hm.renderOrder = 5; g.add(hm); }
+    }
     if ($("#chkSpace").checked) { const sr = spaceRect(it); if (sr) g.add(slabMesh(sr.x0, sr.y0, sr.x1, sr.y1, zOff + 0.008, 0.004, MAT.space)); }
     if (showLabels && selected?.kind === "item" && selected.id === it.id) { const l = label(`${it.label ?? c.name.replace(/\(.*$/, "")} ${mm(b.x1 - b.x0)}×${mm(b.y1 - b.y0)}`, 0.22); l.position.set(it.x, zOff + m.h + 0.15, it.y); g.add(l); }
   }
@@ -853,19 +882,56 @@ function setMode(mode, persist = true) {
 }
 document.querySelectorAll("[data-mode]").forEach((b) => b.onclick = () => setMode(b.dataset.mode));
 // 3D上のクリックで設備を選ぶ(ドラッグ=カメラ操作と区別するため、押した位置から6px以内・400ms以内の離しだけ)
-const ray = new THREE.Raycaster(); let down3 = null;
-c3.addEventListener("pointerdown", (e) => { down3 = { x: e.clientX, y: e.clientY, t: performance.now() }; });
-c3.addEventListener("pointerup", (e) => {
-  if (!down3) return; const d = down3; down3 = null;
-  if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 6 || performance.now() - d.t > 400) return;
-  const r = c3.getBoundingClientRect(); const v = new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
-  ray.setFromCamera(v, camera);
-  const hit = ray.intersectObjects(bldG.children, true).find((h) => h.object.userData?.itemId);
-  if (!hit) { if (selected) { selected = null; draw2d(); renderProps(); request3d(); } return; }
-  const { itemId, fid } = hit.object.userData;
+const ray = new THREE.Raycaster(); let down3 = null, drag3 = null, lpTimer = 0;
+const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+function pick3(e) { const r = c3.getBoundingClientRect(); const v = new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); ray.setFromCamera(v, camera); return ray.intersectObjects(bldG.children, true); }
+function planeHit(e, y) { const r = c3.getBoundingClientRect(); const v = new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); ray.setFromCamera(v, camera); floorPlane.constant = -y; const p = new THREE.Vector3(); return ray.ray.intersectPlane(floorPlane, p) ? p : null; }
+function selectItem(itemId, fid) {
   if (fid !== cur) { const prevZ = floorZ(cur); cur = fid; followFloor(prevZ); document.querySelectorAll("#floorTabs [data-floor]").forEach((x) => x.classList.toggle("on", x.dataset.floor === fid)); }
   selected = { kind: "item", id: itemId }; areaResult = null; draw2d(); renderProps(); request3d();
+}
+// 3Dの操作: タップ=選択 / 四隅のハンドルを引っ張る=大きさ / 設備を長押し(400ms)して引っ張る=移動(2026-10-14ユーザー要望「スマホで長押ししたら移動できるように」)
+c3.addEventListener("pointerdown", (e) => {
+  if (!e.isPrimary) return;
+  down3 = { x: e.clientX, y: e.clientY, t: performance.now() };
+  const hits = pick3(e);
+  const hh = hits.find((h) => h.object.userData?.handle);
+  if (hh) { // 角ハンドル: すぐに大きさ変更へ
+    const it = state.floors[hh.object.userData.fid].items.find((o) => o.id === hh.object.userData.itemId); if (!it) return;
+    pushUndo(); drag3 = { kind: "resize", it, corner: hh.object.userData.handle, fid: hh.object.userData.fid, orig: JSON.parse(JSON.stringify(it)) };
+    controls.enabled = false; try { c3.setPointerCapture(e.pointerId); } catch { /* noop */ } e.preventDefault(); return;
+  }
+  const hi = hits.find((h) => h.object.userData?.itemId); if (!hi) return;
+  const { itemId, fid } = hi.object.userData; const it = state.floors[fid].items.find((o) => o.id === itemId); if (!it || it.type === "door") return;
+  const p = planeHit(e, floorZ(fid)); if (!p) return;
+  clearTimeout(lpTimer);
+  lpTimer = setTimeout(() => { // 長押し成立: 移動モードへ
+    if (!down3) return;
+    selectItem(itemId, fid); pushUndo();
+    drag3 = { kind: "move", it, fid, dx: it.x - p.x, dy: it.y - p.z };
+    controls.enabled = false; try { c3.setPointerCapture(e.pointerId); } catch { /* noop */ }
+    try { navigator.vibrate?.(15); } catch { /* noop */ }
+    c3.style.cursor = "grabbing";
+  }, 400);
 });
+c3.addEventListener("pointermove", (e) => {
+  if (!drag3) { if (down3 && Math.hypot(e.clientX - down3.x, e.clientY - down3.y) > 8) clearTimeout(lpTimer); return; }
+  e.preventDefault(); const p = planeHit(e, floorZ(drag3.fid)); if (!p) return;
+  if (drag3.kind === "move") { drag3.it.x = snapTo(p.x + drag3.dx, SNAP_ITEM); drag3.it.y = snapTo(p.z + drag3.dy, SNAP_ITEM); }
+  else resizeTo(drag3.it, drag3.corner, p.x, p.z, drag3.orig);
+  sched();
+});
+function end3(e) {
+  clearTimeout(lpTimer);
+  if (drag3) { drag3 = null; down3 = null; controls.enabled = true; c3.style.cursor = ""; save(); areaResult = null; draw2d(); renderProps(); request3d(); return; }
+  if (!down3) return; const d = down3; down3 = null;
+  if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 6 || performance.now() - d.t > 400) return;
+  const hit = pick3(e).find((h) => h.object.userData?.itemId);
+  if (!hit) { if (selected) { selected = null; draw2d(); renderProps(); request3d(); } return; }
+  selectItem(hit.object.userData.itemId, hit.object.userData.fid);
+}
+c3.addEventListener("pointerup", end3); c3.addEventListener("pointercancel", end3);
+for (const el of [c2, c3]) el.addEventListener("contextmenu", (e) => e.preventDefault());   // 長押しでメニューを出さない
 // 検査用: 建物座標(x,y,階)を3Dキャンバス上のピクセルへ
 window.plan3dProject = (x, y, fid, h = 0.3) => { const v = new THREE.Vector3(x, floorZ(fid) + h, y).project(camera); const r = c3.getBoundingClientRect(); return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height]; };
 function loop() { requestAnimationFrame(loop); if (need3d) { need3d = false; build3d(); } controls.update(); renderer.render(scene, camera); }

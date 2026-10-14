@@ -245,6 +245,8 @@ export const ITEM_CATALOG = {
   bed_s: { name: "シングルベッド", w: 0.97, d: 1.95, h: 0.50, cat: "家具", color: "#D8C8E8" },
   bed_sd: { name: "セミダブルベッド", w: 1.20, d: 1.95, h: 0.50, cat: "家具", color: "#D8C8E8" },
   bed_d: { name: "ダブルベッド", w: 1.40, d: 1.95, h: 0.50, cat: "家具", color: "#D8C8E8" },
+  bed_q: { name: "クイーンベッド", w: 1.60, d: 1.95, h: 0.50, cat: "家具", color: "#D8C8E8" },
+  bed_k: { name: "キングベッド", w: 1.80, d: 1.95, h: 0.50, cat: "家具", color: "#D8C8E8" },
   bed_bunk: { name: "2段ベッド", w: 1.05, d: 2.05, h: 1.60, cat: "家具", color: "#C8B8E0" },
   futon: { name: "布団(シングル)", w: 1.00, d: 2.00, h: 0.10, cat: "家具", color: "#E6DCF0" },
   desk: { name: "机 1000×600", w: 1.00, d: 0.60, h: 0.72, cat: "家具", color: "#D9B98C" },
@@ -264,6 +266,24 @@ export const ITEM_CATALOG = {
 };
 
 // 図面にあるが寸法が無い・図面に無いものの前提
+// 規定サイズ(角のハンドルで大きさを変えるときに吸着する寸法。2026-10-14ユーザー要望「大きさをシングル・ダブルとか規定の大きさに角をいじると変更できるように」)。
+// type があればその種類へ切り替える(名前も変わる)。無いものは寸法だけ変え sizeName に規定名を持つ。メーカー標準値の目安
+export const SIZE_PRESETS = {
+  bed: [{ name: "シングル", w: 0.97, d: 1.95, type: "bed_s" }, { name: "セミダブル", w: 1.20, d: 1.95, type: "bed_sd" }, { name: "ダブル", w: 1.40, d: 1.95, type: "bed_d" }, { name: "クイーン", w: 1.60, d: 1.95, type: "bed_q" }, { name: "キング", w: 1.80, d: 1.95, type: "bed_k" }, { name: "ロング(S)", w: 0.97, d: 2.05 }],
+  sofa: [{ name: "1人掛", w: 0.90, d: 0.85 }, { name: "2人掛", w: 1.50, d: 0.85, type: "sofa2" }, { name: "2.5人掛", w: 1.70, d: 0.85 }, { name: "3人掛", w: 1.90, d: 0.85, type: "sofa3" }],
+  kitchen: [{ name: "I型1800", w: 1.80, d: 0.65 }, { name: "I型2100", w: 2.10, d: 0.65 }, { name: "I型2400", w: 2.40, d: 0.65, type: "kitchen2400" }, { name: "I型2550", w: 2.55, d: 0.65, type: "kitchen2550" }, { name: "I型2700", w: 2.70, d: 0.65 }],
+  washstand: [{ name: "W600", w: 0.60, d: 0.50, type: "washstand600" }, { name: "W750", w: 0.75, d: 0.55, type: "washstand750" }, { name: "W900", w: 0.90, d: 0.55, type: "washstand900" }, { name: "W1200", w: 1.20, d: 0.55 }],
+  ub: [{ name: "1216", w: 1.28, d: 1.68, type: "ub1216" }, { name: "1316", w: 1.38, d: 1.68, type: "ub1316" }, { name: "1317", w: 1.38, d: 1.78 }, { name: "1616", w: 1.68, d: 1.68, type: "ub1616" }, { name: "1620", w: 1.68, d: 2.08 }, { name: "1818", w: 1.88, d: 1.88 }],
+  dining: [{ name: "2人用", w: 0.80, d: 0.80 }, { name: "4人用", w: 1.35, d: 0.80, type: "dining" }, { name: "4人用(大)", w: 1.50, d: 0.85 }, { name: "6人用", w: 1.80, d: 0.90 }],
+  desk: [{ name: "1000", w: 1.00, d: 0.60, type: "desk" }, { name: "1200", w: 1.20, d: 0.60, type: "desk1200" }, { name: "1400", w: 1.40, d: 0.70 }, { name: "学習机", w: 1.00, d: 0.70 }],
+  fridge: [{ name: "300L級", w: 0.55, d: 0.65 }, { name: "400L級", w: 0.60, d: 0.70 }, { name: "500L級", w: 0.69, d: 0.70, type: "fridge" }, { name: "600L級", w: 0.75, d: 0.75 }],
+  cupboard: [{ name: "900", w: 0.90, d: 0.45 }, { name: "1200", w: 1.20, d: 0.45, type: "cupboard1200" }, { name: "1600", w: 1.60, d: 0.45 }, { name: "1800", w: 1.80, d: 0.45, type: "cupboard" }],
+  washer: [{ name: "縦型", w: 0.60, d: 0.62 }, { name: "ドラム", w: 0.64, d: 0.72, type: "washer" }, { name: "ドラム(大)", w: 0.70, d: 0.75 }],
+  car: [{ name: "軽", w: 1.475, d: 3.395, type: "car_kei" }, { name: "コンパクト", w: 1.695, d: 3.995, type: "car_compact" }, { name: "ワゴン", w: 1.80, d: 4.70, type: "car_wagon" }, { name: "ミニバン", w: 1.70, d: 4.70, type: "car_minivan" }],
+  toilet: [{ name: "タンク式", w: 0.40, d: 0.74, type: "toilet" }, { name: "タンクレス", w: 0.38, d: 0.66, type: "toilet_tankless" }],
+};
+export const presetGroupOf = (type) => /^bed_(?!bunk)/.test(type) ? "bed" : /^sofa/.test(type) ? "sofa" : /^kitchen/.test(type) ? "kitchen" : /^washstand/.test(type) ? "washstand" : /^ub/.test(type) ? "ub" : type === "dining" ? "dining" : /^desk/.test(type) ? "desk" : type === "fridge" ? "fridge" : /^cupboard/.test(type) ? "cupboard" : type === "washer" ? "washer" : /^car_/.test(type) ? "car" : /^toilet/.test(type) ? "toilet" : null;
+
 export const ASSUMPTIONS = [
   "壁の位置は図面の寸法線(芯々)。壁厚は外壁150・内壁90mm と置いた(図面に無い)。内法=芯々から半厚を引いた値",
   "階高は 1F・2F 2.9m、3F は天井2.3m+ロフト1.3m(高さ10m制限: 0.461+2.9+2.9+3.7=9.96m)。図面に階高の記載は無い",
@@ -277,7 +297,7 @@ export const ASSUMPTIONS = [
 export const PLAN = {
   id: "kamiya2-adcast-a",
   title: "神谷2-24 A区画 参考プラン(2026/10/08・1/100)",
-  W, L, GRID, C, LEVELS, WALL_T, STAIR, LOT, FLOORS, ITEM_CATALOG, ASSUMPTIONS,
+  W, L, GRID, C, LEVELS, WALL_T, STAIR, LOT, FLOORS, ITEM_CATALOG, ASSUMPTIONS, SIZE_PRESETS,
   floorHeightGL: 0.461,
   areas: { site: 47.52, f1_house: 21.68, f1_garage: 8.13, f1_porch: 2.63, f2: 30.71, f3: 30.71, total: 93.86, house_only: 83.10, loft: 8.34, void: 11.62, building_area: 30.71 },
 };
@@ -297,8 +317,8 @@ const CSS_EXTRA = `
 .plan-app[data-mode="3d"]{grid-template-columns:1fr}
 .plan-app[data-mode="3d"] .col2d{display:none}
 .plan-app[data-mode="3d"] #view3d{height:min(78vh,760px)}
-#plan2d{width:100%;background:#FBFBF9;border:1px solid var(--ink);touch-action:none;display:block;cursor:crosshair}
-#view3d{width:100%;height:560px;background:#E9EEF2;border:1px solid var(--ink);display:block;touch-action:none}
+#plan2d{width:100%;background:#FBFBF9;border:1px solid var(--ink);touch-action:none;display:block;cursor:crosshair;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#view3d{width:100%;height:560px;background:#E9EEF2;border:1px solid var(--ink);display:block;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 @media(max-width:900px){#view3d{height:420px}.plan-app[data-mode="3d"] #view3d{height:min(70vh,600px)}}
 .toolbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0}
 .toolbar .lbl{font-size:.72rem;color:var(--ink-soft);letter-spacing:.06em}
@@ -391,7 +411,7 @@ export function renderPlan3d({ asOf, property } = {}) {
     <button class="btn" id="btnAdd">この階に置く</button>
     <button class="btn" id="btnDoor">ドア(開き)を置く</button>
   </div>
-  <div class="props" id="props"><span class="k">設備をタップすると寸法と隙間が出ます。</span><div class="hint"><kbd>R</kbd> 回転 / <kbd>Del</kbd> 削除 / <kbd>矢印</kbd> 移動</div></div>
+  <div class="props" id="props"><span class="k">設備をタップすると寸法と隙間が出ます。</span><div class="hint">長押しして引っ張ると移動(3Dでも)。四隅の◯を引っ張ると大きさが規定サイズに吸着。<kbd>R</kbd> 回転 / <kbd>Del</kbd> 削除</div></div>
   <div class="legend">
     <span><i style="background:#4A8FB8"></i>水回り</span><span><i style="background:#C9A35B"></i>キッチン</span><span><i style="background:#D9B98C"></i>家具</span>
     <span><i style="background:#7A8A99"></i>車・外</span><span><i style="background:#E8A070"></i>人</span><span><i style="background:rgba(201,58,43,.18);border-color:#C93A2B"></i>推奨スペース(目安)</span>
