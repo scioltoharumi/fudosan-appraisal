@@ -471,7 +471,7 @@ function renderProps() {
       <div class="hint">塗られた範囲の外接 ${mm(areaResult.bw)}×${mm(areaResult.bh)}mm(内法の目安)。1帖=1.62m²。ドアの開口は壁として閉じているので、廊下と部屋はドアで分かれます。</div>`;
     return;
   }
-  if (!selected) { el.innerHTML = `<span class="k">何も選択していません。</span><div class="hint">平面図の設備をクリックすると寸法と周囲の隙間が出ます。<kbd>R</kbd> 回転 / <kbd>Del</kbd> 削除 / <kbd>矢印</kbd> 1cm移動(<kbd>Shift</kbd>で45.5mm) / ドラッグ移動。壁は線をドラッグ(垂直方向に動きます)。</div>`; return; }
+  if (!selected) { el.innerHTML = `<span class="k">設備をタップすると寸法と隙間が出ます。</span><div class="hint"><kbd>R</kbd> 回転 / <kbd>Del</kbd> 削除 / <kbd>矢印</kbd> 移動(<kbd>Shift</kbd>で45.5mm) / 壁は線をドラッグ</div>`; return; }
   const f = F();
   if (selected.kind === "wall") {
     const w = f.walls.find((o) => o.id === selected.id); if (!w) { selected = null; return renderProps(); }

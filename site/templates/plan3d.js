@@ -351,13 +351,7 @@ export function renderPlan3d({ asOf, property } = {}) {
   const body = `
 <section class="panel">
   <h2>間取りシミュレーター ── ${esc(PLAN.title)}</h2>
-  <div class="note" style="margin-bottom:10px">
-    図面3枚(販売図面・区割図・各階平面図)の<b>寸法線の値だけ</b>から再構成した3D模型。平面図で設備・家具を<b>ドラッグ移動・回転・追加・削除</b>し、壁も<b>選んでドラッグ</b>で動かせます(45.5mm刻み)。
-    3Dは同じデータをその場で描き直し(マウスで回転・ホイールで拡大)、<b>寸法チェーン・各部屋の内法・選択した設備の隙間</b>を寸法線で描きます。設備は3D上でもクリックで選べます。「画面」ボタンで平面図/3D/並べるを切り替えられます。
-    <b>判定はしません</b>。寸法・内法面積・設備まわりの隙間(クリアランス)・階段下の頭上高さを測って見せるだけです。設備の寸法はメーカー標準値の仮置き(下の前提)。
-    変更はこのブラウザにだけ保存されます(公開リポジトリには書きません)。
-    物件ページは <a href="property/${esc(PLAN.id)}.html">こちら</a>。
-  </div>
+  <div class="hint" style="margin-bottom:8px">図面(2026/10/08・1/100)の寸法から再構成。判定はしない。変更はこのブラウザにだけ保存。<a href="#plan3d-help">使い方・前提</a> / <a href="property/${esc(PLAN.id)}.html">物件ページ</a></div>
   <div class="toolbar" id="floorTabs"><span class="lbl">階</span>
     ${Object.entries(FLOORS).map(([fid, f], i) => `<button class="btn${i === 0 ? " on" : ""}" data-floor="${fid}">${esc(f.label)}</button>`).join("")}
     <span class="lbl" style="margin-left:10px">画面</span>
@@ -396,7 +390,7 @@ export function renderPlan3d({ asOf, property } = {}) {
     <button class="btn" id="btnAdd">この階に置く</button>
     <button class="btn" id="btnDoor">ドア(開き)を置く</button>
   </div>
-  <div class="props" id="props"><span class="k">何も選択していません。</span><div class="hint">平面図または3Dの設備をクリックすると寸法と周囲の隙間が出ます。<kbd>R</kbd> 回転 / <kbd>Del</kbd> 削除 / <kbd>矢印</kbd> 1cm移動(<kbd>Shift</kbd>で45.5mm) / 平面図でドラッグ移動。壁は端点ではなく線をドラッグ(垂直方向に動きます)。「寸法を測る」は押したまま引っ張って離す(2点タップでも可)。</div></div>
+  <div class="props" id="props"><span class="k">設備をタップすると寸法と隙間が出ます。</span><div class="hint"><kbd>R</kbd> 回転 / <kbd>Del</kbd> 削除 / <kbd>矢印</kbd> 移動</div></div>
   <div class="legend">
     <span><i style="background:#4A8FB8"></i>水回り</span><span><i style="background:#C9A35B"></i>キッチン</span><span><i style="background:#D9B98C"></i>家具</span>
     <span><i style="background:#7A8A99"></i>車・外</span><span><i style="background:#E8A070"></i>人</span><span><i style="background:rgba(201,58,43,.18);border-color:#C93A2B"></i>推奨スペース(目安)</span>
@@ -417,6 +411,16 @@ export function renderPlan3d({ asOf, property } = {}) {
     1帖=1.62m²で換算。内法は壁厚の仮定(外壁150・内壁90)による概算で、仕上げで数cm違う。</div>
 </section>
 
+<section class="panel" id="plan3d-help">
+  <h2 class="sub">使い方</h2>
+  <div class="note">
+    図面3枚(販売図面・区割図・各階平面図)の<b>寸法線の値だけ</b>から再構成した3D模型。平面図で設備・家具を<b>ドラッグ移動・回転・追加・削除</b>し、壁も<b>選んでドラッグ</b>で動かせます(45.5mm刻み)。
+    3Dは同じデータをその場で描き直し(マウスで回転・ホイールで拡大)、<b>寸法チェーン・各部屋の内法・選択した設備の隙間</b>を寸法線で描きます。設備は3D上でもクリックで選べます。「画面」ボタンで平面図/3D/並べるを切り替えられます。
+    「寸法を測る」は押したまま引っ張って離す(2点タップでも可)。平面図は2本指ピンチ/ホイールで拡大縮小。
+    <b>判定はしません</b>。寸法・内法面積・設備まわりの隙間(クリアランス)・階段下の頭上高さを測って見せるだけです。設備の寸法はメーカー標準値の仮置き(下の前提)。
+    変更はこのブラウザにだけ保存されます(公開リポジトリには書きません)。
+  </div>
+</section>
 <section class="panel">
   <h2 class="sub">読み取りの前提(図面に無いもの)</h2>
   <ul class="compact">${ASSUMPTIONS.map((a) => `<li>${escRich(a)}</li>`).join("")}</ul>
@@ -431,7 +435,7 @@ ${client}
 
   return layout({
     title: "間取りシミュレーター ── 神谷2-24 A区画(3D)",
-    subtitle: "参考プランの寸法から再構成 / 設備の置き換え・移動・隙間の測定 / 判定はしない",
+    subtitle: "参考プランの寸法から再構成・判定はしない",
     docNo: `PLAN-3D / 図面 2026-10-08 / 基準日 ${esc(asOf ?? "")}<br>${esc(property?.unit_label ?? "")}`,
     body,
   }).replace("</style>", CSS_EXTRA + "</style>");
