@@ -3666,5 +3666,19 @@
   "land_m2": 66.14,
   "floor_m2": 111.93,
   "ko_screened": true
+ },
+ "nc_21937648": {
+  "first_seen": "2026-10-14",
+  "price_man": 7280,
+  "address": "東京都北区赤羽３",
+  "walk_min": 6,
+  "kind": "chuko",
+  "media": "suumo",
+  "land_m2": 83.38,
+  "floor_m2": 89.49,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_area_hazard"
+  ]
  }
 }
