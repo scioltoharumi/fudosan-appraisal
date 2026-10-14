@@ -37,14 +37,20 @@ const C = { // 柱芯・壁芯の位置(図面の寸法線の累計)
   y11: 3.445,  // 3F 北洋室南壁・吹抜南端 = 3,445
 };
 
-// 階高(仮定)。1F床=GL+0.461(ユーザー提供・YAML flood_fermi.floor_height_m)。10mの高さ制限(1種住居)に収まるよう
-// 1F・2Fは2.9、3Fは天井2.3+ロフト床0.1+ロフト1.3 とした(合計 0.461+2.9+2.9+3.7=9.96)
+// 階高(図面の断面スケッチ・2026-10-14に読み取り)。1F床=GL+0.461(図面の「461」=ユーザー提供値と一致・YAML flood_fermi.floor_height_m)。
+// 縦寸法: 461 / 1F天井2,250 / 床厚400 / 2F天井2,400 / 床厚420 / 3F天井2,250 / ロフト床厚300 / ロフト床→棟下端1,245 / ロフト端の頭上≒850。
+// 棟下端 GL+9.73。屋根厚は図面に無い(ROOF.thickness は仮定)
 export const LEVELS = {
-  "1F": { z: 0, ceil: 2.4, story: 2.9 },
-  "2F": { z: 2.9, ceil: 2.4, story: 2.9 },
-  "3F": { z: 5.8, ceil: 2.3, story: 2.4 },     // ロフト下の天井。吹抜部(北洋室)はロフト天井まで 3.7
-  "LOFT": { z: 8.2, ceil: 1.3, story: 1.3 },
+  "1F": { z: 0, ceil: 2.25, story: 2.65 },
+  "2F": { z: 2.65, ceil: 2.40, story: 2.82 },
+  "3F": { z: 5.47, ceil: 2.25, story: 2.55 },     // ロフト下の天井。吹抜部(北洋室)は屋根まで
+  "LOFT": { z: 8.02, ceil: 1.245, story: 1.245 },  // ceil は棟直下の最大値(軒側は ≒0.85→0 へ下がる)
 };
+// 屋根(断面スケッチ): 長手方向(南北)の切妻。棟は東西方向・建物中央(y=L/2・スケッチの棟位置は中央から±0.2m以内)。
+// 軒はロフト床レベルで北面・南面の壁芯に下り、立ち上がりは 1,245 → 勾配 1,245/4,550=0.274(約2.7寸)。
+// ロフト(y 3.445〜5.915)の頭上: 北端 0.94・南端 0.87(スケッチの≒850と整合)・棟直下 1.245。屋根厚0.2・軒の出0.25は仮定
+export const ROOF = { ridgeY: L / 2, rise: 1.245, thickness: 0.2, overhang: 0.25 };
+export const roofHeightAt = (y) => Math.max(0, ROOF.rise * (1 - Math.abs(y - ROOF.ridgeY) / (L / 2)));   // ロフト床からの屋根下端の高さ(内法)
 export const WALL_T = { ext: 0.15, int: 0.09 };  // 壁厚(仮定。内法 = 芯々 − 半厚の和)
 
 // 階段(図面: 1F→2F/2F→3F とも東列 x 2.465〜3.375・下端 y 6.825・上端 y 4.095。下端の 910 角に回り段3段+直階段11段と読む。
@@ -201,7 +207,7 @@ export const FLOORS = {
       { type: "counter_desk", x: 2.92, y: 6.37, rot: 0 },
       { type: "desk", x: 0.45, y: 8.3, rot: 90 },
       { type: "chair", x: 0.95, y: 8.3, rot: 270 },
-      { type: "ladder", x: 0.45, y: 3.25, rot: 180, h: 2.5 },   // ロフトへのはしご(3Fの北洋室側から吹抜の縁へ掛ける想定・図面に無い)
+      { type: "ladder", x: 0.45, y: 3.25, rot: 180, h: 2.55 },   // ロフトへのはしご(3Fの北洋室側から吹抜の縁へ掛ける想定・図面に無い)
     ],
   },
   "LOFT": {
@@ -209,7 +215,7 @@ export const FLOORS = {
     walls: [seg(0, C.y11, W, C.y11, "void"), seg(W, C.y11, W, C.y8, "ext"), seg(W, C.y8, 0, C.y8, "ext"), seg(0, C.y8, 0, C.y11, "ext")],
     rooms: [
       room("吹抜(北洋室の上)", 0, 0, W, C.y11, { kind: "void", note: "11.62m²" }),
-      room("ロフト 5.1帖", 0, C.y11, W, C.y8, { note: "2,470×3,375・天井1.4m以下・オプション" }),
+      room("ロフト 5.1帖", 0, C.y11, W, C.y8, { note: "2,470×3,375・頭上は棟直下1.245〜端≒0.85(屋根勾配)・オプション" }),
     ],
     openings: [],
     items: [{ type: "futon", x: 1.9, y: 4.7, rot: 90 }],
@@ -286,18 +292,18 @@ export const presetGroupOf = (type) => /^bed_(?!bunk)/.test(type) ? "bed" : /^so
 
 export const ASSUMPTIONS = [
   "壁の位置は図面の寸法線(芯々)。壁厚は外壁150・内壁90mm と置いた(図面に無い)。内法=芯々から半厚を引いた値",
-  "階高は 1F・2F 2.9m、3F は天井2.3m+ロフト1.3m(高さ10m制限: 0.461+2.9+2.9+3.7=9.96m)。図面に階高の記載は無い",
+  "階高は図面の断面スケッチの値(1F天井2,250・2F 2,400・3F 2,250・床厚400/420/300・ロフト床→棟1,245)。棟の位置は建物中央と読んだ(スケッチの実測で中央から±0.2m以内)。屋根厚0.2m・軒の出0.25m・軒がロフト床レベルで壁芯に下りる形は仮定",
   "階段は下端の910角に回り段3段+直階段11段(2Fの両端の扇形、3Fの開口1,820、カウンターが下3段の上にある形から)。段割りが違えば階段下トイレの頭上高さは変わる",
   "設備・家具の寸法はメーカー標準値の仮置き(カタログの値)。図面に描かれた位置へ置いたが、図面は家具配置例で確定ではない",
   "敷地内の建物位置: 北面は道路境界から1,150(1F平面図)、東西の空きは北辺の余り1,017を等分(区割図に建物の位置は無い)",
-  "ロフトの床高・天井高は10m制限から逆算。採光・換気・ロフトの固定階段/はしごは図面に無い",
+  "ロフトの頭上高さは屋根勾配から計算(棟直下1.245→端で≒0.85〜0.94)。採光・換気・ロフトの固定階段/はしごは図面に無い",
   "図面の注記どおり『行政・検査機関との協議、天空率・構造計算、真北調査で計画が変わる可能性がある』。ここは検討用の模型であり確定図ではない",
 ];
 
 export const PLAN = {
   id: "kamiya2-adcast-a",
   title: "神谷2-24 A区画 参考プラン(2026/10/08・1/100)",
-  W, L, GRID, C, LEVELS, WALL_T, STAIR, LOT, FLOORS, ITEM_CATALOG, ASSUMPTIONS, SIZE_PRESETS,
+  W, L, GRID, C, LEVELS, ROOF, WALL_T, STAIR, LOT, FLOORS, ITEM_CATALOG, ASSUMPTIONS, SIZE_PRESETS,
   floorHeightGL: 0.461,
   areas: { site: 47.52, f1_house: 21.68, f1_garage: 8.13, f1_porch: 2.63, f2: 30.71, f3: 30.71, total: 93.86, house_only: 83.10, loft: 8.34, void: 11.62, building_area: 30.71 },
 };
@@ -396,6 +402,7 @@ export function renderPlan3d({ asOf, property } = {}) {
         <label class="hint"><input type="checkbox" id="chkLot" checked> 敷地・道路・B区画</label>
         <label class="hint"><input type="checkbox" id="chkLabels" checked> 部屋名・内法</label>
         <label class="hint"><input type="checkbox" id="chkSpace" checked> 推奨スペース</label>
+        <label class="hint"><input type="checkbox" id="chkRoof" checked> 屋根</label>
       </div>
       <div class="hint" id="info3d"></div>
     </div>
@@ -425,12 +432,12 @@ export function renderPlan3d({ asOf, property } = {}) {
 </section>
 
 <section class="panel">
-  <h2 class="sub">階の高さ(仮定。図面に階高の記載なし)</h2>
+  <h2 class="sub">階の高さ(図面の断面スケッチから。屋根厚・軒の出は仮定)</h2>
   <table class="dims"><tr><th>階</th><th>床の高さ(GLから)</th><th>階高(床→上の床)</th><th>天井高</th><th>備考</th></tr>
-    ${Object.entries(LEVELS).map(([fid, lv]) => `<tr><td>${esc(FLOORS[fid].label)}</td><td class="n">GL+${(PLAN.floorHeightGL + lv.z).toFixed(2)}m</td><td class="n">${lv.story.toFixed(1)}m</td><td class="n">${lv.ceil.toFixed(1)}m</td>
-      <td>${fid === "1F" ? "1F床 GL+461mm はユーザー提供(基礎天端なら床は+10〜15cm上)" : fid === "3F" ? "ロフト下の天井。北洋室は上部吹抜で天井 3.7m" : fid === "LOFT" ? "小屋裏(天井1.4m以下)。最高部 GL+" + (PLAN.floorHeightGL + lv.z + lv.ceil).toFixed(2) + "m ≤ 10m(日影規制の線)" : ""}</td></tr>`).join("")}
+    ${Object.entries(LEVELS).map(([fid, lv]) => `<tr><td>${esc(FLOORS[fid].label)}</td><td class="n">GL+${(PLAN.floorHeightGL + lv.z).toFixed(2)}m</td><td class="n">${lv.story.toFixed(2)}m</td><td class="n">${fid === "LOFT" ? `${roofHeightAt(C.y11).toFixed(2)}〜${lv.ceil.toFixed(3)}` : lv.ceil.toFixed(2)}m</td>
+      <td>${fid === "1F" ? "1F床 GL+461mm はユーザー提供(基礎天端なら床は+10〜15cm上)" : fid === "3F" ? `ロフト下の天井。北洋室は上部吹抜で屋根(勾配天井)まで ${(lv.ceil + 0.3 + roofHeightAt(C.y11 / 2)).toFixed(1)}m前後` : fid === "LOFT" ? `屋根勾配の下(棟直下 ${lv.ceil.toFixed(3)}・ロフト北端 ${roofHeightAt(C.y11).toFixed(2)}・南端 ${roofHeightAt(C.y8).toFixed(2)}m)。棟下端 GL+${(PLAN.floorHeightGL + lv.z + lv.ceil).toFixed(2)}m・屋根上端 GL+${(PLAN.floorHeightGL + lv.z + lv.ceil + ROOF.thickness).toFixed(2)}m(仮定の屋根厚${ROOF.thickness}) ≤ 10m(日影規制の線)` : ""}</td></tr>`).join("")}
   </table>
-  <div class="hint" style="margin-bottom:14px">3Dでは「全階(重ねる)」「全階(ばらす)」にすると東側に階ごとの高さの寸法線が出る。</div>
+  <div class="hint" style="margin-bottom:14px">3Dでは「全階(重ねる)」「全階(ばらす)」にすると東側に階ごとの高さの寸法線が出る。屋根(切妻・半透明)は全階表示と3F/ロフトの単階表示に描き、ロフトの北端・棟直下・南端に頭上高さの縦線を出す。平面図のロフトは頭上高さを帯で塗る(赤 1.0m未満 / 黄 1.2m未満 / 緑 1.2m以上)。</div>
   <h2 class="sub">図面の寸法と内法の目安</h2>
   <table class="dims"><tr><th>部屋</th><th>芯々 (mm)</th><th>面積</th><th>備考</th></tr>${floorsTable}</table>
   <div class="note" style="margin-top:8px">面積表(図面): 1F 住宅部分 ${PLAN.areas.f1_house} + 車庫 ${PLAN.areas.f1_garage} + ポーチ ${PLAN.areas.f1_porch} / 2F ${PLAN.areas.f2} / 3F ${PLAN.areas.f3} = 延床 ${PLAN.areas.total}m²(住宅部分 ${PLAN.areas.house_only})。
@@ -444,6 +451,7 @@ export function renderPlan3d({ asOf, property } = {}) {
     図面3枚(販売図面・区割図・各階平面図)の<b>寸法線の値だけ</b>から再構成した3D模型。平面図で設備・家具を<b>ドラッグ移動・回転・追加・削除</b>し、壁も<b>選んでドラッグ</b>で動かせます(45.5mm刻み)。
     3Dは同じデータをその場で描き直し(マウスで回転・ホイールで拡大)、<b>寸法チェーン・各部屋の内法・選択した設備の隙間</b>を寸法線で描きます。設備は3D上でもクリックで選べます。「画面」ボタンで平面図/3D/並べるを切り替えられます。
     「寸法を測る」は押したまま引っ張って離す(2点タップでも可)。平面図は2本指ピンチ/ホイールで拡大縮小。
+    3Dで設備を長押し(0.4秒)すると移動、選択中の設備の四隅の赤い点を引っ張ると大きさが変わる。<b>規定サイズのある設備(ベッド・ソファ・キッチン・ユニットバス等)は常に最寄りの規定サイズ(シングル/セミダブル/ダブル…)に吸着</b>し、規定の無い設備だけ1cm刻みで自由に変わる。
     <b>判定はしません</b>。寸法・内法面積・設備まわりの隙間(クリアランス)・階段下の頭上高さを測って見せるだけです。設備の寸法はメーカー標準値の仮置き(下の前提)。
     変更はこのブラウザにだけ保存されます(公開リポジトリには書きません)。
   </div>

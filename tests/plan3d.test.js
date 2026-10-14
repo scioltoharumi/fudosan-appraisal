@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { ROOT, loadProperty } from "../engine/io.js";
-import { PLAN, FLOORS, LOT, ITEM_CATALOG, ASSUMPTIONS, STAIR, roomArea, polygonArea, renderPlan3d } from "../site/templates/plan3d.js";
+import { PLAN, FLOORS, LOT, ITEM_CATALOG, ASSUMPTIONS, STAIR, ROOF, roofHeightAt, roomArea, polygonArea, renderPlan3d } from "../site/templates/plan3d.js";
 
 const near = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b} (許容${tol})`);
 
@@ -43,10 +43,18 @@ test("plan3d: 壁・設備・階段が建物の範囲に収まり、階段の段
   // 1Fトイレは階段の下: 便器位置の頭上が 1.2〜2.2m(段割りの仮定で変わる参照値)
   const toilet = FLOORS["1F"].items.find((i) => i.type === "toilet");
   assert.ok(toilet.x > STAIR.x0 && toilet.x < STAIR.x1 && toilet.y > STAIR.yTop && toilet.y < STAIR.yTurn, "1Fトイレが階段下にある");
-  // 高さ10m制限
+  // 断面スケッチの縦寸法: 461 / 2,250 / 400 / 2,400 / 420 / 2,250 / 300 / 1,245(棟下端 GL+9.726)。屋根厚(仮定)を足しても10m制限内
+  near(PLAN.LEVELS["2F"].z, 2.25 + 0.40, 1e-9, "2F床 = 1F天井2,250+床厚400");
+  near(PLAN.LEVELS["3F"].z, 2.65 + 2.40 + 0.42, 1e-9, "3F床 = +2F天井2,400+床厚420");
+  near(PLAN.LEVELS.LOFT.z, 5.47 + 2.25 + 0.30, 1e-9, "ロフト床 = +3F天井2,250+床厚300");
   const top = PLAN.floorHeightGL + PLAN.LEVELS.LOFT.z + PLAN.LEVELS.LOFT.ceil;
-  assert.ok(top <= 10.0, `建物高さ ${top.toFixed(2)}m ≤ 10m`);
-  assert.ok(PLAN.LEVELS.LOFT.ceil <= 1.4, "ロフト天井高 ≤ 1.4m");
+  near(top, 9.726, 1e-9, "棟下端 GL+9.726");
+  assert.ok(top + ROOF.thickness <= 10.0, `屋根上端 ${(top + ROOF.thickness).toFixed(2)}m ≤ 10m`);
+  assert.ok(PLAN.LEVELS.LOFT.ceil <= 1.4, "ロフト天井高(棟直下) ≤ 1.4m");
+  // 屋根勾配: 軒(y=0・L)で0・棟で1,245。ロフト両端の頭上はスケッチの「≒850」と整合(0.85〜0.95)
+  near(roofHeightAt(0), 0, 1e-9, "北の軒で0"); near(roofHeightAt(PLAN.L), 0, 1e-9, "南の軒で0"); near(roofHeightAt(ROOF.ridgeY), 1.245, 1e-9, "棟で1,245");
+  const lr = FLOORS.LOFT.floorRect;
+  for (const y of [lr.y0, lr.y1]) { const h = roofHeightAt(y); assert.ok(h >= 0.85 && h <= 0.95, `ロフト端 y${y} の頭上 ${h.toFixed(3)} ≒ 0.85`); }
 });
 
 test("plan3d: ページの開示(判定しない・前提・出典)と three.js 同梱の参照", () => {
@@ -55,7 +63,9 @@ test("plan3d: ページの開示(判定しない・前提・出典)と three.js 
   const text = html.replace(/<script[\s\S]*?<\/script>/g, " ").replace(/<[^>]+>/g, " ");
   assert.ok(text.includes("判定はしません"), "判定しない、の開示");
   assert.ok(text.includes("読み取りの前提(図面に無いもの)"), "前提の節");
-  assert.ok(text.includes("階の高さ(仮定") && text.includes(`GL+${(PLAN.floorHeightGL + PLAN.LEVELS["2F"].z).toFixed(2)}m`), "階の高さの表(床高はLEVELSから)");
+  assert.ok(text.includes("階の高さ(図面の断面スケッチから") && text.includes(`GL+${(PLAN.floorHeightGL + PLAN.LEVELS["2F"].z).toFixed(2)}m`), "階の高さの表(床高はLEVELSから)");
+  assert.ok(text.includes("屋根(切妻・半透明)") && text.includes("頭上高さを帯で塗る") && html.includes('id="chkRoof"'), "屋根とロフト頭上高さの開示・屋根チェックボックス");
+  assert.ok(text.includes("常に最寄りの規定サイズ"), "規定サイズ吸着の開示");
   for (const a of ASSUMPTIONS) assert.ok(text.includes(a.replace(/\*\*/g, "").slice(0, 20)), `前提: ${a.slice(0, 20)}`);
   assert.ok(text.includes("図面の画像そのものと販売会社の連絡先は載せない"), "図面画像・連絡先を載せない開示(運用ルール3)");
   assert.ok(text.includes("このブラウザにだけ保存"), "保存先の開示");

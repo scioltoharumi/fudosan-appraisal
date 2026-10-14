@@ -142,6 +142,10 @@ ok("ベッド選択で規定サイズのボタン(シングル〜キング)が�
 await page.mouse.move(bedPx.se.x, bedPx.se.y); await page.mouse.down(); await page.mouse.move(bedPx.se.x + 0.23 * bedPx.s, bedPx.se.y, { steps: 6 }); await page.mouse.up(); await page.waitForTimeout(200);
 const bed = await page.evaluate(() => window.plan3dState().floors["1F"].items.find((i) => /^bed_/.test(i.type)));
 ok("角のハンドルを引っ張るとセミダブル(bed_sd)に吸着する", bed?.type === "bed_sd", JSON.stringify(bed));
+// さらに +5cm(規定の中間・1,250)引っ張っても自由寸法にならず規定(セミダブル 1,200)のまま(2026-10-14「規定サイズに吸着するように」)
+await page.mouse.move(bedPx.se.x + 0.23 * bedPx.s, bedPx.se.y); await page.mouse.down(); await page.mouse.move(bedPx.se.x + 0.28 * bedPx.s, bedPx.se.y, { steps: 5 }); await page.mouse.up(); await page.waitForTimeout(200);
+const bed2 = await page.evaluate(() => window.plan3dState().floors["1F"].items.find((i) => /^bed_/.test(i.type)));
+ok("中間まで引っ張っても規定サイズ(bed_sd・w未設定か1.20)のまま=自由寸法にならない", bed2?.type === "bed_sd" && (bed2.w == null || Math.abs(bed2.w - 1.2) < 1e-9), JSON.stringify(bed2));
 await page.click('[data-preset="2"]'); await page.waitForTimeout(150);
 ok("規定サイズボタンでダブルに切り替わる", await page.evaluate(() => window.plan3dState().floors["1F"].items.some((i) => i.type === "bed_d")));
 // 3D: 便器を長押し→引っ張って移動
@@ -158,6 +162,21 @@ if (shotDir) await page.locator("#view3d").screenshot({ path: join(shotDir, "pla
 await page.click('[data-floor="2F"]'); await page.click('[data-view="floor"]'); await page.click('[data-cam="eye"]'); await page.waitForTimeout(600);
 if (shotDir) await page.locator("#view3d").screenshot({ path: join(shotDir, "plan3d-eye-ldk.png") });
 ok("外観・内観の描画でJSエラーなし", errors.length === 0, errors.join(" | "));
+// --- 屋根とロフトの頭上高さ(2026-10-14「屋根のイメージも欲しい。どれくらいロフトの高さになるのか」) ---
+await page.click('[data-floor="LOFT"]'); await page.click('[data-mode="both"]'); await page.click('[data-view="floor"]'); await page.click('[data-cam="bird"]'); await page.waitForTimeout(500);
+const loftPx = await page.evaluate(() => { const c = document.getElementById("plan2d"); const r = c.getBoundingClientRect(); const V = { x0: -1.3, y0: -1.9, x1: 4.7 }; const s = r.width / (V.x1 - V.x0); const it = window.plan3dState().floors["LOFT"].items[0]; return { x: r.left + (it.x - V.x0) * s, y: r.top + (it.y - V.y0) * s }; });
+await page.mouse.click(loftPx.x, loftPx.y); await page.waitForTimeout(200);
+const loftProps = await page.textContent("#props");
+ok("ロフトの布団を選ぶと屋根下の頭上高さ(北端/南端)が出る", /屋根の下: 頭上の高さ 北端 \d\.\d\dm \/ 南端 \d\.\d\dm/.test(loftProps), loftProps.slice(0, 200));
+ok("ロフトの頭上高さが 0.85〜1.245 の範囲", (() => { const m = loftProps.match(/北端 (\d\.\d\d)m \/ 南端 (\d\.\d\d)m/); return m && [m[1], m[2]].every((v) => Number(v) >= 0.85 && Number(v) <= 1.245); })());
+if (shotDir) await page.locator("#view3d").screenshot({ path: join(shotDir, "plan3d-loft-roof.png") });
+await page.click('[data-view="all"]'); await page.click('[data-cam="bird"]'); await page.click('[data-wallh="full"]'); await page.waitForTimeout(500);
+if (shotDir) await page.locator("#view3d").screenshot({ path: join(shotDir, "plan3d-full-roof.png") });
+await page.click("#chkRoof"); await page.waitForTimeout(300); await page.click("#chkRoof"); await page.waitForTimeout(300);
+ok("屋根の表示切替・妻壁の塗り(天井まで)でJSエラーなし", errors.length === 0, errors.join(" | "));
+const info3d = await page.textContent("#info3d");
+ok("3Dの説明にロフトの頭上(棟直下1.245)が出る", info3d.includes("棟直下1.245"), info3d.slice(0, 120));
+if (shotDir) { await page.click('[data-mode="2d"]'); await page.waitForTimeout(200); await page.locator("#plan2d").screenshot({ path: join(shotDir, "plan3d-loft-2d.png") }); }
 
 await b.close(); srv.close();
 const fails = checks.filter((c) => !c[1]);
