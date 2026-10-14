@@ -404,6 +404,12 @@ export function renderPlan3d({ asOf, property } = {}) {
 </section>
 
 <section class="panel">
+  <h2 class="sub">階の高さ(仮定。図面に階高の記載なし)</h2>
+  <table class="dims"><tr><th>階</th><th>床の高さ(GLから)</th><th>階高(床→上の床)</th><th>天井高</th><th>備考</th></tr>
+    ${Object.entries(LEVELS).map(([fid, lv]) => `<tr><td>${esc(FLOORS[fid].label)}</td><td class="n">GL+${(PLAN.floorHeightGL + lv.z).toFixed(2)}m</td><td class="n">${lv.story.toFixed(1)}m</td><td class="n">${lv.ceil.toFixed(1)}m</td>
+      <td>${fid === "1F" ? "1F床 GL+461mm はユーザー提供(基礎天端なら床は+10〜15cm上)" : fid === "3F" ? "ロフト下の天井。北洋室は上部吹抜で天井 3.7m" : fid === "LOFT" ? "小屋裏(天井1.4m以下)。最高部 GL+" + (PLAN.floorHeightGL + lv.z + lv.ceil).toFixed(2) + "m ≤ 10m(日影規制の線)" : ""}</td></tr>`).join("")}
+  </table>
+  <div class="hint" style="margin-bottom:14px">3Dでは「全階(重ねる)」「全階(ばらす)」にすると東側に階ごとの高さの寸法線が出る。</div>
   <h2 class="sub">図面の寸法と内法の目安</h2>
   <table class="dims"><tr><th>部屋</th><th>芯々 (mm)</th><th>面積</th><th>備考</th></tr>${floorsTable}</table>
   <div class="note" style="margin-top:8px">面積表(図面): 1F 住宅部分 ${PLAN.areas.f1_house} + 車庫 ${PLAN.areas.f1_garage} + ポーチ ${PLAN.areas.f1_porch} / 2F ${PLAN.areas.f2} / 3F ${PLAN.areas.f3} = 延床 ${PLAN.areas.total}m²(住宅部分 ${PLAN.areas.house_only})。

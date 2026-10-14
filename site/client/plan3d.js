@@ -719,6 +719,19 @@ function build3d() {
   const labels = $("#chkLabels").checked;
   const list = viewMode === "floor" ? [cur] : FLOOR_IDS;
   for (const fid of list) { const z = floorZ(fid); bldG.add(buildFloor(fid, z, labels && (viewMode === "floor" || fid === cur))); }
+  if (viewMode !== "floor" && $("#chkDims").checked) { // 全階表示: 東側に階高の縦寸法線(GL基準)
+    const xE = P.W + 0.45, zE = P.L + 0.2; const pts = [];
+    const lvl = FLOOR_IDS.map((fid) => ({ fid, z: floorZ(fid), lv: P.LEVELS[fid] }));
+    const tick = (y) => pts.push(new THREE.Vector3(xE - 0.08, y, zE), new THREE.Vector3(xE + 0.08, y, zE));
+    pts.push(new THREE.Vector3(xE, GL, zE), new THREE.Vector3(xE, lvl[lvl.length - 1].z + lvl[lvl.length - 1].lv.ceil, zE)); tick(GL);
+    for (const { fid, z, lv } of lvl) {
+      tick(z); const l = label(`${P.FLOORS[fid].label} 床 GL+${(P.floorHeightGL + P.LEVELS[fid].z).toFixed(2)}m`, 0.2, "#2E6E8E"); l.position.set(xE + 0.1, z + 0.12, zE); bldG.add(l);
+      const l2 = label(`天井高 ${lv.ceil}m`, 0.17, "#43566B"); l2.position.set(xE + 0.1, z + lv.ceil - 0.15, zE); bldG.add(l2);
+    }
+    const top = lvl[lvl.length - 1].z + lvl[lvl.length - 1].lv.ceil; tick(top);
+    const l3 = label(`最高部 GL+${(P.floorHeightGL + P.LEVELS.LOFT.z + P.LEVELS.LOFT.ceil).toFixed(2)}m`, 0.2, "#2E6E8E"); l3.position.set(xE + 0.1, top + 0.15, zE); bldG.add(l3);
+    bldG.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), MAT.dim));
+  }
   if (viewMode === "floor") for (const fid of FLOOR_IDS) { if (fid === cur) break; const lv = P.LEVELS[fid]; bldG.add(box(P.W + 0.15, lv.story - 0.03, P.L + 0.15, MAT.ghost, P.W / 2, lv.z + (lv.story - 0.03) / 2, P.L / 2)); }
   // 1F床=0・GLは −0.461。表示は常に建物座標(1F床=0)
   $("#info3d").textContent = `${P.FLOORS[cur].label}: 床 GL+${(P.floorHeightGL + P.LEVELS[cur].z).toFixed(2)}m・天井高 ${P.LEVELS[cur].ceil}m(仮定)。` +

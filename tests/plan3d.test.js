@@ -55,6 +55,7 @@ test("plan3d: ページの開示(判定しない・前提・出典)と three.js 
   const text = html.replace(/<script[\s\S]*?<\/script>/g, " ").replace(/<[^>]+>/g, " ");
   assert.ok(text.includes("判定はしません"), "判定しない、の開示");
   assert.ok(text.includes("読み取りの前提(図面に無いもの)"), "前提の節");
+  assert.ok(text.includes("階の高さ(仮定") && text.includes(`GL+${(PLAN.floorHeightGL + PLAN.LEVELS["2F"].z).toFixed(2)}m`), "階の高さの表(床高はLEVELSから)");
   for (const a of ASSUMPTIONS) assert.ok(text.includes(a.replace(/\*\*/g, "").slice(0, 20)), `前提: ${a.slice(0, 20)}`);
   assert.ok(text.includes("図面の画像そのものと販売会社の連絡先は載せない"), "図面画像・連絡先を載せない開示(運用ルール3)");
   assert.ok(text.includes("このブラウザにだけ保存"), "保存先の開示");
