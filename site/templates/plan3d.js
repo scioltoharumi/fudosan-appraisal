@@ -289,9 +289,16 @@ const CSS_EXTRA = `
 .plan-app{display:grid;grid-template-columns:minmax(300px,440px) 1fr;gap:14px}
 @media(max-width:900px){.plan-app{grid-template-columns:1fr}}
 .plan-app .col{min-width:0}
+/* 画面の切替(2026-10-14ユーザー要望「3Dと平面図を行ったり来たり見るのが面倒。ボタンで切り替えたい」)。
+   平面図だけ: 2Dを中央に最大520px / 3Dだけ: 3Dを全幅・背高に。ツールとプロパティ欄は両方の下に置き、どちらの画面でも見える */
+.plan-app[data-mode="2d"]{grid-template-columns:minmax(300px,520px);justify-content:center}
+.plan-app[data-mode="2d"] .col3d{display:none}
+.plan-app[data-mode="3d"]{grid-template-columns:1fr}
+.plan-app[data-mode="3d"] .col2d{display:none}
+.plan-app[data-mode="3d"] #view3d{height:min(78vh,760px)}
 #plan2d{width:100%;background:#FBFBF9;border:1px solid var(--ink);touch-action:none;display:block;cursor:crosshair}
-#view3d{width:100%;height:560px;background:#E9EEF2;border:1px solid var(--ink);display:block}
-@media(max-width:900px){#view3d{height:420px}}
+#view3d{width:100%;height:560px;background:#E9EEF2;border:1px solid var(--ink);display:block;touch-action:none}
+@media(max-width:900px){#view3d{height:420px}.plan-app[data-mode="3d"] #view3d{height:min(70vh,600px)}}
 .toolbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0}
 .toolbar .lbl{font-size:.72rem;color:var(--ink-soft);letter-spacing:.06em}
 .btn{font-family:inherit;font-size:.78rem;padding:4px 10px;border:1px solid var(--ink);background:#FDFDFC;color:var(--ink);cursor:pointer}
@@ -345,57 +352,60 @@ export function renderPlan3d({ asOf, property } = {}) {
 <section class="panel">
   <h2>間取りシミュレーター ── ${esc(PLAN.title)}</h2>
   <div class="note" style="margin-bottom:10px">
-    図面3枚(販売図面・区割図・各階平面図)の<b>寸法線の値だけ</b>から再構成した3D模型。左の平面図で設備・家具を<b>ドラッグ移動・回転・追加・削除</b>し、壁も<b>選んでドラッグ</b>で動かせます(45.5mm刻み)。
-    右の3Dは同じデータをその場で描き直します(マウスで回転・ホイールで拡大)。
+    図面3枚(販売図面・区割図・各階平面図)の<b>寸法線の値だけ</b>から再構成した3D模型。平面図で設備・家具を<b>ドラッグ移動・回転・追加・削除</b>し、壁も<b>選んでドラッグ</b>で動かせます(45.5mm刻み)。
+    3Dは同じデータをその場で描き直し(マウスで回転・ホイールで拡大)、<b>寸法チェーン・各部屋の内法・選択した設備の隙間</b>を寸法線で描きます。設備は3D上でもクリックで選べます。「画面」ボタンで平面図/3D/並べるを切り替えられます。
     <b>判定はしません</b>。寸法・内法面積・設備まわりの隙間(クリアランス)・階段下の頭上高さを測って見せるだけです。設備の寸法はメーカー標準値の仮置き(下の前提)。
     変更はこのブラウザにだけ保存されます(公開リポジトリには書きません)。
     物件ページは <a href="property/${esc(PLAN.id)}.html">こちら</a>。
   </div>
   <div class="toolbar" id="floorTabs"><span class="lbl">階</span>
     ${Object.entries(FLOORS).map(([fid, f], i) => `<button class="btn${i === 0 ? " on" : ""}" data-floor="${fid}">${esc(f.label)}</button>`).join("")}
+    <span class="lbl" style="margin-left:10px">画面</span>
+    <button class="btn" data-mode="2d">平面図</button><button class="btn" data-mode="3d">3D</button><button class="btn" data-mode="both">並べる</button>
     <span class="lbl" style="margin-left:10px">3D表示</span>
     <button class="btn on" data-view="floor">この階だけ</button><button class="btn" data-view="all">全階(重ねる)</button><button class="btn" data-view="explode">全階(ばらす)</button>
     <span class="lbl" style="margin-left:10px">壁の高さ</span>
     <button class="btn" data-wallh="0.3">30cm</button><button class="btn on" data-wallh="1.2">1.2m</button><button class="btn" data-wallh="full">天井まで</button>
   </div>
-  <div class="plan-app">
-    <div class="col">
+  <div class="plan-app" id="planApp" data-mode="both">
+    <div class="col col2d">
       <canvas id="plan2d" width="440" height="1000" aria-label="平面図(編集可)"></canvas>
-      <div class="toolbar"><span class="lbl">ツール</span>
-        <button class="btn on" data-tool="select">選択/移動</button>
-        <button class="btn" data-tool="measure">寸法を測る</button>
-        <button class="btn" data-tool="area">部屋の広さ</button>
-        <button class="btn" data-tool="wall">壁を引く</button>
-        <button class="btn" id="btnUndo" title="Ctrl+Z">元に戻す</button>
-      </div>
-      <div class="toolbar"><span class="lbl">追加</span>
-        <select class="sel" id="addSel">${Object.entries(ITEM_CATALOG).map(([k, v]) => `<option value="${k}">${esc(v.cat)}: ${esc(v.name)}</option>`).join("")}</select>
-        <button class="btn" id="btnAdd">この階に置く</button>
-        <button class="btn" id="btnDoor">ドア(開き)を置く</button>
-      </div>
-      <div class="props" id="props"><span class="k">何も選択していません。</span><div class="hint">平面図の設備をクリックすると寸法と周囲の隙間が出ます。<kbd>R</kbd> 回転 / <kbd>Del</kbd> 削除 / <kbd>矢印</kbd> 1cm移動(<kbd>Shift</kbd>で45.5mm) / ドラッグ移動。壁は端点ではなく線をドラッグ(垂直方向に動きます)。</div></div>
-      <div class="legend">
-        <span><i style="background:#4A8FB8"></i>水回り</span><span><i style="background:#C9A35B"></i>キッチン</span><span><i style="background:#D9B98C"></i>家具</span>
-        <span><i style="background:#7A8A99"></i>車・外</span><span><i style="background:#E8A070"></i>人</span><span><i style="background:rgba(201,58,43,.18);border-color:#C93A2B"></i>推奨スペース(目安)</span>
-      </div>
-      <div class="toolbar" style="margin-top:10px"><span class="lbl">保存</span>
-        <button class="btn" id="btnExport">書き出し(JSON)</button>
-        <label class="btn" style="cursor:pointer">読み込み<input type="file" id="fileImport" accept="application/json" style="display:none"></label>
-        <button class="btn warn" id="btnReset">図面の初期配置に戻す</button>
-        <span class="hint" id="saveState"></span>
-      </div>
+      <div class="toolbar"><span class="lbl">平面図の拡大</span><button class="btn" id="btnZoomIn">＋</button><button class="btn" id="btnZoomOut">－</button><button class="btn" id="btnZoomFit">全体</button><span class="hint">2本指でピンチ/移動・ホイールでも拡大</span></div>
     </div>
-    <div class="col">
+    <div class="col col3d">
       <canvas id="view3d" aria-label="3D模型"></canvas>
       <div class="toolbar"><span class="lbl">視点</span>
         <button class="btn" data-cam="bird">鳥瞰</button><button class="btn" data-cam="top">真上</button><button class="btn" data-cam="north">道路側から</button><button class="btn" data-cam="eye">選択した部屋の中(目線1.5m)</button>
         <span class="lbl" style="margin-left:10px">表示</span>
+        <label class="hint"><input type="checkbox" id="chkDims" checked> 寸法</label>
         <label class="hint"><input type="checkbox" id="chkLot" checked> 敷地・道路・B区画</label>
-        <label class="hint"><input type="checkbox" id="chkLabels" checked> 部屋名</label>
+        <label class="hint"><input type="checkbox" id="chkLabels" checked> 部屋名・内法</label>
         <label class="hint"><input type="checkbox" id="chkSpace" checked> 推奨スペース</label>
       </div>
       <div class="hint" id="info3d"></div>
     </div>
+  </div>
+  <div class="toolbar"><span class="lbl">ツール</span>
+    <button class="btn on" data-tool="select">選択/移動</button>
+    <button class="btn" data-tool="measure">寸法を測る</button>
+    <button class="btn" data-tool="area">部屋の広さ</button>
+    <button class="btn" data-tool="wall">壁を引く</button>
+    <button class="btn" id="btnUndo" title="Ctrl+Z">元に戻す</button>
+    <span class="lbl" style="margin-left:10px">追加</span>
+    <select class="sel" id="addSel">${Object.entries(ITEM_CATALOG).map(([k, v]) => `<option value="${k}">${esc(v.cat)}: ${esc(v.name)}</option>`).join("")}</select>
+    <button class="btn" id="btnAdd">この階に置く</button>
+    <button class="btn" id="btnDoor">ドア(開き)を置く</button>
+  </div>
+  <div class="props" id="props"><span class="k">何も選択していません。</span><div class="hint">平面図または3Dの設備をクリックすると寸法と周囲の隙間が出ます。<kbd>R</kbd> 回転 / <kbd>Del</kbd> 削除 / <kbd>矢印</kbd> 1cm移動(<kbd>Shift</kbd>で45.5mm) / 平面図でドラッグ移動。壁は端点ではなく線をドラッグ(垂直方向に動きます)。「寸法を測る」は押したまま引っ張って離す(2点タップでも可)。</div></div>
+  <div class="legend">
+    <span><i style="background:#4A8FB8"></i>水回り</span><span><i style="background:#C9A35B"></i>キッチン</span><span><i style="background:#D9B98C"></i>家具</span>
+    <span><i style="background:#7A8A99"></i>車・外</span><span><i style="background:#E8A070"></i>人</span><span><i style="background:rgba(201,58,43,.18);border-color:#C93A2B"></i>推奨スペース(目安)</span>
+  </div>
+  <div class="toolbar" style="margin-top:10px"><span class="lbl">保存</span>
+    <button class="btn" id="btnExport">書き出し(JSON)</button>
+    <label class="btn" style="cursor:pointer">読み込み<input type="file" id="fileImport" accept="application/json" style="display:none"></label>
+    <button class="btn warn" id="btnReset">図面の初期配置に戻す</button>
+    <span class="hint" id="saveState"></span>
   </div>
 </section>
 

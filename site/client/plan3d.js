@@ -127,16 +127,27 @@ function stairUnderside(fid, y) {
 // ---------- 2D ----------
 const c2 = $("#plan2d");
 const VIEW = { x0: -1.3, x1: 4.7, y0: -1.9, y1: 9.9 };
-let scale = 70, ox = 0, oy = 0, dpr = 1;
+let scale = 70, base = 70, ox = 0, oy = 0, dpr = 1;
+let zoom = 1, panX = 0, panY = 0;   // 平面図の拡大縮小(ピンチ/ホイール)と2本指での移動。2026-10-14ユーザー要望
+const applyView = () => { scale = base * zoom; ox = -VIEW.x0 * scale + panX; oy = -VIEW.y0 * scale + panY; };
 function fit2d() {
+  if (!c2.clientWidth) return;   // 平面図が非表示(画面=3D)のときは触らない
   dpr = Math.min(2, window.devicePixelRatio || 1);
-  const cssW = c2.clientWidth || 440;
-  scale = cssW / (VIEW.x1 - VIEW.x0);
-  const cssH = Math.round((VIEW.y1 - VIEW.y0) * scale);
+  const cssW = c2.clientWidth;
+  base = cssW / (VIEW.x1 - VIEW.x0);
+  const cssH = Math.round((VIEW.y1 - VIEW.y0) * base);
   c2.style.height = cssH + "px";
   c2.width = Math.round(cssW * dpr); c2.height = Math.round(cssH * dpr);
-  ox = -VIEW.x0 * scale; oy = -VIEW.y0 * scale;
+  applyView();
 }
+// 画面上の点(px,py)を固定したままズーム倍率を k 倍にする
+function zoomAt(px, py, k) {
+  const [wx, wy] = toW(px, py);
+  zoom = Math.min(8, Math.max(0.5, zoom * k)); applyView();
+  panX += px - toPx(wx, wy)[0]; panY += py - toPx(wx, wy)[1]; applyView();
+  draw2d();
+}
+function resetZoom() { zoom = 1; panX = 0; panY = 0; applyView(); draw2d(); }
 const toPx = (x, y) => [ox + x * scale, oy + y * scale];
 const toW = (px, py) => [(px - ox) / scale, (py - oy) / scale];
 const mm = (v) => Math.round(v * 1000).toLocaleString();
@@ -207,7 +218,7 @@ function draw2d() {
       const dx = measure.b[0] - measure.a[0], dy = measure.b[1] - measure.a[1];
       const d = Math.hypot(dx, dy);
       const lab = `${mm(d)}mm` + (Math.abs(dx) > 0.01 && Math.abs(dy) > 0.01 ? ` (x${mm(Math.abs(dx))}・y${mm(Math.abs(dy))})` : "");
-      txtBox(ctx, lab, (ax + bx) / 2, (ay + by) / 2 - 10);
+      txtBox(ctx, lab, (ax + bx) / 2, (ay + by) / 2 - 12, 13);
     }
   }
   if (wallDraft) { const [ax, ay] = toPx(wallDraft.x1, wallDraft.y1), [bx, by] = toPx(wallDraft.x2, wallDraft.y2); ctx.strokeStyle = "#C93A2B"; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke(); }
@@ -224,7 +235,7 @@ function roomLabel(ctx, r) { // 部屋名: 左上に白地で。部屋幅に入�
   const w = ctx.measureText(s).width + 4; ctx.fillStyle = "rgba(255,255,255,.75)"; ctx.fillRect(px - 2, py - 6, w, 12);
   ctx.fillStyle = "#43566B"; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillText(s, px, py);
 }
-function txtBox(ctx, s, px, py) { ctx.font = `11px Consolas,Menlo,monospace`; const w = ctx.measureText(s).width + 8; ctx.fillStyle = "rgba(255,255,255,.92)"; ctx.fillRect(px - w / 2, py - 8, w, 16); ctx.strokeStyle = "#C93A2B"; ctx.lineWidth = 1; ctx.strokeRect(px - w / 2, py - 8, w, 16); ctx.fillStyle = "#C93A2B"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(s, px, py); }
+function txtBox(ctx, s, px, py, fs = 11) { ctx.font = `${fs}px Consolas,Menlo,monospace`; const w = ctx.measureText(s).width + 8, h = fs + 6; ctx.fillStyle = "rgba(255,255,255,.92)"; ctx.fillRect(px - w / 2, py - h / 2, w, h); ctx.strokeStyle = "#C93A2B"; ctx.lineWidth = 1; ctx.strokeRect(px - w / 2, py - h / 2, w, h); ctx.fillStyle = "#C93A2B"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(s, px, py); }
 function cross(ctx, r) { const [a, b] = toPx(r.x0, r.y0), [c, d] = toPx(r.x1, r.y1); ctx.strokeStyle = "#C8CED4"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(a, b); ctx.lineTo(c, d); ctx.moveTo(c, b); ctx.lineTo(a, d); ctx.stroke(); }
 function stairTreads(ctx, r) {
   ctx.strokeStyle = "#8A9AA6"; ctx.lineWidth = 1;
@@ -325,14 +336,29 @@ function nearestWallPoint(wx, wy) {
   }
   return best;
 }
+const pointers = new Map(); let pinch = null;
 c2.addEventListener("pointerdown", (e) => {
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pointers.size === 2) { // 2本指: ピンチ/移動の開始。進行中のドラッグ・計測・壁描画は取り消す
+    try { c2.setPointerCapture(e.pointerId); } catch { /* 合成イベント */ }
+    if (drag) { if (drag.moved) { Object.assign(drag.obj, drag.orig); undoStack.pop(); } drag = null; }
+    measure.live = false; wallDraft = null;
+    const r = c2.getBoundingClientRect(); const [a, b] = [...pointers.values()];
+    const mx = (a.x + b.x) / 2 - r.left, my = (a.y + b.y) / 2 - r.top;
+    pinch = { d0: Math.hypot(a.x - b.x, a.y - b.y), zoom0: zoom, w: toW(mx, my) };
+    draw2d(); return;
+  }
+  if (pointers.size > 2 || pinch) return;
   if (e.button !== 0 || !e.isPrimary) return;
   const r = c2.getBoundingClientRect(); const [wx, wy] = toW(e.clientX - r.left, e.clientY - r.top);
   lastClickWorld = [wx, wy];
-  c2.setPointerCapture(e.pointerId);
+  try { c2.setPointerCapture(e.pointerId); } catch { /* 合成イベント */ }
   if (tool === "measure") {
+    // 押したまま引っ張ると寸法線が伸び、離した位置で確定(2026-10-14ユーザー要望「正確に2点をタップするのは難しい」)。
+    // 動かさずに離したときは従来どおり「次のタップで2点目」
     const p = snapPoint(wx, wy);
-    if (!measure.a || measure.b) measure = { a: p, b: null }; else measure.b = p;
+    if (measure.a && !measure.b && !measure.live) { measure.b = p; draw2d(); return; }
+    measure = { a: p, b: null, live: true, sx: e.clientX, sy: e.clientY };
     draw2d(); return;
   }
   if (tool === "area") { selected = null; areaResult = floodArea(wx, wy); draw2d(); renderProps(); request3d(); return; }
@@ -346,12 +372,22 @@ c2.addEventListener("pointerdown", (e) => {
   draw2d(); renderProps();
 });
 c2.addEventListener("pointermove", (e) => {
+  if (pointers.has(e.pointerId)) pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pinch) {
+    if (pointers.size < 2) return;
+    const r = c2.getBoundingClientRect(); const [a, b] = [...pointers.values()];
+    const d = Math.hypot(a.x - b.x, a.y - b.y); const mx = (a.x + b.x) / 2 - r.left, my = (a.y + b.y) / 2 - r.top;
+    zoom = Math.min(8, Math.max(0.5, pinch.zoom0 * d / Math.max(pinch.d0, 1))); applyView();
+    const [px, py] = toPx(...pinch.w); panX += mx - px; panY += my - py; applyView();   // 最初の中点の下の世界座標を今の中点へ
+    draw2d(); return;
+  }
   const r = c2.getBoundingClientRect(); const [wx, wy] = toW(e.clientX - r.left, e.clientY - r.top);
   if (wallDraft) { // 直交にスナップ
     const dx = wx - wallDraft.x1, dy = wy - wallDraft.y1;
     if (Math.abs(dx) > Math.abs(dy)) { wallDraft.x2 = snapTo(wx, SNAP_WALL); wallDraft.y2 = wallDraft.y1; } else { wallDraft.y2 = snapTo(wy, SNAP_WALL); wallDraft.x2 = wallDraft.x1; }
     draw2d(); return;
   }
+  if (measure.live) { if (Math.hypot(e.clientX - measure.sx, e.clientY - measure.sy) > 4) measure.b = snapPoint(wx, wy); draw2d(); return; }
   if (!drag) return;
   if (!drag.moved) { pushUndo(); drag.moved = true; }
   const noSnap = e.altKey;
@@ -377,6 +413,7 @@ c2.addEventListener("pointermove", (e) => {
 let rafId = 0;
 function sched() { if (rafId) return; rafId = requestAnimationFrame(() => { rafId = 0; draw2d(); renderProps(); request3d(); }); }
 function endDrag() {
+  if (measure.live) { measure.live = false; draw2d(); return; }   // 引っ張って離した=確定。動かしていなければ2点目のタップ待ち
   if (wallDraft) {
     const len = Math.hypot(wallDraft.x2 - wallDraft.x1, wallDraft.y2 - wallDraft.y1);
     if (len >= SNAP_WALL - 1e-6) { pushUndo(); const w = { ...wallDraft, kind: "int", id: nid() }; F().walls.push(w); selected = { kind: "wall", id: w.id }; }
@@ -385,7 +422,12 @@ function endDrag() {
   if (drag?.moved) { save(); areaResult = null; draw2d(); request3d(); }
   drag = null;
 }
-c2.addEventListener("pointerup", endDrag); c2.addEventListener("pointercancel", endDrag);
+function pointerEnd(e) { pointers.delete(e.pointerId); if (pinch) { if (pointers.size < 2) pinch = null; return; } endDrag(); }
+c2.addEventListener("pointerup", pointerEnd); c2.addEventListener("pointercancel", pointerEnd);
+c2.addEventListener("wheel", (e) => { e.preventDefault(); const r = c2.getBoundingClientRect(); zoomAt(e.clientX - r.left, e.clientY - r.top, Math.pow(1.0015, -e.deltaY)); }, { passive: false });
+$("#btnZoomIn").onclick = () => zoomAt(c2.clientWidth / 2, c2.clientHeight / 2, 1.25);
+$("#btnZoomOut").onclick = () => zoomAt(c2.clientWidth / 2, c2.clientHeight / 2, 0.8);
+$("#btnZoomFit").onclick = resetZoom;
 function snapPoint(wx, wy) { // 壁の面・設備の辺に8px以内なら吸着
   const tol = 8 / scale; let bx = wx, by = wy;
   const xs = [], ys = [];
@@ -527,6 +569,7 @@ const MAT = {
   stair: new THREE.MeshLambertMaterial({ color: 0xB69A72 }), stairUnder: new THREE.MeshLambertMaterial({ color: 0x8E7A5E, side: THREE.DoubleSide }),
   glass: new THREE.MeshLambertMaterial({ color: 0x9FD2E8, transparent: true, opacity: 0.55 }), door: new THREE.MeshLambertMaterial({ color: 0x9C7B52 }),
   space: new THREE.MeshBasicMaterial({ color: 0xC93A2B, transparent: true, opacity: 0.16, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
+  dim: new THREE.LineBasicMaterial({ color: 0x2E6E8E }), dimSel: new THREE.LineBasicMaterial({ color: 0xC93A2B }),
   sel: new THREE.LineBasicMaterial({ color: 0xC93A2B }), ghost: new THREE.MeshLambertMaterial({ color: 0xC9CDD1, transparent: true, opacity: 0.25, depthWrite: false }), ladder: new THREE.MeshLambertMaterial({ color: 0x8E7A5E }),
 };
 const itemMats = {};
@@ -546,9 +589,10 @@ function prism(tri, y0, y1, mat) { // 三角柱(回り段)
   const g = new THREE.ExtrudeGeometry(sh, { depth: y1 - y0, bevelEnabled: false }); const m = new THREE.Mesh(g, mat); m.rotation.x = Math.PI / 2; m.position.y = y1; return m;
 }
 const labelCache = {};
-function label(text, size = 0.32) {
-  if (!labelCache[text]) { const cv = document.createElement("canvas"); const ctx = cv.getContext("2d"); ctx.font = "28px 'Hiragino Kaku Gothic ProN','Yu Gothic',Meiryo,sans-serif"; const w = Math.ceil(ctx.measureText(text).width) + 16; cv.width = w; cv.height = 40; ctx.font = "28px 'Hiragino Kaku Gothic ProN','Yu Gothic',Meiryo,sans-serif"; ctx.fillStyle = "rgba(255,255,255,.85)"; ctx.fillRect(0, 0, w, 40); ctx.fillStyle = "#16232E"; ctx.textBaseline = "middle"; ctx.fillText(text, 8, 20); const tex = new THREE.CanvasTexture(cv); tex.minFilter = THREE.LinearFilter; labelCache[text] = { tex, ratio: w / 40 }; }
-  const lc = labelCache[text]; lc.mat ??= new THREE.SpriteMaterial({ map: lc.tex, depthTest: false, transparent: true }); const sp = new THREE.Sprite(lc.mat); sp.scale.set(size * lc.ratio, size, 1); sp.renderOrder = 10; return sp;
+function label(text, size = 0.32, color = "#16232E") {
+  const key = color + "|" + text;
+  if (!labelCache[key]) { const cv = document.createElement("canvas"); const ctx = cv.getContext("2d"); ctx.font = "28px 'Hiragino Kaku Gothic ProN','Yu Gothic',Meiryo,sans-serif"; const w = Math.ceil(ctx.measureText(text).width) + 16; cv.width = w; cv.height = 40; ctx.font = "28px 'Hiragino Kaku Gothic ProN','Yu Gothic',Meiryo,sans-serif"; ctx.fillStyle = "rgba(255,255,255,.85)"; ctx.fillRect(0, 0, w, 40); ctx.fillStyle = color; ctx.textBaseline = "middle"; ctx.fillText(text, 8, 20); const tex = new THREE.CanvasTexture(cv); tex.minFilter = THREE.LinearFilter; labelCache[key] = { tex, ratio: w / 40 }; }
+  const lc = labelCache[key]; lc.mat ??= new THREE.SpriteMaterial({ map: lc.tex, depthTest: false, transparent: true }); const sp = new THREE.Sprite(lc.mat); sp.scale.set(size * lc.ratio, size, 1); sp.renderOrder = 10; return sp;
 }
 let staticDirty = true;
 function buildStatic() {
@@ -603,14 +647,70 @@ function buildFloor(fid, zOff, showLabels) {
     const c = CAT[it.type] ?? CAT.box; const m = itemDims(it); const b = aabb(it);
     const mesh = box(b.x1 - b.x0, m.h, b.y1 - b.y0, matFor(c.color), it.x, zOff + m.h / 2, it.y);
     if (it.type === "ub1316" || it.type === "ub1616" || it.type === "ub1216") mesh.material = matGlassy(c.color);
-    g.add(mesh);
+    mesh.userData.itemId = it.id; mesh.userData.fid = fid; g.add(mesh);
     if (selected?.kind === "item" && selected.id === it.id && fid === cur) { const e = new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry), MAT.sel); e.position.copy(mesh.position); g.add(e); }
     if ($("#chkSpace").checked) { const sr = spaceRect(it); if (sr) g.add(slabMesh(sr.x0, sr.y0, sr.x1, sr.y1, zOff + 0.008, 0.004, MAT.space)); }
-    if (showLabels && selected?.kind === "item" && selected.id === it.id) { const l = label(it.label ?? c.name.replace(/\(.*$/, ""), 0.22); l.position.set(it.x, zOff + m.h + 0.15, it.y); g.add(l); }
+    if (showLabels && selected?.kind === "item" && selected.id === it.id) { const l = label(`${it.label ?? c.name.replace(/\(.*$/, "")} ${mm(b.x1 - b.x0)}×${mm(b.y1 - b.y0)}`, 0.22); l.position.set(it.x, zOff + m.h + 0.15, it.y); g.add(l); }
   }
   if (fid === "1F" || fid === "2F") stairMeshes(g, fid, zOff);
-  if (showLabels) for (const r of fl.rooms) if (r.kind !== "outside" && r.kind !== "stair" && r.kind !== "closet") { const l = label(r.name, 0.26); l.position.set((r.x0 + r.x1) / 2, zOff + 0.9, (r.y0 + r.y1) / 2); g.add(l); }
+  if (showLabels) for (const r of fl.rooms) if (r.kind !== "outside" && r.kind !== "stair" && r.kind !== "closet" && r.kind !== "void") {
+    const cx = (r.x0 + r.x1) / 2, cz = (r.y0 + r.y1) / 2; const tall = r.y1 - r.y0 >= 0.8;   // 真上から見ても重ならないよう南北にずらす
+    const l = label(r.name, 0.26); l.position.set(cx, zOff + 0.95, cz - (tall ? 0.17 : 0)); g.add(l);
+    const n = netDims(r, fid); const l2 = label(`内法 ${mm(n.w)}×${mm(n.d)}`, 0.19, "#2E6E8E"); l2.position.set(cx, zOff + 0.7, cz + (tall ? 0.17 : 0.3)); g.add(l2);
+  }
+  if ($("#chkDims").checked && (viewMode === "floor" || fid === cur)) dimMeshes(g, fid, zOff, slab);
   return g;
+}
+// 内法(芯々から壁の半厚を引く。外壁に接する辺は 75mm・内壁は 45mm。1Fの北面は開口なので内壁扱い)
+function netDims(r, fid) {
+  const ext = (v, lim) => Math.abs(v - lim) < 1e-6;
+  const hx = (ext(r.x0, 0) ? P.WALL_T.ext : P.WALL_T.int) / 2 + (ext(r.x1, P.W) ? P.WALL_T.ext : P.WALL_T.int) / 2;
+  const hy = (ext(r.y0, 0) && fid !== "1F" ? P.WALL_T.ext : P.WALL_T.int) / 2 + (ext(r.y1, P.L) ? P.WALL_T.ext : P.WALL_T.int) / 2;
+  return { w: Math.max(0, r.x1 - r.x0 - hx), d: Math.max(0, r.y1 - r.y0 - hy) };
+}
+// 寸法線(3D): 床面に線+目盛+mmのラベル。2026-10-14ユーザー要望「3Dの方にも詳細寸法は極力書いてほしい」
+function dimLine(g, a, b, y, text, mat, color, size = 0.17) {
+  const [ax, az] = a, [bx, bz] = b; const horiz = Math.abs(az - bz) < 1e-9;
+  const tick = 0.07; const pts = [new THREE.Vector3(ax, y, az), new THREE.Vector3(bx, y, bz)];
+  for (const [px, pz] of [a, b]) { if (horiz) pts.push(new THREE.Vector3(px, y, pz - tick), new THREE.Vector3(px, y, pz + tick)); else pts.push(new THREE.Vector3(px - tick, y, pz), new THREE.Vector3(px + tick, y, pz)); }
+  g.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), mat));
+  if (text) { const l = label(text, size, color); l.position.set((ax + bx) / 2, y + 0.02, (az + bz) / 2); g.add(l); }
+}
+function dimMeshes(g, fid, zOff, slab) {
+  const f = state.floors[fid]; const fl = P.FLOORS[fid]; const y = zOff + 0.02;
+  const xs = new Set([slab.x0, slab.x1]), ys = new Set([slab.y0 === 0 ? 0 : slab.y0, slab.y1]);
+  if (fid === "LOFT") { ys.clear(); ys.add(slab.y0); ys.add(slab.y1); }
+  for (const w of f.walls) { if (w.kind === "void") continue; if (Math.abs(w.x1 - w.x2) < 1e-6) xs.add(round3(w.x1)); if (Math.abs(w.y1 - w.y2) < 1e-6) ys.add(round3(w.y1)); }
+  const outsideN = Math.min(slab.y0, ...fl.rooms.filter((r) => r.kind === "outside").map((r) => r.y0));
+  const X = [...xs].sort((a, b) => a - b), Y = [...ys].sort((a, b) => a - b);
+  // 北側の寸法チェーン(x方向)と西側(y方向)。短い区間(<300mm)はラベルを省く
+  const zN = outsideN - 0.35, zN2 = outsideN - 0.75, xW = -0.42, xW2 = -0.85;
+  for (let i = 0; i + 1 < X.length; i++) { const d = X[i + 1] - X[i]; dimLine(g, [X[i], zN], [X[i + 1], zN], y, d >= 0.3 ? mm(d) : "", MAT.dim, "#2E6E8E"); }
+  dimLine(g, [X[0], zN2], [X[X.length - 1], zN2], y, mm(X[X.length - 1] - X[0]), MAT.dim, "#2E6E8E", 0.2);
+  for (let i = 0; i + 1 < Y.length; i++) { const d = Y[i + 1] - Y[i]; dimLine(g, [xW, Y[i]], [xW, Y[i + 1]], y, d >= 0.3 ? mm(d) : "", MAT.dim, "#2E6E8E"); }
+  dimLine(g, [xW2, Y[0]], [xW2, Y[Y.length - 1]], y, mm(Y[Y.length - 1] - Y[0]), MAT.dim, "#2E6E8E", 0.2);
+  // ドア幅
+  for (const d of f.items) if (d.type === "door") { const l = label(`W${mm(d.w)}`, 0.15, "#43566B"); l.position.set(d.x, y + 0.25, d.y); g.add(l); }
+  // 階段の段寸法
+  if (fid === "1F" || fid === "2F") { const s = P.STAIR; const riser = P.LEVELS[fid].story / (s.winders + s.straight); const l = label(`蹴上${mm(riser)} 踏面${mm(TREAD)}`, 0.15, "#43566B"); l.position.set((s.x0 + s.x1) / 2, zOff + 1.6, (s.yTop + s.yBottom) / 2); g.add(l); }
+  // 選択中の設備: 4方向の隙間を寸法線で
+  if (selected?.kind === "item" && fid === cur) {
+    const it = f.items.find((o) => o.id === selected.id); if (!it || it.type === "door") return;
+    const b = aabb(it); const cx = (b.x0 + b.x1) / 2, cz = (b.y0 + b.y1) / 2; const yy = zOff + 0.05;
+    for (const dir of ["N", "S", "E", "W"]) {
+      const { gap, hit } = gapInDir(b, dir, fid, it.id); if (!Number.isFinite(gap) || !hit) continue;
+      const txt = gap < -0.005 ? "重なり" : mm(gap);
+      if (dir === "N") dimLine(g, [cx, b.y0], [cx, b.y0 - Math.max(gap, 0)], yy, txt, MAT.dimSel, "#C93A2B", 0.16);
+      if (dir === "S") dimLine(g, [cx, b.y1], [cx, b.y1 + Math.max(gap, 0)], yy, txt, MAT.dimSel, "#C93A2B", 0.16);
+      if (dir === "W") dimLine(g, [b.x0, cz], [b.x0 - Math.max(gap, 0), cz], yy, txt, MAT.dimSel, "#C93A2B", 0.16);
+      if (dir === "E") dimLine(g, [b.x1, cz], [b.x1 + Math.max(gap, 0), cz], yy, txt, MAT.dimSel, "#C93A2B", 0.16);
+    }
+    const hu0 = stairUnderside(fid, b.y0), hu1 = stairUnderside(fid, b.y1);
+    if ((hu0 != null || hu1 != null) && b.x1 > P.STAIR.x0 && b.x0 < P.STAIR.x1) { // 階段下: 頭上高さを縦の寸法線で
+      const h = Math.min(hu0 ?? 9, hu1 ?? 9); const pts = [new THREE.Vector3(b.x1 + 0.05, zOff, b.y1), new THREE.Vector3(b.x1 + 0.05, zOff + h, b.y1)];
+      g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), MAT.dimSel)); const l = label(`頭上 ${h.toFixed(2)}m`, 0.16, "#C93A2B"); l.position.set(b.x1 + 0.05, zOff + h + 0.12, b.y1); g.add(l);
+    }
+  }
 }
 let need3d = false;
 function request3d() { need3d = true; }
@@ -623,7 +723,8 @@ function build3d() {
   // 1F床=0・GLは −0.461。表示は常に建物座標(1F床=0)
   $("#info3d").textContent = `${P.FLOORS[cur].label}: 床 GL+${(P.floorHeightGL + P.LEVELS[cur].z).toFixed(2)}m・天井高 ${P.LEVELS[cur].ceil}m(仮定)。` +
     (viewMode === "floor" ? "この階だけ表示中(上の階は非表示)。" : viewMode === "explode" ? "全階を1.2m離して表示。" : "全階を実際の高さで重ねて表示。") +
-    (wallH === "full" ? "壁は天井まで(ドア・窓は壁に埋まって見えない)。" : `壁の高さを${wallH}mで切って表示(ドールハウス)。`);
+    (wallH === "full" ? "壁は天井まで(ドア・窓は壁に埋まって見えない)。" : `壁の高さを${wallH}mで切って表示(ドールハウス)。`) +
+    " 寸法は芯々(青のチェーン)・内法(壁厚の仮定を引いた値)・階段の段寸法は回り3段+直11段の仮定。";
 }
 // 表示中の階の床高(ばらす表示では階ごとに1.2m上乗せ)。階を切り替えたらカメラと注視点を同じ分だけ持ち上げる
 const floorZ = (fid) => P.LEVELS[fid].z + (viewMode === "explode" ? FLOOR_IDS.indexOf(fid) * 1.2 : 0);
@@ -645,12 +746,43 @@ function setCam(mode) {
   controls.update();
 }
 document.querySelectorAll("[data-cam]").forEach((b) => b.onclick = () => setCam(b.dataset.cam));
+$("#chkDims").onchange = () => request3d();
+// 画面の切替(平面図/3D/並べる)。初期値は保存値 → 無ければ画面幅で決める(狭い画面は平面図だけ)
+const MODE_KEY = LS_KEY + ":mode";
+function setMode(mode, persist = true) {
+  $("#planApp").dataset.mode = mode;
+  document.querySelectorAll("[data-mode]").forEach((x) => x.classList.toggle("on", x.dataset.mode === mode));
+  if (persist) { try { localStorage.setItem(MODE_KEY, mode); } catch { /* noop */ } }
+  fit2d(); draw2d(); resize3d(); request3d();
+}
+document.querySelectorAll("[data-mode]").forEach((b) => b.onclick = () => setMode(b.dataset.mode));
+// 3D上のクリックで設備を選ぶ(ドラッグ=カメラ操作と区別するため、押した位置から6px以内・400ms以内の離しだけ)
+const ray = new THREE.Raycaster(); let down3 = null;
+c3.addEventListener("pointerdown", (e) => { down3 = { x: e.clientX, y: e.clientY, t: performance.now() }; });
+c3.addEventListener("pointerup", (e) => {
+  if (!down3) return; const d = down3; down3 = null;
+  if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 6 || performance.now() - d.t > 400) return;
+  const r = c3.getBoundingClientRect(); const v = new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(v, camera);
+  const hit = ray.intersectObjects(bldG.children, true).find((h) => h.object.userData?.itemId);
+  if (!hit) { if (selected) { selected = null; draw2d(); renderProps(); request3d(); } return; }
+  const { itemId, fid } = hit.object.userData;
+  if (fid !== cur) { const prevZ = floorZ(cur); cur = fid; followFloor(prevZ); document.querySelectorAll("#floorTabs [data-floor]").forEach((x) => x.classList.toggle("on", x.dataset.floor === fid)); }
+  selected = { kind: "item", id: itemId }; areaResult = null; draw2d(); renderProps(); request3d();
+});
+// 検査用: 建物座標(x,y,階)を3Dキャンバス上のピクセルへ
+window.plan3dProject = (x, y, fid, h = 0.3) => { const v = new THREE.Vector3(x, floorZ(fid) + h, y).project(camera); const r = c3.getBoundingClientRect(); return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height]; };
 function loop() { requestAnimationFrame(loop); if (need3d) { need3d = false; build3d(); } controls.update(); renderer.render(scene, camera); }
 
 // ---------- 起動 ----------
 function init() {
+  let mode = null; try { mode = localStorage.getItem(MODE_KEY); } catch { /* noop */ }
+  if (!["2d", "3d", "both"].includes(mode)) mode = window.innerWidth <= 900 ? "2d" : "both";
+  setMode(mode, false);
   fit2d(); draw2d(); renderProps(); resize3d(); build3d(); setCam("bird"); loop();
   const el = document.getElementById("saveState"); el.textContent = saved ? "このブラウザに保存した配置を復元しました" : "図面の初期配置(変更すると自動保存)";
   window.addEventListener("resize", () => { fit2d(); draw2d(); resize3d(); });
+  // 画面が3Dだけ→平面図へ戻ったとき等、非表示中は fit2d が走らないので表示されたら測り直す
+  new ResizeObserver(() => { if (c2.clientWidth && Math.abs(c2.width / dpr - c2.clientWidth) > 1) { fit2d(); draw2d(); } resize3d(); }).observe($("#planApp"));
 }
 init();

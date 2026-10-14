@@ -62,6 +62,8 @@ test("plan3d: ページの開示(判定しない・前提・出典)と three.js 
   assert.ok(html.includes("./vendor/OrbitControls.js"), "OrbitControls も vendor から");
   assert.ok(!/https?:\/\/[^"'\s]*(cdn|unpkg|jsdelivr)/i.test(html), "外部CDNに依存しない");
   assert.ok(html.includes("window.PLAN = {"), "PLAN が注入されている");
+  for (const k of ['data-mode="2d"', 'data-mode="3d"', 'data-mode="both"', 'id="chkDims"', 'id="btnZoomFit"']) assert.ok(html.includes(k), `UI部品: ${k}`);
+  assert.ok(html.includes("寸法チェーン・各部屋の内法・選択した設備の隙間"), "3Dに寸法を描くことの説明");
   assert.ok(!html.includes("</script>".repeat(2)), "script の閉じが二重でない");
   for (const f of ["three.module.min.js", "OrbitControls.js", "THREE-LICENSE"]) assert.ok(existsSync(join(ROOT, "site", "vendor", f)), `site/vendor/${f} が同梱`);
   assert.ok(readFileSync(join(ROOT, "site", "vendor", "OrbitControls.js"), "utf8").includes("from './three.module.min.js'"), "OrbitControls の import が同梱の three を指す");
