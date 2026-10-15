@@ -77,7 +77,7 @@ function figScatter(rows) {
   el.push(`<text x="${L + 129}" y="${T - 10.5}" font-size="9.5" fill="${C.soft}">塗り=築5年以内</text>`);
   el.push(`<circle cx="${L + 230}" cy="${T - 14}" r="5" fill="#fff" stroke="${C.shallow}" stroke-width="2.2"/>`);
   el.push(`<text x="${L + 239}" y="${T - 10.5}" font-size="9.5" fill="${C.soft}">白抜き=それ以前</text>`);
-  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="売出価格と延床面積の散布図。神谷2-24は同じ価格帯の中で新しい点(延床は居住部分のみ)" style="max-width:${W}px;font-family:inherit">${el.join("")}</svg>`;
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="売出価格と延床面積の散布図。神谷2-24は同じ価格帯の中で新しい点(延床は図面の値=車庫・ポーチ込み)" style="max-width:${W}px;font-family:inherit">${el.join("")}</svg>`;
 }
 
 // ---- 図3: 同じ価格帯の「査定の中央値との差」(発散棒) ----
@@ -157,10 +157,10 @@ function bandTable(rows) { return condRows(bandRows(rows)); }
 const CHECKS = [
   ["風呂 1316→1616", "納戸4.3帖→約3.5帖", "+10〜25万・構造計算で可否"],
   ["ロフト5.1帖", "図面にあるが価格外。約8.3m²=延床に入らない", "+50〜150万・無しの場合の天井は?"],
-  ["ロフトの体感", "収納に使えば 83+8=約91m²相当", "天井1.4m以下・はしご・夏は暑い"],
+  ["ロフトの体感", "住宅部分83+8=約91m²相当(図面の延床93.86は車庫・ポーチ込み)", "天井1.4m以下・はしご・夏は暑い"],
   ["設備負担金", "60万(確定)", "内訳"],
   ["地盤改良", "荒川低地の軟弱地盤", "+100〜200万(想定)"],
-  ["実総額", "6,580 → 6,800〜6,950万", "査定6,396万より+400〜550"],
+  ["実総額", "6,580 → 6,830〜6,900万(10/12見積: 別途253+ロフト66)", "査定6,691万より+140〜210"],
   ["仲介手数料", "土地4,090万のみ=約142万(建売なら約224万)", "−80万・台帳の諸費用5%は多め"],
   ["間取り", "2LDK+S(1F納戸4.3帖・3F 7.9+7.3帖)", "個室は3階の2室のみ"],
   ["7.9帖の2室化", "入口が階段側1ヶ所。縦割り=幅1.5m / 横割り=奥に入口なし。廊下を取ると2.9+4帖", "今の間取りでは成立しない"],
@@ -192,10 +192,10 @@ export function renderCompare({ snapshot }) {
     <h2>結論</h2>
     <div class="logic-body" style="font-size:.95rem;line-height:2">
       <div>① この価格帯で <b>新築・JR徒歩11分・6m公道・車庫</b> がそろうのは <b>神谷2-24だけ</b></div>
-      <div>② 広さは <b>2LDK+S・83m²</b>。同じ帯の中古より1部屋小さい</div>
-      <div>③ 値段は <b>査定どおり(+184万)</b>。別途込みで+250〜550万。同じ帯の他は+400〜2,500万</div>
+      <div>② 広さは <b>2LDK+S・93.86m²(車庫・ポーチ込み。住宅部分83)</b>。同じ帯の中古より1部屋小さい</div>
+      <div>③ 値段は <b>査定より安い(−111万)</b>。別途込み(見積の別途253+ロフト66)で+140〜210万。同じ帯の他は+400〜2,500万</div>
       <div>④ 弱点は <b>浸水3〜5m・小さい土地・広さ</b></div>
-      <div>⑤ 同じ帯の新築は神谷を含め9件。<b>他の8件は全て70〜80m²</b>で神谷(83・車庫別)が最大。それより広いのは<b>築10年超の中古だけ</b></div>
+      <div>⑤ 同じ帯の新築は神谷を含め9件。<b>他の8件は全て70〜80m²</b>で神谷(93.86・車庫込み)が最大。それより広いのは<b>築10年超の中古だけ</b></div>
     </div>
   </section>
 
@@ -208,7 +208,7 @@ export function renderCompare({ snapshot }) {
   <section class="panel">
     <h2>条件が近い物件</h2>
     ${condTable(rows)}
-    <div class="note"><span style="background:#E6F0F5;padding:0 4px">青=神谷より有利</span> <span style="background:#FBEBDD;padding:0 4px">橙=不利</span>　旗竿?=接道3mから推定　車庫別=神谷の延床は居住部分のみ</div>
+    <div class="note"><span style="background:#E6F0F5;padding:0 4px">青=神谷より有利</span> <span style="background:#FBEBDD;padding:0 4px">橙=不利</span>　旗竿?=接道3mから推定　車庫込=神谷の延床は図面の値(車庫8.13・ポーチ2.63を含む)で他物件と同じ土俵</div>
   </section>
 
   <section class="panel">
@@ -228,7 +228,7 @@ export function renderCompare({ snapshot }) {
     <div class="note">聞くこと15項目の全文は <a href="property/kamiya2-adcast-a.html">物件ページ</a></div>
   </section>
 
-  <p class="note">※${esc(snapshot.as_of.slice(5).replace("-", "/").replace(/^0/, ""))}時点 / *=台帳外(参考値) / 浸水=丁目の代表点 / 神谷の延床=居住部分(車庫・ポーチ除く) / 相対比較で判定ではない</p>
+  <p class="note">※${esc(snapshot.as_of.slice(5).replace("-", "/").replace(/^0/, ""))}時点 / *=台帳外(参考値) / 浸水=丁目の代表点 / 神谷の延床=図面の93.86(車庫・ポーチ込み。住宅部分83.10)=他物件と同じ土俵 / 相対比較で判定ではない</p>
   <p style="margin-top:14px"><a class="src-link" href="index.html">← 物件一覧へ戻る</a></p>`;
   return layout({ title: "本命の立ち位置", subtitle: "神谷2-24を2つの軸で比べる", docNo: "COMPARE", body });
 }

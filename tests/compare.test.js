@@ -27,9 +27,11 @@ test("compare: 時点・台帳外の参考値・代表点・判定ではない�
 });
 
 test("compare: 神谷2-24の確認事項(風呂1616・ロフト・別途費用)と、延床が居住部分である旨を出す", () => {
-  // 2026-10-10 参考プラン図で延床を住宅部分83.10に置き換えた。他物件は掲載の延床のままなので、その非対称を脚注と表に出す
+  // 2026-10-10に延床を住宅部分83.10へ置き換えたが、2026-10-15ユーザー指示「他と一緒にしないと比較の意味ない」で図面の93.86(車庫・ポーチ込み)へ戻した。
+  // 他物件は掲載の延床(車庫込みも混在)なので同じ土俵。住宅部分83.10は注記として残す
   const k = snapshot.rows.find((r) => r.id === "kamiya2-adcast-a");
-  assert.equal(k.floor, 83.1);
+  assert.equal(k.floor, 93.86);
+  assert.equal(k.incl, "車庫込");
   assert.equal(k.layout, "2LDK+S");
   assert.ok(html.includes("決める前に"));
   assert.ok(html.includes("1316→1616"));
@@ -37,7 +39,9 @@ test("compare: 神谷2-24の確認事項(風呂1616・ロフト・別途費用)�
   assert.ok(html.includes("約91m²相当"));
   assert.ok(html.includes("7.9帖の2室化"));
   assert.ok(html.includes('href="property/kamiya2-adcast-a.html"'));   // 聞くこと15項目の全文への導線   // ロフトを収納に使ったときの体感(延床には入れない)
-  assert.ok(html.includes("居住部分"));
+  assert.ok(html.includes("車庫・ポーチ込み"));
+  assert.ok(html.includes("同じ土俵"));
+  assert.ok(!html.includes("車庫別"));
   assert.ok(html.includes("<th>間取り</th>"));
 });
 
