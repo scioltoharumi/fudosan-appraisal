@@ -174,25 +174,30 @@ test("status_updates があるページには状況更新の欄が日付・出�
 // 掲載終了の疑い(delisted_observed)はページに出す(2026-09-10)。出ていないと「元の掲載ページを見る」が404へ飛ぶだけで、
 // 読む人はまだ売っていると受け取る。成約とは断定しない文言であること、無い物件には出ないことを固定する
 test("delisted_observed があるページには掲載終了の疑いが日付つきで出る", () => {
-  const pages = Object.fromEntries(renderAll());
-  // 対象物件は日次クロールで入れ替わる(5日超ルールで台帳から外れる)。2026-10-15時点は滝野川2 新築8,480万(SUUMO・athome とも404・10/11起点)
-  const body = visibleText(pages["property/takinogawa2-21764026.html"]);
+  // 対象物件は5日超ルールで台帳から消えるので、台帳の実物件には依存しない。**台帳の先頭物件の複製に delisted_observed を注入して**描画する
+  // (2026-10-16に切替。それまでは日次で対照IDと日付を張り替えていたが、10/16に該当物件が0件になった)。2件目の物件は「無い物件には出ない」の対照
+  const [targetId, otherId] = listPropertyIds();
+  const D = { date: "2026-10-11", http: 404, athome: "at_0000000000 も404(クローラ経路)", relisting_search: "新築一覧に諸元一致の再掲載なし", last_check: "2026-10-15", days: 5 };
+  const build = (id, inject) => {
+    const property = loadProperty(id);
+    property.crawl_links = crawlLinksOf(property, SEEN);
+    if (inject) property.delisted_observed = inject;
+    const r = evaluate(property, areaConfig, { houseDeals, cal, asOf });
+    return { r, rRef: r, property, hasMarketPage: !!r.retail };
+  };
+  const target = build(targetId, D), other = build(otherId, null);
+  const page = (x) => visibleText(renderProperty(x.r, x.property, { chosen: null, rRef: x.rRef, dealsN: 0 }, houseDeals));
+  const body = page(target);
   assert.ok(body.includes("掲載終了の疑い"), "見出しが無い");
   assert.ok(body.includes("2026-10-11"), "観測日が無い");
   assert.ok(body.includes("断定しない"), "成約と断定しない旨が無い");
-  assert.ok(!visibleText(pages["property/nishigahara3-21657453.html"]).includes("掲載終了の疑い"), "無い物件には出ない");
+  assert.ok(!page(other).includes("掲載終了の疑い"), "無い物件には出ない");
   // 一覧にも印が出る(build.js と同じ形の results を組んで描画する)
-  const results = listPropertyIds().map((id) => {
-    const property = loadProperty(id);
-    property.crawl_links = crawlLinksOf(property, SEEN);
-    const r = evaluate(property, areaConfig, { houseDeals, cal, asOf });
-    return { r, rRef: r, property, hasMarketPage: !!r.retail };
-  });
-  const idx = visibleText(renderIndex(results, { asOf, cal }));
-  const row = idx.split("<tr class=\"prow\"").find((s) => s.includes('data-id="takinogawa2-21764026"'));
+  const idx = visibleText(renderIndex([target, other], { asOf, cal }));
+  const row = idx.split("<tr class=\"prow\"").find((s) => s.includes(`data-id="${targetId}"`));
   assert.ok(row && row.includes("掲載終了疑い(2026-10-11)"), "一覧の当該行に印が無い");
-  const other = idx.split("<tr class=\"prow\"").find((s) => s.includes('data-id="nishigahara3-21657453"'));
-  assert.ok(other && !other.includes("掲載終了疑い"), "無い物件の行に印が出ている");
+  const otherRow = idx.split("<tr class=\"prow\"").find((s) => s.includes(`data-id="${otherId}"`));
+  assert.ok(otherRow && !otherRow.includes("掲載終了疑い"), "無い物件の行に印が出ている");
 });
 
 // land_only(土地として査定)の注意書きはCLIにしか出ておらず、物件ページには一度も描かれていなかった(2026-09-12に発見)。

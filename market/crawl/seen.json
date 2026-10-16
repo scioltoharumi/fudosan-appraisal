@@ -3788,5 +3788,66 @@
   "media": "suumo",
   "land_m2": 60.71,
   "floor_m2": null
+ },
+ "nc_21957353": {
+  "first_seen": "2026-10-16",
+  "price_man": 6980,
+  "address": "東京都北区志茂１",
+  "walk_min": 5,
+  "kind": "shinchiku",
+  "media": "suumo",
+  "land_m2": 48.04,
+  "floor_m2": 84.33,
+  "ko_screened": true,
+  "ko_suspect": [
+   "AREA_LOWLAND_LT5"
+  ]
+ },
+ "nc_21919315": {
+  "first_seen": "2026-10-16",
+  "price_man": 5950,
+  "address": "東京都北区岸町２",
+  "walk_min": 6,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 96.09,
+  "floor_m2": null,
+  "ko_screened": true
+ },
+ "nc_21958956": {
+  "first_seen": "2026-10-16",
+  "price_man": 3800,
+  "address": "東京都北区滝野川３-24-14",
+  "walk_min": 6,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 75.23,
+  "floor_m2": null,
+  "ko_blocked": true,
+  "ko_codes": [
+   "KO4_hazard"
+  ]
+ },
+ "nc_21397139": {
+  "first_seen": "2026-10-16",
+  "price_man": 5280,
+  "address": "東京都北区赤羽２",
+  "walk_min": 3,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 37.82,
+  "floor_m2": 77.26,
+  "out_of_scope": "土地37.82m2(土地の条件は45m2以上)"
+ },
+ "nc_21902131": {
+  "first_seen": "2026-10-16",
+  "price_man": 6680,
+  "address": "東京都北区上中里２",
+  "walk_min": 4,
+  "kind": "tochi",
+  "media": "suumo",
+  "land_m2": 73.13,
+  "floor_m2": 119.6,
+  "out_of_scope": "土地建物総額13360万(土地6680+建物6680。総額の条件は5000〜9000万)"
  }
 }
