@@ -32,6 +32,8 @@ page.on("requestfailed", (r) => errors.push("requestfailed: " + r.url()));
 page.on("response", (r) => { if (r.status() >= 400 && !/favicon/.test(r.url())) errors.push(`http ${r.status()}: ${r.url()}`); });
 await page.goto(url, { waitUntil: "load" });
 await page.waitForTimeout(1500);
+ok("既定の案は採用案D(localStorage無し)", await page.evaluate(() => document.querySelector('[data-variant="D"]').classList.contains("on") && window.plan3dState().floors["2F"].items.some((i) => i.type === "bed_s")));
+await page.click('[data-variant="A"]'); await page.waitForLoadState("load"); await page.waitForTimeout(1200);   // 以降の検査は参考プランAで行う
 ok("既定が 3D・全階・30cm", await page.evaluate(() => document.getElementById("planApp").dataset.mode === "3d" && document.querySelector('[data-view="all"]').classList.contains("on") && document.querySelector('[data-wallh="0.3"]').classList.contains("on")));
 await page.click('[data-mode="both"]'); await page.click('[data-view="floor"]'); await page.waitForTimeout(400);
 

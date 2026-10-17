@@ -721,6 +721,7 @@ export const VARIANTS = {
   C: { id: "C", label: "改案 C(Bの3F+車庫は一時停止・1Fも455張り出し・風呂1F)", floors: FLOORS_C, north_ext: EXT_N },
   D: { id: "D", label: "改案 D(駐車場は残す・1F洋室→2Fリビング続きの洋室・1F南はFCL物干し)", floors: FLOORS_D, north_ext: EXT_N },
 };
+export const CHOSEN_VARIANT = "D";   // 2026-10-17ユーザー決定「d案で」。ページの既定の案
 export const D_CHANGES = [
   "C案との違いは1F・2Fだけ。**車庫はA案の常駐駐車に戻す**(2,225×3,640。3層とも455張り出すので奥行はA案+455、前面0.695を足して約4.34m=A案と同じ=コンパクトカーが敷地内に収まる)",
   "**1Fの洋室(納戸)4.3帖を廃止し、同じ大きさの部屋(2,275×3,375)を2Fの南端に置く**(A案でキッチンがあった位置)。LDKとの間は**随時開放できる3枚引戸(開口約2,200)**",
@@ -770,7 +771,7 @@ export const B_CAVEATS = [
 export const PLAN = {
   id: "kamiya2-adcast-a",
   title: "神谷2-24 A区画 参考プラン(2026/10/08・1/100)",
-  W, L, GRID, C, LEVELS, ROOF, WALL_T, STAIR, LOT, FLOORS, VARIANTS, ITEM_CATALOG, ASSUMPTIONS, SIZE_PRESETS,
+  W, L, GRID, C, LEVELS, ROOF, WALL_T, STAIR, LOT, FLOORS, VARIANTS, CHOSEN_VARIANT, ITEM_CATALOG, ASSUMPTIONS, SIZE_PRESETS,
   floorHeightGL: 0.461,
   areas: { site: 47.52, f1_house: 21.68, f1_garage: 8.13, f1_porch: 2.63, f2: 30.71, f3: 30.71, total: 93.86, house_only: 83.10, loft: 8.34, void: 11.62, building_area: 30.71 },
 };
@@ -879,8 +880,8 @@ export function renderPlan3d({ asOf, property } = {}) {
   <h2>間取りシミュレーター ── ${esc(PLAN.title)}</h2>
   <div class="hint" style="margin-bottom:8px">図面(2026/10/08・1/100)の寸法から再構成。判定はしない。変更はこのブラウザにだけ保存。<a href="#plan3d-help">使い方・前提</a> / <a href="property/${esc(PLAN.id)}.html">物件ページ</a></div>
   <div class="toolbar" id="variantTabs"><span class="lbl">案</span>
-    ${Object.values(VARIANTS).map((v, i) => `<button class="btn${i === 0 ? " on" : ""}" data-variant="${v.id}">${esc(v.label)}</button>`).join("")}
-    <span class="hint"><a href="#plan3d-b">改案B</a>・<a href="#plan3d-c">改案C</a>・<a href="#plan3d-d">改案D</a>の前提と法規の机上計算。案ごとに配置は別々に保存</span>
+    ${Object.values(VARIANTS).map((v) => `<button class="btn${v.id === CHOSEN_VARIANT ? " on" : ""}" data-variant="${v.id}">${esc(v.label)}${v.id === CHOSEN_VARIANT ? " ★採用" : ""}</button>`).join("")}
+    <span class="hint"><b>採用案: 改案D(2026-10-17 本人の選択)</b>。<a href="#plan3d-b">改案B</a>・<a href="#plan3d-c">改案C</a>・<a href="#plan3d-d">改案D</a>の前提と法規の机上計算。案ごとに配置は別々に保存</span>
   </div>
   <div class="toolbar" id="floorTabs"><span class="lbl">階</span>
     ${Object.entries(FLOORS).map(([fid, f], i) => `<button class="btn${i === 0 ? " on" : ""}" data-floor="${fid}">${esc(f.label)}</button>`).join("")}
@@ -950,7 +951,7 @@ export function renderPlan3d({ asOf, property } = {}) {
 
 
 ${variantSection({ id: "b", title: "改案B: バルコニー無し・3階三部屋・風呂2階(2026-10-14)", intro: "A案の構造(柱位置・階段・外壁の芯・屋根・階高)を変えずに、ユーザーの3条件で組み直した案。", ck: CHECK_B, changes: B_CHANGES, caveats: B_CAVEATS, floors: FLOORS_B, name: "改案B", f1: "1F 住宅部分 21.68 + 車庫 8.13 + ポーチ 2.63", f1house: 21.68 })}
-${variantSection({ id: "d", title: "改案D: 駐車場は残す・1F洋室→2Fリビング続きの洋室・1F南はFCL物干し(2026-10-17)", intro: "C案の『3層同じ外形・1F水回り』を残し、常駐駐車に戻す代わりに1Fの部屋を2Fのリビング続きへ移した案。", ck: CHECK_D, changes: D_CHANGES, caveats: D_CAVEATS, floors: FLOORS_D, name: "改案D", f1: `1F 住宅部分 ${(21.68 + W * EXT_N).toFixed(2)} + 車庫 ${CHECK_D.garage_m2.toFixed(2)} + ポーチ 2.63`, f1house: 21.68 + W * EXT_N, extraRows: `<tr><td>車庫(常駐)</td><td class="n">2,225×3,185+前面1.15=約4.34m</td><td class="n">2,225×${((C.y3 + EXT_N) * 1000).toFixed(0)}+前面${(NS - EXT_N).toFixed(3)}=約${(C.y3 + NS).toFixed(2)}m</td><td class="n">コンパクト3,995</td><td>A案と同じ長さ(余り${CHECK_D.car_fit_margin.toFixed(2)}m)。車庫${CHECK_D.garage_m2.toFixed(2)}m²は延床の1/5以内で容積不算入</td></tr><tr><td>2F 洋室S(続き間)の採光</td><td class="n">—</td><td class="n">南窓は係数0 → LDKと1室扱い(3枚引戸)</td><td class="n">随時開放できる建具(令20条)</td><td>北窓${CHECK_D.daylight.N2.win.toFixed(2)}m²×3.0=${CHECK_D.daylight.N2.eff.toFixed(2)} ≥ (LDK+洋室S)/7=${(CHECK_D.daylight.N2.floor / 7).toFixed(2)}m²。壁と普通のドアで仕切ると納戸</td></tr>` })}
+${variantSection({ id: "d", title: "改案D(採用案・2026-10-17): 駐車場は残す・1F洋室→2Fリビング続きの洋室・1F南はFCL物干し", intro: "C案の『3層同じ外形・1F水回り』を残し、常駐駐車に戻す代わりに1Fの部屋を2Fのリビング続きへ移した案。2026-10-17に本人が採用案として選んだ(建築会社との打ち合わせに持ち込む前提。確認申請の設計者の検証が要る)。", ck: CHECK_D, changes: D_CHANGES, caveats: D_CAVEATS, floors: FLOORS_D, name: "改案D", f1: `1F 住宅部分 ${(21.68 + W * EXT_N).toFixed(2)} + 車庫 ${CHECK_D.garage_m2.toFixed(2)} + ポーチ 2.63`, f1house: 21.68 + W * EXT_N, extraRows: `<tr><td>車庫(常駐)</td><td class="n">2,225×3,185+前面1.15=約4.34m</td><td class="n">2,225×${((C.y3 + EXT_N) * 1000).toFixed(0)}+前面${(NS - EXT_N).toFixed(3)}=約${(C.y3 + NS).toFixed(2)}m</td><td class="n">コンパクト3,995</td><td>A案と同じ長さ(余り${CHECK_D.car_fit_margin.toFixed(2)}m)。車庫${CHECK_D.garage_m2.toFixed(2)}m²は延床の1/5以内で容積不算入</td></tr><tr><td>2F 洋室S(続き間)の採光</td><td class="n">—</td><td class="n">南窓は係数0 → LDKと1室扱い(3枚引戸)</td><td class="n">随時開放できる建具(令20条)</td><td>北窓${CHECK_D.daylight.N2.win.toFixed(2)}m²×3.0=${CHECK_D.daylight.N2.eff.toFixed(2)} ≥ (LDK+洋室S)/7=${(CHECK_D.daylight.N2.floor / 7).toFixed(2)}m²。壁と普通のドアで仕切ると納戸</td></tr>` })}
 ${variantSection({ id: "c", title: "改案C: Bの3F三部屋+車庫は一時停止・1Fも張り出し・風呂1F(2026-10-17)", intro: "B案の2F・3Fの考え方は残し、常駐駐車をやめる前提で1Fに水回りを戻した案。3層とも同じ外形。", ck: CHECK_C, changes: C_CHANGES, caveats: C_CAVEATS, floors: FLOORS_C, name: "改案C", f1: `1F 住宅部分 ${(21.68 + W * EXT_N + C.xG * (C.y3 - yG)).toFixed(2)} + 車寄せ ${CHECK_C.garage_m2.toFixed(2)} + ポーチ 2.63`, f1house: 21.68 + W * EXT_N + C.xG * (C.y3 - yG), extraRows: `<tr><td>車寄せ(一時停止)</td><td class="n">車庫 2,225×3,185+前面1.15=約4.3m</td><td class="n">${(GARAGE_C.w * 1000).toFixed(0)}×${(GARAGE_C.d * 1000).toFixed(0)}+前面${GARAGE_C.apron.toFixed(3)}=約${(GARAGE_C.d + GARAGE_C.apron).toFixed(2)}m</td><td class="n">コンパクト3,995 / 軽3,395</td><td>はみ出し コンパクト約${CHECK_C.car_overhang_compact.toFixed(2)}m・軽約${CHECK_C.car_overhang_kei.toFixed(2)}m=停車のみ。車寄せ${CHECK_C.garage_m2.toFixed(2)}m²は延床の1/5以内で容積不算入</td></tr>` })}
 <section class="panel" id="plan3d-help">
   <h2 class="sub">使い方</h2>

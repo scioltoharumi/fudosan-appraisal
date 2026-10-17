@@ -28,7 +28,8 @@ const cornersOf = (it) => { const b = aabb(it); return [["NW", b.x0, b.y0], ["NE
 // 案(A=参考プラン / B=改案)。配置は案ごとに別キーで保存し、切替は再読込で初期化する(2026-10-14)
 const LS_BASE = "fudosan-plan3d-kamiya2-v1";
 const VAR_KEY = LS_BASE + ":variant";
-let variant = "A"; try { const v = localStorage.getItem(VAR_KEY); if (v && P.VARIANTS[v]) variant = v; } catch { /* noop */ }
+let variant = P.CHOSEN_VARIANT && P.VARIANTS[P.CHOSEN_VARIANT] ? P.CHOSEN_VARIANT : "A";   // 既定は採用案(2026-10-17: D)
+try { const v = localStorage.getItem(VAR_KEY); if (v && P.VARIANTS[v]) variant = v; } catch { /* noop */ }
 P.FLOORS = P.VARIANTS[variant].floors; P.northExt = P.VARIANTS[variant].north_ext;
 document.querySelectorAll("[data-variant]").forEach((b) => { b.classList.toggle("on", b.dataset.variant === variant); b.onclick = () => { if (b.dataset.variant === variant) return; try { localStorage.setItem(VAR_KEY, b.dataset.variant); } catch { /* noop */ } location.reload(); }; });
 const FLOOR_IDS = Object.keys(P.FLOORS);

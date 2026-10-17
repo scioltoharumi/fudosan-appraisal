@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { ROOT, loadProperty } from "../engine/io.js";
-import { PLAN, FLOORS, FLOORS_B, FLOORS_C, FLOORS_D, VARIANTS, CHECK_A, CHECK_B, CHECK_C, CHECK_D, GARAGE_C, EXT_N, B_CHANGES, B_CAVEATS, C_CHANGES, C_CAVEATS, D_CHANGES, D_CAVEATS, LOT, ITEM_CATALOG, ASSUMPTIONS, STAIR, ROOF, roofHeightAt, roomArea, polygonArea, netArea, renderPlan3d } from "../site/templates/plan3d.js";
+import { PLAN, FLOORS, FLOORS_B, FLOORS_C, FLOORS_D, VARIANTS, CHOSEN_VARIANT, CHECK_A, CHECK_B, CHECK_C, CHECK_D, GARAGE_C, EXT_N, B_CHANGES, B_CAVEATS, C_CHANGES, C_CAVEATS, D_CHANGES, D_CAVEATS, LOT, ITEM_CATALOG, ASSUMPTIONS, STAIR, ROOF, roofHeightAt, roomArea, polygonArea, netArea, renderPlan3d } from "../site/templates/plan3d.js";
 
 const near = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b} (許容${tol})`);
 
@@ -211,6 +211,11 @@ test("plan3d: 改案D(駐車場は残す・1F洋室→2Fリビング続き・1F�
   const html = renderPlan3d({ asOf: "2026-10-17", property: loadProperty("kamiya2-adcast-a") });
   const text = html.replace(/<script[\s\S]*?<\/script>/g, " ").replace(/<[^>]+>/g, " "); const flat = text.replace(/\s+/g, "");
   assert.ok(html.includes('data-variant="D"') && html.includes('id="plan3d-d"'), "案Dの切替と節");
+  assert.equal(CHOSEN_VARIANT, "D"); assert.equal(PLAN.CHOSEN_VARIANT, "D");
+  assert.ok(html.includes('class="btn on" data-variant="D"') && !html.includes('class="btn on" data-variant="A"'), "既定(採用案)のボタンは D");
+  assert.ok(flat.includes("採用案:改案D(2026-10-17本人の選択)"), "採用案の表示");
+  const prop = loadProperty("kamiya2-adcast-a"); const su = prop.status_updates.find((u) => new Date(u.date).toISOString().slice(0, 10) === "2026-10-17");
+  assert.ok(su && su.facts.some((f) => /改案D/.test(f)) && su.implications.some((f) => /参考プラン.*のまま/.test(f)), "物件YAMLの status_updates に採用案Dの記録(査定は参考プランのまま)");
   assert.ok(flat.includes("1室とみなす") && flat.includes("随時開放できる"), "続き間の採光の扱いの開示");
   for (const a of [...D_CHANGES, ...D_CAVEATS]) assert.ok(flat.includes(a.replace(/\*\*/g, "").replace(/\s+/g, "").slice(0, 16)), `改案Dの開示: ${a.slice(0, 16)}`);
 });
