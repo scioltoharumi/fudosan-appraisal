@@ -675,7 +675,8 @@ function buildStatic() {
   const eg = new THREE.EdgesGeometry(new THREE.BoxGeometry(P.W, 10, P.L)); const ln = new THREE.LineSegments(eg, new THREE.LineDashedMaterial({ color: 0x8A9AA6, dashSize: 0.3, gapSize: 0.2 })); ln.computeLineDistances(); ln.position.set(P.W / 2, GL + 5, P.L / 2); staticG.add(ln);
   const l3 = label("高さ10m", 0.22); l3.position.set(0, GL + 10.15, 0); staticG.add(l3);
   // 基礎(GL→1F床の1cm下。床板と同一平面にするとちらつく)
-  const fh = P.floorHeightGL - 0.01; staticG.add(box(P.W + 0.15, fh, P.L + 0.15, MAT.found, P.W / 2, GL + fh / 2, P.L / 2));
+  const n1 = -(P.FLOORS["1F"].floorRect?.y0 ?? 0);   // 1Fが北へ張り出す案(C)は基礎も伸ばす
+  const fh = P.floorHeightGL - 0.01; staticG.add(box(P.W + 0.15, fh, P.L + 0.15 + n1, MAT.found, P.W / 2, GL + fh / 2, (P.L - n1) / 2));
 }
 function stairMeshes(g, fid, zOff) {
   const s = P.STAIR; const story = P.LEVELS[fid].story; const riser = story / (s.winders + s.straight); const hTurn = riser * s.winders;

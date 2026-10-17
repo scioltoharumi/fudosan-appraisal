@@ -198,6 +198,18 @@ await page.mouse.click(mPx.x, mPx.y); await page.waitForTimeout(300);
 const mArea = await page.textContent("#props");
 ok("案B 3F洋室Mの広さが 5〜6.5m²(内法≈5.7)", /([\d.]+) ?m²/.test(mArea) && (() => { const v = Number(mArea.match(/([\d.]+) ?m²/)[1]); return v >= 5.0 && v <= 6.5; })(), mArea.slice(0, 120));
 ok("案Bの操作でJSエラーなし", errors.length === 0, errors.join(" | "));
+// --- 改案C(2026-10-17「車庫は一時停止・1Fも張り出し・風呂1F」) ---
+await page.click('[data-variant="C"]'); await page.waitForLoadState("load"); await page.waitForTimeout(1500);
+const cState = await page.evaluate(() => window.plan3dState());
+ok("案Cに切り替わりJSエラーなし・1FにUBと洗濯機・2Fに便器(風呂無し)", errors.length === 0 && cState.floors["1F"].items.some((i) => i.type === "ub1316") && cState.floors["1F"].items.some((i) => i.type === "washer") && cState.floors["2F"].items.some((i) => i.type === "toilet") && !cState.floors["2F"].items.some((i) => i.type === "ub1316"), errors.join(" | "));
+ok("案Cの1F東外壁が y=-0.455 から(3層同じ外形)", cState.floors["1F"].walls.some((w) => w.kind === "ext" && Math.abs(w.x1 - 3.375) < 1e-9 && Math.abs(w.y1 + 0.455) < 1e-9));
+await page.click('[data-mode="both"]'); await page.click('[data-floor="1F"]'); await page.click('[data-view="floor"]'); await page.click('[data-cam="top"]'); await page.waitForTimeout(500);
+if (shotDir) { await page.locator("#plan2d").screenshot({ path: join(shotDir, "plan3d-C-1F-2d.png") }); }
+await page.click('[data-floor="2F"]'); await page.waitForTimeout(400);
+if (shotDir) { await page.locator("#plan2d").screenshot({ path: join(shotDir, "plan3d-C-2F-2d.png") }); }
+await page.click('[data-view="all"]'); await page.click('[data-cam="bird"]'); await page.click('[data-wallh="full"]'); await page.waitForTimeout(600);
+if (shotDir) await page.locator("#view3d").screenshot({ path: join(shotDir, "plan3d-C-full.png") });
+ok("案Cの操作でJSエラーなし", errors.length === 0, errors.join(" | "));
 // 案Aへ戻す(以後の検査・既定に影響しない)
 await page.click('[data-variant="A"]'); await page.waitForLoadState("load"); await page.waitForTimeout(800);
 ok("案Aへ戻る(1Fに洗面台)", await page.evaluate(() => window.plan3dState().floors["1F"].items.some((i) => i.type === "washstand750")));

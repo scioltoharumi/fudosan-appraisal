@@ -381,6 +381,115 @@ export const FLOORS_B = {
 };
 for (const fid of ["2F", "3F"]) FLOORS_B[fid].floorRect = { x0: 0, y0: yN, x1: W, y1: L };
 
+// ---- 改案C(2026-10-17ユーザー要望「常にクルマを停めておかないことにして、車庫を一時停止するようにして数十cm前にせり出す。風呂たちは一階へ」) ----
+// B案の2F・3F(北へ455・3F三部屋)はそのままに、**1Fも455北へ張り出して3層とも同じ外形**(片持ち無し=Bの構造上の注意が消える)。
+// 車庫は常駐駐車をやめ「一時停止」の車寄せ(2,225×2,275)に縮め、空いた西列に 洗面脱衣(1,820)+UB1316(1,820)+WIC(1,365) を戻す。
+// 2FはA案と同じ一体のLDK(+張り出し分)に2Fトイレ(階段の北・東列)を足す。3F・ロフトはB案と同一
+const yG = 1.82;                               // C: 車庫(一時停止)の南壁 = 洗面脱衣の北壁
+const yD = 1.365;                              // C: 玄関ドアの壁(ポーチは yN〜1.365 の 1,820)
+const yE = 2.275;                              // C: 玄関/ホール(上がり框)
+const yW1 = 3.64, yW2 = 5.46;                  // C: 洗面/UB・UB/WIC
+const yT2N = 2.73;                             // C: 2Fトイレ北壁(東列 2,730〜4,095 = 910×1,365)
+export const GARAGE_C = { w: C.xG, d: yG - yN, apron: NS - EXT_N };   // 車寄せ 2,225×2,275・道路境界まで 0.695
+export const FLOORS_C = {
+  "1F": {
+    label: "1F",
+    walls: [
+      seg(W, yN, W, L, "ext"), seg(W, L, 0, L, "ext"), seg(0, L, 0, yN, "ext"),   // 北面は車寄せ・ポーチとも開口
+      seg(C.xG, yD, W, yD),                   // 玄関ドアの壁
+      seg(C.xG, yN, C.xG, yG),                // 車寄せ/ポーチ・玄関
+      seg(0, yG, C.xG, yG),                   // 車寄せの南壁(洗面脱衣の北壁)
+      seg(C.xW, yG, C.xW, C.y9),              // 西列(洗面・UB・WIC)の東壁
+      seg(0, yW1, C.xW, yW1),                 // 洗面/UB
+      seg(0, yW2, C.xW, yW2),                 // UB/WIC
+      seg(0, C.y9, W, C.y9),                  // 洋室の北壁・階段の南壁
+      seg(C.xH, C.y4, C.xH, C.y10),           // トイレ・階段・CLの西壁
+      seg(C.xH, C.y4, W, C.y4),               // トイレの北壁
+      seg(C.xH, C.y6, W, C.y6),               // トイレ/階段
+    ],
+    rooms: [
+      room("車寄せ(一時停止)", 0, yN, C.xG, yG, { kind: "garage", note: "2,225×2,275。道路境界まで0.695を足しても約2.97m=コンパクトカー(3,995)は約1.0m・軽(3,395)は約0.4m道路にはみ出す=停車のみ(駐車不可)" }),
+      room("ポーチ", C.xG, yN, W, yD, { kind: "outside", note: "1,150×1,820(A案と同じ奥行)" }),
+      room("玄関", C.xG, yD, W, yE),
+      room("ホール", C.xW, yE, W, C.y4),
+      room("洗面脱衣室", 0, yG, C.xW, yW1, { note: "1,555×1,820(A案と同じモジュール)。洗濯機はここ" }),
+      room("UB1316", 0, yW1, C.xW, yW2, { kind: "bath", note: "1,555×1,820。1F設置(A案と同じ)" }),
+      room("WIC", 0, yW2, C.xW, C.y9, { kind: "closet", note: "1,555×1,365。洋室から出入り" }),
+      room("トイレ", C.xH, C.y4, W, C.y6, { note: "階段下(A案と同じ)" }),
+      room("階段", C.xH, C.y6, W, C.y9, { kind: "stair" }),
+      room("CL", C.xH, C.y9, W, C.y10, { kind: "closet" }),
+      room("洋室(納戸)4.3帖+WIC", 0, C.y9, W, L, { note: "A案と同じ。採光の計算上は居室にならない(納戸扱い)のもA案と同じ" }),
+    ],
+    openings: [
+      { type: "door", x: 2.80, y: yD, w: 0.85, dir: "N", hinge: "E", label: "玄関ドア" },
+      { type: "door", x: C.xW, y: 2.73, w: 0.70, dir: "E", hinge: "S", label: "洗面" },
+      { type: "door", x: 0.78, y: yW1, w: 0.65, dir: "N", hinge: "W", label: "UB(折戸)", fold: true },
+      { type: "door", x: 0.78, y: C.y9, w: 0.73, dir: "N", hinge: "W", label: "WIC" },
+      { type: "door", x: C.xH, y: 4.55, w: 0.65, dir: "W", hinge: "N", label: "トイレ" },
+      { type: "door", x: 1.95, y: C.y9, w: 0.73, dir: "S", hinge: "W", label: "洋室" },
+      { type: "door", x: 2.92, y: C.y10, w: 0.80, dir: "S", hinge: "E", label: "CL(折戸)", fold: true },
+      { type: "window", x: 0, y: 2.7, w: 0.6, dir: "W", sill: 1.2, h: 0.5 },
+      { type: "window", x: 0, y: 4.5, w: 0.6, dir: "W", sill: 1.2, h: 0.5 },
+      { type: "window", x: W, y: 4.65, w: 0.6, dir: "E" },
+      { type: "window", x: 0.78, y: L, w: 1.4, dir: "S" },
+      { type: "window", x: W, y: 8.1, w: 0.8, dir: "E" },
+    ],
+    items: [
+      { type: "car_compact", x: 1.11, y: yG - 0.1 - 3.995 / 2, rot: 0, label: "車(一時停止・約1.0m道路側へ)" },
+      { type: "washstand750", x: 0.355, y: 2.30, rot: 90 },
+      { type: "washer", x: 0.40, y: 3.20, rot: 0 },
+      { type: "ub1316", x: 0.78, y: 4.55, rot: 0 },
+      { type: "wardrobe", x: 0.78, y: 5.73, rot: 0 },
+      { type: "toilet", x: 2.92, y: 5.00, rot: 0 },
+      { type: "bed_s", x: 0.63, y: 7.95, rot: 0 },
+      { type: "desk", x: 2.75, y: 8.65, rot: 0 },
+      { type: "chair", x: 2.75, y: 8.15, rot: 180 },
+    ],
+    floorRect: { x0: 0, y0: yN, x1: W, y1: L },
+  },
+  "2F": {
+    label: "2F",
+    walls: [
+      ...extRectB(),
+      seg(C.xH, C.y4, C.xH, C.y9),            // 階段の西壁
+      seg(C.xH, C.y4, W, C.y4),               // 階段の北壁(=トイレの南壁)
+      seg(C.xH, C.y9, W, C.y9),               // 階段の南壁(キッチン側)
+      seg(C.xH, yT2N, W, yT2N),               // 2Fトイレの北壁
+      seg(C.xH, yT2N, C.xH, C.y4),            // 2Fトイレの西壁
+      seg(0, C.y4, 0.65, C.y4),               // 西壁の壁柱(A案の L/DK 境の袖壁)
+    ],
+    rooms: [
+      room("LDK 約18帖", 0, yN, W, L, { note: "A案17.4帖+北へ455(+1.54m²)−2Fトイレ(1.24m²)。階段を除く" }),
+      room("トイレ", C.xH, yT2N, W, C.y4, { note: "910×1,365。階段の北・東列。不要なら削ってLDKへ戻せる" }),
+      room("階段", C.xH, C.y4, W, C.y9, { kind: "stair" }),
+    ],
+    openings: [
+      { type: "window", x: 1.69, y: yN, w: 1.7, dir: "N", label: "腰窓(バルコニー無し)" },
+      { type: "window", x: 0, y: 5.40, w: 1.0, dir: "W" },
+      { type: "window", x: W, y: 1.3, w: 1.5, dir: "E" },
+      { type: "window", x: W, y: 3.4, w: 0.5, dir: "E", sill: 1.2, h: 0.5 },
+      { type: "window", x: W, y: 7.8, w: 0.6, dir: "E" },
+      { type: "window", x: 1.69, y: L, w: 1.6, dir: "S" },
+      { type: "door", x: C.xH, y: 3.4, w: 0.65, dir: "W", hinge: "S", label: "トイレ" },
+    ],
+    items: [
+      { type: "kitchen2400", x: 2.11, y: 7.18, rot: 0 },
+      { type: "fridge", x: 0.42, y: 8.70, rot: 0 },
+      { type: "cupboard", x: 2.15, y: 8.85, rot: 0 },
+      { type: "dining", x: 0.95, y: 5.75, rot: 90 },
+      { type: "chair", x: 0.95, y: 4.95, rot: 0 }, { type: "chair", x: 0.95, y: 6.55, rot: 180 },
+      { type: "chair", x: 0.35, y: 5.75, rot: 90 }, { type: "chair", x: 1.55, y: 5.75, rot: 270 },
+      { type: "sofa3", x: 0.60, y: 1.65, rot: 90 },
+      { type: "table_low", x: 1.70, y: 1.75, rot: 90 },
+      { type: "tvboard", x: 3.0, y: 1.3, rot: 90 },
+      { type: "toilet", x: 2.92, y: 3.55, rot: 0 },
+    ],
+    floorRect: { x0: 0, y0: yN, x1: W, y1: L },
+  },
+  "3F": FLOORS_B["3F"],
+  "LOFT": FLOORS_B["LOFT"],
+};
+
 // ---- 設備カタログ(幅w=x方向・奥行d=y方向・高さh。rot=0のとき) --------------------------------
 // 推奨スペース(space)は便器まわり等の目安(メーカーの標準寸法・住宅設計の一般的な数値)。判定ではなく参照値
 export const ITEM_CATALOG = {
@@ -467,10 +576,10 @@ const roofTopGL = (y) => FLOOR_GL + LEVELS.LOFT.z + hRaw(y) + ROOF.thickness;  /
 const daylight = (d, h) => Math.min(3, Math.max(0, (d / h) * 6 - 1.4));        // 採光補正係数(住居系: d/h×6−1.4・上限3)
 const SOUTH_GAP = Math.min(10.872, 10.938) - NS - (L + WALL_T.ext / 2);       // 南面の壁面から南側隣地境界まで(西端 0.547)
 const KERABA = 0.15;                                                          // 妻側(東西)の屋根の出(仮定)
-function checkOf(ext, floors) {
+function checkOf(ext, floors, f1Extra = 0) {
   const bArea = W * (L + ext);                                                // 建築面積(2F・3Fの外形。1Fの車庫は2Fの下)
   const f23 = W * (L + ext);
-  const volume = 21.68 + 2.63 + f23 * 2;                                      // 容積対象(1F住宅+ポーチ+2F+3F。車庫8.13は1/5以内で不算入)
+  const volume = 21.68 + 2.63 + f1Extra + f23 * 2;                            // 容積対象(1F住宅+ポーチ+2F+3F。車庫は1/5以内で不算入。f1Extra=1Fの増分)
   const setback = NS - ext;                                                   // 道路境界からの後退距離
   const nFaceTop = roofTopGL(-ext), nEaveTop = roofTopGL(-ext - ROOF.overhang);
   const net = (fid, name) => { const r = floors[fid].rooms.find((q) => q.name.startsWith(name)); return r ? netArea(r, fid, -ext) : 0; };
@@ -499,10 +608,29 @@ function checkOf(ext, floors) {
 }
 export const CHECK_A = checkOf(0, FLOORS);
 export const CHECK_B = checkOf(EXT_N, FLOORS_B);
+// C: 1Fの住宅部分は 張り出し(3.375×0.455)+車庫の縮小(2.225×(3.185−2.275)) だけ増える
+export const CHECK_C = checkOf(EXT_N, FLOORS_C, W * EXT_N + C.xG * (C.y3 - yG));
+CHECK_C.garage_m2 = GARAGE_C.w * GARAGE_C.d; CHECK_C.car_overhang_compact = 3.995 - (GARAGE_C.d + GARAGE_C.apron); CHECK_C.car_overhang_kei = 3.395 - (GARAGE_C.d + GARAGE_C.apron);
 export const VARIANTS = {
   A: { id: "A", label: "参考プラン A", floors: FLOORS, north_ext: 0 },
   B: { id: "B", label: "改案 B(バルコニー無し・3F三部屋・風呂2F)", floors: FLOORS_B, north_ext: EXT_N },
+  C: { id: "C", label: "改案 C(Bの3F+車庫は一時停止・1Fも455張り出し・風呂1F)", floors: FLOORS_C, north_ext: EXT_N },
 };
+export const C_CHANGES = [
+  "B案との違いは1F・2Fだけ。**1Fも455北へ張り出し、3層とも同じ外形**にする(片持ちの床が無くなる=B案の構造上の注意が消え、総2階ならぬ総3階の素直な箱になる)",
+  "**車庫は常駐駐車をやめ「一時停止」の車寄せ(2,225×2,275)に縮める**。道路境界まで0.695を足しても約2.97mなので、コンパクトカー(3,995)は約1.0m・軽(3,395)は約0.4m道路にはみ出す=荷物の積み下ろしの停車専用(駐車はできない)",
+  "空いた西列に **洗面脱衣(1,555×1,820)・UB1316(1,555×1,820)・WIC(1,555×1,365)** を北から順に戻す。玄関ポーチの奥行1,820・玄関・ホール・階段下トイレ・洋室(納戸)4.3帖はA案のまま",
+  "2FはA案と同じ一体のLDK(約18帖=A案+1.54−トイレ1.24)に戻し、**2Fトイレ(910×1,365)を階段の北・東列**に置く(ドアは西向き=リビング側)。不要ならLDKへ戻せる",
+  "3F(洋室N 6.7帖/洋室M 3.5帖+天窓/洋室S 4.3帖+カウンター・廊下・3Fトイレ無し)とロフトはB案と同一",
+];
+export const C_CAVEATS = [
+  "**車の扱いが生活の前提になる**: 常駐の駐車場は外(月極)になり、月極の相場(北区の戸建周辺で1.5〜3万円/月)が固定費に乗る。一時停止は道路交通法の『停車』の範囲(人の乗降・5分以内の荷物の積み下ろし)で、はみ出した状態で放置すれば駐車違反。6m道路なので対向は通れる",
+  "**採光・1Fの納戸・3Fの条件(天窓・1/10)はB案と同じ**(3Fと2Fの北窓は変えていない)。2Fトイレの東窓は延焼ライン内で防火設備",
+  "**1Fの水回りが車寄せの真後ろ**になるので、洗面脱衣の北壁は車寄せに面する。A案の『車庫の南壁=洗面の北壁』と同じ関係で、湿気・音の配慮はA案と同等",
+  "**道路斜線・高度地区の数値はB案と同じ**(北面の位置が同じ)。1Fの壁も北へ出るので後退距離の扱い(壁面0.695)はB案より明快",
+  "**失うもの**: 常駐駐車(A案)/バルコニー/3Fトイレ/3F収納。得るもの: 1F水回り(A案の使い勝手)+WIC・2F一体LDK・3F三部屋・2Fトイレ",
+  "**費用**: 天窓・張り出し3層分・2Fトイレ配管で建物価格は上がる方向。B案より構造は素直(片持ち無し)だが外壁面積はわずかに増える。金額は建築会社の見積りでしか決まらない",
+];
 export const B_CHANGES = [
   "バルコニー(片持ち910)を撤去し、2F・3Fの北面を455北へ張り出す(建ぺい率70%の残り2.55m²に収まる最大のモジュール。+1.54m²/階)。構造は片持ち910のバルコニーが片持ち455の床に変わるだけ",
   "3Fを三部屋に: 洋室N(北・吹抜つき・東にアルコーブ)/洋室M(西列 幅1,555×4,095)/洋室S(南・カウンター部つき)+幅910の廊下。3Fのトイレ・CL2つは廃止",
@@ -594,6 +722,37 @@ export function renderPlan3d({ asOf, property } = {}) {
       <td class="n">${roomArea(r).toFixed(2)}m² / 内法≈${netArea(r, fid, fid === "1F" ? 0 : northLine).toFixed(2)}m²(${(netArea(r, fid, fid === "1F" ? 0 : northLine) / 1.62).toFixed(1)}帖)</td>
       <td>${esc(r.note ?? "")}</td></tr>`).join("")}`).join("");
   const floorsTable = floorsTableOf(FLOORS, 0);
+  const variantSection = ({ id, title, intro, ck, changes, caveats, floors, name, f1, f1house, extraRows = "" }) => `
+<section class="panel" id="plan3d-${id}">
+  <h2 class="sub">${esc(title)}</h2>
+  <div class="note">${esc(intro)}<b>法律的・建築的に「机上では成り立つ」ことを数値で示すのが目的</b>で、確認申請の設計者(建築士)の検証に代わるものではない。判定はしない。</div>
+  <h3 class="sub" style="margin-top:10px">変えたこと</h3>
+  <ul class="compact">${changes.map((a) => `<li>${escRich(a)}</li>`).join("")}</ul>
+  <h3 class="sub">面積と法規の机上計算(A案との対照)</h3>
+  <table class="dims">
+    <tr><th>項目</th><th>A案(参考プラン)</th><th>${esc(name)}</th><th>上限・条件</th><th>読み方</th></tr>
+    <tr><td>建築面積</td><td class="n">${CHECK_A.building_area.toFixed(2)}m²(${(CHECK_A.coverage * 100).toFixed(1)}%)</td><td class="n">${ck.building_area.toFixed(2)}m²(${(ck.coverage * 100).toFixed(1)}%)</td><td class="n">${ck.coverage_cap_m2.toFixed(2)}m²(70%)</td><td>建ぺい率60%+準防火地域の準耐火建築物の緩和10%。A案も64.6%でこの緩和を前提にしている。残り ${(ck.coverage_cap_m2 - ck.building_area).toFixed(2)}m²</td></tr>
+    <tr><td>容積対象床面積</td><td class="n">${CHECK_A.volume.toFixed(2)}m²(${(CHECK_A.far * 100).toFixed(1)}%)</td><td class="n">${ck.volume.toFixed(2)}m²(${(ck.far * 100).toFixed(1)}%)</td><td class="n">${ck.far_cap_m2.toFixed(2)}m²(200%)</td><td>前面6m道路×0.4=240%&gt;200%なので指定200%。車庫は延床の1/5以内で不算入</td></tr>
+    <tr><td>道路斜線(1.25勾配)</td><td class="n">北面 屋根上端 GL+${CHECK_A.north_face_top.toFixed(2)} / 許容 ${CHECK_A.road_slope_allowed.toFixed(2)}</td><td class="n">GL+${ck.north_face_top.toFixed(2)} / 許容 ${ck.road_slope_allowed.toFixed(2)}</td><td class="n">1.25×(6+後退${ck.setback.toFixed(3)}×2)</td><td>後退距離は壁面で測った値。A案はバルコニー先端(後退0.24)で測ると許容8.1で足りず天空率の前提と読める。バルコニーが無いぶん後退距離の扱いが素直になる。軒先は道路境界まで ${(ck.setback - ROOF.overhang).toFixed(3)}m</td></tr>
+    <tr><td>第2種高度地区(北側)</td><td class="n">GL+${CHECK_A.north_face_top.toFixed(2)} / 許容 ${CHECK_A.kodo2_allowed.toFixed(2)}</td><td class="n">GL+${ck.north_face_top.toFixed(2)} / 許容 ${ck.kodo2_allowed.toFixed(2)}</td><td class="n">5m+0.6×(道路6m+後退)</td><td>北が道路なので反対側境界から測る。棟(GL+${ck.ridge_top.toFixed(2)})は中央にあり余裕が大きい</td></tr>
+    <tr><td>絶対高さ・日影</td><td class="n">GL+${CHECK_A.ridge_top.toFixed(2)}</td><td class="n">GL+${ck.ridge_top.toFixed(2)}</td><td class="n">10m</td><td>棟の高さは変えない。1種住居の日影規制は10m超が対象=対象外のまま</td></tr>
+    ${extraRows}
+    <tr><td>採光 3F 洋室N</td><td class="n">—</td><td class="n">窓${ck.daylight.N3.win.toFixed(2)}m²×係数${ck.daylight.N3.k.toFixed(2)}=${ck.daylight.N3.eff.toFixed(2)}</td><td class="n">1/7=${(ck.daylight.N3.floor / 7).toFixed(2)}m²</td><td>北=道路。d=${ck.daylight.N3.d.toFixed(2)} h=${ck.daylight.N3.h.toFixed(2)} で係数は上限3.0。非常用進入口の代替開口(幅75×高120以上・道路面)もこの窓</td></tr>
+    <tr><td>採光 3F 洋室S</td><td class="n">—</td><td class="n">窓${ck.daylight.S3.win.toFixed(2)}m²×係数${ck.daylight.S3.k.toFixed(2)}=${ck.daylight.S3.eff.toFixed(2)}</td><td class="n">1/7=${(ck.daylight.S3.floor / 7).toFixed(2)} / 1/10=${(ck.daylight.S3.floor / 10).toFixed(2)}m²</td><td>南の空き${SOUTH_GAP.toFixed(2)}m−軒0.25 → d=${ck.daylight.S3.d.toFixed(2)} h=${ck.daylight.S3.h.toFixed(2)}。<b>1/7には届かず、照明設備つきの1/10(令和5年改正)で可</b>。1/7にするなら幅2,000超の窓</td></tr>
+    <tr><td>採光 3F 洋室M</td><td class="n">—</td><td class="n">西窓は係数${ck.daylight.M3.k.toFixed(2)} → 天窓${ck.daylight.M3.skylight}m²×3=${ck.daylight.M3.eff.toFixed(2)}</td><td class="n">1/7=${(ck.daylight.M3.floor / 7).toFixed(2)}m²</td><td>西の空き0.51m・けらばまで d=${ck.daylight.M3.d.toFixed(2)} h=${ck.daylight.M3.h.toFixed(2)} で係数0=西窓は数えられない。<b>天窓(0.6×0.6)が居室の条件</b>。位置はロフトの外(y5,915〜6,825)の屋根南面</td></tr>
+    <tr><td>採光 2F LDK</td><td class="n">—</td><td class="n">北窓${ck.daylight.N2.win.toFixed(2)}m²×3.0=${ck.daylight.N2.eff.toFixed(2)}</td><td class="n">1/7=${(ck.daylight.N2.floor / 7).toFixed(2)}m²</td><td>LDKの床は壁芯の全面(水回り・トイレを引く前)で保守側</td></tr>
+    <tr><td>1F 洋室</td><td class="n">納戸</td><td class="n">納戸</td><td class="n">—</td><td>南の空き${SOUTH_GAP.toFixed(2)}m・軒まで約6.7mで係数が負。A案が「洋室(納戸)」と書くのと同じ理由で居室にならない</td></tr>
+    <tr><td>ロフト</td><td class="n">8.34m²・頭上≤1.245</td><td class="n">${(W * (C.y8 - yM)).toFixed(2)}m²・頭上≤1.245</td><td class="n">天井1.4m以下・下階の1/2以下</td><td>小屋裏物置の扱い(階・床面積に入らない)はA案と同じ</td></tr>
+    <tr><td>階段・天井高</td><td class="n">蹴上${(LEVELS["1F"].story / 14 * 1000).toFixed(0)}/${(LEVELS["2F"].story / 14 * 1000).toFixed(0)}mm・天井2.25/2.40/2.25</td><td class="n">同じ</td><td class="n">蹴上≤230・踏面≥150・居室2.1m以上</td><td>変えていない</td></tr>
+    <tr><td>準防火地域の開口部</td><td class="n">北面は延焼ラインの内</td><td class="n">同じ(北面 道路中心から${(ck.setback + 3).toFixed(2)}m)</td><td class="n">2F以上は道路中心から5m</td><td>北・東・西・南の窓は防火設備(網入り等)。A案と同じ条件</td></tr>
+  </table>
+  <div class="note" style="margin-top:6px">採光の計算: 令20条の住居系(d/h×6−1.4、上限3.0。天窓は3倍)。窓の中心は床+1.5m、軒の出0.25・けらば0.15・東西の空き0.51・南の空き${SOUTH_GAP.toFixed(2)}は図面と仮定の値。高度地区は東京都の第2種(5m立上り+0.6勾配)で計算。天空率は使っていない。</div>
+  <h3 class="sub">建築的な注意・失うもの</h3>
+  <ul class="compact">${caveats.map((a) => `<li>${escRich(a)}</li>`).join("")}</ul>
+  <h3 class="sub">${esc(name)}の部屋と内法</h3>
+  <table class="dims"><tr><th>部屋</th><th>芯々 (mm)</th><th>面積</th><th>備考</th></tr>${floorsTableOf(floors, -EXT_N)}</table>
+  <div class="note" style="margin-top:8px">${esc(name)}の床面積: ${f1} / 2F ${ck.building_area.toFixed(2)} / 3F ${ck.building_area.toFixed(2)} = 住宅部分 ${(f1house + ck.building_area * 2).toFixed(2)}m²(A案 83.10 から +${(f1house + ck.building_area * 2 - 83.10).toFixed(2)}m²)。</div>
+</section>`;
 
   const body = `
 <section class="panel">
@@ -601,7 +760,7 @@ export function renderPlan3d({ asOf, property } = {}) {
   <div class="hint" style="margin-bottom:8px">図面(2026/10/08・1/100)の寸法から再構成。判定はしない。変更はこのブラウザにだけ保存。<a href="#plan3d-help">使い方・前提</a> / <a href="property/${esc(PLAN.id)}.html">物件ページ</a></div>
   <div class="toolbar" id="variantTabs"><span class="lbl">案</span>
     ${Object.values(VARIANTS).map((v, i) => `<button class="btn${i === 0 ? " on" : ""}" data-variant="${v.id}">${esc(v.label)}</button>`).join("")}
-    <span class="hint"><a href="#plan3d-b">改案Bの前提と法規の机上計算</a>。案ごとに配置は別々に保存</span>
+    <span class="hint"><a href="#plan3d-b">改案B</a>・<a href="#plan3d-c">改案C</a>の前提と法規の机上計算。案ごとに配置は別々に保存</span>
   </div>
   <div class="toolbar" id="floorTabs"><span class="lbl">階</span>
     ${Object.entries(FLOORS).map(([fid, f], i) => `<button class="btn${i === 0 ? " on" : ""}" data-floor="${fid}">${esc(f.label)}</button>`).join("")}
@@ -670,36 +829,8 @@ export function renderPlan3d({ asOf, property } = {}) {
 </section>
 
 
-<section class="panel" id="plan3d-b">
-  <h2 class="sub">改案B: バルコニー無し・3階三部屋・風呂2階(2026-10-14)</h2>
-  <div class="note">A案の構造(柱位置・階段・外壁の芯・屋根・階高)を変えずに、ユーザーの3条件で組み直した案。<b>法律的・建築的に「机上では成り立つ」ことを数値で示すのが目的</b>で、確認申請の設計者(建築士)の検証に代わるものではない。判定はしない。</div>
-  <h3 class="sub" style="margin-top:10px">変えたこと</h3>
-  <ul class="compact">${B_CHANGES.map((a) => `<li>${escRich(a)}</li>`).join("")}</ul>
-  <h3 class="sub">面積と法規の机上計算(A案との対照)</h3>
-  <table class="dims">
-    <tr><th>項目</th><th>A案(参考プラン)</th><th>改案B</th><th>上限・条件</th><th>読み方</th></tr>
-    <tr><td>建築面積</td><td class="n">${CHECK_A.building_area.toFixed(2)}m²(${(CHECK_A.coverage * 100).toFixed(1)}%)</td><td class="n">${CHECK_B.building_area.toFixed(2)}m²(${(CHECK_B.coverage * 100).toFixed(1)}%)</td><td class="n">${CHECK_B.coverage_cap_m2.toFixed(2)}m²(70%)</td><td>建ぺい率60%+準防火地域の準耐火建築物の緩和10%。A案も64.6%でこの緩和を前提にしている。Bの残り ${(CHECK_B.coverage_cap_m2 - CHECK_B.building_area).toFixed(2)}m²</td></tr>
-    <tr><td>容積対象床面積</td><td class="n">${CHECK_A.volume.toFixed(2)}m²(${(CHECK_A.far * 100).toFixed(1)}%)</td><td class="n">${CHECK_B.volume.toFixed(2)}m²(${(CHECK_B.far * 100).toFixed(1)}%)</td><td class="n">${CHECK_B.far_cap_m2.toFixed(2)}m²(200%)</td><td>前面6m道路×0.4=240%&gt;200%なので指定200%。車庫8.13m²は延床の1/5以内で不算入</td></tr>
-    <tr><td>道路斜線(1.25勾配)</td><td class="n">北面 屋根上端 GL+${CHECK_A.north_face_top.toFixed(2)} / 許容 ${CHECK_A.road_slope_allowed.toFixed(2)}</td><td class="n">GL+${CHECK_B.north_face_top.toFixed(2)} / 許容 ${CHECK_B.road_slope_allowed.toFixed(2)}</td><td class="n">1.25×(6+後退${CHECK_B.setback.toFixed(3)}×2)</td><td>後退距離は壁面で測った値。A案はバルコニー先端(後退0.24)で測ると許容8.1で足りず天空率の前提と読める。Bはバルコニーが無いぶん後退距離の扱いが素直になる。軒先は道路境界まで ${(CHECK_B.setback - ROOF.overhang).toFixed(3)}m</td></tr>
-    <tr><td>第2種高度地区(北側)</td><td class="n">GL+${CHECK_A.north_face_top.toFixed(2)} / 許容 ${CHECK_A.kodo2_allowed.toFixed(2)}</td><td class="n">GL+${CHECK_B.north_face_top.toFixed(2)} / 許容 ${CHECK_B.kodo2_allowed.toFixed(2)}</td><td class="n">5m+0.6×(道路6m+後退)</td><td>北が道路なので反対側境界から測る。棟(GL+${CHECK_B.ridge_top.toFixed(2)})は中央にあり余裕が大きい</td></tr>
-    <tr><td>絶対高さ・日影</td><td class="n">GL+${CHECK_A.ridge_top.toFixed(2)}</td><td class="n">GL+${CHECK_B.ridge_top.toFixed(2)}</td><td class="n">10m</td><td>棟の高さは変えない。1種住居の日影規制は10m超が対象=対象外のまま</td></tr>
-    <tr><td>採光 3F 洋室N</td><td class="n">—</td><td class="n">窓${CHECK_B.daylight.N3.win.toFixed(2)}m²×係数${CHECK_B.daylight.N3.k.toFixed(2)}=${CHECK_B.daylight.N3.eff.toFixed(2)}</td><td class="n">1/7=${(CHECK_B.daylight.N3.floor / 7).toFixed(2)}m²</td><td>北=道路。d=${CHECK_B.daylight.N3.d.toFixed(2)} h=${CHECK_B.daylight.N3.h.toFixed(2)} で係数は上限3.0。非常用進入口の代替開口(幅75×高120以上・道路面)もこの窓</td></tr>
-    <tr><td>採光 3F 洋室S</td><td class="n">—</td><td class="n">窓${CHECK_B.daylight.S3.win.toFixed(2)}m²×係数${CHECK_B.daylight.S3.k.toFixed(2)}=${CHECK_B.daylight.S3.eff.toFixed(2)}</td><td class="n">1/7=${(CHECK_B.daylight.S3.floor / 7).toFixed(2)} / 1/10=${(CHECK_B.daylight.S3.floor / 10).toFixed(2)}m²</td><td>南の空き${SOUTH_GAP.toFixed(2)}m−軒0.25 → d=${CHECK_B.daylight.S3.d.toFixed(2)} h=${CHECK_B.daylight.S3.h.toFixed(2)}。<b>1/7には届かず、照明設備つきの1/10(令和5年改正)で可</b>。1/7にするなら幅2,000超の窓</td></tr>
-    <tr><td>採光 3F 洋室M</td><td class="n">—</td><td class="n">西窓は係数${CHECK_B.daylight.M3.k.toFixed(2)} → 天窓${CHECK_B.daylight.M3.skylight}m²×3=${CHECK_B.daylight.M3.eff.toFixed(2)}</td><td class="n">1/7=${(CHECK_B.daylight.M3.floor / 7).toFixed(2)}m²</td><td>西の空き0.51m・けらばまで d=${CHECK_B.daylight.M3.d.toFixed(2)} h=${CHECK_B.daylight.M3.h.toFixed(2)} で係数0=西窓は数えられない。<b>天窓(0.6×0.6)が居室の条件</b>。位置はロフトの外(y5,915〜6,825)の屋根南面</td></tr>
-    <tr><td>採光 2F LDK</td><td class="n">—</td><td class="n">北窓${CHECK_B.daylight.N2.win.toFixed(2)}m²×3.0=${CHECK_B.daylight.N2.eff.toFixed(2)}</td><td class="n">1/7=${(CHECK_B.daylight.N2.floor / 7).toFixed(2)}m²</td><td>LDKの床は壁芯の全面(水回りを引く前)で保守側</td></tr>
-    <tr><td>1F 洋室</td><td class="n">納戸</td><td class="n">納戸</td><td class="n">—</td><td>南の空き${SOUTH_GAP.toFixed(2)}m・軒まで約6.7mで係数が負。A案が「洋室(納戸)」と書くのと同じ理由で居室にならない</td></tr>
-    <tr><td>ロフト</td><td class="n">8.34m²・頭上≤1.245</td><td class="n">${(W * (C.y8 - yM)).toFixed(2)}m²・頭上≤1.245</td><td class="n">天井1.4m以下・下階の1/2以下</td><td>小屋裏物置の扱い(階・床面積に入らない)はA案と同じ</td></tr>
-    <tr><td>階段・天井高</td><td class="n">蹴上${(LEVELS["1F"].story / 14 * 1000).toFixed(0)}/${(LEVELS["2F"].story / 14 * 1000).toFixed(0)}mm・天井2.25/2.40/2.25</td><td class="n">同じ</td><td class="n">蹴上≤230・踏面≥150・居室2.1m以上</td><td>変えていない</td></tr>
-    <tr><td>準防火地域の開口部</td><td class="n">北面は延焼ラインの内</td><td class="n">同じ(北面 道路中心から${(CHECK_B.setback + 3).toFixed(2)}m)</td><td class="n">2F以上は道路中心から5m</td><td>北・東・西・南の窓は防火設備(網入り等)。A案と同じ条件</td></tr>
-  </table>
-  <div class="note" style="margin-top:6px">採光の計算: 令20条の住居系(d/h×6−1.4、上限3.0。天窓は3倍)。窓の中心は床+1.5m、軒の出0.25・けらば0.15・東西の空き0.51・南の空き${SOUTH_GAP.toFixed(2)}は図面と仮定の値。高度地区は東京都の第2種(5m立上り+0.6勾配)で計算。天空率は使っていない。</div>
-  <h3 class="sub">建築的な注意・失うもの</h3>
-  <ul class="compact">${B_CAVEATS.map((a) => `<li>${escRich(a)}</li>`).join("")}</ul>
-  <h3 class="sub">改案Bの部屋と内法</h3>
-  <table class="dims"><tr><th>部屋</th><th>芯々 (mm)</th><th>面積</th><th>備考</th></tr>${floorsTableOf(FLOORS_B, -EXT_N)}</table>
-  <div class="note" style="margin-top:8px">改案Bの床面積: 1F 住宅部分 21.68 + 車庫 8.13 + ポーチ 2.63 / 2F ${CHECK_B.building_area.toFixed(2)} / 3F ${CHECK_B.building_area.toFixed(2)} = 延床 ${(21.68 + 8.13 + 2.63 + CHECK_B.building_area * 2).toFixed(2)}m²(住宅部分 ${(21.68 + CHECK_B.building_area * 2).toFixed(2)})。A案 93.86(住宅部分 83.10)から +${(CHECK_B.building_area * 2 - 30.71 * 2).toFixed(2)}m²。</div>
-</section>
-
+${variantSection({ id: "b", title: "改案B: バルコニー無し・3階三部屋・風呂2階(2026-10-14)", intro: "A案の構造(柱位置・階段・外壁の芯・屋根・階高)を変えずに、ユーザーの3条件で組み直した案。", ck: CHECK_B, changes: B_CHANGES, caveats: B_CAVEATS, floors: FLOORS_B, name: "改案B", f1: "1F 住宅部分 21.68 + 車庫 8.13 + ポーチ 2.63", f1house: 21.68 })}
+${variantSection({ id: "c", title: "改案C: Bの3F三部屋+車庫は一時停止・1Fも張り出し・風呂1F(2026-10-17)", intro: "B案の2F・3Fの考え方は残し、常駐駐車をやめる前提で1Fに水回りを戻した案。3層とも同じ外形。", ck: CHECK_C, changes: C_CHANGES, caveats: C_CAVEATS, floors: FLOORS_C, name: "改案C", f1: `1F 住宅部分 ${(21.68 + W * EXT_N + C.xG * (C.y3 - yG)).toFixed(2)} + 車寄せ ${CHECK_C.garage_m2.toFixed(2)} + ポーチ 2.63`, f1house: 21.68 + W * EXT_N + C.xG * (C.y3 - yG), extraRows: `<tr><td>車寄せ(一時停止)</td><td class="n">車庫 2,225×3,185+前面1.15=約4.3m</td><td class="n">${(GARAGE_C.w * 1000).toFixed(0)}×${(GARAGE_C.d * 1000).toFixed(0)}+前面${GARAGE_C.apron.toFixed(3)}=約${(GARAGE_C.d + GARAGE_C.apron).toFixed(2)}m</td><td class="n">コンパクト3,995 / 軽3,395</td><td>はみ出し コンパクト約${CHECK_C.car_overhang_compact.toFixed(2)}m・軽約${CHECK_C.car_overhang_kei.toFixed(2)}m=停車のみ。車寄せ${CHECK_C.garage_m2.toFixed(2)}m²は延床の1/5以内で容積不算入</td></tr>` })}
 <section class="panel" id="plan3d-help">
   <h2 class="sub">使い方</h2>
   <div class="note">
