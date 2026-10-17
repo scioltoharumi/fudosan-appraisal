@@ -210,6 +210,15 @@ if (shotDir) { await page.locator("#plan2d").screenshot({ path: join(shotDir, "p
 await page.click('[data-view="all"]'); await page.click('[data-cam="bird"]'); await page.click('[data-wallh="full"]'); await page.waitForTimeout(600);
 if (shotDir) await page.locator("#view3d").screenshot({ path: join(shotDir, "plan3d-C-full.png") });
 ok("案Cの操作でJSエラーなし", errors.length === 0, errors.join(" | "));
+// --- 改案D(2026-10-17「駐車場は削らず、1階の部屋を無くして2階のリビング南側に」) ---
+await page.click('[data-variant="D"]'); await page.waitForLoadState("load"); await page.waitForTimeout(1500);
+const dState = await page.evaluate(() => window.plan3dState());
+ok("案Dに切り替わりJSエラーなし・1Fに車とUB・2Fにベッド(続き間)と縦向きキッチン", errors.length === 0 && dState.floors["1F"].items.some((i) => i.type === "car_compact") && dState.floors["1F"].items.some((i) => i.type === "ub1316") && dState.floors["2F"].items.some((i) => i.type === "bed_s") && dState.floors["2F"].items.some((i) => i.type === "kitchen2400" && i.rot === 90), errors.join(" | "));
+await page.click('[data-mode="both"]'); await page.click('[data-floor="2F"]'); await page.click('[data-view="floor"]'); await page.click('[data-cam="top"]'); await page.waitForTimeout(500);
+if (shotDir) { await page.locator("#plan2d").screenshot({ path: join(shotDir, "plan3d-D-2F-2d.png") }); }
+await page.click('[data-floor="1F"]'); await page.waitForTimeout(400);
+if (shotDir) { await page.locator("#plan2d").screenshot({ path: join(shotDir, "plan3d-D-1F-2d.png") }); }
+ok("案Dの操作でJSエラーなし", errors.length === 0, errors.join(" | "));
 // 案Aへ戻す(以後の検査・既定に影響しない)
 await page.click('[data-variant="A"]'); await page.waitForLoadState("load"); await page.waitForTimeout(800);
 ok("案Aへ戻る(1Fに洗面台)", await page.evaluate(() => window.plan3dState().floors["1F"].items.some((i) => i.type === "washstand750")));
